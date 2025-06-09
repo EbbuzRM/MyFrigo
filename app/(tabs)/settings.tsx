@@ -8,6 +8,8 @@ import {
   Switch,
   Alert,
   Platform,
+  Modal, // Added Modal
+  TextInput, // Added TextInput for modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -24,33 +26,49 @@ import {
 import { StorageService, AppSettings } from '@/services/StorageService'; // Import AppSettings
 import { NotificationService } from '@/services/NotificationService';
 import { SettingsCard } from '@/components/SettingsCard';
+import { useTheme } from '../../context/ThemeContext'; // Import useTheme
 
 export default function Settings() {
+  const { theme: contextTheme, setAppTheme } = useTheme(); // Use theme from context
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationDays, setNotificationDays] = useState(3);
-  const [currentTheme, setCurrentTheme] = useState<AppSettings['theme']>('auto');
+  // const [currentTheme, setCurrentTheme] = useState<AppSettings['theme']>('auto'); // Replaced by contextTheme
+  const [isDaysModalVisible, setIsDaysModalVisible] = useState(false);
+  const [daysInput, setDaysInput] = useState(notificationDays.toString());
+  
+  // Local currentTheme state to sync with context, primarily for UI display within this component
+  const [displayTheme, setDisplayTheme] = useState<AppSettings['theme']>(contextTheme);
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    // Sync local display theme when context theme changes (e.g. on initial load from context)
+    setDisplayTheme(contextTheme);
+  }, [contextTheme]);
 
-  const loadSettings = async () => {
-    try {
-      const settings = await StorageService.getSettings();
-      setNotificationsEnabled(settings.notificationsEnabled);
-      setNotificationDays(settings.notificationDays);
-      setCurrentTheme(settings.theme);
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
+  useEffect(() => {
+    // Load other settings not managed by ThemeContext
+    const loadOtherSettings = async () => {
+      try {
+        const settings = await StorageService.getSettings();
+        setNotificationsEnabled(settings.notificationsEnabled);
+        setNotificationDays(settings.notificationDays);
+        // Theme is now primarily from context, but ensure consistency if needed
+        if (settings.theme !== displayTheme) {
+          setDisplayTheme(settings.theme); 
+        }
+      } catch (error) {
+        console.error('Error loading non-theme settings:', error);
+      }
+    };
+    loadOtherSettings();
+  }, []); // Removed displayTheme from deps to avoid loop with contextTheme effect
 
-  const handleThemeChange = async (theme: AppSettings['theme']) => {
+  const handleThemeChange = async (newTheme: AppSettings['theme']) => {
     try {
-      setCurrentTheme(theme);
-      await StorageService.updateSettings({ theme });
-      Alert.alert('Tema Aggiornato', `Il tema è stato impostato su: ${theme}. Potrebbe essere necessario riavviare l'app per vedere tutte le modifiche.`);
-      // Note: Actual theme application requires more setup (e.g., context, dynamic styles)
+      await setAppTheme(newTheme); // This updates context and storage
+      setDisplayTheme(newTheme); // Update local display
+      Alert.alert('Tema Aggiornato', `Il tema è stato impostato su: ${newTheme}.`);
+      // The note about restarting is less relevant now as context should trigger UI updates.
     } catch (error) {
       console.error('Error updating theme:', error);
       Alert.alert("Errore", "Impossibile aggiornare il tema.");
@@ -79,41 +97,32 @@ export default function Settings() {
     }
   };
 
-  const handleNotificationDaysChange = () => {
-    Alert.prompt(
-      'Giorni di Preavviso',
-      'Inserisci il numero di giorni di preavviso per le notifiche (es. 1-7).',
-      [
-        {
-          text: 'Annulla',
-          style: 'cancel',
-        },
-        {
-          text: 'OK',
-          onPress: async (daysStr) => {
-            if (daysStr) {
-              const days = parseInt(daysStr, 10);
-              if (!isNaN(days) && days > 0 && days <= 30) { // Basic validation
-                try {
-                  setNotificationDays(days);
-                  await StorageService.updateSettings({ notificationDays: days });
-                  Alert.alert('Successo', `Giorni di preavviso impostati a ${days}.`);
-                } catch (error) {
-                  console.error('Error updating notification days:', error);
-                  Alert.alert("Errore", "Impossibile aggiornare i giorni di preavviso.");
-                }
-              } else {
-                Alert.alert('Valore Non Valido', 'Inserisci un numero di giorni valido (es. 1-30).');
-              }
-            }
-          },
-        },
-      ],
-      'plain-text', // Input type
-      notificationDays.toString(), // Default value
-      'numeric' // Keyboard type
-    );
+  const openDaysModal = () => {
+    setDaysInput(notificationDays.toString());
+    setIsDaysModalVisible(true);
   };
+
+  const handleSaveNotificationDays = async () => {
+    if (daysInput) {
+      const days = parseInt(daysInput, 10);
+      if (!isNaN(days) && days > 0 && days <= 30) { // Basic validation
+        try {
+          setNotificationDays(days);
+          await StorageService.updateSettings({ notificationDays: days });
+          Alert.alert('Successo', `Giorni di preavviso impostati a ${days}.`);
+          setIsDaysModalVisible(false);
+        } catch (error) {
+          console.error('Error updating notification days:', error);
+          Alert.alert("Errore", "Impossibile aggiornare i giorni di preavviso.");
+        }
+      } else {
+        Alert.alert('Valore Non Valido', 'Inserisci un numero di giorni valido (es. 1-30).');
+      }
+    } else {
+      Alert.alert('Valore Non Valido', 'Il campo non può essere vuoto.');
+    }
+  };
+
 
   const handleClearData = () => {
     Alert.alert(
@@ -184,7 +193,7 @@ export default function Settings() {
             description={`Ricevi notifiche ${notificationDays} giorni prima della scadenza`}
             icon={<Bell size={24} color="#F59E0B" />}
             rightElement={<Text style={styles.daysText}>{notificationDays}</Text>}
-            onPress={handleNotificationDaysChange}
+            onPress={openDaysModal}
           />
         </View>
         
@@ -192,10 +201,10 @@ export default function Settings() {
           <Text style={styles.sectionTitle}>Aspetto</Text>
           <SettingsCard
             title="Tema App"
-            description={`Attualmente: ${currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}`}
+            description={`Attualmente: ${displayTheme.charAt(0).toUpperCase() + displayTheme.slice(1)}`}
             icon={
-              currentTheme === 'light' ? <Sun size={24} color="#F59E0B" /> :
-              currentTheme === 'dark' ? <Moon size={24} color="#6366F1" /> :
+              displayTheme === 'light' ? <Sun size={24} color="#F59E0B" /> :
+              displayTheme === 'dark' ? <Moon size={24} color="#6366F1" /> :
               <Smartphone size={24} color="#64748B" />
             }
             rightElement={<ChevronRight size={20} color="#94a3b8" />}
@@ -270,6 +279,41 @@ export default function Settings() {
           </Text>
         </View>
       </ScrollView>
+
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isDaysModalVisible}
+        onRequestClose={() => setIsDaysModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Giorni di Preavviso Notifica</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Numero di giorni (es. 3)"
+              value={daysInput}
+              onChangeText={setDaysInput}
+              keyboardType="number-pad"
+              autoFocus
+            />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setIsDaysModalVisible(false)}
+              >
+                <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleSaveNotificationDays}
+              >
+                <Text style={styles.modalButtonTextConfirm}>Salva</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -327,5 +371,66 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#94a3b8',
+  },
+  // Modal Styles (can be shared or moved to a common style sheet)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'stretch',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    marginBottom: 15,
+    textAlign: 'center',
+    color: '#1e293b',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    marginBottom: 20,
+    color: '#1e293b',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: '#e2e8f0',
+    marginRight: 10,
+  },
+  modalButtonConfirm: {
+    backgroundColor: '#2563EB',
+    marginLeft: 10,
+  },
+  modalButtonTextCancel: {
+    color: '#1e293b',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  modalButtonTextConfirm: {
+    color: 'white',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
   },
 });

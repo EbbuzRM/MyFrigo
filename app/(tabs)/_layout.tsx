@@ -11,8 +11,8 @@ export default function TabLayout() {
           backgroundColor: '#ffffff',
           borderTopWidth: 1,
           borderTopColor: '#f1f5f9',
-          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-          paddingTop: 10,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 15,
+          paddingTop: 5,
           height: Platform.OS === 'ios' ? 80 : 60,
         },
         tabBarActiveTintColor: '#2563EB',
@@ -20,7 +20,7 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 12,
           fontFamily: 'Inter-Medium',
-          marginTop: 4,
+          marginTop: 0,
         },
       }}>
       <Tabs.Screen

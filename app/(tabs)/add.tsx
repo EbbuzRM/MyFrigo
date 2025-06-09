@@ -17,14 +17,32 @@ export default function AddProduct() {
   // const [someState, setSomeState] = useState(''); // Example if useState was needed
 
   useEffect(() => {
-    if (params.barcode) {
-      console.log('Barcode ricevuto:', params.barcode, 'Tipo:', params.barcodeType);
-      // Here you could navigate to manual-entry with pre-filled data
-      // or show a modal, or directly try to fetch product info from an API.
-      // For now, just logging.
-      // Example: router.push({ pathname: '/manual-entry', params: { barcode: params.barcode } });
+    // Check if we have barcode data, implying we came from the scanner
+    if (params.barcode && typeof params.barcode === 'string') {
+      // Prepare all parameters to forward to the manual entry screen
+      const forwardParams: { [key: string]: string | undefined | string[] } = { 
+        barcode: params.barcode,
+      };
+      if (params.barcodeType && typeof params.barcodeType === 'string') {
+        forwardParams.barcodeType = params.barcodeType;
+      }
+      if (params.productName && typeof params.productName === 'string') {
+        forwardParams.productName = params.productName;
+      }
+      if (params.brand && typeof params.brand === 'string') {
+        forwardParams.brand = params.brand;
+      }
+      if (params.imageUrl && typeof params.imageUrl === 'string') {
+        forwardParams.imageUrl = params.imageUrl;
+      }
+      // Add any other params you might have passed from scanner.tsx
+
+      // Navigate to manual-entry with all collected parameters
+      // Using replace to prevent going back to this intermediate 'add' screen
+      router.replace({ pathname: '/manual-entry', params: forwardParams });
     }
   }, [params]);
+
   const handleBarcodeScanner = () => {
     router.push('/scanner');
   };

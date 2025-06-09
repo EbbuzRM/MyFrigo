@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Product } from '@/types/Product';
+import { StorageService } from './StorageService'; // Import StorageService
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -33,15 +34,18 @@ export class NotificationService {
     }
   }
 
-  static async scheduleExpirationNotification(product: Product, daysBefore: number = 3): Promise<void> {
+  static async scheduleExpirationNotification(product: Product): Promise<void> { // Removed daysBefore parameter
     if (Platform.OS === 'web') {
       return; // Skip notifications on web
     }
 
     try {
+      const settings = await StorageService.getSettings();
+      const daysBeforeToUse = settings.notificationDays; // Use stored value
+
       const expirationDate = new Date(product.expirationDate);
       const notificationDate = new Date(expirationDate);
-      notificationDate.setDate(notificationDate.getDate() - daysBefore);
+      notificationDate.setDate(notificationDate.getDate() - daysBeforeToUse);
 
       // Don't schedule if notification date is in the past
       if (notificationDate <= new Date()) {
@@ -55,6 +59,7 @@ export class NotificationService {
           data: { productId: product.id, type: 'expiration' },
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: notificationDate,
         },
         identifier: `expiration_${product.id}`,
@@ -76,7 +81,7 @@ export class NotificationService {
     }
   }
 
-  static async scheduleMultipleNotifications(products: Product[], daysBefore: number = 3): Promise<void> {
+  static async scheduleMultipleNotifications(products: Product[]): Promise<void> { // Removed daysBefore parameter
     if (Platform.OS === 'web') {
       return;
     }
@@ -86,8 +91,9 @@ export class NotificationService {
       await Notifications.cancelAllScheduledNotificationsAsync();
 
       // Schedule new notifications
+      // scheduleExpirationNotification will now use the stored setting for daysBefore
       const promises = products.map(product => 
-        this.scheduleExpirationNotification(product, daysBefore)
+        this.scheduleExpirationNotification(product)
       );
 
       await Promise.all(promises);

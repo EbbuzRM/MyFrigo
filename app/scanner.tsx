@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button, Alert } from 'react-native';
+import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform } from 'react-native'; // Added TouchableOpacity and Platform
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native'; // Added ArrowLeft icon
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BarcodeScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Added for loading state
 
   useEffect(() => {
     if (permission && !permission.granted && permission.canAskAgain) {
@@ -32,51 +34,116 @@ export default function BarcodeScannerScreen() {
     );
   }
 
-  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
+    setIsLoading(true);
+
+    let productInfo = null;
+    let alertMessage = `Codice: ${data}`;
+    let paramsForAddScreen: any = { barcode: data, barcodeType: type };
+
+    try {
+      const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${data}`);
+      if (response.ok) {
+        const jsonResponse = await response.json();
+        if (jsonResponse.status === 1 && jsonResponse.product) {
+          productInfo = jsonResponse.product;
+          alertMessage = `Prodotto Trovato: ${productInfo.product_name || data}`;
+          paramsForAddScreen = {
+            ...paramsForAddScreen,
+            productName: productInfo.product_name || '',
+            brand: productInfo.brands || '',
+            imageUrl: productInfo.image_url || '',
+            // You can add more fields here, e.g., categories_tags, nutriments etc.
+          };
+        } else {
+          alertMessage = `Prodotto non trovato (codice: ${data}). Puoi inserirlo manualmente.`;
+        }
+      } else {
+        alertMessage = `Errore nel recuperare dati per il codice: ${data}. Puoi inserirlo manualmente. (HTTP ${response.status})`;
+      }
+    } catch (error) {
+      console.error("Failed to fetch product info:", error);
+      alertMessage = `Errore di rete nel recuperare dati per il codice: ${data}. Puoi inserirlo manualmente.`;
+    } finally {
+      setIsLoading(false);
+    }
+
     Alert.alert(
-      'Codice a Barre Scansionato',
-      `Tipo: ${type}\nDati: ${data}`,
+      productInfo ? 'Prodotto Trovato!' : 'Prodotto Non Trovato',
+      alertMessage,
       [
         {
-          text: 'OK',
+          text: 'Continua', // Changed from 'OK'
           onPress: () => {
-            // Here you would typically navigate to a form pre-filled with barcode data
-            // or fetch product info from an API using the 'data' (barcode)
-            console.log(`Barcode: ${data}, Type: ${type}`);
-            // For now, just go back or allow another scan
-            // router.back(); 
-            // To allow another scan:
-            // setScanned(false); 
-            router.replace({ pathname: '/(tabs)/add', params: { barcode: data, barcodeType: type } });
+            // Now ask if they want to photograph expiration date
+            Alert.alert(
+              'Data di Scadenza',
+              'Vuoi fotografare la data di scadenza per provare a inserirla automaticamente?',
+              [
+                {
+                  text: 'Sì, Fotografa',
+                  onPress: () => {
+                    // Navigate to photo-capture for expiration date
+                    // We use push so user can go back if photo capture fails or is cancelled
+                    router.push({ 
+                      pathname: '/photo-capture', 
+                      params: { 
+                        ...paramsForAddScreen, 
+                        captureMode: 'expirationDateOnly' // Specific mode for photo-capture screen
+                      } 
+                    });
+                  }
+                },
+                {
+                  text: 'No, Inserisci Manualmente',
+                  onPress: () => {
+                    router.replace({ pathname: '/(tabs)/add', params: paramsForAddScreen });
+                  },
+                  style: 'cancel' 
+                }
+              ],
+              { cancelable: false } // Optional: prevent dismissing this second alert easily
+            );
           },
         },
         {
           text: 'Scansiona di Nuovo',
-          onPress: () => setScanned(false),
+          onPress: () => {
+            setScanned(false); 
+            // setIsLoading(false) is handled by the finally block of the API call
+          },
           style: 'cancel',
         },
       ]
     );
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.loadingText}>Recupero informazioni prodotto...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <CameraView
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        onBarcodeScanned={scanned || isLoading ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "qr", "pdf417", "datamatrix", "code39", "code93", "code128", "itf14", "codabar", "aztec"], // Add more types as needed
         }}
         style={StyleSheet.absoluteFillObject}
       />
-      {scanned && (
+      {scanned && !isLoading && (
         <View style={styles.rescanButtonContainer}>
-          <Button title={'Tocca per Scansionare di Nuovo'} onPress={() => setScanned(false)} color="#fff" />
+          <Button title={'Tocca per Scansionare di Nuovo'} onPress={() => { setScanned(false); setIsLoading(false);}} color="#fff" />
         </View>
       )}
-      <View style={styles.backButtonContainer}>
-        <Button title="Indietro" onPress={() => router.back()} color="#fff" />
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButtonContainer}>
+        <ArrowLeft size={28} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -99,6 +166,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-Regular',
   },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#fff',
+    fontFamily: 'Inter-Medium',
+  },
   rescanButtonContainer: {
     position: 'absolute',
     bottom: 100,
@@ -108,9 +185,11 @@ const styles = StyleSheet.create({
   },
   backButtonContainer: {
     position: 'absolute',
-    top: 50, // Adjust as needed for SafeAreaView
+    top: Platform.OS === 'ios' ? 60 : 40, // Adjusted for typical status bar/notch
     left: 20,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 5,
+    borderRadius: 25, // Make it circular for a typical icon button feel
+    padding: 8, // Add some padding around the icon
+    zIndex: 10, // Ensure it's above the CameraView
   }
 });

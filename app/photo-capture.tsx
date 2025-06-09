@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Image } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // Added useLocalSearchParams
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlipHorizontal, Camera as CameraIcon, Check } from 'lucide-react-native';
 import TextRecognition from 'react-native-text-recognition'; // Import OCR
@@ -11,6 +11,7 @@ export default function PhotoCaptureScreen() {
   const [cameraType, setCameraType] = useState<'front' | 'back'>('back');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
+  const params = useLocalSearchParams(); // Get navigation params
 
   useEffect(() => {
     // Request permissions if not determined or not granted but can ask again
@@ -60,16 +61,9 @@ export default function PhotoCaptureScreen() {
     console.log("OCR Text Blocks for date parsing:", ocrResult.join('\n'));
     const dateKeywords = ['exp', 'scad', 'best before', 'use by', 'entro il'];
     
-    // Regex patterns:
-    // 1. DD/MM/YYYY or DD.MM.YYYY or DD-MM-YYYY (day, month, year)
-    // 2. YYYY/MM/DD or YYYY.MM.DD or YYYY-MM-DD (year, month, day)
-    // 3. DDMMYY or DDMMYYYY (less common, no separator)
-    // 4. Month Name (abbreviated or full) Day, Year (e.g., GEN 25 2025, January 25 2025)
     const patterns = [
       { regex: /\b(\d{1,2})[\s\/\.-](\d{1,2})[\s\/\.-](\d{2,4})\b/g, day: 1, month: 2, year: 3 },
       { regex: /\b(\d{4})[\s\/\.-](\d{1,2})[\s\/\.-](\d{1,2})\b/g, year: 1, month: 2, day: 3 },
-      // More complex patterns for month names would require a mapping from name to number
-      // Example: /(JAN|FEB|...|DEC)\s*(\d{1,2})(?:st|nd|rd|th)?(?:,\s*|\s+)(\d{2,4})/i
     ];
 
     let potentialDates: { date: string, score: number }[] = [];
@@ -79,13 +73,13 @@ export default function PhotoCaptureScreen() {
       let keywordBonus = 0;
       for (const keyword of dateKeywords) {
         if (lowerText.includes(keyword)) {
-          keywordBonus = 1; // Give a slight preference if a keyword is nearby
+          keywordBonus = 1; 
           break;
         }
       }
 
       for (const p of patterns) {
-        p.regex.lastIndex = 0; // Reset regex state for global flag
+        p.regex.lastIndex = 0; 
         let match;
         while ((match = p.regex.exec(text)) !== null) {
           try {
@@ -98,15 +92,14 @@ export default function PhotoCaptureScreen() {
             let year = parseInt(yearStr, 10);
 
             if (yearStr.length === 2) {
-              year += 2000; // Assuming 21st century for 2-digit years
+              year += 2000; 
             }
             
-            // Basic validation
             if (isNaN(day) || isNaN(month) || isNaN(year)) continue;
             if (month < 1 || month > 12) continue;
-            const daysInMonth = new Date(year, month, 0).getDate(); // month is 1-indexed here
+            const daysInMonth = new Date(year, month, 0).getDate(); 
             if (day < 1 || day > daysInMonth) continue;
-            if (year < (new Date().getFullYear() - 2) || year > (new Date().getFullYear() + 15)) continue; // Plausible year range
+            if (year < (new Date().getFullYear() - 2) || year > (new Date().getFullYear() + 15)) continue; 
 
             const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             potentialDates.push({ date: formattedDate, score: keywordBonus });
@@ -123,7 +116,6 @@ export default function PhotoCaptureScreen() {
       return null;
     }
 
-    // Sort by score (keyword bonus), then by date (latest is often preferred for expiration)
     potentialDates.sort((a, b) => {
       if (b.score !== a.score) {
         return b.score - a.score;
@@ -137,7 +129,7 @@ export default function PhotoCaptureScreen() {
 
   const extractExpirationDateFromImage = async (imageUri: string): Promise<string | null> => {
     try {
-      const result = await TextRecognition.recognize(imageUri); // result is string[]
+      const result = await TextRecognition.recognize(imageUri); 
       return findDateInOcrResult(result);
     } catch (error) {
       console.error("OCR Error:", error);
@@ -146,25 +138,33 @@ export default function PhotoCaptureScreen() {
     }
   };
 
-  const confirmPhoto = async () => { // Make it async
+  const confirmPhoto = async () => { 
     if (capturedImage) {
       Alert.alert("Elaborazione OCR", "Estrazione della data di scadenza in corso...");
       const extractedDate = await extractExpirationDateFromImage(capturedImage);
       if (extractedDate) {
         Alert.alert("Data Rilevata", `Data di scadenza: ${extractedDate}. Controlla e conferma.`);
       } else {
-        Alert.alert("Data Non Rilevata", "Nessuna data di scadenza rilevata automaticamente. Inseriscila manualmente.");
-      }
-      router.replace({ 
-        pathname: '/manual-entry', 
-        params: { 
-          imageUrl: capturedImage, 
-          addedMethod: 'photo',
-          extractedExpirationDate: extractedDate || undefined 
-        } 
-      });
+      Alert.alert("Data Non Rilevata", "Nessuna data di scadenza rilevata automaticamente. Inseriscila manualmente.");
     }
-  };
+
+    let forwardParams: any = { ...params }; 
+
+    if (params.captureMode === 'expirationDateOnly') {
+      forwardParams.extractedExpirationDate = extractedDate || undefined;
+      delete forwardParams.captureMode;
+    } else {
+      forwardParams.imageUrl = capturedImage; 
+      forwardParams.addedMethod = 'photo';
+      forwardParams.extractedExpirationDate = extractedDate || undefined;
+    }
+    
+    router.replace({ 
+      pathname: '/(tabs)/add', 
+      params: forwardParams
+    });
+  }
+};
 
   const retakePhoto = () => {
     setCapturedImage(null);

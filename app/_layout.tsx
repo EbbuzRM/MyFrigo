@@ -12,6 +12,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { NotificationService } from '@/services/NotificationService';
 import { StorageService } from '@/services/StorageService'; // Import StorageService
+import { ThemeProvider, useTheme } from '../context/ThemeContext'; // Import ThemeProvider and useTheme
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,7 +45,8 @@ export default function RootLayout() {
               const products = await StorageService.getProducts();
               const activeProducts = products.filter(p => p.status === 'active');
               // scheduleMultipleNotifications cancels all old and schedules new ones.
-              await NotificationService.scheduleMultipleNotifications(activeProducts, settings.notificationDays);
+              // It now gets notificationDays internally from StorageService.
+              await NotificationService.scheduleMultipleNotifications(activeProducts);
               console.log('Initial notification sync complete for active products.');
             }
           } catch (error) {
@@ -64,13 +66,23 @@ export default function RootLayout() {
     return null;
   }
 
+  // Inner component to access theme context after ThemeProvider is set up
+  const AppContent = () => {
+    const { isDarkMode } = useTheme();
+    return (
+      <>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      </>
+    );
+  };
+
   return (
-    <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

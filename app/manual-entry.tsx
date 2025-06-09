@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   Image, // Added Image
+  Modal, // Added Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
@@ -17,11 +18,26 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StorageService } from '@/services/StorageService';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
+const COMMON_UNITS = [
+  { id: 'pz', name: 'pz (pezzi)' },
+  { id: 'kg', name: 'kg (chilogrammi)' },
+  { id: 'g', name: 'g (grammi)' },
+  { id: 'L', name: 'L (litri)' },
+  { id: 'ml', name: 'ml (millilitri)' },
+  { id: 'conf', name: 'conf. (confezione)' },
+  { id: 'barattolo', name: 'barattolo' },
+  { id: 'bottiglia', name: 'bottiglia' },
+  { id: 'vasetto', name: 'vasetto' },
+];
+
 export default function ManualEntryScreen() {
   const params = useLocalSearchParams();
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(PRODUCT_CATEGORIES[0]?.id || '');
+  // State for categories, initialized with the static list from import
+  const [dynamicCategories, setDynamicCategories] = useState([...PRODUCT_CATEGORIES]);
+  // Initialize selectedCategory to an empty string or the first dynamic category later in useEffect
+  const [selectedCategory, setSelectedCategory] = useState(''); 
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState('pz'); // Default unit
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
@@ -34,6 +50,59 @@ export default function ManualEntryScreen() {
 
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
   const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(false);
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+  const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
+
+  const ADD_NEW_CATEGORY_ID = 'add_new_category_sentinel_value'; // Unique value for "Add New"
+
+  const handleAddNewCategory = () => {
+    if (newCategoryNameInput && newCategoryNameInput.trim() !== '') {
+      const trimmedName = newCategoryNameInput.trim();
+      const newId = trimmedName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now(); // Ensure unique ID
+
+      if (dynamicCategories.find(cat => cat.id === newId || cat.name.toLowerCase() === trimmedName.toLowerCase())) {
+        Alert.alert('Errore', 'Una categoria con questo nome o ID esiste già.');
+        // Optionally, don't close modal or clear input
+        return;
+      }
+      const newCategory = { 
+        id: newId, 
+        name: trimmedName, 
+        icon: '🏷️', // Default icon for new categories
+        color: '#808080' // Default color (gray) for new categories
+      };
+      setDynamicCategories(prev => [...prev, newCategory]);
+      setSelectedCategory(newId);
+      // TODO: Persist newCategory to StorageService.
+      setIsCategoryModalVisible(false);
+      setNewCategoryNameInput(''); // Clear input
+    } else {
+      Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
+    }
+  };
+
+  const handleCategoryChange = (itemValue: string) => {
+    if (itemValue === ADD_NEW_CATEGORY_ID) {
+      setNewCategoryNameInput(''); // Clear previous input
+      setIsCategoryModalVisible(true);
+    } else {
+      setSelectedCategory(itemValue);
+    }
+  };
+
+  useEffect(() => {
+    // Set initial selected category if not already set (e.g. by edit mode)
+    // and dynamicCategories has items.
+    if (dynamicCategories.length > 0 && !selectedCategory) {
+      // Check if current selectedCategory is valid, otherwise default
+      const isValidCurrentSelection = dynamicCategories.some(cat => cat.id === selectedCategory);
+      if (!isValidCurrentSelection) {
+        setSelectedCategory(dynamicCategories[0].id);
+      }
+    }
+    // This effect will also re-run if dynamicCategories changes, ensuring selection logic is reapplied.
+  }, [dynamicCategories, selectedCategory]);
+
 
   useEffect(() => {
     const loadProductForEdit = async (id: string) => {
@@ -60,21 +129,36 @@ export default function ManualEntryScreen() {
 
     if (params.productId && typeof params.productId === 'string') {
       loadProductForEdit(params.productId);
-    } else if (params.barcode && typeof params.barcode === 'string') {
-      setBarcode(params.barcode);
-      console.log('Barcode ricevuto in ManualEntryScreen:', params.barcode);
+    } else {
+      // Not in edit mode, pre-fill from scanner or photo capture parameters
+      if (params.barcode && typeof params.barcode === 'string' && barcode !== params.barcode) {
+        setBarcode(params.barcode);
+      }
+      if (params.productName && typeof params.productName === 'string' && name !== params.productName) {
+        setName(params.productName); // Pre-fill product name
+      }
+      if (params.brand && typeof params.brand === 'string' && brand !== params.brand) {
+        setBrand(params.brand); // Pre-fill brand
+      }
+      if (params.imageUrl && typeof params.imageUrl === 'string' && imageUrl !== params.imageUrl) {
+        setImageUrl(params.imageUrl);
+      }
+      if (params.extractedExpirationDate && typeof params.extractedExpirationDate === 'string' && expirationDate !== params.extractedExpirationDate) {
+        setExpirationDate(params.extractedExpirationDate);
+      }
     }
-    if (params.imageUrl && typeof params.imageUrl === 'string') {
-      setImageUrl(params.imageUrl);
-      console.log('Immagine ricevuta in ManualEntryScreen:', params.imageUrl);
-      // If an image is received, clear barcode as photo takes precedence
-      setBarcode(''); 
-    }
-    if (params.extractedExpirationDate && typeof params.extractedExpirationDate === 'string' && !params.productId) { // Only prefill if not editing
-      setExpirationDate(params.extractedExpirationDate);
-      console.log('Data di scadenza estratta ricevuta:', params.extractedExpirationDate);
-    }
-  }, [params]);
+  }, [
+    params.productId, 
+    params.barcode, 
+    params.productName, 
+    params.brand, 
+    params.imageUrl, 
+    params.extractedExpirationDate,
+    // Add other relevant params if they are used for pre-filling in this effect
+    // Also, include local state vars in dependency array if their change should re-evaluate pre-fill logic,
+    // e.g. 'barcode', 'name', 'brand', 'imageUrl', 'expirationDate' are used for comparison.
+    barcode, name, brand, imageUrl, expirationDate 
+  ]);
 
   // States for date picker visibility (if using DateTimePicker)
   // Removed as they are now defined above
@@ -157,6 +241,23 @@ export default function ManualEntryScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
         <Text style={styles.title}>Inserimento Manuale</Text>
 
+        {/* Button to take a photo */}
+        {!imageUrl && !isEditMode && ( // Show only if no image yet and not editing (to avoid confusion with existing image)
+          <TouchableOpacity 
+            style={styles.takePhotoButton} 
+            onPress={() => {
+              // Pass current form data to photo-capture so it can be returned
+              const currentFormData = {
+                name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode
+                // Do not pass imageUrl here, as we are about to capture it
+              };
+              router.push({ pathname: '/photo-capture', params: { ...currentFormData, fromManualEntry: 'true' } });
+            }}
+          >
+            <Text style={styles.takePhotoButtonText}>Scatta Foto Prodotto</Text>
+          </TouchableOpacity>
+        )}
+
         {imageUrl && (
           <>
             <Text style={styles.label}>Immagine Prodotto</Text>
@@ -196,11 +297,23 @@ export default function ManualEntryScreen() {
           <Picker
             selectedValue={selectedCategory}
             style={styles.picker}
-            onValueChange={(itemValue: string) => setSelectedCategory(itemValue)}
+            onValueChange={handleCategoryChange} // Use the new handler
           >
-            {PRODUCT_CATEGORIES.map((category) => (
-              <Picker.Item key={category.id} label={category.name} value={category.id} />
-            ))}
+            <Picker.Item label="Aggiungi Nuova Categoria..." value={ADD_NEW_CATEGORY_ID} />
+            {dynamicCategories
+              .filter(cat => cat.id !== 'other') // Exclude 'Altro' for now
+              .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+              .map((category) => (
+                <Picker.Item key={category.id} label={category.name} value={category.id} />
+              ))}
+            {/* Add 'Altro' at the end if it exists in dynamicCategories */}
+            {dynamicCategories.find(cat => cat.id === 'other') && (
+              <Picker.Item 
+                key={'other'} 
+                label={dynamicCategories.find(cat => cat.id === 'other')?.name || 'Altro'} 
+                value={'other'} 
+              />
+            )}
           </Picker>
         </View>
 
@@ -217,12 +330,17 @@ export default function ManualEntryScreen() {
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Unità*</Text>
-            <TextInput
-              style={styles.input}
-              value={unit}
-              onChangeText={setUnit}
-              placeholder="Es. pz, L, kg"
-            />
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={unit}
+                style={styles.picker}
+                onValueChange={(itemValue: string) => setUnit(itemValue)}
+              >
+                {COMMON_UNITS.map((u) => (
+                  <Picker.Item key={u.id} label={u.name} value={u.id} />
+                ))}
+              </Picker>
+            </View>
           </View>
         </View>
 
@@ -272,6 +390,52 @@ export default function ManualEntryScreen() {
           <Text style={styles.saveButtonText}>{isEditMode ? 'Aggiorna Prodotto' : 'Salva Prodotto'}</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isCategoryModalVisible}
+        onRequestClose={() => {
+          setIsCategoryModalVisible(false);
+          // Revert selection if modal is dismissed (e.g. Android back button)
+          if (dynamicCategories.length > 0 && selectedCategory === ADD_NEW_CATEGORY_ID) {
+            setSelectedCategory(dynamicCategories[0].id);
+          }
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Aggiungi Nuova Categoria</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Nome della nuova categoria"
+              value={newCategoryNameInput}
+              onChangeText={setNewCategoryNameInput}
+              autoFocus
+            />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setIsCategoryModalVisible(false);
+                  if (dynamicCategories.length > 0 && selectedCategory === ADD_NEW_CATEGORY_ID) {
+                     // If user cancels, revert to the first actual category
+                    setSelectedCategory(dynamicCategories.find(cat => cat.id !== ADD_NEW_CATEGORY_ID)?.id || '');
+                  }
+                }}
+              >
+                <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleAddNewCategory}
+              >
+                <Text style={styles.modalButtonTextConfirm}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -385,5 +549,77 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontFamily: 'Inter-Bold',
+  },
+  takePhotoButton: {
+    backgroundColor: '#10B981', // Green, similar to photo add method card
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  takePhotoButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'stretch', // Changed from 'center'
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    marginBottom: 20,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around', // Changed to space-around for better spacing
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20, // Give more horizontal space
+    borderRadius: 8,
+    flex: 1, // Allow buttons to take space
+    alignItems: 'center', // Center text in button
+  },
+  modalButtonCancel: {
+    backgroundColor: '#e2e8f0',
+    marginRight: 10, // Space between buttons
+  },
+  modalButtonConfirm: {
+    backgroundColor: '#2563EB',
+    marginLeft: 10, // Space between buttons
+  },
+  modalButtonTextCancel: {
+    color: '#1e293b',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  modalButtonTextConfirm: {
+    color: 'white',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
   },
 });

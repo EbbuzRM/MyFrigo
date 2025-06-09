@@ -71,7 +71,7 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
           <View style={styles.actionsContainer}>
             {onConsume && product.status === 'active' && (
               <TouchableOpacity style={styles.actionButton} onPress={onConsume}>
-                <Text style={styles.consumeText}>Consuma</Text>
+                <Text style={styles.consumeText}>Consumato</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
