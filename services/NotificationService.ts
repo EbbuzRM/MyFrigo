@@ -1,7 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Product } from '@/types/Product';
-import { StorageService } from './StorageService'; // Import StorageService
+// DO NOT import StorageService here to break the cycle.
+// Instead, settings will be passed as arguments where needed.
+// import { StorageService } from './StorageService'; 
+import { AppSettings } from '@/services/StorageService'; // Import AppSettings type
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -34,14 +37,14 @@ export class NotificationService {
     }
   }
 
-  static async scheduleExpirationNotification(product: Product): Promise<void> { // Removed daysBefore parameter
+  static async scheduleExpirationNotification(product: Product, notificationDays: number): Promise<void> {
     if (Platform.OS === 'web') {
-      return; // Skip notifications on web
+      return;
     }
 
     try {
-      const settings = await StorageService.getSettings();
-      const daysBeforeToUse = settings.notificationDays; // Use stored value
+      // const settings = await StorageService.getSettings(); // Removed direct call
+      const daysBeforeToUse = notificationDays; // Use passed argument
 
       const expirationDate = new Date(product.expirationDate);
       const notificationDate = new Date(expirationDate);
@@ -81,19 +84,23 @@ export class NotificationService {
     }
   }
 
-  static async scheduleMultipleNotifications(products: Product[]): Promise<void> { // Removed daysBefore parameter
+  static async scheduleMultipleNotifications(products: Product[], settings: AppSettings): Promise<void> {
     if (Platform.OS === 'web') {
+      return;
+    }
+    
+    if (!settings.notificationsEnabled) {
+      await Notifications.cancelAllScheduledNotificationsAsync(); // Cancel all if disabled
+      console.log('Notifications are disabled, all scheduled notifications cancelled.');
       return;
     }
 
     try {
-      // Cancel all existing notifications first
       await Notifications.cancelAllScheduledNotificationsAsync();
+      const notificationDays = settings.notificationDays;
 
-      // Schedule new notifications
-      // scheduleExpirationNotification will now use the stored setting for daysBefore
       const promises = products.map(product => 
-        this.scheduleExpirationNotification(product)
+        this.scheduleExpirationNotification(product, notificationDays)
       );
 
       await Promise.all(promises);

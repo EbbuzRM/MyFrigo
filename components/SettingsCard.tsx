@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 interface SettingsCardProps {
   title: string;
@@ -18,6 +19,8 @@ export function SettingsCard({
   onPress,
   variant = 'default',
 }: SettingsCardProps) {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
   const CardComponent = onPress ? TouchableOpacity : View;
 
   return (
@@ -53,16 +56,16 @@ export function SettingsCard({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -73,8 +76,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   dangerCard: {
-    borderColor: '#FECACA',
-    backgroundColor: '#FEF2F2',
+    borderColor: isDarkMode ? '#581818' : '#FECACA', // Darker red border for dark mode
+    backgroundColor: isDarkMode ? '#2a0f0f' : '#FEF2F2', // Darker red background for dark mode
   },
   iconContainer: {
     marginRight: 16,
@@ -85,20 +88,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 4,
   },
   dangerTitle: {
-    color: '#DC2626',
+    color: isDarkMode ? '#ef9f9f' : '#DC2626',
   },
   description: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     lineHeight: 20,
   },
   dangerDescription: {
-    color: '#B91C1C',
+    color: isDarkMode ? '#B91C1C' : '#B91C1C',
   },
   rightElement: {
     marginLeft: 12,

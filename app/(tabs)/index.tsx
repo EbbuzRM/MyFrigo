@@ -12,53 +12,52 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlertTriangle, Calendar, Package, TrendingUp } from 'lucide-react-native';
 import { StorageService } from '@/services/StorageService';
 import { Product } from '@/types/Product';
-import { useFocusEffect } from 'expo-router'; // Import useFocusEffect
+import { useFocusEffect, router } from 'expo-router'; // Import useFocusEffect and router
 import { ExpirationCard } from '@/components/ExpirationCard';
 import { StatsCard } from '@/components/StatsCard';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function Dashboard() {
+  const { isDarkMode } = useTheme();
   const [products, setProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notificationDays, setNotificationDays] = useState(3); // Default value
 
-  // useEffect(() => { // Replaced by useFocusEffect
-  //   loadProducts();
-  // }, []);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      setLoading(true); // Show loading indicator on focus
-      loadProducts();
-      return () => {
-        // Optional: cleanup if needed when screen loses focus
-      };
-    }, [])
-  );
-
-  const loadProducts = async () => {
+  const loadData = async () => {
     try {
       const storedProducts = await StorageService.getProducts();
+      const settings = await StorageService.getSettings();
       setProducts(storedProducts);
+      setNotificationDays(settings.notificationDays || 3);
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  useFocusEffect(
+    React.useCallback(() => {
+      setLoading(true);
+      loadData();
+      return () => {};
+    }, [])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadProducts();
+    await loadData();
     setRefreshing(false);
   };
 
   const getExpiringProducts = () => {
     const now = new Date();
-    const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const notificationPeriod = new Date(now.getTime() + notificationDays * 24 * 60 * 60 * 1000);
     
     return products.filter(product => {
       const expirationDate = new Date(product.expirationDate);
-      return expirationDate <= threeDaysFromNow && expirationDate >= now;
+      return expirationDate <= notificationPeriod && expirationDate >= now;
     }).sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
   };
 
@@ -78,6 +77,7 @@ export default function Dashboard() {
 
   const stats = getStats();
   const expiringProducts = getExpiringProducts();
+  const styles = getStyles(isDarkMode);
 
   if (loading) {
     return (
@@ -108,24 +108,28 @@ export default function Dashboard() {
             value={stats.total.toString()}
             icon={<Package size={24} color="#2563EB" />}
             backgroundColor="#EFF6FF"
+            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'all' } })}
           />
           <StatsCard
             title="In Scadenza"
             value={stats.expiring.toString()}
             icon={<AlertTriangle size={24} color="#F59E0B" />}
             backgroundColor="#FFFBEB"
+            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'expiring' } })}
           />
           <StatsCard
             title="Scaduti"
             value={stats.expired.toString()}
             icon={<Calendar size={24} color="#EF4444" />}
             backgroundColor="#FEF2F2"
+            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'expired' } })}
           />
           <StatsCard
             title="Buoni"
             value={stats.healthy.toString()}
             icon={<TrendingUp size={24} color="#10B981" />}
             backgroundColor="#F0FDF4"
+            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'all' } })}
           />
         </View>
 
@@ -133,12 +137,16 @@ export default function Dashboard() {
           <Text style={styles.sectionTitle}>Prodotti in Scadenza</Text>
           {expiringProducts.length > 0 ? (
             expiringProducts.map((product) => (
-              <ExpirationCard key={product.id} product={product} />
+              <ExpirationCard 
+                key={product.id} 
+                product={product} 
+                onPress={() => router.push({ pathname: '/manual-entry', params: { productId: product.id } })}
+              />
             ))
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>
-                Nessun prodotto in scadenza nei prossimi 3 giorni
+                Nessun prodotto in scadenza nei prossimi {notificationDays} giorni
               </Text>
             </View>
           )}
@@ -148,10 +156,10 @@ export default function Dashboard() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
   },
   scrollView: {
     flex: 1,
@@ -164,22 +172,23 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#64748B',
+    color: isDarkMode ? '#c9d1d9' : '#64748B',
   },
   header: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10, // Riduci il padding superiore
     paddingBottom: 10,
   },
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -194,21 +203,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 16,
   },
   emptyState: {
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     padding: 32,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
   },
   emptyStateText: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     textAlign: 'center',
   },
 });

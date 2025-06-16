@@ -17,6 +17,7 @@ import { Picker } from '@react-native-picker/picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StorageService } from '@/services/StorageService';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useTheme } from '@/context/ThemeContext';
 
 const COMMON_UNITS = [
   { id: 'pz', name: 'pz (pezzi)' },
@@ -31,19 +32,18 @@ const COMMON_UNITS = [
 ];
 
 export default function ManualEntryScreen() {
+  const { isDarkMode } = useTheme();
   const params = useLocalSearchParams();
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
-  // State for categories, initialized with the static list from import
   const [dynamicCategories, setDynamicCategories] = useState([...PRODUCT_CATEGORIES]);
-  // Initialize selectedCategory to an empty string or the first dynamic category later in useEffect
   const [selectedCategory, setSelectedCategory] = useState(''); 
   const [quantity, setQuantity] = useState('1');
-  const [unit, setUnit] = useState('pz'); // Default unit
+  const [unit, setUnit] = useState('pz');
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
   const [expirationDate, setExpirationDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [barcode, setBarcode] = useState(''); // State for barcode
+  const [barcode, setBarcode] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [originalProductId, setOriginalProductId] = useState<string | null>(null);
@@ -53,29 +53,31 @@ export default function ManualEntryScreen() {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
 
-  const ADD_NEW_CATEGORY_ID = 'add_new_category_sentinel_value'; // Unique value for "Add New"
+  const ADD_NEW_CATEGORY_ID = 'add_new_category_sentinel_value';
 
-  const handleAddNewCategory = () => {
+  const handleAddNewCategory = async () => {
     if (newCategoryNameInput && newCategoryNameInput.trim() !== '') {
       const trimmedName = newCategoryNameInput.trim();
-      const newId = trimmedName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now(); // Ensure unique ID
+      const newId = trimmedName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
 
       if (dynamicCategories.find(cat => cat.id === newId || cat.name.toLowerCase() === trimmedName.toLowerCase())) {
         Alert.alert('Errore', 'Una categoria con questo nome o ID esiste già.');
-        // Optionally, don't close modal or clear input
         return;
       }
-      const newCategory = { 
-        id: newId, 
-        name: trimmedName, 
-        icon: '🏷️', // Default icon for new categories
-        color: '#808080' // Default color (gray) for new categories
+      const newCategory = {
+        id: newId,
+        name: trimmedName,
+        icon: trimmedName.charAt(0).toUpperCase(),
+        color: '#808080'
       };
-      setDynamicCategories(prev => [...prev, newCategory]);
+      
+      const updatedCategories = [...dynamicCategories, newCategory];
+      setDynamicCategories(updatedCategories);
       setSelectedCategory(newId);
-      // TODO: Persist newCategory to StorageService.
+      await StorageService.saveCategories(updatedCategories);
+      
       setIsCategoryModalVisible(false);
-      setNewCategoryNameInput(''); // Clear input
+      setNewCategoryNameInput('');
     } else {
       Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
     }
@@ -83,7 +85,7 @@ export default function ManualEntryScreen() {
 
   const handleCategoryChange = (itemValue: string) => {
     if (itemValue === ADD_NEW_CATEGORY_ID) {
-      setNewCategoryNameInput(''); // Clear previous input
+      setNewCategoryNameInput('');
       setIsCategoryModalVisible(true);
     } else {
       setSelectedCategory(itemValue);
@@ -91,23 +93,31 @@ export default function ManualEntryScreen() {
   };
 
   useEffect(() => {
-    // Set initial selected category if not already set (e.g. by edit mode)
-    // and dynamicCategories has items.
+    const loadCategories = async () => {
+      const storedCategories = await StorageService.getCategories();
+      const combined = [...PRODUCT_CATEGORIES];
+      storedCategories.forEach(storedCat => {
+        if (!combined.some(defaultCat => defaultCat.id === storedCat.id)) {
+          combined.push(storedCat);
+        }
+      });
+      setDynamicCategories(combined);
+    };
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
     if (dynamicCategories.length > 0 && !selectedCategory) {
-      // Check if current selectedCategory is valid, otherwise default
       const isValidCurrentSelection = dynamicCategories.some(cat => cat.id === selectedCategory);
       if (!isValidCurrentSelection) {
         setSelectedCategory(dynamicCategories[0].id);
       }
     }
-    // This effect will also re-run if dynamicCategories changes, ensuring selection logic is reapplied.
   }, [dynamicCategories, selectedCategory]);
-
 
   useEffect(() => {
     const loadProductForEdit = async (id: string) => {
-      const products = await StorageService.getProducts();
-      const productToEdit = products.find(p => p.id === id);
+      const productToEdit = await StorageService.getProductById(id);
       if (productToEdit) {
         setName(productToEdit.name);
         setBrand(productToEdit.brand || '');
@@ -115,75 +125,58 @@ export default function ManualEntryScreen() {
         setQuantity(productToEdit.quantity.toString());
         setUnit(productToEdit.unit);
         setPurchaseDate(productToEdit.purchaseDate);
-        setExpirationDate(productToEdit.expirationDate);
+        setExpirationDate(productToEdit.expirationDate); // This should correctly set the initial date for edit mode
         setNotes(productToEdit.notes || '');
         setBarcode(productToEdit.barcode || '');
         setImageUrl(productToEdit.imageUrl || null);
-        setOriginalProductId(productToEdit.id); // Store original ID for saving
+        setOriginalProductId(productToEdit.id);
         setIsEditMode(true);
       } else {
         console.warn(`Product with ID ${id} not found for editing.`);
-        // Optionally, navigate back or show an error
       }
     };
 
     if (params.productId && typeof params.productId === 'string') {
       loadProductForEdit(params.productId);
     } else {
-      // Not in edit mode, pre-fill from scanner or photo capture parameters
-      if (params.barcode && typeof params.barcode === 'string' && barcode !== params.barcode) {
-        setBarcode(params.barcode);
-      }
-      if (params.productName && typeof params.productName === 'string' && name !== params.productName) {
-        setName(params.productName); // Pre-fill product name
-      }
-      if (params.brand && typeof params.brand === 'string' && brand !== params.brand) {
-        setBrand(params.brand); // Pre-fill brand
-      }
-      if (params.imageUrl && typeof params.imageUrl === 'string' && imageUrl !== params.imageUrl) {
-        setImageUrl(params.imageUrl);
-      }
-      if (params.extractedExpirationDate && typeof params.extractedExpirationDate === 'string' && expirationDate !== params.extractedExpirationDate) {
+      // For new products, ensure expirationDate is initialized or handled if coming from OCR
+      if (params.barcode && typeof params.barcode === 'string') setBarcode(params.barcode);
+      if (params.productName && typeof params.productName === 'string') setName(params.productName);
+      if (params.brand && typeof params.brand === 'string') setBrand(params.brand);
+      if (params.imageUrl && typeof params.imageUrl === 'string') setImageUrl(params.imageUrl);
+      
+      // Prioritize extractedExpirationDate if available (e.g., from OCR)
+      if (params.extractedExpirationDate && typeof params.extractedExpirationDate === 'string') {
         setExpirationDate(params.extractedExpirationDate);
+        // Clear the param so it doesn't interfere with subsequent interactions
+        const currentParams = { ...params };
+        delete currentParams.extractedExpirationDate;
+        router.setParams(currentParams); 
+      } else if (!expirationDate) { // If not set by OCR and still empty, initialize or leave empty
+        // setExpirationDate(''); // Or initialize to a default, e.g., tomorrow
       }
     }
-  }, [
-    params.productId, 
-    params.barcode, 
-    params.productName, 
-    params.brand, 
-    params.imageUrl, 
-    params.extractedExpirationDate,
-    // Add other relevant params if they are used for pre-filling in this effect
-    // Also, include local state vars in dependency array if their change should re-evaluate pre-fill logic,
-    // e.g. 'barcode', 'name', 'brand', 'imageUrl', 'expirationDate' are used for comparison.
-    barcode, name, brand, imageUrl, expirationDate 
-  ]);
-
-  // States for date picker visibility (if using DateTimePicker)
-  // Removed as they are now defined above
+  }, [params.productId, params.barcode, params.productName, params.brand, params.imageUrl, params.extractedExpirationDate]); // Refined dependencies
 
   const onChangePurchaseDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    const currentDate = selectedDate || new Date(purchaseDate);
-    setShowPurchaseDatePicker(Platform.OS === 'ios'); // On iOS, the picker is a modal that needs to be managed differently or might stay open.
-                                                    // For simplicity, we can let it self-dismiss or require user to tap "Done".
-                                                    // On Android, we always hide after an event.
-    if (Platform.OS === 'android') {
-      setShowPurchaseDatePicker(false);
-    }
-    if (event.type === 'set' && selectedDate) { // "set" means user picked a date
-      setPurchaseDate(currentDate.toISOString().split('T')[0]);
+    setShowPurchaseDatePicker(false);
+    if (event.type === 'set' && selectedDate) {
+      setPurchaseDate(selectedDate.toISOString().split('T')[0]);
     }
   };
 
   const onChangeExpirationDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    const currentDate = selectedDate || new Date(expirationDate || Date.now()); // Ensure a valid date for the picker if expirationDate is empty
-    setShowExpirationDatePicker(Platform.OS === 'ios');
-    if (Platform.OS === 'android') {
+    // For Android, the picker is modal and closes itself. We only care about 'set'.
+    // For iOS, we need to manage the visibility.
+    if (event.type === 'set' && selectedDate) {
+      setExpirationDate(selectedDate.toISOString().split('T')[0]);
+      setShowExpirationDatePicker(false); // Close picker on set for both platforms
+    } else if (event.type === 'dismissed') {
+      setShowExpirationDatePicker(false); // Close picker on dismiss for iOS
+    } else if (Platform.OS === 'android' && event.type !== 'set') {
+      // On Android, if it's not a 'set' event (like a neutral button press),
+      // ensure the picker is hidden as it might not auto-close.
       setShowExpirationDatePicker(false);
-    }
-    if (event.type === 'set' && selectedDate) { // "set" means user picked a date
-      setExpirationDate(currentDate.toISOString().split('T')[0]);
     }
   };
 
@@ -206,16 +199,12 @@ export default function ManualEntryScreen() {
       status: 'active',
       addedMethod: params.addedMethod === 'photo' ? 'photo' : (barcode ? 'barcode' : 'manual'),
       barcode: barcode || undefined,
-      imageUrl: imageUrl || undefined, // Add image URL to product
-      // nutritionalInfo can be added later or remain undefined
+      imageUrl: imageUrl || undefined,
     };
 
     try {
       await StorageService.saveProduct(productToSave);
-      console.log('Nuovo Prodotto (Manuale) Salvato:', productToSave);
       Alert.alert('Prodotto Salvato', `${name} è stato aggiunto e salvato nella tua dispensa.`);
-      
-      // Navigate back or to product list
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -227,30 +216,18 @@ export default function ManualEntryScreen() {
     }
   };
 
-  // Date picker handlers (if using DateTimePicker)
-  // const onChangePurchaseDate = (event: any, selectedDate?: Date) => {
-  //   const currentDate = selectedDate || new Date(purchaseDate);
-  //   setShowPurchaseDatePicker(Platform.OS === 'ios');
-  //   setPurchaseDate(currentDate.toISOString().split('T')[0]);
-  // };
-
-  // const onChangeExpirationDate = (event: any, selectedDate?: Date) => { ... }; // Handled above
+  const styles = getStyles(isDarkMode);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.title}>Inserimento Manuale</Text>
+        <Text style={styles.title}>{isEditMode ? 'Modifica Prodotto' : 'Inserimento Manuale'}</Text>
 
-        {/* Button to take a photo */}
-        {!imageUrl && !isEditMode && ( // Show only if no image yet and not editing (to avoid confusion with existing image)
+        {!imageUrl && !isEditMode && (
           <TouchableOpacity 
             style={styles.takePhotoButton} 
             onPress={() => {
-              // Pass current form data to photo-capture so it can be returned
-              const currentFormData = {
-                name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode
-                // Do not pass imageUrl here, as we are about to capture it
-              };
+              const currentFormData = { name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode };
               router.push({ pathname: '/photo-capture', params: { ...currentFormData, fromManualEntry: 'true' } });
             }}
           >
@@ -265,7 +242,7 @@ export default function ManualEntryScreen() {
           </>
         )}
 
-        {barcode && !imageUrl && ( // Show barcode only if no image
+        {barcode && !imageUrl && (
           <>
             <Text style={styles.label}>Codice a Barre Scansionato</Text>
             <TextInput
@@ -282,6 +259,7 @@ export default function ManualEntryScreen() {
           value={name}
           onChangeText={setName}
           placeholder="Es. Latte Parzialmente Scremato"
+          placeholderTextColor={styles.placeholder.color}
         />
 
         <Text style={styles.label}>Marca</Text>
@@ -290,6 +268,7 @@ export default function ManualEntryScreen() {
           value={brand}
           onChangeText={setBrand}
           placeholder="Es. Granarolo"
+          placeholderTextColor={styles.placeholder.color}
         />
 
         <Text style={styles.label}>Categoria*</Text>
@@ -297,16 +276,16 @@ export default function ManualEntryScreen() {
           <Picker
             selectedValue={selectedCategory}
             style={styles.picker}
-            onValueChange={handleCategoryChange} // Use the new handler
+            onValueChange={handleCategoryChange}
+            dropdownIconColor={isDarkMode ? '#c9d1d9' : '#1e293b'}
           >
             <Picker.Item label="Aggiungi Nuova Categoria..." value={ADD_NEW_CATEGORY_ID} />
             {dynamicCategories
-              .filter(cat => cat.id !== 'other') // Exclude 'Altro' for now
-              .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+              .filter(cat => cat.id !== 'other')
+              .sort((a, b) => a.name.localeCompare(b.name))
               .map((category) => (
                 <Picker.Item key={category.id} label={category.name} value={category.id} />
               ))}
-            {/* Add 'Altro' at the end if it exists in dynamicCategories */}
             {dynamicCategories.find(cat => cat.id === 'other') && (
               <Picker.Item 
                 key={'other'} 
@@ -326,6 +305,7 @@ export default function ManualEntryScreen() {
               onChangeText={setQuantity}
               placeholder="Es. 1"
               keyboardType="numeric"
+              placeholderTextColor={styles.placeholder.color}
             />
           </View>
           <View style={styles.column}>
@@ -335,6 +315,7 @@ export default function ManualEntryScreen() {
                 selectedValue={unit}
                 style={styles.picker}
                 onValueChange={(itemValue: string) => setUnit(itemValue)}
+                dropdownIconColor={isDarkMode ? '#c9d1d9' : '#1e293b'}
               >
                 {COMMON_UNITS.map((u) => (
                   <Picker.Item key={u.id} label={u.name} value={u.id} />
@@ -353,14 +334,25 @@ export default function ManualEntryScreen() {
             testID="purchaseDatePicker"
             value={new Date(purchaseDate || Date.now())}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display="default"
             onChange={onChangePurchaseDate}
-            minimumDate={new Date(new Date().getFullYear() - 5, 0, 1)} // 5 years ago
-            maximumDate={new Date()} // Today
+            maximumDate={new Date()}
           />
         )}
 
-        <Text style={styles.label}>Data di Scadenza*</Text>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>Data di Scadenza*</Text>
+          <TouchableOpacity 
+            style={styles.photoButton}
+            onPress={() => {
+              const currentFormData = { name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode, imageUrl };
+              router.push({ pathname: '/photo-capture', params: { ...currentFormData, captureMode: 'expirationDateOnly' } });
+            }}
+          >
+            <Text style={styles.photoButtonText}>Fotografa la scadenza</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.helperText}>Puoi anche selezionare una foto dalla galleria nella schermata della fotocamera.</Text>
         <TouchableOpacity onPress={() => setShowExpirationDatePicker(true)} style={styles.dateInputTouchable}>
           <Text style={styles.dateTextValue}>{expirationDate ? new Date(expirationDate).toLocaleDateString('it-IT') : 'Seleziona Data'}</Text>
         </TouchableOpacity>
@@ -369,10 +361,9 @@ export default function ManualEntryScreen() {
             testID="expirationDatePicker"
             value={new Date(expirationDate || Date.now())}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display="default"
             onChange={onChangeExpirationDate}
-            minimumDate={new Date()} // Today
-            // maximumDate can be set if needed, e.g., 10 years from now
+            minimumDate={new Date()}
           />
         )}
 
@@ -384,6 +375,7 @@ export default function ManualEntryScreen() {
           placeholder="Eventuali note aggiuntive..."
           multiline
           numberOfLines={3}
+          placeholderTextColor={styles.placeholder.color}
         />
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSaveProduct}>
@@ -395,13 +387,7 @@ export default function ManualEntryScreen() {
         transparent={true}
         animationType="fade"
         visible={isCategoryModalVisible}
-        onRequestClose={() => {
-          setIsCategoryModalVisible(false);
-          // Revert selection if modal is dismissed (e.g. Android back button)
-          if (dynamicCategories.length > 0 && selectedCategory === ADD_NEW_CATEGORY_ID) {
-            setSelectedCategory(dynamicCategories[0].id);
-          }
-        }}
+        onRequestClose={() => setIsCategoryModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -412,17 +398,12 @@ export default function ManualEntryScreen() {
               value={newCategoryNameInput}
               onChangeText={setNewCategoryNameInput}
               autoFocus
+              placeholderTextColor={styles.placeholder.color}
             />
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setIsCategoryModalVisible(false);
-                  if (dynamicCategories.length > 0 && selectedCategory === ADD_NEW_CATEGORY_ID) {
-                     // If user cancels, revert to the first actual category
-                    setSelectedCategory(dynamicCategories.find(cat => cat.id !== ADD_NEW_CATEGORY_ID)?.id || '');
-                  }
-                }}
+                onPress={() => setIsCategoryModalVisible(false)}
               >
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>
               </TouchableOpacity>
@@ -440,69 +421,97 @@ export default function ManualEntryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+  helperText: {
+    fontSize: 12,
+    color: isDarkMode ? '#8b949e' : '#64748b',
+    fontFamily: 'Inter-Regular',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  photoButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: isDarkMode ? '#38bdf8' : '#E0F2FE',
+    borderRadius: 6,
+  },
+  photoButtonText: {
+    color: isDarkMode ? '#0d1117' : '#0EA5E9',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 24,
     textAlign: 'center',
   },
   label: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#334155',
+    color: isDarkMode ? '#8b949e' : '#334155',
     marginBottom: 8,
     marginTop: 16,
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderColor: '#cbd5e1',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  placeholder: {
+    color: isDarkMode ? '#8b949e' : '#94a3b8',
   },
   disabledInput: {
-    backgroundColor: '#e2e8f0',
-    color: '#64748b',
+    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
+    color: isDarkMode ? '#8b949e' : '#64748b',
   },
   productImagePreview: {
     width: '100%',
     height: 200,
     borderRadius: 8,
     marginBottom: 16,
-    backgroundColor: '#e2e8f0', // Placeholder background
+    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
   pickerContainer: {
-    backgroundColor: '#ffffff',
-    borderColor: '#cbd5e1',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
     borderWidth: 1,
     borderRadius: 8,
-    overflow: 'hidden', // Needed for Picker border radius on Android
+    overflow: 'hidden',
   },
   picker: {
-    height: Platform.OS === 'ios' ? undefined : 50, // iOS picker height is intrinsic
-    // width: '100%', // Not always needed, check layout
-    color: '#1e293b',
-    backgroundColor: Platform.OS === 'android' ? '#ffffff' : undefined, // Ensure bg for Android picker
+    height: Platform.OS === 'ios' ? undefined : 50,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    backgroundColor: 'transparent',
   },
   row: {
     flexDirection: 'row',
@@ -510,33 +519,21 @@ const styles = StyleSheet.create({
   },
   column: {
     flex: 1,
-    marginRight: 8, // Add some spacing between columns
+    marginRight: 8,
   },
-  dateText: {
-    backgroundColor: '#ffffff',
-    borderColor: '#cbd5e1',
+  dateInputTouchable: {
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: '#1e293b',
-    textAlign: 'center',
-  },
-  dateInputTouchable: {
-    backgroundColor: '#ffffff',
-    borderColor: '#cbd5e1',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12, // Adjusted padding for touchable
-    justifyContent: 'center', // Center text vertically
+    justifyContent: 'center',
   },
   dateTextValue: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   saveButton: {
     backgroundColor: '#2563EB',
@@ -551,7 +548,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
   },
   takePhotoButton: {
-    backgroundColor: '#10B981', // Green, similar to photo add method card
+    backgroundColor: '#10B981',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -563,7 +560,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
   },
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -571,49 +567,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: 'white',
+    backgroundColor: isDarkMode ? '#161b22' : 'white',
     padding: 20,
     borderRadius: 10,
     width: '80%',
-    alignItems: 'stretch', // Changed from 'center'
+    alignItems: 'stretch',
   },
   modalTitle: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
     marginBottom: 15,
     textAlign: 'center',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     marginBottom: 20,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
   },
   modalButtonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around', // Changed to space-around for better spacing
+    justifyContent: 'space-around',
   },
   modalButton: {
     paddingVertical: 10,
-    paddingHorizontal: 20, // Give more horizontal space
+    paddingHorizontal: 20,
     borderRadius: 8,
-    flex: 1, // Allow buttons to take space
-    alignItems: 'center', // Center text in button
+    flex: 1,
+    alignItems: 'center',
   },
   modalButtonCancel: {
-    backgroundColor: '#e2e8f0',
-    marginRight: 10, // Space between buttons
+    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
+    marginRight: 10,
   },
   modalButtonConfirm: {
     backgroundColor: '#2563EB',
-    marginLeft: 10, // Space between buttons
+    marginLeft: 10,
   },
   modalButtonTextCancel: {
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
   },

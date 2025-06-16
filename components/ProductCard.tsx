@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Trash2, MoreVertical, Calendar, Package } from 'lucide-react-native';
 import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
+import { useTheme } from '@/context/ThemeContext';
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +12,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCardProps) {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
   const getExpirationStatus = () => {
     const now = new Date();
     const expirationDate = new Date(product.expirationDate);
@@ -54,7 +57,7 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
               <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
             </View>
             <View style={styles.textContainer}>
-              <Text style={styles.productName} numberOfLines={1}>
+              <Text style={styles.productName} numberOfLines={2}>
                 {product.name}
               </Text>
               {product.brand && (
@@ -107,13 +110,13 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -141,7 +144,7 @@ const styles = StyleSheet.create({
   productInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    flexShrink: 1,
     marginRight: 12,
   },
   categoryIcon: {
@@ -151,9 +154,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
   },
   categoryEmoji: {
     fontSize: 20,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   textContainer: {
     flex: 1,
@@ -161,19 +166,19 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 2,
   },
   brandName: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     marginBottom: 2,
   },
   categoryName: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#94a3b8',
+    color: isDarkMode ? '#8b949e' : '#94a3b8',
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -183,13 +188,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
-    backgroundColor: '#E0F2FE', // Light blue
+    backgroundColor: isDarkMode ? '#1e2530' : '#E0F2FE', // Light blue
     marginRight: 8,
   },
   consumeText: {
     fontSize: 12,
     fontFamily: 'Inter-SemiBold',
-    color: '#0EA5E9', // Blue
+    color: isDarkMode ? '#8b949e' : '#0EA5E9', // Blue
   },
   deleteButton: {
     padding: 8,
@@ -210,13 +215,13 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     marginLeft: 6,
   },
   notes: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     fontStyle: 'italic',
   },
 });

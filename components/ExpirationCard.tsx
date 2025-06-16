@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { AlertTriangle, Calendar, Package } from 'lucide-react-native';
 import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
+import { useTheme } from '@/context/ThemeContext';
 
 interface ExpirationCardProps {
   product: Product;
@@ -9,6 +10,8 @@ interface ExpirationCardProps {
 }
 
 export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
   const getExpirationStatus = () => {
     const now = new Date();
     const expirationDate = new Date(product.expirationDate);
@@ -77,13 +80,13 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -115,9 +118,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
   },
   categoryEmoji: {
     fontSize: 20,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   textContainer: {
     flex: 1,
@@ -125,13 +130,13 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 2,
   },
   brandName: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -141,6 +146,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   details: {
     flexDirection: 'row',
@@ -153,7 +159,7 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     marginLeft: 6,
   },
 });

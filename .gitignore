@@ -1,10 +1,15 @@
+# Firebase
+# Ignore Firebase config files
+google-services.json
+GoogleService-Info.plist
+
 # dependencies
-node_modules/
+/node_modules/
 
 # expo
-.expo/
-dist/
-web-build/
+/.expo/
+/dist/
+/web-build/
 expo-env.d.ts
 
 # native
@@ -15,6 +20,15 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Android
+/android/app/build/
+/android/.gradle/
+/android/app/src/main/assets/
+
+# iOS
+/ios/build/
+/ios/Pods/
+
 # metro
 .metro-health-check*
 
@@ -22,6 +36,7 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
 
 # macos
 .DS_Store
@@ -33,3 +48,12 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

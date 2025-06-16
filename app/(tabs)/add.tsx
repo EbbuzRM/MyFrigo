@@ -11,8 +11,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, QrCode, PlusCircle } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AddMethodCard } from '@/components/AddMethodCard';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AddProduct() {
+  const { isDarkMode } = useTheme();
   const params = useLocalSearchParams();
   // const [someState, setSomeState] = useState(''); // Example if useState was needed
 
@@ -47,13 +49,11 @@ export default function AddProduct() {
     router.push('/scanner');
   };
 
-  const handlePhotoCapture = () => {
-    router.push({ pathname: '/photo-capture' }); // Using HrefObject
-  };
-
   const handleManualEntry = () => {
     router.push('/manual-entry');
   };
+
+  const styles = getStyles(isDarkMode);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,15 +73,6 @@ export default function AddProduct() {
             onPress={handleBarcodeScanner}
             backgroundColor="#EFF6FF"
             borderColor="#DBEAFE"
-          />
-
-          <AddMethodCard
-            title="Fotografa il Prodotto"
-            description="Scatta una foto per il riconoscimento automatico e l'estrazione della data"
-            icon={<Camera size={32} color="#10B981" />}
-            onPress={handlePhotoCapture}
-            backgroundColor="#F0FDF4"
-            borderColor="#DCFCE7"
           />
 
           <AddMethodCard
@@ -106,6 +97,9 @@ export default function AddProduct() {
             <Text style={styles.tipText}>
               • L'inserimento manuale ti permette il controllo completo sui dettagli
             </Text>
+            <Text style={styles.tipText}>
+              • Per inserire la data di scadenza si può utilizzare un'immagine dalla galleria e si consiglia di utilizzare la modalità macro.
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -113,28 +107,29 @@ export default function AddProduct() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10,
     paddingBottom: 10,
   },
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     lineHeight: 24,
   },
   methodsContainer: {
@@ -148,20 +143,20 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 12,
   },
   tipContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   tipText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     lineHeight: 20,
     marginBottom: 8,
   },

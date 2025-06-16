@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Appearance } from 'react-native';
 import { StorageService, AppSettings } from '@/services/StorageService';
-import * as SystemUI from 'expo-system-ui';
 
 type Theme = AppSettings['theme']; // 'light' | 'dark' | 'auto'
 type ThemeContextType = {
@@ -25,13 +24,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const systemColorScheme = Appearance.getColorScheme(); // 'light' or 'dark' or null
   const isDarkMode = theme === 'auto' ? systemColorScheme === 'dark' : theme === 'dark';
-
-  useEffect(() => {
-    // Apply root background color and status bar style
-    const newRootBackgroundColor = isDarkMode ? '#000000' : '#FFFFFF'; // Example colors
-    SystemUI.setBackgroundColorAsync(newRootBackgroundColor);
-    // Status bar style will be handled in RootLayout using the context
-  }, [isDarkMode]);
 
   const setAppTheme = async (newTheme: Theme) => {
     setTheme(newTheme);

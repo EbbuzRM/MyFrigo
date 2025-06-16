@@ -1,7 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Product } from '@/types/Product';
-import { NotificationService } from './NotificationService'; // Import NotificationService
-import * as Notifications from 'expo-notifications'; // Import expo-notifications
+import { Product, ProductCategory, PRODUCT_CATEGORIES } from '@/types/Product';
+import { NotificationService } from './NotificationService';
+import * as Notifications from 'expo-notifications';
+import { firestoreDB } from './firebaseConfig';
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  writeBatch,
+  query,
+  onSnapshot,
+  orderBy,
+} from 'firebase/firestore';
 
 export interface AppSettings {
   notificationsEnabled: boolean;
@@ -10,139 +23,254 @@ export interface AppSettings {
 }
 
 export class StorageService {
-  private static readonly PRODUCTS_KEY = 'food_manager_products';
-  private static readonly HISTORY_KEY = 'food_manager_history';
-  private static readonly SETTINGS_KEY = 'food_manager_settings';
+  private static readonly CATEGORIES_DOC = 'appData/categories';
+  private static readonly PRODUCTS_COLLECTION = 'products';
+  private static readonly HISTORY_COLLECTION = 'productHistory';
+  private static readonly SETTINGS_DOC = 'appData/settings';
+
+  // Categories
+  static async getCategories(): Promise<ProductCategory[]> {
+    try {
+      const docRef = doc(firestoreDB, this.CATEGORIES_DOC);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data()?.custom) {
+        const customCategories = docSnap.data()?.custom as ProductCategory[];
+        const combined = [...PRODUCT_CATEGORIES];
+        customCategories.forEach(storedCat => {
+          if (!combined.some(defaultCat => defaultCat.id === storedCat.id)) {
+            combined.push(storedCat);
+          }
+        });
+        return combined;
+      }
+      return [...PRODUCT_CATEGORIES];
+    } catch (error) {
+      console.error('Error getting categories from Firestore:', error);
+      return [...PRODUCT_CATEGORIES];
+    }
+  }
+
+  static async saveCategories(categories: ProductCategory[]): Promise<void> {
+    try {
+      const defaultCategoryIds = PRODUCT_CATEGORIES.map(c => c.id);
+      const customCategoriesToSave = categories.filter(c => !defaultCategoryIds.includes(c.id));
+      const docRef = doc(firestoreDB, this.CATEGORIES_DOC);
+      await setDoc(docRef, { custom: customCategoriesToSave }, { merge: true });
+    } catch (error) {
+      console.error('Error saving custom categories to Firestore:', error);
+      throw error;
+    }
+  }
 
   // Products
   static async getProducts(): Promise<Product[]> {
     try {
-      const products = await AsyncStorage.getItem(this.PRODUCTS_KEY);
-      return products ? JSON.parse(products) : [];
+      const productsCollectionRef = collection(firestoreDB, StorageService.PRODUCTS_COLLECTION);
+      const querySnapshot = await getDocs(productsCollectionRef);
+      const products: Product[] = [];
+      querySnapshot.forEach((doc) => {
+        products.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      return products;
     } catch (error) {
-      console.error('Error getting products:', error);
+      console.error('Error getting products from Firestore:', error);
       return [];
+    }
+  }
+
+  static listenToProducts(callback: (products: Product[]) => void): () => void {
+    const productsCollectionRef = collection(firestoreDB, StorageService.PRODUCTS_COLLECTION);
+    const q = query(productsCollectionRef, orderBy('expirationDate', 'asc'));
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const products: Product[] = [];
+      querySnapshot.forEach((doc) => {
+        products.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      callback(products);
+    }, (error) => {
+      console.error("Error listening to products:", error);
+      callback([]);
+    });
+
+    return unsubscribe;
+  }
+
+  static async getProductById(productId: string): Promise<Product | null> {
+    try {
+      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, productId);
+      const docSnap = await getDoc(productDocRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Product;
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error getting product by ID ${productId}:`, error);
+      return null;
     }
   }
 
   static async saveProduct(product: Product): Promise<void> {
     try {
-      const products = await this.getProducts();
-      const existingProduct = products.find(p => p.id === product.id);
+      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, product.id);
       const settings = await this.getSettings();
+      const docSnap = await getDoc(productDocRef);
+      const existingProductData = docSnap.exists() ? docSnap.data() as Product : null;
 
-      if (existingProduct) {
-        // Product updated
-        const existingIndex = products.findIndex(p => p.id === product.id);
-        products[existingIndex] = product;
-        // If expiration date changed or status changed to active, (re)schedule
-        if (existingProduct.expirationDate !== product.expirationDate || (existingProduct.status !== 'active' && product.status === 'active')) {
-          await NotificationService.cancelNotification(product.id); // Cancel old one first
+      await setDoc(productDocRef, product);
+
+      if (existingProductData) {
+        if (existingProductData.expirationDate !== product.expirationDate ||
+            (existingProductData.status !== 'active' && product.status === 'active') ||
+            (existingProductData.status === 'active' && product.status !== 'active')) {
+          await NotificationService.cancelNotification(product.id);
           if (product.status === 'active' && settings.notificationsEnabled) {
             await NotificationService.scheduleExpirationNotification(product, settings.notificationDays);
           }
         }
       } else {
-        // New product
-        products.push(product);
         if (product.status === 'active' && settings.notificationsEnabled) {
           await NotificationService.scheduleExpirationNotification(product, settings.notificationDays);
         }
       }
-      
-      await AsyncStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(products));
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error('Error saving product to Firestore:', error);
       throw error;
     }
   }
 
   static async deleteProduct(productId: string): Promise<void> {
     try {
-      const products = await this.getProducts();
-      const updatedProducts = products.filter(p => p.id !== productId);
-      await AsyncStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(updatedProducts));
-      await NotificationService.cancelNotification(productId); // Cancel notification
+      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, productId);
+      await deleteDoc(productDocRef);
+      await NotificationService.cancelNotification(productId);
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('Error deleting product from Firestore:', error);
       throw error;
     }
   }
 
   static async updateProductStatus(productId: string, status: Product['status']): Promise<void> {
     try {
-      const products = await this.getProducts();
-      const productIndex = products.findIndex(p => p.id === productId);
-      
-      if (productIndex >= 0) {
-        const product = products[productIndex];
-        const oldStatus = product.status;
-        product.status = status;
+      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, productId);
+      const docSnap = await getDoc(productDocRef);
 
-        if (status === 'consumed' || status === 'expired') {
-          product.consumedDate = (status === 'consumed' && !product.consumedDate) ? new Date().toISOString() : product.consumedDate;
-          // Cancel notification if it was active and now consumed/expired
-          if (oldStatus === 'active') {
-            await NotificationService.cancelNotification(productId);
-          }
-        } else if (status === 'active' && oldStatus !== 'active') {
-          // If product becomes active again (e.g., from 'consumed' by mistake), reschedule notification
-          const settings = await this.getSettings();
-          if (settings.notificationsEnabled) {
-            await NotificationService.scheduleExpirationNotification(product, settings.notificationDays);
-          }
+      if (!docSnap.exists()) {
+        console.error(`Product with ID ${productId} not found in Firestore.`);
+        return;
+      }
+
+      const product = { id: docSnap.id, ...docSnap.data() } as Product;
+      const oldStatus = product.status;
+      
+      const updatedFields: Partial<Product> = { status };
+
+      if (status === 'consumed' || status === 'expired') {
+        updatedFields.consumedDate = (status === 'consumed' && !product.consumedDate)
+          ? new Date().toISOString()
+          : product.consumedDate;
+        
+        if (oldStatus === 'active') {
+          await NotificationService.cancelNotification(productId);
         }
-        
-        await AsyncStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(products));
-        
-        if (status === 'consumed') {
-          const consumedProduct = { ...product }; 
-          await this.addToHistory(consumedProduct);
-          // Remove from active products list
-          const activeProducts = products.filter(p => p.id !== productId);
-          await AsyncStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(activeProducts));
-          // Notification is already cancelled above if it was active
+      } else if (status === 'active' && oldStatus !== 'active') {
+        const settings = await this.getSettings();
+        if (settings.notificationsEnabled) {
+          const tempProductForNotification = { ...product, status: 'active' as Product['status'] };
+          await NotificationService.scheduleExpirationNotification(tempProductForNotification, settings.notificationDays);
         }
       }
+      
+      await updateDoc(productDocRef, updatedFields);
+
+      if (status === 'consumed') {
+        const consumedDateValue = updatedFields.consumedDate || new Date().toISOString();
+        const { status: originalStatus, consumedDate: originalConsumedDate, ...restOfProduct } = product;
+        const consumedProductEntry: Product = {
+          ...restOfProduct,
+          id: product.id, 
+          status: 'consumed',
+          consumedDate: consumedDateValue,
+        };
+        await this.addToHistory(consumedProductEntry);
+      }
     } catch (error) {
-      console.error('Error updating product status:', error);
+      console.error('Error updating product status in Firestore:', error);
       throw error;
     }
   }
 
   // History
-  static async getProductHistory(): Promise<Product[]> {
-    try {
-      const history = await AsyncStorage.getItem(this.HISTORY_KEY);
-      return history ? JSON.parse(history) : [];
-    } catch (error) {
-      console.error('Error getting product history:', error);
-      return [];
-    }
+  static listenToHistory(callback: (history: Product[]) => void): () => void {
+    const historyCollectionRef = collection(firestoreDB, StorageService.HISTORY_COLLECTION);
+    const q = query(historyCollectionRef, orderBy('consumedDate', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const history: Product[] = [];
+      querySnapshot.forEach((doc) => {
+        history.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      callback(history);
+    }, (error) => {
+      console.error("Error listening to history:", error);
+      callback([]);
+    });
+
+    return unsubscribe;
   }
 
   static async addToHistory(product: Product): Promise<void> {
     try {
-      const history = await this.getProductHistory();
-      history.push(product);
-      await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
+      const historyDocRef = doc(collection(firestoreDB, StorageService.HISTORY_COLLECTION));
+      await setDoc(historyDocRef, { ...product, id: historyDocRef.id });
     } catch (error) {
-      console.error('Error adding to history:', error);
+      console.error('Error adding to history in Firestore:', error);
       throw error;
     }
   }
 
   // Settings
+  static listenToSettings(callback: (settings: AppSettings) => void): () => void {
+    const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
+    
+    const unsubscribe = onSnapshot(settingsDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data() as AppSettings);
+      } else {
+        // Se il documento non esiste, restituisce le impostazioni di default
+        callback({
+          notificationsEnabled: true,
+          notificationDays: 3,
+          theme: 'auto',
+        });
+      }
+    }, (error) => {
+      console.error("Error listening to settings:", error);
+      // In caso di errore, restituisce le impostazioni di default
+      callback({
+        notificationsEnabled: true,
+        notificationDays: 3,
+        theme: 'auto',
+      });
+    });
+
+    return unsubscribe;
+  }
+
   static async getSettings(): Promise<AppSettings> {
     try {
-      const settings = await AsyncStorage.getItem(this.SETTINGS_KEY);
-      return settings ? JSON.parse(settings) : {
+      const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
+      const docSnap = await getDoc(settingsDocRef);
+      if (docSnap.exists()) {
+        return docSnap.data() as AppSettings;
+      }
+      return {
         notificationsEnabled: true,
         notificationDays: 3,
         theme: 'auto',
       };
     } catch (error) {
-      console.error('Error getting settings:', error);
+      console.error('Error getting settings from Firestore:', error);
       return {
         notificationsEnabled: true,
         notificationDays: 3,
@@ -153,26 +281,20 @@ export class StorageService {
 
   static async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
     try {
-      const currentSettings = await this.getSettings();
-      const updatedSettings = { ...currentSettings, ...newSettings };
-      await AsyncStorage.setItem(this.SETTINGS_KEY, JSON.stringify(updatedSettings));
+      const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
+      await setDoc(settingsDocRef, newSettings, { merge: true }); 
+      
+      const updatedSettings = await this.getSettings();
 
-      // If notification settings changed, reschedule all active product notifications
       if (newSettings.notificationsEnabled !== undefined || newSettings.notificationDays !== undefined) {
         const activeProducts = (await this.getProducts()).filter(p => p.status === 'active');
-        // First, cancel all existing notifications to avoid duplicates or outdated ones
-        await Notifications.cancelAllScheduledNotificationsAsync(); // Corrected: Use Notifications directly
-        
+        await Notifications.cancelAllScheduledNotificationsAsync();
         if (updatedSettings.notificationsEnabled) {
-          // Reschedule with new settings
-          for (const product of activeProducts) {
-            await NotificationService.scheduleExpirationNotification(product, updatedSettings.notificationDays);
-          }
+          await NotificationService.scheduleMultipleNotifications(activeProducts, updatedSettings);
         }
-        // If notificationsEnabled is false, all notifications are already cancelled.
       }
     } catch (error) {
-      console.error('Error updating settings:', error);
+      console.error('Error updating settings in Firestore:', error);
       throw error;
     }
   }
@@ -181,7 +303,8 @@ export class StorageService {
   static async exportData(): Promise<string> {
     try {
       const products = await this.getProducts();
-      const history = await this.getProductHistory();
+      const historySnapshot = await getDocs(collection(firestoreDB, StorageService.HISTORY_COLLECTION));
+      const history = historySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
       const settings = await this.getSettings();
       
       const exportData = {
@@ -189,7 +312,7 @@ export class StorageService {
         history,
         settings,
         exportDate: new Date().toISOString(),
-        version: '1.0.0',
+        version: '2.0.0',
       };
       
       return JSON.stringify(exportData, null, 2);
@@ -202,33 +325,67 @@ export class StorageService {
   static async importData(data: string): Promise<void> {
     try {
       const importedData = JSON.parse(data);
-      
-      if (importedData.products) {
-        await AsyncStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(importedData.products));
+      const batch = writeBatch(firestoreDB);
+
+      if (importedData.products && Array.isArray(importedData.products)) {
+        importedData.products.forEach((product: Product) => {
+          const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, product.id);
+          batch.set(productDocRef, product);
+        });
       }
       
-      if (importedData.history) {
-        await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(importedData.history));
+      if (importedData.history && Array.isArray(importedData.history)) {
+        importedData.history.forEach((historyEntry: Product) => {
+          const historyDocRef = doc(collection(firestoreDB, StorageService.HISTORY_COLLECTION), historyEntry.id || undefined);
+          batch.set(historyDocRef, historyEntry);
+        });
       }
       
       if (importedData.settings) {
-        await AsyncStorage.setItem(this.SETTINGS_KEY, JSON.stringify(importedData.settings));
+        const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
+        batch.set(settingsDocRef, importedData.settings, { merge: true });
       }
+
+      await batch.commit();
+      
+      const settings = await this.getSettings();
+      if (settings.notificationsEnabled) {
+        const activeProducts = (await this.getProducts()).filter(p => p.status === 'active');
+        await Notifications.cancelAllScheduledNotificationsAsync();
+        await NotificationService.scheduleMultipleNotifications(activeProducts, settings);
+      }
+
     } catch (error) {
-      console.error('Error importing data:', error);
+      console.error('Error importing data to Firestore:', error);
       throw error;
     }
   }
 
   static async clearAllData(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove([
-        this.PRODUCTS_KEY,
-        this.HISTORY_KEY,
-        this.SETTINGS_KEY,
-      ]);
+      const productsSnapshot = await getDocs(collection(firestoreDB, StorageService.PRODUCTS_COLLECTION));
+      const productBatch = writeBatch(firestoreDB);
+      productsSnapshot.forEach(doc => productBatch.delete(doc.ref));
+      await productBatch.commit();
+
+      const historySnapshot = await getDocs(collection(firestoreDB, StorageService.HISTORY_COLLECTION));
+      const historyBatch = writeBatch(firestoreDB);
+      historySnapshot.forEach(doc => historyBatch.delete(doc.ref));
+      await historyBatch.commit();
+
+      const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
+      const defaultSettings: AppSettings = {
+        notificationsEnabled: true,
+        notificationDays: 3,
+        theme: 'auto',
+      };
+      await setDoc(settingsDocRef, defaultSettings);
+      
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      console.log('All data cleared from Firestore and notifications cancelled.');
+
     } catch (error) {
-      console.error('Error clearing data:', error);
+      console.error('Error clearing data from Firestore:', error);
       throw error;
     }
   }

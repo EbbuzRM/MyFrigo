@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "myfrigo",
-    "slug": "myfrigo",
+    "name": "Myfrigo",
+    "slug": "bolt-expo-nativewind",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -33,7 +33,8 @@
         "android.permission.VIBRATE",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.example.myfrigo"
+      "package": "com.example.myfrigo",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -52,7 +53,9 @@
           "color": "#ffffff",
           "sounds": []
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "./plugins/withTextRecognition.js"
     ],
     "experiments": {
       "typedRoutes": true

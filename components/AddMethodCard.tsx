@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 interface AddMethodCardProps {
   title: string;
@@ -19,6 +20,9 @@ export function AddMethodCard({
   backgroundColor,
   borderColor,
 }: AddMethodCardProps) {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
+
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor, borderColor }]}
@@ -33,13 +37,13 @@ export function AddMethodCard({
         <Text style={styles.description}>{description}</Text>
       </View>
       <View style={styles.chevronContainer}>
-        <ChevronRight size={20} color="#94a3b8" />
+        <ChevronRight size={20} color={isDarkMode ? '#8b949e' : '#94a3b8'} />
       </View>
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -62,16 +66,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  title: {
+    title: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e293b',
+    color: isDarkMode ? '#000000' : '#1e293b', // Black in dark mode, original dark gray in light
     marginBottom: 4,
   },
   description: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#000000' : '#64748B', // Black in dark mode, original gray in light
     lineHeight: 20,
   },
   chevronContainer: {

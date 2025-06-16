@@ -1,14 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
+import { Product, ProductCategory } from '@/types/Product';
+import { useTheme } from '@/context/ThemeContext';
 
 interface CategoryFilterProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
   products: Product[];
+  categories: ProductCategory[];
 }
 
-export function CategoryFilter({ selectedCategory, onCategoryChange, products }: CategoryFilterProps) {
+export function CategoryFilter({ selectedCategory, onCategoryChange, products, categories: customCategories }: CategoryFilterProps) {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
   const getCategoryCount = (categoryId: string) => {
     if (categoryId === 'all') {
       return products.length;
@@ -18,7 +22,7 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, products }:
 
   const categories = [
     { id: 'all', name: 'Tutti', icon: '📦', color: '#64748B' },
-    ...PRODUCT_CATEGORIES,
+    ...customCategories,
   ];
 
   return (
@@ -77,7 +81,7 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, products }:
   );
 }
 
-const styles = StyleSheet.create({
+  const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     marginBottom: 16,
   },
@@ -91,16 +95,16 @@ const styles = StyleSheet.create({
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   selectedCategoryButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -113,11 +117,12 @@ const styles = StyleSheet.create({
   categoryIcon: {
     fontSize: 16,
     marginRight: 6,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   categoryName: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#64748B',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginRight: 6,
   },
   countBadge: {
@@ -127,9 +132,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
+    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
   },
   countText: {
     fontSize: 12,
     fontFamily: 'Inter-Bold',
+    color: isDarkMode ? '#c9d1d9' : '#64748B',
   },
 });

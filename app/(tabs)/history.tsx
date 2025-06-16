@@ -12,59 +12,50 @@ import { Product } from '@/types/Product';
 import { HistoryCard } from '@/components/HistoryCard';
 import { HistoryStats } from '@/components/HistoryStats';
 import { useFocusEffect } from 'expo-router'; // Import useFocusEffect
+import { useTheme } from '@/context/ThemeContext';
 
 export default function History() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
+  const [consumedProducts, setConsumedProducts] = useState<Product[]>([]);
+  const [expiredProducts, setExpiredProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // useEffect(() => { // Replaced by useFocusEffect
-  //   loadProducts();
-  // }, []);
+  useEffect(() => {
+    setLoading(true);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      setLoading(true);
-      loadProducts();
-      return () => {
-        // Optional: cleanup
-      };
-    }, [])
-  );
+    const unsubscribeHistory = StorageService.listenToHistory((history) => {
+      setConsumedProducts(history);
+      if (loading) setLoading(false);
+    });
 
-  const loadProducts = async () => {
-    try {
-      const storedProducts = await StorageService.getProducts();
-      const historyProducts = await StorageService.getProductHistory();
-      setProducts([...storedProducts, ...historyProducts]);
-    } catch (error) {
-      console.error('Error loading products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchExpiredProducts = async () => {
+      const allProducts = await StorageService.getProducts();
+      const now = new Date();
+      const expired = allProducts
+        .filter(p => p.status === 'expired' || (p.status === 'active' && new Date(p.expirationDate) < now))
+        .sort((a, b) => new Date(b.expirationDate).getTime() - new Date(a.expirationDate).getTime());
+      setExpiredProducts(expired);
+    };
+
+    fetchExpiredProducts();
+
+    return () => {
+      unsubscribeHistory();
+    };
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadProducts();
+    const allProducts = await StorageService.getProducts();
+    const now = new Date();
+    const expired = allProducts
+      .filter(p => p.status === 'expired' || (p.status === 'active' && new Date(p.expirationDate) < now))
+      .sort((a, b) => new Date(b.expirationDate).getTime() - new Date(a.expirationDate).getTime());
+    setExpiredProducts(expired);
     setRefreshing(false);
   };
-
-  const getExpiredProducts = () => {
-    const now = new Date();
-    return products
-      .filter(product => new Date(product.expirationDate) < now)
-      .sort((a, b) => new Date(b.expirationDate).getTime() - new Date(a.expirationDate).getTime());
-  };
-
-  const getConsumedProducts = () => {
-    return products
-      .filter(product => product.status === 'consumed')
-      .sort((a, b) => new Date(b.consumedDate || 0).getTime() - new Date(a.consumedDate || 0).getTime());
-  };
-
-  const expiredProducts = getExpiredProducts();
-  const consumedProducts = getConsumedProducts();
 
   if (loading) {
     return (
@@ -92,7 +83,7 @@ export default function History() {
         </View>
 
         <HistoryStats
-          totalProducts={products.length}
+          totalProducts={consumedProducts.length + expiredProducts.length}
           expiredProducts={expiredProducts.length}
           consumedProducts={consumedProducts.length}
         />
@@ -139,10 +130,10 @@ export default function History() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
   },
   scrollView: {
     flex: 1,
@@ -155,7 +146,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
   },
   header: {
     padding: 20,
@@ -164,13 +155,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
   },
   section: {
     paddingHorizontal: 20,
@@ -179,21 +170,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Inter-SemiBold',
-    color: '#1e293b',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 16,
   },
   emptyState: {
-    backgroundColor: '#ffffff',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     padding: 32,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
   },
   emptyStateText: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748B',
     textAlign: 'center',
   },
 });

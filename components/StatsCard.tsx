@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 interface StatsCardProps {
   title: string;
@@ -10,6 +11,8 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ title, value, icon, backgroundColor, onPress }: StatsCardProps) {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
   const CardComponent = onPress ? TouchableOpacity : View;
 
   return (
@@ -29,7 +32,7 @@ export function StatsCard({ title, value, icon, backgroundColor, onPress }: Stat
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
     width: '48%',
     padding: 16,
@@ -53,12 +56,12 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#1e293b',
+    color: isDarkMode ? '#000000' : '#1e293b', // Nero per dark mode
     marginBottom: 4,
   },
   title: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#64748B',
+    color: isDarkMode ? '#000000' : '#64748B', // Nero per dark mode
   },
 });

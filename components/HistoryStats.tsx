@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react-native';
 import { StatsCard } from './StatsCard';
+import { useTheme } from '@/context/ThemeContext';
 
 interface HistoryStatsProps {
   totalProducts: number;
@@ -10,6 +11,8 @@ interface HistoryStatsProps {
 }
 
 export function HistoryStats({ totalProducts, expiredProducts, consumedProducts }: HistoryStatsProps) {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
   const wastePercentage = totalProducts > 0 ? Math.round((expiredProducts / totalProducts) * 100) : 0;
 
   return (
@@ -54,7 +57,7 @@ export function HistoryStats({ totalProducts, expiredProducts, consumedProducts 
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -65,22 +68,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   suggestionCard: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: isDarkMode ? '#161b22' : '#FFFBEB', // Darker background for dark mode
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#FEF3C7',
+    borderColor: isDarkMode ? '#30363d' : '#FEF3C7',
   },
   suggestionTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#92400E',
+    color: isDarkMode ? '#c9d1d9' : '#92400E', // White-ish text for dark mode
     marginBottom: 8,
   },
   suggestionText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#A16207',
+    color: isDarkMode ? '#8b949e' : '#A16207', // Lighter gray text for dark mode
     lineHeight: 20,
   },
 });

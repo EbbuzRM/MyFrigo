@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform } from 'react-native'; // Added TouchableOpacity and Platform
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native'; // Added ArrowLeft icon
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +10,7 @@ export default function BarcodeScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Added for loading state
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     if (permission && !permission.granted && permission.canAskAgain) {
@@ -129,6 +131,7 @@ export default function BarcodeScannerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {isFocused && (
       <CameraView
         onBarcodeScanned={scanned || isLoading ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
@@ -136,10 +139,11 @@ export default function BarcodeScannerScreen() {
         }}
         style={StyleSheet.absoluteFillObject}
       />
+      )}
       {scanned && !isLoading && (
-        <View style={styles.rescanButtonContainer}>
-          <Button title={'Tocca per Scansionare di Nuovo'} onPress={() => { setScanned(false); setIsLoading(false);}} color="#fff" />
-        </View>
+        <TouchableOpacity style={styles.rescanButtonContainer} onPress={() => { setScanned(false); setIsLoading(false); }}>
+          <Text style={styles.rescanButtonText}>Tocca per Scansionare di Nuovo</Text>
+        </TouchableOpacity>
       )}
       <TouchableOpacity onPress={() => router.back()} style={styles.backButtonContainer}>
         <ArrowLeft size={28} color="#fff" />
@@ -179,9 +183,17 @@ const styles = StyleSheet.create({
   rescanButtonContainer: {
     position: 'absolute',
     bottom: 100,
-    left: 0,
-    right: 0,
+    left: '20%',
+    right: '20%',
+    paddingVertical: 15,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 30,
     alignItems: 'center',
+  },
+  rescanButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
   },
   backButtonContainer: {
     position: 'absolute',
