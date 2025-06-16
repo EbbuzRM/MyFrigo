@@ -1,6 +1,6 @@
 # MyFrigo - Smart Food Manager 🍏
 
-ITA
+# ITA
 
 MyFrigo è un'applicazione mobile cross-platform che aiuta a gestire l'inventario alimentare domestico. Traccia le date di scadenza, invia notifiche per i prodotti in avvicinamento alla scadenza e fornisce statistiche sui consumi per minimizzare gli sprechi.
 
@@ -93,7 +93,7 @@ Questo progetto è rilasciato sotto la **Licenza MIT**. Vedi il file `LICENSE` p
 
 ```
 
-ENG
+# ENG
 
 MyFrigo is a cross-platform mobile app that helps you manage your home food inventory. It tracks expiration dates, sends notifications for products approaching expiration, and provides consumption statistics to minimize waste.
 
