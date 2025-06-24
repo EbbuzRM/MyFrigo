@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Platform,
 } from 'react-native';
@@ -57,52 +56,47 @@ export default function AddProduct() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Aggiungi Prodotto</Text>
-          <Text style={styles.subtitle}>
-            Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
+      <View style={styles.header}>
+        <Text style={styles.title}>Aggiungi Prodotto</Text>
+        <Text style={styles.subtitle}>
+          Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
+        </Text>
+      </View>
+
+      <View style={styles.methodsContainer}>
+        <AddMethodCard
+          title="Scansiona Codice a Barre"
+          description="Scansiona il codice a barre per identificare automaticamente il prodotto"
+          icon={<QrCode size={28} color="#2563EB" />}
+          onPress={handleBarcodeScanner}
+          backgroundColor="#EFF6FF"
+          borderColor="#DBEAFE"
+        />
+
+        <AddMethodCard
+          title="Inserimento Manuale"
+          description="Aggiungi manualmente tutti i dettagli del prodotto"
+          icon={<PlusCircle size={28} color="#F59E0B" />}
+          onPress={handleManualEntry}
+          backgroundColor="#FFFBEB"
+          borderColor="#FEF3C7"
+        />
+      </View>
+
+      <View style={styles.infoSection}>
+        <Text style={styles.infoTitle}>Suggerimenti</Text>
+        <View style={styles.tipContainer}>
+          <Text style={styles.tipText}>
+            • Per risultati migliori con la fotocamera, assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
+          </Text>
+          <Text style={styles.tipText}>
+            • L'inserimento manuale ti permette il controllo completo sui dettagli
+          </Text>
+          <Text style={styles.tipText}>
+            • Puoi inserire la data di scadenza anche da un'immagine della galleria.
           </Text>
         </View>
-
-        <View style={styles.methodsContainer}>
-          <AddMethodCard
-            title="Scansiona Codice a Barre"
-            description="Scansiona il codice a barre per identificare automaticamente il prodotto"
-            icon={<QrCode size={32} color="#2563EB" />}
-            onPress={handleBarcodeScanner}
-            backgroundColor="#EFF6FF"
-            borderColor="#DBEAFE"
-          />
-
-          <AddMethodCard
-            title="Inserimento Manuale"
-            description="Aggiungi manualmente tutti i dettagli del prodotto"
-            icon={<PlusCircle size={32} color="#F59E0B" />}
-            onPress={handleManualEntry}
-            backgroundColor="#FFFBEB"
-            borderColor="#FEF3C7"
-          />
-        </View>
-
-        <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>Suggerimenti</Text>
-          <View style={styles.tipContainer}>
-            <Text style={styles.tipText}>
-              • Per risultati migliori con la fotocamera, assicurati che l'etichetta sia ben illuminata
-            </Text>
-            <Text style={styles.tipText}>
-              • Il codice a barre funziona meglio su superfici piatte e pulite
-            </Text>
-            <Text style={styles.tipText}>
-              • L'inserimento manuale ti permette il controllo completo sui dettagli
-            </Text>
-            <Text style={styles.tipText}>
-              • Per inserire la data di scadenza si può utilizzare un'immagine dalla galleria e si consiglia di utilizzare la modalità macro.
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -111,9 +105,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
-  },
-  scrollView: {
-    flex: 1,
+    justifyContent: 'space-between',
+    padding: 10,
   },
   header: {
     paddingHorizontal: 20,
@@ -134,7 +127,6 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   methodsContainer: {
     paddingHorizontal: 20,
-    marginBottom: 32,
   },
   infoSection: {
     paddingHorizontal: 20,
@@ -144,11 +136,11 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   tipContainer: {
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    padding: 16,
+    padding: 10,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
@@ -158,6 +150,6 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
     lineHeight: 20,
-    marginBottom: 8,
+    marginBottom: 6,
   },
 });

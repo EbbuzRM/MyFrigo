@@ -40,14 +40,16 @@ export default function Settings() {
     theme: 'auto',
   });
   const [isDaysModalVisible, setIsDaysModalVisible] = useState(false);
-  const [daysInput, setDaysInput] = useState(settings.notificationDays.toString());
+  const [daysInput, setDaysInput] = useState(settings.notificationDays?.toString() ?? '3');
 
   useEffect(() => {
     const unsubscribe = StorageService.listenToSettings((newSettings) => {
-      setSettings(newSettings);
-      setDaysInput(newSettings.notificationDays.toString());
-      if (newSettings.theme !== contextTheme) {
-        setAppTheme(newSettings.theme);
+      if (newSettings) {
+        setSettings(newSettings);
+        setDaysInput(newSettings.notificationDays?.toString() ?? '3');
+        if (newSettings.theme && newSettings.theme !== contextTheme) {
+          setAppTheme(newSettings.theme);
+        }
       }
     });
     return () => unsubscribe();
@@ -80,7 +82,7 @@ export default function Settings() {
   };
 
   const openDaysModal = () => {
-    setDaysInput(settings.notificationDays.toString());
+    setDaysInput(settings.notificationDays?.toString() ?? '3');
     setIsDaysModalVisible(true);
   };
 
@@ -160,7 +162,7 @@ export default function Settings() {
           />
           <SettingsCard
             title="Giorni di Preavviso"
-            description={`Ricevi notifiche ${settings.notificationDays} giorni prima della scadenza`}
+            description={`Ricevi notifiche ${settings.notificationDays ?? 3} giorni prima della scadenza`}
             icon={<Bell size={24} color="#F59E0B" />}
             rightElement={<Text style={styles.daysText}>{settings.notificationDays}</Text>}
             onPress={openDaysModal}
@@ -171,7 +173,7 @@ export default function Settings() {
           <Text style={styles.sectionTitle}>Aspetto</Text>
           <SettingsCard
             title="Tema App"
-            description={`Attualmente: ${settings.theme.charAt(0).toUpperCase() + settings.theme.slice(1)}`}
+            description={`Attualmente: ${settings.theme ? settings.theme.charAt(0).toUpperCase() + settings.theme.slice(1) : 'Auto'}`}
             icon={
               settings.theme === 'light' ? <Sun size={24} color="#F59E0B" /> :
               settings.theme === 'dark' ? <Moon size={24} color="#6366F1" /> :

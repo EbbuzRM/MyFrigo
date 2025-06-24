@@ -1,36 +1,19 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, AppState, Vibration } from 'react-native';
 import { Product } from '@/types/Product';
-// DO NOT import StorageService here to break the cycle.
-// Instead, settings will be passed as arguments where needed.
-// import { StorageService } from './StorageService'; 
-import { AppSettings } from '@/services/StorageService'; // Import AppSettings type
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true, // Sostituisce shouldShowAlert, mostra la notifica come banner
-    shouldShowList: true, // Sostituisce shouldShowAlert, mostra la notifica nella lista delle notifiche
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+import { AppSettings } from '@/services/StorageService';
+import Sound from 'react-native-sound'; // Importa react-native-sound
 
 export class NotificationService {
   static async requestPermissions(): Promise<boolean> {
-    if (Platform.OS === 'web') {
-      return true; // Web doesn't require explicit permissions
-    }
+    if (Platform.OS === 'web') return true;
 
     try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status === 'granted') return true;
 
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      return finalStatus === 'granted';
+      const { status: newStatus } = await Notifications.requestPermissionsAsync();
+      return newStatus === 'granted';
     } catch (error) {
       console.error('Error requesting notification permissions:', error);
       return false;
@@ -38,35 +21,34 @@ export class NotificationService {
   }
 
   static async scheduleExpirationNotification(product: Product, notificationDays: number): Promise<void> {
-    if (Platform.OS === 'web') {
-      return;
-    }
+    if (Platform.OS === 'web') return;
 
     try {
-      // const settings = await StorageService.getSettings(); // Removed direct call
-      const daysBeforeToUse = notificationDays; // Use passed argument
-
       const expirationDate = new Date(product.expirationDate);
       const notificationDate = new Date(expirationDate);
-      notificationDate.setDate(notificationDate.getDate() - daysBeforeToUse);
+      notificationDate.setDate(notificationDate.getDate() - notificationDays);
 
-      // Don't schedule if notification date is in the past
+      // Se la data di notifica è nel passato, non pianificare
       if (notificationDate <= new Date()) {
         return;
       }
 
+      // Pianifica la notifica
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Prodotto in Scadenza',
           body: `${product.name} scadrà il ${expirationDate.toLocaleDateString('it-IT')}`,
-          data: { productId: product.id, type: 'expiration' },
+          data: { productId: product.id },
         },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: notificationDate,
-        },
+        trigger: notificationDate,
         identifier: `expiration_${product.id}`,
       });
+
+      // Gestione suono e vibrazione (opzionale, se non gestito dal sistema)
+      // Questa parte può essere attivata se il trigger non riproduce il suono/vibrazione desiderati
+      // playNotificationSound();
+      // Vibration.vibrate();
+
     } catch (error) {
       console.error('Error scheduling notification:', error);
     }

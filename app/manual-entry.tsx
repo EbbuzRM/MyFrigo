@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // Consolidated imports
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
-  Image, // Added Image
-  Modal, // Added Modal
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
@@ -139,24 +139,20 @@ export default function ManualEntryScreen() {
     if (params.productId && typeof params.productId === 'string') {
       loadProductForEdit(params.productId);
     } else {
-      // For new products, ensure expirationDate is initialized or handled if coming from OCR
       if (params.barcode && typeof params.barcode === 'string') setBarcode(params.barcode);
       if (params.productName && typeof params.productName === 'string') setName(params.productName);
       if (params.brand && typeof params.brand === 'string') setBrand(params.brand);
       if (params.imageUrl && typeof params.imageUrl === 'string') setImageUrl(params.imageUrl);
+      if (params.category && typeof params.category === 'string') setSelectedCategory(params.category);
       
-      // Prioritize extractedExpirationDate if available (e.g., from OCR)
       if (params.extractedExpirationDate && typeof params.extractedExpirationDate === 'string') {
         setExpirationDate(params.extractedExpirationDate);
-        // Clear the param so it doesn't interfere with subsequent interactions
         const currentParams = { ...params };
         delete currentParams.extractedExpirationDate;
         router.setParams(currentParams); 
-      } else if (!expirationDate) { // If not set by OCR and still empty, initialize or leave empty
-        // setExpirationDate(''); // Or initialize to a default, e.g., tomorrow
       }
     }
-  }, [params.productId, params.barcode, params.productName, params.brand, params.imageUrl, params.extractedExpirationDate]); // Refined dependencies
+  }, [params.productId, params.barcode, params.productName, params.brand, params.imageUrl, params.category, params.extractedExpirationDate]);
 
   const onChangePurchaseDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowPurchaseDatePicker(false);
@@ -166,16 +162,12 @@ export default function ManualEntryScreen() {
   };
 
   const onChangeExpirationDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    // For Android, the picker is modal and closes itself. We only care about 'set'.
-    // For iOS, we need to manage the visibility.
     if (event.type === 'set' && selectedDate) {
       setExpirationDate(selectedDate.toISOString().split('T')[0]);
-      setShowExpirationDatePicker(false); // Close picker on set for both platforms
+      setShowExpirationDatePicker(false);
     } else if (event.type === 'dismissed') {
-      setShowExpirationDatePicker(false); // Close picker on dismiss for iOS
+      setShowExpirationDatePicker(false);
     } else if (Platform.OS === 'android' && event.type !== 'set') {
-      // On Android, if it's not a 'set' event (like a neutral button press),
-      // ensure the picker is hidden as it might not auto-close.
       setShowExpirationDatePicker(false);
     }
   };
@@ -189,16 +181,16 @@ export default function ManualEntryScreen() {
     const productToSave: Product = {
       id: isEditMode && originalProductId ? originalProductId : Date.now().toString(),
       name,
-      brand: brand || undefined,
+      brand: brand || '',
       category: selectedCategory,
       quantity: parseInt(quantity, 10),
       unit,
       purchaseDate,
       expirationDate,
-      notes: notes || undefined,
+      notes: notes || '',
       status: 'active',
       addedMethod: params.addedMethod === 'photo' ? 'photo' : (barcode ? 'barcode' : 'manual'),
-      barcode: barcode || undefined,
+      barcode: barcode || '',
       imageUrl: imageUrl || undefined,
     };
 

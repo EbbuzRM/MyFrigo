@@ -1,4 +1,4 @@
-import '@react-native-firebase/analytics'; // Import to initialize Firebase Analytics
+import 'react-native-url-polyfill/auto';
 import { useEffect } from 'react';
 import { ThemeProvider as NavThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { Stack } from 'expo-router';
@@ -12,10 +12,12 @@ import {
   Inter_700Bold
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Updates from 'expo-updates';
+import { Platform, AppState } from 'react-native';
 import { NotificationService } from '@/services/NotificationService';
-import { StorageService } from '@/services/StorageService'; // Import StorageService
-import { ThemeProvider, useTheme } from '../context/ThemeContext'; // Import ThemeProvider and useTheme
-import '@/services/firebaseConfig'; // Import for side effects (initialization)
+import { StorageService } from '@/services/StorageService';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import '@/services/firebaseConfig';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,11 +38,23 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active') {
+        // Ricarica l'app quando ritorna in primo piano
+        if (Platform.OS !== 'web') {
+          Updates.reloadAsync();
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
     const requestNotifPermissions = async () => {
       const granted = await NotificationService.requestPermissions();
       if (granted) {
         console.log('Notification permissions granted.');
-        // Sync notifications for existing active products
         const syncNotifications = async () => {
           try {
             const settings = await StorageService.getSettings();
@@ -57,12 +71,10 @@ export default function RootLayout() {
         syncNotifications();
       } else {
         console.log('Notification permissions denied.');
-        // Optionally, inform the user that notifications will not work
       }
     };
     requestNotifPermissions();
     
-    // Listener for app state changes to re-sync notifications when app comes to foreground
     const AppState = require('react-native').AppState;
     const subscription = AppState.addEventListener('change', async (nextAppState: string) => {
       if (nextAppState === 'active') {
@@ -90,7 +102,6 @@ export default function RootLayout() {
     return null;
   }
 
-  // Inner component to access theme context after ThemeProvider is set up
   const AppContent = () => {
     const { isDarkMode } = useTheme();
     const theme = isDarkMode ? DarkTheme : DefaultTheme;

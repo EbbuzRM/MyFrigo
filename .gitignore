@@ -10,7 +10,6 @@ GoogleService-Info.plist
 /.expo/
 /dist/
 /web-build/
-expo-env.d.ts
 
 # native
 *.orig.*

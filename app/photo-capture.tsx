@@ -45,17 +45,29 @@ export default function PhotoCaptureScreen() {
   }
 
   const takePicture = async () => {
+    if (!cameraPermission?.granted) {
+      Alert.alert("Permesso Fotocamera Negato", "Non è possibile scattare foto senza il permesso della fotocamera.");
+      return;
+    }
+    if (!galleryPermission?.granted) {
+      Alert.alert("Permesso Galleria Negato", "Per salvare le foto o accedere alla galleria, è necessario il permesso.");
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+    }
+
     if (cameraRef.current) {
       try {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-        if (photo?.uri) {
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, base64: false });
+        if (photo && photo.uri) {
           setCapturedImage(photo.uri);
         } else {
-          Alert.alert("Errore", "Impossibile scattare la foto.");
+          Alert.alert("Errore", "Impossibile scattare la foto: nessun URI valido ricevuto.");
         }
-      } catch (error) {
+      } catch (error: unknown) { // Explicitly type error as unknown
         console.error("Errore scattando la foto:", error);
-        Alert.alert("Errore", "Si è verificato un problema durante lo scatto della foto.");
+        Alert.alert("Errore", `Si è verificato un problema durante lo scatto della foto: ${(error as Error).message || 'Errore sconosciuto'}`);
       }
     }
   };

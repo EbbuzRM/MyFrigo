@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   RefreshControl,
-  Alert, // Added Alert
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Filter } from 'lucide-react-native';
@@ -28,14 +28,10 @@ export default function Products() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [currentFilter, setCurrentFilter] = useState<ProductFilter>('all'); // New state for product filter
+  const [currentFilter, setCurrentFilter] = useState<ProductFilter>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Sostituito con il listener in tempo reale
-  // const loadData = async () => { ... };
-
-  // Listener per i prodotti in tempo reale
   useEffect(() => {
     setLoading(true);
     const unsubscribe = StorageService.listenToProducts((storedProducts) => {
@@ -43,7 +39,6 @@ export default function Products() {
       setLoading(false);
     });
 
-    // Carica le categorie (questo può rimanere asincrono e non in tempo reale per ora)
     const loadCategories = async () => {
       try {
         const storedCategories = await StorageService.getCategories();
@@ -61,28 +56,26 @@ export default function Products() {
     
     loadCategories();
 
-    return () => unsubscribe(); // Annulla l'iscrizione quando il componente viene smontato
+    return () => unsubscribe();
   }, []);
 
-  // Gestisce il filtro passato tramite i parametri di navigazione
   useFocusEffect(
     React.useCallback(() => {
       if (params.filter && typeof params.filter === 'string') {
         setCurrentFilter(params.filter as ProductFilter);
       } else {
-        setCurrentFilter('all'); // Default
+        setCurrentFilter('all');
       }
     }, [params.filter])
   );
 
   useEffect(() => {
     filterProducts();
-  }, [products, searchQuery, selectedCategory, currentFilter]); // Add currentFilter to dependencies
+  }, [products, searchQuery, selectedCategory, currentFilter]);
 
   const filterProducts = () => {
     let filtered = [...products];
 
-    // Filter by search query
     if (searchQuery.trim()) {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,19 +83,15 @@ export default function Products() {
       );
     }
 
-    // Filter by category
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(product => product.category === selectedCategory);
     }
 
-    // Filter by product status (expired, expiring, all)
     const now = new Date();
     if (currentFilter === 'expired') {
       filtered = filtered.filter(product => new Date(product.expirationDate) < now);
     } else if (currentFilter === 'expiring') {
-      // Assuming a default notificationDays or fetching it from settings if needed
-      // For simplicity, let's define a fixed period for 'expiring' here or fetch from settings
-      const notificationDaysForExpiring = 7; // Example: products expiring in next 7 days
+      const notificationDaysForExpiring = 7;
       const notificationPeriod = new Date(now.getTime() + notificationDaysForExpiring * 24 * 60 * 60 * 1000);
       filtered = filtered.filter(product => {
         const expirationDate = new Date(product.expirationDate);
@@ -110,26 +99,18 @@ export default function Products() {
       });
     }
 
-    // Sort by expiration date
     filtered.sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
     setFilteredProducts(filtered);
   };
 
   const onRefresh = async () => {
-    // Con il listener in tempo reale, il pull-to-refresh non è strettamente necessario
-    // per aggiornare i dati, ma possiamo lasciarlo per ricaricare le categorie
-    // o come feedback visivo per l'utente.
     setRefreshing(true);
-    // await loadData(); // loadData non esiste più
-    // Potremmo ricaricare le categorie se necessario
-    // await loadCategories();
-    setTimeout(() => setRefreshing(false), 1000); // Simula un refresh
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   const handleDeleteProduct = async (productId: string) => {
     try {
-      // La UI si aggiornerà automaticamente grazie al listener
       await StorageService.deleteProduct(productId);
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -139,7 +120,6 @@ export default function Products() {
 
   const handleConsumeProduct = async (productId: string) => {
     try {
-      // La UI si aggiornerà automaticamente
       await StorageService.updateProductStatus(productId, 'consumed');
       Alert.alert("Prodotto Consumato", "Il prodotto è stato segnato come consumato e spostato nello storico.");
     } catch (error) {

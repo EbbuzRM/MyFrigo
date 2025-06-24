@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform } from 'react-native'; // Added TouchableOpacity and Platform
+import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
-import { ArrowLeft } from 'lucide-react-native'; // Added ArrowLeft icon
+import { ArrowLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StorageService } from '@/services/StorageService';
 
 export default function BarcodeScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -40,39 +41,54 @@ export default function BarcodeScannerScreen() {
     setScanned(true);
     setIsLoading(true);
 
-    let productInfo = null;
+    let productInfoFound = false;
     let alertMessage = `Codice: ${data}`;
     let paramsForAddScreen: any = { barcode: data, barcodeType: type };
 
     try {
-      const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${data}`);
-      if (response.ok) {
-        const jsonResponse = await response.json();
-        if (jsonResponse.status === 1 && jsonResponse.product) {
-          productInfo = jsonResponse.product;
-          alertMessage = `Prodotto Trovato: ${productInfo.product_name || data}`;
-          paramsForAddScreen = {
-            ...paramsForAddScreen,
-            productName: productInfo.product_name || '',
-            brand: productInfo.brands || '',
-            imageUrl: productInfo.image_url || '',
-            // You can add more fields here, e.g., categories_tags, nutriments etc.
-          };
-        } else {
-          alertMessage = `Prodotto non trovato (codice: ${data}). Puoi inserirlo manualmente.`;
-        }
+      // 1. Check for a saved template first
+      const template = await StorageService.getProductTemplate(data);
+      if (template) {
+        productInfoFound = true;
+        alertMessage = `Prodotto Trovato (salvato): ${template.name}`;
+        paramsForAddScreen = {
+          ...paramsForAddScreen,
+          productName: template.name,
+          brand: template.brand || '',
+          category: template.category,
+          imageUrl: template.imageUrl || '',
+        };
       } else {
-        alertMessage = `Errore nel recuperare dati per il codice: ${data}. Puoi inserirlo manualmente. (HTTP ${response.status})`;
+        // 2. If no template, try Open Food Facts
+        const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${data}`);
+        if (response.ok) {
+          const jsonResponse = await response.json();
+          if (jsonResponse.status === 1 && jsonResponse.product) {
+            const productInfo = jsonResponse.product;
+            productInfoFound = true;
+            alertMessage = `Prodotto Trovato (Online): ${productInfo.product_name || data}`;
+            paramsForAddScreen = {
+              ...paramsForAddScreen,
+              productName: productInfo.product_name || '',
+              brand: productInfo.brands || '',
+              imageUrl: productInfo.image_url || '',
+            };
+          } else {
+            alertMessage = `Prodotto non trovato (codice: ${data}). Puoi inserirlo manualmente.`;
+          }
+        } else {
+          alertMessage = `Errore nel recuperare dati per il codice: ${data}. (HTTP ${response.status})`;
+        }
       }
     } catch (error) {
       console.error("Failed to fetch product info:", error);
-      alertMessage = `Errore di rete nel recuperare dati per il codice: ${data}. Puoi inserirlo manualmente.`;
+      alertMessage = `Errore di rete. Puoi inserirlo manualmente.`;
     } finally {
       setIsLoading(false);
     }
 
     Alert.alert(
-      productInfo ? 'Prodotto Trovato!' : 'Prodotto Non Trovato',
+      productInfoFound ? 'Prodotto Trovato!' : 'Prodotto Non Trovato',
       alertMessage,
       [
         {

@@ -22,11 +22,20 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'auto';
 }
 
+export interface ProductTemplate {
+  barcode: string;
+  name: string;
+  brand?: string;
+  category: string;
+  imageUrl?: string;
+}
+
 export class StorageService {
   private static readonly CATEGORIES_DOC = 'appData/categories';
   private static readonly PRODUCTS_COLLECTION = 'products';
   private static readonly HISTORY_COLLECTION = 'productHistory';
   private static readonly SETTINGS_DOC = 'appData/settings';
+  private static readonly BARCODE_TEMPLATES_COLLECTION = 'barcodeTemplates';
 
   // Categories
   static async getCategories(): Promise<ProductCategory[]> {
@@ -133,6 +142,9 @@ export class StorageService {
           await NotificationService.scheduleExpirationNotification(product, settings.notificationDays);
         }
       }
+      if (product.barcode) {
+        await this.saveProductTemplate(product);
+      }
     } catch (error) {
       console.error('Error saving product to Firestore:', error);
       throw error;
@@ -200,6 +212,38 @@ export class StorageService {
     }
   }
 
+  // Barcode Templates
+  static async getProductTemplate(barcode: string): Promise<ProductTemplate | null> {
+    try {
+      const templateDocRef = doc(firestoreDB, this.BARCODE_TEMPLATES_COLLECTION, barcode);
+      const docSnap = await getDoc(templateDocRef);
+      if (docSnap.exists()) {
+        return docSnap.data() as ProductTemplate;
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error getting product template for barcode ${barcode}:`, error);
+      return null;
+    }
+  }
+
+  static async saveProductTemplate(product: Product): Promise<void> {
+    if (!product.barcode) return;
+    try {
+      const templateData: ProductTemplate = {
+        barcode: product.barcode,
+        name: product.name,
+        brand: product.brand,
+        category: product.category,
+        imageUrl: product.imageUrl,
+      };
+      const templateDocRef = doc(firestoreDB, this.BARCODE_TEMPLATES_COLLECTION, product.barcode);
+      await setDoc(templateDocRef, templateData, { merge: true });
+    } catch (error) {
+      console.error(`Error saving product template for barcode ${product.barcode}:`, error);
+    }
+  }
+
   // History
   static listenToHistory(callback: (history: Product[]) => void): () => void {
     const historyCollectionRef = collection(firestoreDB, StorageService.HISTORY_COLLECTION);
@@ -217,6 +261,22 @@ export class StorageService {
     });
 
     return unsubscribe;
+  }
+
+  static async getHistory(): Promise<Product[]> {
+    try {
+      const historyCollectionRef = collection(firestoreDB, StorageService.HISTORY_COLLECTION);
+      const q = query(historyCollectionRef, orderBy('consumedDate', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const history: Product[] = [];
+      querySnapshot.forEach((doc) => {
+        history.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      return history;
+    } catch (error) {
+      console.error('Error getting history from Firestore:', error);
+      return [];
+    }
   }
 
   static async addToHistory(product: Product): Promise<void> {
