@@ -1,16 +1,19 @@
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Home, Plus, Package, Settings, History } from 'lucide-react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function TabLayout() {
+  const { isDarkMode } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: isDarkMode ? '#121212' : '#ffffff',
           borderTopWidth: 1,
-          borderTopColor: '#f1f5f9',
+          borderTopColor: isDarkMode ? '#272727' : '#f1f5f9',
           paddingBottom: Platform.OS === 'ios' ? 20 : 15,
           paddingTop: 5,
           height: Platform.OS === 'ios' ? 80 : 60,

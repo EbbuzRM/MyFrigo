@@ -115,7 +115,7 @@ export default function History() {
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
   },
   listsContainer: {
     flex: 1,

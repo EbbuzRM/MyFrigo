@@ -6,14 +6,16 @@ interface StatsCardProps {
   title: string;
   value: string;
   icon: React.ReactNode;
-  backgroundColor: string;
+  lightBackgroundColor: string;
+  darkBackgroundColor: string;
   onPress?: () => void;
 }
 
-export function StatsCard({ title, value, icon, backgroundColor, onPress }: StatsCardProps) {
+export function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgroundColor, onPress }: StatsCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const CardComponent = onPress ? TouchableOpacity : View;
+  const backgroundColor = isDarkMode ? darkBackgroundColor : lightBackgroundColor;
 
   return (
     <CardComponent 
@@ -38,12 +40,12 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: isDarkMode ? 'transparent' : '#d1d5db',
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
   },
@@ -56,12 +58,12 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   value: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: isDarkMode ? '#000000' : '#1e293b', // Nero per dark mode
+    color: isDarkMode ? '#ffffff' : '#1e293b',
     marginBottom: 4,
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#000000' : '#64748B', // Nero per dark mode
+    color: isDarkMode ? '#d1d5db' : '#64748B',
   },
 });

@@ -14,23 +14,36 @@ interface ProductCardProps {
 export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
+  
+  // Controllo di sicurezza per product undefined
+  if (!product) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.errorText}>Prodotto non disponibile</Text>
+      </View>
+    );
+  }
+
   const getExpirationStatus = () => {
     const now = new Date();
     const expirationDate = new Date(product.expirationDate);
     const daysUntilExpiration = Math.ceil((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     if (daysUntilExpiration < 0) {
-      return { status: 'expired', color: '#EF4444', backgroundColor: '#FEF2F2' };
+      return { status: 'expired', color: '#EF4444', backgroundColor: isDarkMode ? '#4B1A1A' : '#FEE2E2' };
     } else if (daysUntilExpiration <= 3) {
-      return { status: 'warning', color: '#F59E0B', backgroundColor: '#FFFBEB' };
+      return { status: 'warning', color: '#F59E0B', backgroundColor: isDarkMode ? '#4B3B1A' : '#FEF3C7' };
     } else {
-      return { status: 'good', color: '#10B981', backgroundColor: '#F0FDF4' };
+      return { status: 'good', color: '#10B981', backgroundColor: isDarkMode ? '#1A4B3A' : '#D1FAE5' };
     }
   };
 
   const getCategoryInfo = () => {
     return PRODUCT_CATEGORIES.find(cat => cat.id === product.category) || PRODUCT_CATEGORIES[PRODUCT_CATEGORIES.length - 1];
   };
+
+  const expirationInfo = getExpirationStatus();
+  const categoryInfo = getCategoryInfo();
 
   const handleDeletePress = () => {
     Alert.alert(
@@ -43,11 +56,12 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
     );
   };
 
-  const expirationInfo = getExpirationStatus();
-  const categoryInfo = getCategoryInfo();
-
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity 
+      style={[styles.card, { backgroundColor: expirationInfo.backgroundColor, borderColor: expirationInfo.color + '33' }]} 
+      onPress={onPress} 
+      activeOpacity={0.7}
+    >
       <View style={[styles.statusIndicator, { backgroundColor: expirationInfo.color }]} />
       
       <View style={styles.content}>
@@ -65,9 +79,11 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
                   {product.brand}
                 </Text>
               )}
-              <Text style={styles.categoryName}>
-                {categoryInfo.name}
-              </Text>
+              <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '33' }]}>
+                <Text style={[styles.categoryName, { color: isDarkMode ? '#ffffff' : categoryInfo.color }]}>
+                  {categoryInfo.name}
+                </Text>
+              </View>
             </View>
           </View>
           
@@ -93,8 +109,8 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
             </View>
             <View style={styles.detailItem}>
               <Calendar size={16} color="#64748B" />
-              <Text style={styles.detailText}>
-                {new Date(product.expirationDate).toLocaleDateString('it-IT')}
+              <Text style={styles.dateText}>
+                {new Date(product.expirationDate).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
               </Text>
             </View>
           </View>
@@ -112,24 +128,22 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 16,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
     flexDirection: 'row',
     overflow: 'hidden',
   },
   statusIndicator: {
-    width: 4,
+    width: 5,
   },
   content: {
     flex: 1,
@@ -139,7 +153,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   productInfo: {
     flexDirection: 'row',
@@ -148,37 +162,39 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginRight: 12,
   },
   categoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
   },
   categoryEmoji: {
-    fontSize: 20,
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    fontSize: 24,
   },
   textContainer: {
     flex: 1,
+    gap: 4,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 2,
   },
   brandName: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
-    marginBottom: 2,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   categoryName: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#8b949e' : '#94a3b8',
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -188,40 +204,51 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
-    backgroundColor: isDarkMode ? '#1e2530' : '#E0F2FE', // Light blue
+    backgroundColor: isDarkMode ? '#1e2530' : '#ffffff',
     marginRight: 8,
   },
   consumeText: {
     fontSize: 12,
     fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#8b949e' : '#0EA5E9', // Blue
+    color: isDarkMode ? '#8b949e' : '#0EA5E9',
   },
   deleteButton: {
     padding: 8,
-    borderRadius: 8,
-    // backgroundColor: '#FEF2F2', // Keep or remove if only icon
   },
   details: {
-    gap: 8,
+    gap: 12,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   detailText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
-    marginLeft: 6,
+  },
+  dateText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: isDarkMode ? '#c9d1d9' : '#334155',
   },
   notes: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
     fontStyle: 'italic',
+  },
+  errorText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: isDarkMode ? '#EF4444' : '#B91C1C',
+    textAlign: 'center',
+    padding: 16,
   },
 });

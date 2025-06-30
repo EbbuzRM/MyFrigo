@@ -18,13 +18,13 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
     const daysUntilExpiration = Math.ceil((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     if (daysUntilExpiration < 0) {
-      return { status: 'expired', color: '#EF4444', backgroundColor: '#FEF2F2', text: 'Scaduto' };
+      return { status: 'expired', color: '#EF4444', backgroundColor: isDarkMode ? '#2a1212' : '#ffffff', text: 'Scaduto' };
     } else if (daysUntilExpiration === 0) {
-      return { status: 'today', color: '#F59E0B', backgroundColor: '#FFFBEB', text: 'Scade oggi' };
+      return { status: 'today', color: '#FBBF24', backgroundColor: isDarkMode ? '#2a200f' : '#FEF3C7', text: 'Scade oggi' };
     } else if (daysUntilExpiration <= 3) {
-      return { status: 'soon', color: '#F59E0B', backgroundColor: '#FFFBEB', text: `${daysUntilExpiration} giorni` };
+      return { status: 'soon', color: '#FBBF24', backgroundColor: isDarkMode ? '#2a200f' : '#FEF3C7', text: `${daysUntilExpiration} giorni` };
     } else {
-      return { status: 'good', color: '#10B981', backgroundColor: '#F0FDF4', text: `${daysUntilExpiration} giorni` };
+      return { status: 'good', color: '#10B981', backgroundColor: isDarkMode ? '#162d21' : '#ffffff', text: `${daysUntilExpiration} giorni` };
     }
   };
 
@@ -68,7 +68,7 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
               {product.quantity} {product.unit}
             </Text>
           </View>
-          <View style={styles.detailItem}>
+          <View style={[styles.detailItem, { marginLeft: 8 }]}>
             <Calendar size={16} color="#64748B" />
             <Text style={styles.detailText}>
               {new Date(product.expirationDate).toLocaleDateString('it-IT')}
@@ -82,19 +82,19 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+    backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   content: {
     padding: 16,

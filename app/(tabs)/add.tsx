@@ -7,7 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, QrCode, PlusCircle } from 'lucide-react-native';
+import { Barcode, Keyboard } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AddMethodCard } from '@/components/AddMethodCard';
 import { useTheme } from '@/context/ThemeContext';
@@ -66,20 +66,20 @@ export default function AddProduct() {
       <View style={styles.methodsContainer}>
         <AddMethodCard
           title="Scansiona Codice a Barre"
-          description="Scansiona il codice a barre per identificare automaticamente il prodotto"
-          icon={<QrCode size={28} color="#2563EB" />}
+          description="Usa la fotocamera per una scansione rapida"
+          icon={<Barcode size={28} color="#3B82F6" />}
           onPress={handleBarcodeScanner}
-          backgroundColor="#EFF6FF"
-          borderColor="#DBEAFE"
+          backgroundColor={isDarkMode ? '#1E293B' : '#EFF6FF'}
+          borderColor={isDarkMode ? '#3B82F6' : '#DBEAFE'}
         />
 
         <AddMethodCard
           title="Inserimento Manuale"
-          description="Aggiungi manualmente tutti i dettagli del prodotto"
-          icon={<PlusCircle size={28} color="#F59E0B" />}
+          description="Aggiungi i dettagli del prodotto manualmente"
+          icon={<Keyboard size={28} color="#6366F1" />}
           onPress={handleManualEntry}
-          backgroundColor="#FFFBEB"
-          borderColor="#FEF3C7"
+          backgroundColor={isDarkMode ? '#312E81' : '#EEF2FF'}
+          borderColor={isDarkMode ? '#4F46E5' : '#C7D2FE'}
         />
       </View>
 
@@ -104,14 +104,12 @@ export default function AddProduct() {
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
-    justifyContent: 'space-between',
-    padding: 10,
+    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
+    padding: 20,
+    gap: 24,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+    // No specific padding needed if container has it
   },
   title: {
     fontSize: 28,
@@ -126,30 +124,29 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     lineHeight: 24,
   },
   methodsContainer: {
-    paddingHorizontal: 20,
+    gap: 16,
   },
   infoSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    // No specific padding needed if container has it
   },
   infoTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   tipContainer: {
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    padding: 10,
+    padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
+    gap: 8,
   },
   tipText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
     lineHeight: 20,
-    marginBottom: 6,
   },
 });

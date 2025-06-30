@@ -9,6 +9,7 @@ interface SettingsCardProps {
   rightElement: React.ReactNode;
   onPress?: () => void;
   variant?: 'default' | 'danger';
+  isDarkMode: boolean;
 }
 
 export function SettingsCard({
@@ -18,8 +19,8 @@ export function SettingsCard({
   rightElement,
   onPress,
   variant = 'default',
+  isDarkMode,
 }: SettingsCardProps) {
-  const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const CardComponent = onPress ? TouchableOpacity : View;
 

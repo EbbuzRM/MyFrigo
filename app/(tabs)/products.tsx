@@ -224,7 +224,7 @@ export default function Products() {
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
   },
   loadingContainer: {
     flex: 1,
@@ -286,7 +286,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
     marginTop: 20,
   },
   emptyStateText: {
@@ -305,10 +305,13 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
-    backgroundColor: isDarkMode ? '#21262d' : '#E2E8F0',
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   statusFilterButtonActive: {
     backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
   statusFilterText: {
     fontSize: 14,

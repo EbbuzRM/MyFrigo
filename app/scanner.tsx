@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
   },
   permissionText: {
     textAlign: 'center',

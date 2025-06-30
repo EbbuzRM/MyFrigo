@@ -12,11 +12,12 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>('auto'); // Default to 'auto'
+  const [theme, setTheme] = useState<Theme>('light'); // Default to 'light'
 
   useEffect(() => {
     const loadThemePreference = async () => {
       const settings = await StorageService.getSettings();
+      console.log('Loaded settings:', settings);
       setTheme(settings.theme);
     };
     loadThemePreference();

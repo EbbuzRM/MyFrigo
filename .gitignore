@@ -1,58 +1,120 @@
+# Expo
+.expo/
+web-build/
+dist/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android
+/android
+*.apk
+*.aab
+
+# iOS
+/ios
+*.ipa
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# next.js build output
+.next
+
+# Nuxt.js build output
+.nuxt
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
 # Firebase
-# Ignore Firebase config files
 google-services.json
 GoogleService-Info.plist
 
-# dependencies
-/node_modules/
+# EAS
+eas.json.bak
 
-# expo
-/.expo/
-/dist/
-/web-build/
-
-# native
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Android
-/android/app/build/
-/android/.gradle/
-/android/app/src/main/assets/
-
-# iOS
-/ios/build/
-/ios/Pods/
-
-# metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-*.log
-
-# macos
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-.env
-
-# typescript
+# TypeScript
 *.tsbuildinfo
 
-# Editor directories and files
-.idea/
-.vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Metro
+.metro-health-check*
+
+# Flipper
+ios/Pods/
+
+# Xcode
+*.xcworkspace
+*.xcuserdata
+*.xcscheme
+DerivedData/
+
+# Gradle
+.gradle/
+build/
+
+# Local configuration files
+local.properties
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+.clinerules

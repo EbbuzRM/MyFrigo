@@ -16,8 +16,49 @@ import * as Updates from 'expo-updates';
 import { Platform, AppState } from 'react-native';
 import { NotificationService } from '@/services/NotificationService';
 import { StorageService } from '@/services/StorageService';
-import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import '@/services/firebaseConfig';
+import '@/services/backgroundSync';
+import * as BackgroundTask from 'expo-background-task';
+
+const BACKGROUND_SYNC_TASK = 'background-sync';
+
+const MyDefaultTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#007bff',
+    background: '#ffffff',
+    card: '#ffffff',
+    text: '#212529',
+    border: '#e9ecef',
+    notification: '#dc3545',
+  },
+};
+
+const MyDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: '#007bff',
+    background: '#121212',
+    card: '#1e1e1e',
+    text: '#ffffff',
+    border: '#272727',
+    notification: '#dc3545',
+  },
+};
+
+async function registerBackgroundTask() {
+  try {
+    await BackgroundTask.registerTaskAsync(BACKGROUND_SYNC_TASK, {
+      minimumInterval: 60 * 15, // 15 minutes
+    });
+    console.log('Background sync task registered');
+  } catch (error) {
+    console.error('Failed to register background sync task:', error);
+  }
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,6 +71,10 @@ export default function RootLayout() {
     'Inter-SemiBold': Inter_600SemiBold,
     'Inter-Bold': Inter_700Bold,
   });
+
+  useEffect(() => {
+    registerBackgroundTask();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -102,24 +147,29 @@ export default function RootLayout() {
     return null;
   }
 
-  const AppContent = () => {
-    const { isDarkMode } = useTheme();
-    const theme = isDarkMode ? DarkTheme : DefaultTheme;
-
-    return (
-      <NavThemeProvider value={theme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-      </NavThemeProvider>
-    );
-  };
-
   return (
     <ThemeProvider>
       <AppContent />
     </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { isDarkMode } = useTheme();
+  const theme = isDarkMode ? MyDarkTheme : MyDefaultTheme;
+
+  return (
+    <NavThemeProvider value={theme}>
+      <Stack screenOptions={{ 
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: isDarkMode ? '#0d1117' : '#ffffff'
+        }
+      }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+    </NavThemeProvider>
   );
 }

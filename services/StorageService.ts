@@ -2,6 +2,7 @@ import { Product, ProductCategory, PRODUCT_CATEGORIES } from '@/types/Product';
 import { NotificationService } from './NotificationService';
 import * as Notifications from 'expo-notifications';
 import { firestoreDB } from './firebaseConfig';
+import { Platform } from 'react-native';
 import {
   collection,
   doc,
@@ -121,12 +122,17 @@ export class StorageService {
 
   static async saveProduct(product: Product): Promise<void> {
     try {
+      const productToSave = { ...product };
+      if (typeof productToSave.imageUrl !== 'string') {
+        productToSave.imageUrl = null;
+      }
+
       const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, product.id);
       const settings = await this.getSettings();
       const docSnap = await getDoc(productDocRef);
       const existingProductData = docSnap.exists() ? docSnap.data() as Product : null;
 
-      await setDoc(productDocRef, product);
+      await setDoc(productDocRef, productToSave);
 
       if (existingProductData) {
         if (existingProductData.expirationDate !== product.expirationDate ||
@@ -235,7 +241,7 @@ export class StorageService {
         name: product.name,
         brand: product.brand,
         category: product.category,
-        imageUrl: product.imageUrl,
+        imageUrl: product.imageUrl ?? null,
       };
       const templateDocRef = doc(firestoreDB, this.BARCODE_TEMPLATES_COLLECTION, product.barcode);
       await setDoc(templateDocRef, templateData, { merge: true });
@@ -344,17 +350,20 @@ export class StorageService {
       const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
       await setDoc(settingsDocRef, newSettings, { merge: true }); 
       
-      const updatedSettings = await this.getSettings();
+      if (Platform.OS !== 'web') {
+        const updatedSettings = await this.getSettings();
 
-      if (newSettings.notificationsEnabled !== undefined || newSettings.notificationDays !== undefined) {
-        const activeProducts = (await this.getProducts()).filter(p => p.status === 'active');
-        await Notifications.cancelAllScheduledNotificationsAsync();
-        if (updatedSettings.notificationsEnabled) {
-          await NotificationService.scheduleMultipleNotifications(activeProducts, updatedSettings);
+        if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationsEnabled') || Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
+          const activeProducts = (await this.getProducts()).filter(p => p.status === 'active');
+          await Notifications.cancelAllScheduledNotificationsAsync();
+          if (updatedSettings.notificationsEnabled) {
+            await NotificationService.scheduleMultipleNotifications(activeProducts, updatedSettings);
+          }
         }
       }
     } catch (error) {
       console.error('Error updating settings in Firestore:', error);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
       throw error;
     }
   }
