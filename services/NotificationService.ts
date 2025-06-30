@@ -40,7 +40,10 @@ export class NotificationService {
           body: `${product.name} scadrà il ${expirationDate.toLocaleDateString('it-IT')}`,
           data: { productId: product.id },
         },
-        trigger: notificationDate,
+        trigger: {
+          type: 'date',
+          date: notificationDate,
+        },
         identifier: `expiration_${product.id}`,
       });
 

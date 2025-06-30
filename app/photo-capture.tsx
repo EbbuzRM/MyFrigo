@@ -298,7 +298,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
-    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
   },
   permissionText: {
     textAlign: 'center',

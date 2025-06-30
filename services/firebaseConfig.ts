@@ -1,6 +1,10 @@
 import 'react-native-url-polyfill/auto';
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { initializeFirestore, getFirestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  reactNativeLocalCache,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAgSoTYNlDvqRRKpJPRntdFb2-tPk792TM",
@@ -18,8 +22,13 @@ if (!getApps().length) {
   app = getApp();
 }
 
-const firestoreDB = initializeFirestore(app, {
-  localCache: { kind: 'persistent' }
-});
+let firestoreDB;
+try {
+  firestoreDB = initializeFirestore(app, {
+    localCache: reactNativeLocalCache(),
+  });
+} catch (e) {
+  firestoreDB = getFirestore(app);
+}
 
 export { app, firestoreDB };

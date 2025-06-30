@@ -1,3 +1,4 @@
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,14 +11,16 @@ import {
   Platform,
   Image,
   Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
 import { Picker } from '@react-native-picker/picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StorageService } from '@/services/StorageService';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { CustomDatePicker } from '@/components/CustomDatePicker';
 import { useTheme } from '@/context/ThemeContext';
+import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 const COMMON_UNITS = [
   { id: 'pz', name: 'pz (pezzi)' },
@@ -197,10 +200,20 @@ export default function ManualEntryScreen() {
     try {
       await StorageService.saveProduct(productToSave);
       Alert.alert('Prodotto Salvato', `${name} è stato aggiunto e salvato nella tua dispensa.`);
-      if (router.canGoBack()) {
-        router.back();
+      if (Platform.OS === 'web') {
+        setTimeout(() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)');
+          }
+        }, 100);
       } else {
-        router.replace('/(tabs)');
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)');
+        }
       }
     } catch (error) {
       console.error('Errore durante il salvataggio del prodotto:', error);
@@ -210,170 +223,178 @@ export default function ManualEntryScreen() {
 
   const styles = getStyles(isDarkMode);
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.title}>{isEditMode ? 'Modifica Prodotto' : 'Inserimento Manuale'}</Text>
+  const renderHeader = () => (
+    <>
+      <Text style={styles.title}>{isEditMode ? 'Modifica Prodotto' : 'Inserimento Manuale'}</Text>
 
-        {!imageUrl && !isEditMode && (
-          <TouchableOpacity 
-            style={styles.takePhotoButton} 
-            onPress={() => {
-              const currentFormData = { name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode };
-              router.push({ pathname: '/photo-capture', params: { ...currentFormData, fromManualEntry: 'true' } });
-            }}
-          >
-            <Text style={styles.takePhotoButtonText}>Scatta Foto Prodotto</Text>
-          </TouchableOpacity>
-        )}
+      {!imageUrl && !isEditMode && (
+        <TouchableOpacity 
+          style={styles.takePhotoButton} 
+          onPress={() => {
+            const currentFormData = { name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode };
+            router.push({ pathname: '/photo-capture', params: { ...currentFormData, fromManualEntry: 'true' } });
+          }}
+        >
+          <Text style={styles.takePhotoButtonText}>Scatta Foto Prodotto</Text>
+        </TouchableOpacity>
+      )}
 
-        {imageUrl && (
-          <>
-            <Text style={styles.label}>Immagine Prodotto</Text>
-            <Image source={{ uri: imageUrl }} style={styles.productImagePreview} />
-          </>
-        )}
+      {imageUrl && (
+        <>
+          <Text style={styles.label}>Immagine Prodotto</Text>
+          <Image source={{ uri: imageUrl }} style={styles.productImagePreview} />
+        </>
+      )}
 
-        {barcode && !imageUrl && (
-          <>
-            <Text style={styles.label}>Codice a Barre Scansionato</Text>
+      {barcode && !imageUrl && (
+        <>
+          <Text style={styles.label}>Codice a Barre Scansionato</Text>
+          <TextInput
+            style={[styles.input, styles.disabledInput]}
+            value={barcode}
+            editable={false}
+          />
+        </>
+      )}
+      
+      <Text style={styles.label}>Nome Prodotto*</Text>
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        placeholder="Es. Latte Parzialmente Scremato"
+        placeholderTextColor={styles.placeholder.color}
+      />
+
+      <Text style={styles.label}>Marca</Text>
+      <TextInput
+        style={styles.input}
+        value={brand}
+        onChangeText={setBrand}
+        placeholder="Es. Granarolo"
+        placeholderTextColor={styles.placeholder.color}
+      />
+
+      <Text style={styles.label}>Categoria*</Text>
+    </>
+  );
+
+  const renderFooter = () => (
+    <>
+      <View style={styles.row}>
+        <View style={styles.column}>
+          <Text style={styles.label}>Quantità*</Text>
+          <View style={styles.quantityContainer}>
+            <AnimatedPressable onPress={() => setQuantity(q => String(Math.max(1, parseInt(q, 10) - 1)))} style={styles.quantityButton}>
+              <Text style={styles.quantityButtonText}>-</Text>
+            </AnimatedPressable>
             <TextInput
-              style={[styles.input, styles.disabledInput]}
-              value={barcode}
-              editable={false}
-            />
-          </>
-        )}
-        
-        <Text style={styles.label}>Nome Prodotto*</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Es. Latte Parzialmente Scremato"
-          placeholderTextColor={styles.placeholder.color}
-        />
-
-        <Text style={styles.label}>Marca</Text>
-        <TextInput
-          style={styles.input}
-          value={brand}
-          onChangeText={setBrand}
-          placeholder="Es. Granarolo"
-          placeholderTextColor={styles.placeholder.color}
-        />
-
-        <Text style={styles.label}>Categoria*</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedCategory}
-            style={styles.picker}
-            onValueChange={handleCategoryChange}
-            dropdownIconColor={isDarkMode ? '#c9d1d9' : '#1e293b'}
-          >
-            <Picker.Item label="Aggiungi Nuova Categoria..." value={ADD_NEW_CATEGORY_ID} />
-            {dynamicCategories
-              .filter(cat => cat.id !== 'other')
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((category) => (
-                <Picker.Item key={category.id} label={category.name} value={category.id} />
-              ))}
-            {dynamicCategories.find(cat => cat.id === 'other') && (
-              <Picker.Item 
-                key={'other'} 
-                label={dynamicCategories.find(cat => cat.id === 'other')?.name || 'Altro'} 
-                value={'other'} 
-              />
-            )}
-          </Picker>
-        </View>
-
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.label}>Quantità*</Text>
-            <TextInput
-              style={styles.input}
+              style={styles.quantityInput}
               value={quantity}
               onChangeText={setQuantity}
-              placeholder="Es. 1"
               keyboardType="numeric"
               placeholderTextColor={styles.placeholder.color}
             />
-          </View>
-          <View style={styles.column}>
-            <Text style={styles.label}>Unità*</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={unit}
-                style={styles.picker}
-                onValueChange={(itemValue: string) => setUnit(itemValue)}
-                dropdownIconColor={isDarkMode ? '#c9d1d9' : '#1e293b'}
-              >
-                {COMMON_UNITS.map((u) => (
-                  <Picker.Item key={u.id} label={u.name} value={u.id} />
-                ))}
-              </Picker>
-            </View>
+            <AnimatedPressable onPress={() => setQuantity(q => String(parseInt(q, 10) + 1))} style={styles.quantityButton}>
+              <Text style={styles.quantityButtonText}>+</Text>
+            </AnimatedPressable>
           </View>
         </View>
-
-        <Text style={styles.label}>Data di Acquisto*</Text>
-        <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)} style={styles.dateInputTouchable}>
-          <Text style={styles.dateTextValue}>{purchaseDate ? new Date(purchaseDate).toLocaleDateString('it-IT') : 'Seleziona Data'}</Text>
-        </TouchableOpacity>
-        {showPurchaseDatePicker && (
-          <DateTimePicker
-            testID="purchaseDatePicker"
-            value={new Date(purchaseDate || Date.now())}
-            mode="date"
-            display="default"
-            onChange={onChangePurchaseDate}
-            maximumDate={new Date()}
-          />
-        )}
-
-        <View style={styles.labelRow}>
-          <Text style={styles.label}>Data di Scadenza*</Text>
-          <TouchableOpacity 
-            style={styles.photoButton}
-            onPress={() => {
-              const currentFormData = { name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode, imageUrl };
-              router.push({ pathname: '/photo-capture', params: { ...currentFormData, captureMode: 'expirationDateOnly' } });
-            }}
-          >
-            <Text style={styles.photoButtonText}>Fotografa la scadenza</Text>
-          </TouchableOpacity>
+        <View style={styles.column}>
+          <Text style={styles.label}>Unità*</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={unit}
+              style={styles.picker}
+              onValueChange={(itemValue: string) => setUnit(itemValue)}
+              dropdownIconColor={isDarkMode ? '#c9d1d9' : '#1e293b'}
+            >
+              {COMMON_UNITS.map((u) => (
+                <Picker.Item key={u.id} label={u.name} value={u.id} />
+              ))}
+            </Picker>
+          </View>
         </View>
-        <Text style={styles.helperText}>Puoi anche selezionare una foto dalla galleria nella schermata della fotocamera.</Text>
-        <TouchableOpacity onPress={() => setShowExpirationDatePicker(true)} style={styles.dateInputTouchable}>
-          <Text style={styles.dateTextValue}>{expirationDate ? new Date(expirationDate).toLocaleDateString('it-IT') : 'Seleziona Data'}</Text>
-        </TouchableOpacity>
-        {showExpirationDatePicker && (
-          <DateTimePicker
-            testID="expirationDatePicker"
-            value={new Date(expirationDate || Date.now())}
-            mode="date"
-            display="default"
-            onChange={onChangeExpirationDate}
-            minimumDate={new Date()}
-          />
-        )}
+      </View>
 
-        <Text style={styles.label}>Note</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Eventuali note aggiuntive..."
-          multiline
-          numberOfLines={3}
-          placeholderTextColor={styles.placeholder.color}
+      <Text style={styles.label}>Data di Acquisto*</Text>
+      <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)} style={styles.dateInputTouchable}>
+        <Text style={styles.dateTextValue}>{purchaseDate ? new Date(purchaseDate).toLocaleDateString('it-IT') : 'Seleziona Data'}</Text>
+      </TouchableOpacity>
+      {showPurchaseDatePicker && (
+        <CustomDatePicker
+          value={new Date(purchaseDate || Date.now())}
+          onChange={onChangePurchaseDate}
+          onClose={() => setShowPurchaseDatePicker(false)}
+          maximumDate={new Date()}
         />
+      )}
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveProduct}>
-          <Text style={styles.saveButtonText}>{isEditMode ? 'Aggiorna Prodotto' : 'Salva Prodotto'}</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>Data di Scadenza*</Text>
+        <TouchableOpacity 
+          style={styles.photoButton}
+          onPress={() => {
+            const currentFormData = { name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode, imageUrl };
+            router.push({ pathname: '/photo-capture', params: { ...currentFormData, captureMode: 'expirationDateOnly' } });
+          }}
+        >
+          <Text style={styles.photoButtonText}>Fotografa la scadenza</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
+      <Text style={styles.helperText}>Puoi anche selezionare una foto dalla galleria nella schermata della fotocamera.</Text>
+      <TouchableOpacity onPress={() => setShowExpirationDatePicker(true)} style={styles.dateInputTouchable}>
+        <Text style={styles.dateTextValue}>{expirationDate ? new Date(expirationDate).toLocaleDateString('it-IT') : 'Seleziona Data'}</Text>
+      </TouchableOpacity>
+      {showExpirationDatePicker && (
+        <CustomDatePicker
+          value={new Date(expirationDate || Date.now())}
+          onChange={onChangeExpirationDate}
+          onClose={() => setShowExpirationDatePicker(false)}
+          minimumDate={new Date()}
+        />
+      )}
+
+      <Text style={styles.label}>Note</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        value={notes}
+        onChangeText={setNotes}
+        placeholder="Eventuali note aggiuntive..."
+        multiline
+        numberOfLines={3}
+        placeholderTextColor={styles.placeholder.color}
+      />
+
+      <TouchableOpacity style={styles.saveButton} onPress={handleSaveProduct}>
+        <Text style={styles.saveButtonText}>{isEditMode ? 'Aggiorna Prodotto' : 'Salva Prodotto'}</Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={[...dynamicCategories, { id: ADD_NEW_CATEGORY_ID, name: 'Aggiungi', icon: '+', color: '#808080' }]}
+        renderItem={({ item }) => (
+          <AnimatedPressable
+            style={[
+              styles.categoryItem,
+              selectedCategory === item.id && styles.categoryItemSelected,
+            ]}
+            onPress={() => handleCategoryChange(item.id)}
+          >
+            <Text style={styles.categoryIcon}>{item.icon}</Text>
+            <Text style={styles.categoryName}>{item.name}</Text>
+          </AnimatedPressable>
+        )}
+        keyExtractor={(item) => item.id}
+        numColumns={4}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
+        contentContainerStyle={styles.contentContainer}
+        columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 10 }}
+      />
 
       <Modal
         transparent={true}
@@ -414,143 +435,181 @@ export default function ManualEntryScreen() {
 }
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  helperText: {
-    fontSize: 12,
-    color: isDarkMode ? '#8b949e' : '#64748b',
-    fontFamily: 'Inter-Regular',
-    marginTop: 4,
+  container: {
+    flex: 1,
+    backgroundColor: isDarkMode ? '#0d1117' : '#f8f9fa',
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  takePhotoButton: {
+    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+  },
+  takePhotoButtonText: {
+    textAlign: 'center',
+    color: isDarkMode ? '#58a6ff' : '#3b82f6',
+    fontWeight: '500',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
     marginBottom: 8,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
+    marginBottom: 8,
   },
   photoButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: isDarkMode ? '#38bdf8' : '#E0F2FE',
+    backgroundColor: isDarkMode ? '#238636' : '#10b981',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 6,
   },
   photoButtonText: {
-    color: isDarkMode ? '#0d1117' : '#0EA5E9',
-    fontFamily: 'Inter-SemiBold',
+    color: '#ffffff',
     fontSize: 12,
+    fontWeight: '500',
   },
-  container: {
-    flex: 1,
-    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Inter-Bold',
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  label: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#8b949e' : '#334155',
+  helperText: {
+    fontSize: 12,
+    color: isDarkMode ? '#8b949e' : '#64748b',
     marginBottom: 8,
-    marginTop: 16,
+    fontStyle: 'italic',
   },
   input: {
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
     borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    padding: 12,
+    marginBottom: 16,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
-  placeholder: {
-    color: isDarkMode ? '#8b949e' : '#94a3b8',
-  },
   disabledInput: {
-    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
+    backgroundColor: isDarkMode ? '#161b22' : '#f1f5f9',
     color: isDarkMode ? '#8b949e' : '#64748b',
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  column: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    borderRadius: 8,
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+  },
+  quantityButton: {
+    padding: 12,
+    backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 44,
+  },
+  quantityButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  quantityInput: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    padding: 12,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    borderRadius: 8,
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+  },
+  picker: {
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  dateInputTouchable: {
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+  },
+  dateTextValue: {
+    fontSize: 16,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  categoryItem: {
+    flex: 1,
+    aspectRatio: 1,
+    margin: 4,
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryItemSelected: {
+    borderColor: isDarkMode ? '#58a6ff' : '#3b82f6',
+    backgroundColor: isDarkMode ? '#0d419d' : '#dbeafe',
+  },
+  categoryIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  categoryName: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   productImagePreview: {
     width: '100%',
     height: 200,
     borderRadius: 8,
     marginBottom: 16,
-    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  pickerContainer: {
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
-    borderWidth: 1,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: Platform.OS === 'ios' ? undefined : 50,
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    backgroundColor: 'transparent',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  column: {
-    flex: 1,
-    marginRight: 8,
-  },
-  dateInputTouchable: {
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    justifyContent: 'center',
-  },
-  dateTextValue: {
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   saveButton: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 14,
+    backgroundColor: isDarkMode ? '#238636' : '#10b981',
+    padding: 16,
     borderRadius: 8,
-    marginTop: 32,
-    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
   },
   saveButtonText: {
     color: '#ffffff',
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
-  },
-  takePhotoButton: {
-    backgroundColor: '#10B981',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  takePhotoButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -559,16 +618,16 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: isDarkMode ? '#161b22' : 'white',
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 12,
     width: '80%',
-    alignItems: 'stretch',
+    maxWidth: 300,
   },
   modalTitle: {
     fontSize: 18,
-    fontFamily: 'Inter-Bold',
-    marginBottom: 15,
+    fontWeight: 'bold',
+    marginBottom: 16,
     textAlign: 'center',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
@@ -576,41 +635,39 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    padding: 12,
+    marginBottom: 16,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    marginBottom: 20,
+    backgroundColor: isDarkMode ? '#0d1117' : '#f8f9fa',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
   },
   modalButtonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
   modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
     flex: 1,
-    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
   },
   modalButtonCancel: {
-    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
-    marginRight: 10,
+    backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   modalButtonConfirm: {
-    backgroundColor: '#2563EB',
-    marginLeft: 10,
+    backgroundColor: isDarkMode ? '#238636' : '#10b981',
   },
   modalButtonTextCancel: {
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   modalButtonTextConfirm: {
-    color: 'white',
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    color: '#ffffff',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  placeholder: {
+    color: isDarkMode ? '#8b949e' : '#64748b',
   },
 });

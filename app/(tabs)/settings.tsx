@@ -28,7 +28,8 @@ import { router } from 'expo-router';
 import { StorageService, AppSettings } from '@/services/StorageService';
 import { NotificationService } from '@/services/NotificationService';
 import { SettingsCard } from '@/components/SettingsCard';
-import { useTheme } from '../../context/ThemeContext';
+import { Toast } from '@/components/Toast';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function Settings() {
   const { theme: contextTheme, setAppTheme, isDarkMode } = useTheme();
@@ -40,7 +41,9 @@ export default function Settings() {
     theme: 'auto',
   });
   const [isDaysModalVisible, setIsDaysModalVisible] = useState(false);
+  const [isThemeModalVisible, setIsThemeModalVisible] = useState(false);
   const [daysInput, setDaysInput] = useState(settings.notificationDays?.toString() ?? '3');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     const unsubscribe = StorageService.listenToSettings((newSettings) => {
@@ -58,7 +61,7 @@ export default function Settings() {
   const handleThemeChange = async (newTheme: AppSettings['theme']) => {
     try {
       await StorageService.updateSettings({ theme: newTheme });
-      // Il listener aggiornerà il context e lo stato locale
+      setIsThemeModalVisible(false);
     } catch (error) {
       console.error('Error updating theme:', error);
       Alert.alert("Errore", "Impossibile aggiornare il tema.");
@@ -91,14 +94,14 @@ export default function Settings() {
     if (!isNaN(days) && days > 0 && days <= 30) {
       try {
         await StorageService.updateSettings({ notificationDays: days });
-        Alert.alert('Successo', `Giorni di preavviso impostati a ${days}.`);
+        setToast({ message: `Giorni di preavviso impostati a ${days}.`, type: 'success' });
         setIsDaysModalVisible(false);
       } catch (error) {
         console.error('Error updating notification days:', error);
-        Alert.alert("Errore", "Impossibile aggiornare i giorni di preavviso.");
+        setToast({ message: "Impossibile aggiornare i giorni di preavviso.", type: 'error' });
       }
     } else {
-      Alert.alert('Valore Non Valido', 'Inserisci un numero di giorni valido (es. 1-30).');
+      setToast({ message: 'Inserisci un numero di giorni valido (es. 1-30).', type: 'error' });
     }
   };
 
@@ -159,6 +162,7 @@ export default function Settings() {
                 thumbColor={settings.notificationsEnabled ? '#2563EB' : '#94a3b8'}
               />
             }
+            isDarkMode={isDarkMode}
           />
           <SettingsCard
             title="Giorni di Preavviso"
@@ -166,6 +170,7 @@ export default function Settings() {
             icon={<Bell size={24} color="#F59E0B" />}
             rightElement={<Text style={styles.daysText}>{settings.notificationDays}</Text>}
             onPress={openDaysModal}
+            isDarkMode={isDarkMode}
           />
         </View>
         
@@ -180,18 +185,8 @@ export default function Settings() {
               <Smartphone size={24} color="#64748B" />
             }
             rightElement={<ChevronRight size={20} color="#94a3b8" />}
-            onPress={() => {
-              Alert.alert(
-                'Scegli Tema', 'Seleziona il tema desiderato:',
-                [
-                  { text: 'Chiaro', onPress: () => handleThemeChange('light') },
-                  { text: 'Scuro', onPress: () => handleThemeChange('dark') },
-                  { text: 'Sistema', onPress: () => handleThemeChange('auto') },
-                  { text: 'Annulla', style: 'cancel' },
-                ],
-                { cancelable: true }
-              );
-            }}
+            onPress={() => setIsThemeModalVisible(true)}
+            isDarkMode={isDarkMode}
           />
         </View>
 
@@ -203,6 +198,7 @@ export default function Settings() {
             icon={<ListTree size={24} color="#10B981" />}
             rightElement={<ChevronRight size={20} color="#94a3b8" />}
             onPress={() => router.push('/manage-categories')}
+            isDarkMode={isDarkMode}
           />
           <SettingsCard
             title="Esporta Dati"
@@ -210,6 +206,7 @@ export default function Settings() {
             icon={<Download size={24} color="#10B981" />}
             rightElement={<ChevronRight size={20} color="#94a3b8" />}
             onPress={handleExportData}
+            isDarkMode={isDarkMode}
           />
           <SettingsCard
             title="Importa Dati"
@@ -217,6 +214,7 @@ export default function Settings() {
             icon={<Upload size={24} color="#8B5CF6" />}
             rightElement={<ChevronRight size={20} color="#94a3b8" />}
             onPress={handleImportData}
+            isDarkMode={isDarkMode}
           />
           <SettingsCard
             title="Elimina Tutti i Dati"
@@ -225,6 +223,7 @@ export default function Settings() {
             rightElement={<ChevronRight size={20} color="#94a3b8" />}
             onPress={handleClearData}
             variant="danger"
+            isDarkMode={isDarkMode}
           />
         </View>
 
@@ -236,6 +235,7 @@ export default function Settings() {
             icon={<Info size={24} color="#64748B" />}
             rightElement={<ChevronRight size={20} color="#94a3b8" />}
             onPress={() => Alert.alert('Smart Food Manager', 'Versione 2.0.0\n\nGestione intelligente degli alimenti domestici con riconoscimento automatico e notifiche.')}
+            isDarkMode={isDarkMode}
           />
         </View>
 
@@ -273,12 +273,48 @@ export default function Settings() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isThemeModalVisible}
+        onRequestClose={() => setIsThemeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Scegli Tema</Text>
+            <TouchableOpacity style={styles.themeOption} onPress={() => handleThemeChange('light')}>
+              <Sun size={20} color="#F59E0B" style={styles.themeIcon} />
+              <Text style={styles.themeOptionText}>Chiaro</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.themeOption} onPress={() => handleThemeChange('dark')}>
+              <Moon size={20} color="#6366F1" style={styles.themeIcon} />
+              <Text style={styles.themeOptionText}>Scuro</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.themeOption} onPress={() => handleThemeChange('auto')}>
+              <Smartphone size={20} color="#64748B" style={styles.themeIcon} />
+              <Text style={styles.themeOptionText}>Sistema</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel, {marginTop: 10}]} onPress={() => setIsThemeModalVisible(false)}>
+              <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      {toast && (
+        <Toast
+          message={toast.message}
+          visible={!!toast}
+          onDismiss={() => setToast(null)}
+          type={toast.type}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc' },
+  container: { flex: 1, backgroundColor: isDarkMode ? '#0d1117' : '#ffffff' },
   scrollView: { flex: 1 },
   header: { padding: 20, paddingBottom: 10 },
   title: { fontSize: 28, fontFamily: 'Inter-Bold', color: isDarkMode ? '#c9d1d9' : '#1e293b', marginBottom: 4 },
@@ -290,13 +326,30 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   footerText: { fontSize: 14, fontFamily: 'Inter-Medium', color: isDarkMode ? '#8b949e' : '#64748B', marginBottom: 4 },
   footerSubtext: { fontSize: 12, fontFamily: 'Inter-Regular', color: isDarkMode ? '#6b7280' : '#94a3b8' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContainer: { backgroundColor: isDarkMode ? '#161b22' : 'white', padding: 20, borderRadius: 10, width: '80%', alignItems: 'stretch', borderColor: isDarkMode ? '#30363d' : '#e2e8f0', borderWidth: 1 },
+  modalContainer: { backgroundColor: isDarkMode ? '#161b22' : '#ffffff', padding: 20, borderRadius: 10, width: '80%', alignItems: 'stretch', borderColor: isDarkMode ? '#30363d' : '#e2e8f0', borderWidth: 1 },
   modalTitle: { fontSize: 18, fontFamily: 'Inter-Bold', marginBottom: 15, textAlign: 'center', color: isDarkMode ? '#c9d1d9' : '#1e293b' },
   modalInput: { borderWidth: 1, borderColor: isDarkMode ? '#30363d' : '#cbd5e1', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, fontFamily: 'Inter-Regular', marginBottom: 20, color: isDarkMode ? '#c9d1d9' : '#1e293b', backgroundColor: isDarkMode ? '#0d1117' : '#ffffff' },
   modalButtonContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   modalButton: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, flex: 1, alignItems: 'center' },
-  modalButtonCancel: { backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0', marginRight: 10 },
+  modalButtonCancel: { backgroundColor: isDarkMode ? '#30363d' : '#ffffff', marginRight: 10, borderWidth: 1, borderColor: isDarkMode ? '#30363d' : '#e2e8f0' },
   modalButtonConfirm: { backgroundColor: '#2563EB', marginLeft: 10 },
   modalButtonTextCancel: { color: isDarkMode ? '#c9d1d9' : '#1e293b', fontFamily: 'Inter-SemiBold', fontSize: 16 },
   modalButtonTextConfirm: { color: 'white', fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
+    marginBottom: 10,
+  },
+  themeIcon: {
+    marginRight: 15,
+  },
+  themeOptionText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
 });

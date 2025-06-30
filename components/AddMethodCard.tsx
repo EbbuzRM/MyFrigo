@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { AnimatedPressable } from './AnimatedPressable';
 
 interface AddMethodCardProps {
   title: string;
@@ -24,10 +25,9 @@ export function AddMethodCard({
   const styles = getStyles(isDarkMode);
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       style={[styles.card, { backgroundColor, borderColor }]}
       onPress={onPress}
-      activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
         {icon}
@@ -39,7 +39,7 @@ export function AddMethodCard({
       <View style={styles.chevronContainer}>
         <ChevronRight size={20} color={isDarkMode ? '#8b949e' : '#94a3b8'} />
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
@@ -47,7 +47,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
@@ -69,16 +69,16 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     title: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#000000' : '#1e293b', // Black in dark mode, original dark gray in light
+    color: isDarkMode ? '#000000' : '#1e293b',
     marginBottom: 4,
   },
   description: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#000000' : '#64748B', // Black in dark mode, original gray in light
+    color: isDarkMode ? '#000000' : '#64748B',
     lineHeight: 20,
   },
   chevronContainer: {
-    marginLeft: 12,
+    marginLeft: 16,
   },
 });

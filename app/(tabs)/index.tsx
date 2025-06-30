@@ -17,7 +17,7 @@ import { ExpirationCard } from '@/components/ExpirationCard';
 import { StatsCard } from '@/components/StatsCard';
 import { useTheme } from '@/context/ThemeContext';
 
-export default function Dashboard() {
+function Dashboard() {
   const { isDarkMode } = useTheme();
   const [products, setProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,85 +81,98 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Caricamento...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Caricamento...</Text>
+      </View>
     );
   }
 
   return (
+    <ScrollView
+      style={styles.scrollView}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      <View style={styles.header}>
+        <Text style={styles.title}>Dashboard</Text>
+        <Text style={styles.subtitle}>Gestione intelligente degli alimenti</Text>
+      </View>
+
+      <View style={styles.statsContainer}>
+        <StatsCard
+          title="Totale Prodotti"
+          value={stats.total.toString()}
+          icon={<Package size={24} color="#2563EB" />}
+          lightBackgroundColor="#ffffff"
+          darkBackgroundColor="#1e1e1e"
+          onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'all' } })}
+        />
+        <StatsCard
+          title="In Scadenza"
+          value={stats.expiring.toString()}
+          icon={<AlertTriangle size={24} color="#F59E0B" />}
+          lightBackgroundColor="#ffffff"
+          darkBackgroundColor="#1e1e1e"
+          onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'expiring' } })}
+        />
+        <StatsCard
+          title="Scaduti"
+          value={stats.expired.toString()}
+          icon={<Calendar size={24} color="#EF4444" />}
+          lightBackgroundColor="#ffffff"
+          darkBackgroundColor="#1e1e1e"
+          onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'expired' } })}
+        />
+        <StatsCard
+          title="Buoni"
+          value={stats.healthy.toString()}
+          icon={<TrendingUp size={24} color="#10B981" />}
+          lightBackgroundColor="#ffffff"
+          darkBackgroundColor="#1e1e1e"
+          onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'all' } })}
+        />
+      </View>
+
+      <View style={{...styles.section, paddingTop: 30}}>
+        <Text style={styles.sectionTitle}>Prodotti in Scadenza</Text>
+        {expiringProducts.length > 0 ? (
+          expiringProducts.map((product) => (
+            <ExpirationCard 
+              key={product.id} 
+              product={product} 
+              onPress={() => router.push({ pathname: '/manual-entry', params: { productId: product.id } })}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              Nessun prodotto in scadenza nei prossimi {notificationDays} giorni
+            </Text>
+          </View>
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+function DashboardWrapper() {
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
+
+  return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Dashboard</Text>
-          <Text style={styles.subtitle}>Gestione intelligente degli alimenti</Text>
-        </View>
-
-        <View style={styles.statsContainer}>
-          <StatsCard
-            title="Totale Prodotti"
-            value={stats.total.toString()}
-            icon={<Package size={24} color="#2563EB" />}
-            backgroundColor="#EFF6FF"
-            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'all' } })}
-          />
-          <StatsCard
-            title="In Scadenza"
-            value={stats.expiring.toString()}
-            icon={<AlertTriangle size={24} color="#F59E0B" />}
-            backgroundColor="#FFFBEB"
-            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'expiring' } })}
-          />
-          <StatsCard
-            title="Scaduti"
-            value={stats.expired.toString()}
-            icon={<Calendar size={24} color="#EF4444" />}
-            backgroundColor="#FEF2F2"
-            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'expired' } })}
-          />
-          <StatsCard
-            title="Buoni"
-            value={stats.healthy.toString()}
-            icon={<TrendingUp size={24} color="#10B981" />}
-            backgroundColor="#F0FDF4"
-            onPress={() => router.push({ pathname: '/(tabs)/products', params: { filter: 'all' } })}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Prodotti in Scadenza</Text>
-          {expiringProducts.length > 0 ? (
-            expiringProducts.map((product) => (
-              <ExpirationCard 
-                key={product.id} 
-                product={product} 
-                onPress={() => router.push({ pathname: '/manual-entry', params: { productId: product.id } })}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                Nessun prodotto in scadenza nei prossimi {notificationDays} giorni
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+      <Dashboard />
     </SafeAreaView>
   );
 }
 
+export default DashboardWrapper;
+
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
   },
   scrollView: {
     flex: 1,
@@ -201,8 +214,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 22,
+    fontFamily: 'Inter-Bold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 16,
   },

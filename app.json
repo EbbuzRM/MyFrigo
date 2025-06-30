@@ -6,14 +6,18 @@
     "orientation": "portrait",
     "scheme": "myfrigo",
     "icon": "./assets/images/icon.png",
-    "userInterfaceStyle": "light",
+    "backgroundColor": "#ffffff",
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "backgroundModes": [
+        "fetch",
+        "processing"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -24,12 +28,17 @@
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "com.google.android.c2dm.permission.RECEIVE"
-      ],
-      "useNextNotificationsApi": true
+      ]
     },
     "web": {
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "index": "./index.html"
     },
+    "platforms": [
+      "android",
+      "ios",
+      "web"
+    ],
     "plugins": [
       "expo-router",
       "@react-native-google-signin/google-signin",
@@ -40,7 +49,12 @@
           "color": "#ffffff",
           "sounds": []
         }
-      ]
+      ],
+      "expo-updates",
+      "expo-build-properties",
+      "expo-font",
+      "expo-web-browser",
+      "expo-background-task"
     ]
   }
 }

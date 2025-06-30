@@ -173,7 +173,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 10,
-    backgroundColor: isDarkMode ? '#0d1117' : '#f8fafc',
+    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
   },
   modalOverlay: {
     flex: 1,
@@ -182,7 +182,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: isDarkMode ? '#161b22' : 'white',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     padding: 20,
     borderRadius: 10,
     width: '80%',
@@ -221,8 +221,10 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonCancel: {
-    backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0',
+    backgroundColor: isDarkMode ? '#30363d' : '#ffffff',
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   modalButtonConfirm: {
     backgroundColor: '#10B981',
@@ -257,7 +259,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: isDarkMode ? '#30363d' : '#ccc',
+    borderBottomColor: isDarkMode ? '#30363d' : '#e2e8f0',
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     borderRadius: 8,
     marginBottom: 10,
@@ -297,14 +299,14 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   backButton: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: isDarkMode ? '#21262d' : '#2563EB',
+    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : 'transparent',
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   backButtonText: {
-    color: isDarkMode ? '#c9d1d9' : 'white',
+    color: isDarkMode ? '#c9d1d9' : '#2563EB',
     fontSize: 16,
     fontFamily: 'Inter-Bold',
   },
