@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react'; // Consolidated React imports
+import React, { useEffect } from 'react'; // Consolidated React imports
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Barcode, Keyboard } from 'lucide-react-native';
@@ -12,7 +10,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { AddMethodCard } from '@/components/AddMethodCard';
 import { useTheme } from '@/context/ThemeContext';
 
-export default function AddProduct() {
+// Componente per l'aggiunta di prodotti
+const AddProduct = () => {
   const { isDarkMode } = useTheme();
   const params = useLocalSearchParams();
   // const [someState, setSomeState] = useState(''); // Example if useState was needed
@@ -99,7 +98,10 @@ export default function AddProduct() {
       </View>
     </SafeAreaView>
   );
-}
+};
+
+// Esportazione predefinita del componente
+export default AddProduct;
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {

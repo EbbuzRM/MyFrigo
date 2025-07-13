@@ -1,21 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Calendar, CheckCircle, XCircle } from 'lucide-react-native';
-import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { Calendar, CheckCircle, XCircle, RotateCcw } from 'lucide-react-native';
+import { Product } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
+import { useCategories } from '@/context/CategoryContext';
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#e2e8f0', // Added dark mode border
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff', // Added dark mode background
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
@@ -45,7 +42,11 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   categoryEmoji: {
     fontSize: 20,
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  categoryImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
   },
   textContainer: {
     flex: 1,
@@ -62,11 +63,17 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     color: isDarkMode ? '#8b949e' : '#64748B',
   },
   statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  restoreButton: {
     padding: 4,
-    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+    marginLeft: 8,
   },
   details: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   detailItem: {
     flexDirection: 'row',
@@ -78,49 +85,45 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     color: isDarkMode ? '#8b949e' : '#64748B',
     marginLeft: 6,
   },
-  consumedIcon: {
-    color: isDarkMode ? '#10B981' : '#10B981',
-  },
-  expiredIcon: {
-    color: isDarkMode ? '#EF4444' : '#EF4444',
-  },
 });
 
 interface HistoryCardProps {
   product: Product;
   type: 'consumed' | 'expired';
+  onRestore?: (productId: string) => void;
 }
 
-export function HistoryCard({ product, type }: HistoryCardProps) {
+export function HistoryCard({ product, type, onRestore }: HistoryCardProps) {
   const { isDarkMode } = useTheme();
+  const { getCategoryById } = useCategories();
   const componentStyles = getStyles(isDarkMode);
-  
-  const getCategoryInfo = () => {
-    return PRODUCT_CATEGORIES.find(cat => cat.id === product.category) || PRODUCT_CATEGORIES[PRODUCT_CATEGORIES.length - 1];
-  };
+
+  const categoryInfo = getCategoryById(product.category);
 
   const getStatusInfo = () => {
-    if (type === 'consumed') {
-      return {
-        icon: <CheckCircle size={24} color={componentStyles.consumedIcon.color} />,
-        backgroundColor: isDarkMode ? '#162d21' : '#F0FDF4', // Dark green for consumed in dark mode
-        borderColor: isDarkMode ? '#22402d' : '#DCFCE7', // Darker green border
-        statusText: 'Consumato',
-        date: product.consumedDate,
-      };
-    } else {
-      return {
-        icon: <XCircle size={24} color={componentStyles.expiredIcon.color} />,
-        backgroundColor: isDarkMode ? '#2a1212' : '#FEF2F2', // Dark red for expired in dark mode
-        borderColor: isDarkMode ? '#4d1a1a' : '#FECACA', // Darker red border
-        statusText: 'Scaduto',
-        date: product.expirationDate,
-      };
-    }
+    const themeColors = {
+      consumed: {
+        icon: <CheckCircle size={24} color={isDarkMode ? '#4ade80' : '#16a34a'} />,
+        backgroundColor: isDarkMode ? '#142e1f' : '#f0fdf4',
+        borderColor: isDarkMode ? '#1c4b2a' : '#bbf7d0',
+      },
+      expired: {
+        icon: <XCircle size={24} color={isDarkMode ? '#f87171' : '#dc2626'} />,
+        backgroundColor: isDarkMode ? '#311919' : '#fee2e2',
+        borderColor: isDarkMode ? '#5b2121' : '#fecaca',
+      },
+    };
+    const date = type === 'consumed' ? product.consumedDate : product.expirationDate;
+    const statusText = type === 'consumed' ? 'Consumato' : 'Scaduto';
+    
+    return { ...themeColors[type], date, statusText };
   };
 
-  const categoryInfo = getCategoryInfo();
   const statusInfo = getStatusInfo();
+
+  if (!categoryInfo) {
+    return null; // or a placeholder
+  }
 
   return (
     <View style={[componentStyles.card, { backgroundColor: statusInfo.backgroundColor, borderColor: statusInfo.borderColor }]}>
@@ -128,7 +131,11 @@ export function HistoryCard({ product, type }: HistoryCardProps) {
         <View style={componentStyles.header}>
           <View style={componentStyles.productInfo}>
             <View style={[componentStyles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
-              <Text style={[componentStyles.categoryEmoji, { color: isDarkMode ? '#c9d1d9' : '#1e293b' }]}>{categoryInfo.icon}</Text>
+              {categoryInfo.iconUrl ? (
+                <Image source={{ uri: categoryInfo.iconUrl }} style={componentStyles.categoryImage} />
+              ) : (
+                <Text style={componentStyles.categoryEmoji}>{categoryInfo.icon}</Text>
+              )}
             </View>
             <View style={componentStyles.textContainer}>
               <Text style={componentStyles.productName} numberOfLines={1}>
@@ -153,6 +160,11 @@ export function HistoryCard({ product, type }: HistoryCardProps) {
               {statusInfo.statusText}: {new Date(statusInfo.date || '').toLocaleDateString('it-IT')}
             </Text>
           </View>
+          {type === 'consumed' && onRestore && (
+            <TouchableOpacity style={componentStyles.restoreButton} onPress={() => onRestore(product.id)}>
+              <RotateCcw size={20} color={isDarkMode ? '#4ade80' : '#16a34a'} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>

@@ -1,27 +1,16 @@
-# Active Context
+## Contesto Attivo
 
-## 🔥 Focus attuale
-- **[IN CORSO]** Correzione dell'errore `Cannot read property 'DATE' of undefined`.
-- Verifica e stabilizzazione dell'integrazione con Firebase (Firestore).
+**Stato del Progetto: Stabile**
 
-## ✅ Recenti cambiamenti
-- Risolto problema di build Android con Expo aggiungendo:
-  - `compileSdkVersion 34` in build.gradle
-  - Dipendenze: `metro-react-native-babel-transformer` e `expo-asset`
-- Aggiornata versione di Kotlin per compatibilità con AGP e plugin Expo.
-- Rimosso `getAnalytics()` (incompatibilità React Native).
-- Allineate librerie principali (`expo-router`, `react-native`, `firebase`).
+**Soluzione Implementata:**
+Il problema critico `ReferenceError: Property 'useEffect' doesn't exist` è stato **risolto con successo** implementando un pattern di polyfill per garantire la compatibilità con React 19.
 
-## 🗺️ Prossimi passi
-- **[TASK]** Verificare e correggere tutti i riferimenti a `product.date` nel codice, sostituendoli con `product.expirationDate`.
-  - **File critici da controllare**:
-    - `NotificationService.ts`
-    - `StorageService.ts`
-    - `ProductCard.tsx`
-    - `manual-entry.tsx`
-- Verifica e test dei flussi di scansione e lettura dei dati.
-- Configurazioni finali per rilascio build interna.
+**Architettura della Soluzione:**
+1.  **`react-polyfill.js`**: Un nuovo file che importa `React` e assegna esplicitamente i suoi hook (`useEffect`, `useState`, etc.) all'oggetto `global`. Questo assicura che siano sempre disponibili per il bundler.
+2.  **`index.js`**: Un nuovo entry point personalizzato per l'applicazione che esegue due compiti in ordine:
+    - Importa e attiva il `react-polyfill.js`.
+    - Esegue l'entry point standard di Expo Router (`expo-router/entry`).
+3.  **`app.json`**: La configurazione è stata aggiornata per usare `index.js` come punto di ingresso.
 
-## ⚡️ Decisioni e considerazioni
-- Quando l'app è stabile aggiornare la versione **Expo SDK 51** con piu recente.
-- Utilizzare Firebase Firestore come database principale dei prodotti.
+**Stato Attuale:**
+L'applicazione è di nuovo avviabile, stabile e tutte le funzionalità di Expo Router sono preservate. Lo sviluppo può procedere normalmente.

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,21 +10,24 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Filter } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import { StorageService } from '@/services/StorageService';
-import { Product, ProductCategory, PRODUCT_CATEGORIES } from '@/types/Product';
+import { Product } from '@/types/Product';
 import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { useTheme } from '@/context/ThemeContext';
+import { useCategories } from '@/context/CategoryContext';
+import * as Haptics from 'expo-haptics';
 
 type ProductFilter = 'all' | 'expired' | 'expiring';
 
-export default function Products() {
+// Componente per la visualizzazione dei prodotti
+const Products = () => {
   const { isDarkMode } = useTheme();
+  const { categories, getCategoryById, loading: categoriesLoading } = useCategories();
   const params = useLocalSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<ProductCategory[]>(PRODUCT_CATEGORIES);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -38,23 +41,6 @@ export default function Products() {
       setProducts(storedProducts.filter(p => p.status !== 'consumed'));
       setLoading(false);
     });
-
-    const loadCategories = async () => {
-      try {
-        const storedCategories = await StorageService.getCategories();
-        const combined = [...PRODUCT_CATEGORIES];
-        storedCategories.forEach(storedCat => {
-          if (!combined.some(defaultCat => defaultCat.id === storedCat.id)) {
-            combined.push(storedCat);
-          }
-        });
-        setCategories(combined);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      }
-    };
-    
-    loadCategories();
 
     return () => unsubscribe();
   }, []);
@@ -109,28 +95,32 @@ export default function Products() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const handleDeleteProduct = async (productId: string) => {
+  const handleDeleteProduct = useCallback(async (productId: string) => {
     try {
       await StorageService.deleteProduct(productId);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('Error deleting product:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Errore", "Impossibile eliminare il prodotto.");
     }
-  };
+  }, []);
 
-  const handleConsumeProduct = async (productId: string) => {
+  const handleConsumeProduct = useCallback(async (productId: string) => {
     try {
       await StorageService.updateProductStatus(productId, 'consumed');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Prodotto Consumato", "Il prodotto è stato segnato come consumato e spostato nello storico.");
     } catch (error) {
       console.error('Error consuming product:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Errore", "Impossibile segnare il prodotto come consumato.");
     }
-  };
+  }, []);
 
   const styles = getStyles(isDarkMode);
 
-  if (loading) {
+  if (loading || categoriesLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -160,7 +150,6 @@ export default function Products() {
         </View>
       </View>
 
-      {/* Filter buttons for product status */}
       <View style={styles.statusFilterContainer}>
         <TouchableOpacity
           style={[styles.statusFilterButton, currentFilter === 'all' && styles.statusFilterButtonActive]}
@@ -197,13 +186,15 @@ export default function Products() {
       >
         <View style={styles.productsContainer}>
           {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
+            filteredProducts.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
+                categoryInfo={getCategoryById(product.category)}
                 onDelete={() => handleDeleteProduct(product.id)}
                 onConsume={() => handleConsumeProduct(product.id)}
                 onPress={() => router.push({ pathname: '/manual-entry', params: { productId: product.id } })}
+                index={index}
               />
             ))
           ) : (
@@ -219,7 +210,10 @@ export default function Products() {
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
+
+// Esportazione predefinita del componente
+export default Products;
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {

@@ -1,59 +1,55 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { ChevronRight } from 'lucide-react-native';
 
 interface SettingsCardProps {
-  title: string;
-  description: string;
   icon: React.ReactNode;
-  rightElement: React.ReactNode;
+  title: string;
+  description?: string;
   onPress?: () => void;
-  variant?: 'default' | 'danger';
-  isDarkMode: boolean;
+  control?: React.ReactNode;
 }
 
-export function SettingsCard({
-  title,
-  description,
-  icon,
-  rightElement,
-  onPress,
-  variant = 'default',
-  isDarkMode,
-}: SettingsCardProps) {
+/**
+ * @component SettingsCard
+ * @description Un componente riutilizzabile per visualizzare una singola opzione nelle impostazioni.
+ * Progettato per essere flessibile, può mostrare un'icona, un titolo, una descrizione e un controllo a destra (es. uno Switch o una freccia).
+ * @param {React.ReactNode} icon - L'icona da visualizzare a sinistra.
+ * @param {string} title - Il titolo dell'impostazione.
+ * @param {string} [description] - Una descrizione opzionale.
+ * @param {() => void} [onPress] - Funzione da eseguire al tocco. Se presente, la card diventa cliccabile.
+ * @param {React.ReactNode} [control] - Un componente da visualizzare a destra, come uno Switch.
+ */
+export function SettingsCard({ icon, title, description, onPress, control }: SettingsCardProps) {
+  const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const CardComponent = onPress ? TouchableOpacity : View;
+
+  const CardContent = () => (
+    <>
+      <View style={styles.iconContainer}>{icon}</View>
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{title}</Text>
+        {description && <Text style={styles.description}>{description}</Text>}
+      </View>
+      <View style={styles.controlContainer}>
+        {control ? control : onPress ? <ChevronRight size={24} color={styles.chevron.color} /> : null}
+      </View>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+        <CardContent />
+      </TouchableOpacity>
+    );
+  }
 
   return (
-    <CardComponent
-      style={[
-        styles.card,
-        variant === 'danger' && styles.dangerCard,
-      ]}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-    >
-      <View style={styles.iconContainer}>
-        {icon}
-      </View>
-      <View style={styles.content}>
-        <Text style={[
-          styles.title,
-          variant === 'danger' && styles.dangerTitle,
-        ]}>
-          {title}
-        </Text>
-        <Text style={[
-          styles.description,
-          variant === 'danger' && styles.dangerDescription,
-        ]}>
-          {description}
-        </Text>
-      </View>
-      <View style={styles.rightElement}>
-        {rightElement}
-      </View>
-    </CardComponent>
+    <View style={styles.card}>
+      <CardContent />
+    </View>
   );
 }
 
@@ -62,49 +58,39 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    padding: 16,
     borderRadius: 12,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dangerCard: {
-    borderColor: isDarkMode ? '#581818' : '#FECACA', // Darker red border for dark mode
-    backgroundColor: isDarkMode ? '#2a0f0f' : '#FEF2F2', // Darker red background for dark mode
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
     marginRight: 16,
   },
-  content: {
+  textContainer: {
     flex: 1,
   },
   title: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 4,
-  },
-  dangerTitle: {
-    color: isDarkMode ? '#ef9f9f' : '#DC2626',
   },
   description: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
-    lineHeight: 20,
+    marginTop: 2,
   },
-  dangerDescription: {
-    color: isDarkMode ? '#B91C1C' : '#B91C1C',
+  controlContainer: {
+    marginLeft: 16,
   },
-  rightElement: {
-    marginLeft: 12,
-  },
+  chevron: {
+    color: isDarkMode ? '#8b949e' : '#9ca3af',
+  }
 });

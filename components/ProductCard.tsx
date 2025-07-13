@@ -1,49 +1,40 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Trash2, MoreVertical, Calendar, Package } from 'lucide-react-native';
-import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import { Trash2, Calendar, Package } from 'lucide-react-native';
+import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay } from 'react-native-reanimated';
+import { useExpirationStatus } from '@/hooks/useExpirationStatus';
 
 interface ProductCardProps {
   product: Product;
+  categoryInfo: ProductCategory | undefined;
   onDelete: () => void;
-  onConsume?: () => void; // Added onConsume prop
+  onConsume?: () => void;
   onPress?: () => void;
+  index: number;
 }
 
-export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCardProps) {
+export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onConsume, onPress, index }: ProductCardProps) => {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const expirationInfo = useExpirationStatus(product.expirationDate);
   
-  // Controllo di sicurezza per product undefined
-  if (!product) {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.errorText}>Prodotto non disponibile</Text>
-      </View>
-    );
-  }
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(20);
 
-  const getExpirationStatus = () => {
-    const now = new Date();
-    const expirationDate = new Date(product.expirationDate);
-    const daysUntilExpiration = Math.ceil((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  React.useEffect(() => {
+    opacity.value = withDelay(index * 100, withTiming(1, { duration: 400 }));
+    translateY.value = withDelay(index * 100, withTiming(0, { duration: 400 }));
+  }, [index, opacity, translateY]);
 
-    if (daysUntilExpiration < 0) {
-      return { status: 'expired', color: '#EF4444', backgroundColor: isDarkMode ? '#4B1A1A' : '#FEE2E2' };
-    } else if (daysUntilExpiration <= 3) {
-      return { status: 'warning', color: '#F59E0B', backgroundColor: isDarkMode ? '#4B3B1A' : '#FEF3C7' };
-    } else {
-      return { status: 'good', color: '#10B981', backgroundColor: isDarkMode ? '#1A4B3A' : '#D1FAE5' };
-    }
-  };
-
-  const getCategoryInfo = () => {
-    return PRODUCT_CATEGORIES.find(cat => cat.id === product.category) || PRODUCT_CATEGORIES[PRODUCT_CATEGORIES.length - 1];
-  };
-
-  const expirationInfo = getExpirationStatus();
-  const categoryInfo = getCategoryInfo();
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+      transform: [{ translateY: translateY.value }],
+    };
+  });
+  
+  const styles = getStyles(isDarkMode);
 
   const handleDeletePress = () => {
     Alert.alert(
@@ -56,86 +47,75 @@ export function ProductCard({ product, onDelete, onConsume, onPress }: ProductCa
     );
   };
 
+  if (!product || !categoryInfo) {
+    return null;
+  }
+
   return (
-    <TouchableOpacity 
-      style={[styles.card, { backgroundColor: expirationInfo.backgroundColor, borderColor: expirationInfo.color + '33' }]} 
-      onPress={onPress} 
-      activeOpacity={0.7}
-    >
-      <View style={[styles.statusIndicator, { backgroundColor: expirationInfo.color }]} />
-      
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.productInfo}>
-            <View style={[styles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
-              <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.productName} numberOfLines={2}>
-                {product.name}
-              </Text>
-              {product.brand && (
-                <Text style={styles.brandName} numberOfLines={1}>
-                  {product.brand}
-                </Text>
-              )}
-              <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '33' }]}>
-                <Text style={[styles.categoryName, { color: isDarkMode ? '#ffffff' : categoryInfo.color }]}>
-                  {categoryInfo.name}
-                </Text>
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity 
+        style={[styles.card, { backgroundColor: expirationInfo.backgroundColor, borderColor: expirationInfo.color + '33' }]} 
+        onPress={onPress} 
+        activeOpacity={0.7}
+      >
+        <View style={[styles.statusIndicator, { backgroundColor: expirationInfo.color }]} />
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <View style={styles.productInfo}>
+              <View style={[styles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
+                {categoryInfo.localIcon ? (
+                  <Image source={categoryInfo.localIcon} style={styles.categoryImage} />
+                ) : categoryInfo.iconUrl ? (
+                  <Image source={{ uri: categoryInfo.iconUrl }} style={styles.categoryImage} />
+                ) : (
+                  <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
+                )}
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+                {product.brand && <Text style={styles.brandName} numberOfLines={1}>{product.brand}</Text>}
+                <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '33' }]}>
+                  <Text style={[styles.categoryName, { color: isDarkMode ? '#ffffff' : categoryInfo.color }]}>{categoryInfo.name}</Text>
+                </View>
               </View>
             </View>
-          </View>
-          
-          <View style={styles.actionsContainer}>
-            {onConsume && product.status === 'active' && (
-              <TouchableOpacity style={styles.actionButton} onPress={onConsume}>
-                <Text style={styles.consumeText}>Consumato</Text>
+            <View style={styles.actionsContainer}>
+              {onConsume && product.status === 'active' && (
+                <TouchableOpacity style={styles.actionButton} onPress={onConsume}>
+                  <Text style={styles.consumeText}>Consumato</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+                <Trash2 size={20} color="#EF4444" />
               </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
-              <Trash2 size={20} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <View style={styles.detailItem}>
-              <Package size={16} color="#64748B" />
-              <Text style={styles.detailText}>
-                {product.quantity} {product.unit}
-              </Text>
-            </View>
-            <View style={styles.detailItem}>
-              <Calendar size={16} color="#64748B" />
-              <Text style={styles.dateText}>
-                {new Date(product.expirationDate).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-              </Text>
             </View>
           </View>
-          
-          {product.notes && (
-            <Text style={styles.notes} numberOfLines={2}>
-              {product.notes}
-            </Text>
-          )}
+          <View style={styles.details}>
+            <View style={styles.detailRow}>
+              <View style={styles.detailItem}>
+                <Package size={16} color="#64748B" />
+                <Text style={styles.detailText}>{product.quantity} {product.unit}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Calendar size={16} color="#64748B" />
+                <Text style={styles.dateText}>{new Date(product.expirationDate).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}</Text>
+              </View>
+            </View>
+            {product.notes && <Text style={styles.notes} numberOfLines={2}>{product.notes}</Text>}
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
-}
+});
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  card: {
+    card: {
     borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
@@ -152,14 +132,14 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 16,
   },
   productInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
-    marginRight: 12,
+    marginRight: 4,
   },
   categoryIcon: {
     width: 48,
@@ -171,6 +151,11 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   categoryEmoji: {
     fontSize: 24,
+  },
+  categoryImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   textContainer: {
     flex: 1,
@@ -193,16 +178,17 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 6,
   },
   categoryName: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Inter-Medium',
   },
   actionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   actionButton: {
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 6,
     backgroundColor: isDarkMode ? '#1e2530' : '#ffffff',
     marginRight: 8,
@@ -243,12 +229,5 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
     fontStyle: 'italic',
-  },
-  errorText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#EF4444' : '#B91C1C',
-    textAlign: 'center',
-    padding: 16,
   },
 });

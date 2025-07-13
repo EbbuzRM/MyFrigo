@@ -1,0 +1,58 @@
+  ecco il riepilogo dettagliato di tutte le azioni che abbiamo intrapreso per tentare di
+  risolvere l'errore ReferenceError: Property 'useEffect' doesn't exist, che purtroppo è ancora presente.
+  Inizialmente, l'errore sembrava legato a OneSignal. Abbiamo risolto con successo questa prima parte eseguendo le seguenti
+  azioni:
+   1. Aggiornamento della funzione di inizializzazione: Sostituito OneSignal.setAppId() con la nuova sintassi
+      OneSignal.initialize().
+   2. Installazione del plugin mancante: Aggiunto il pacchetto onesignal-expo-plugin al progetto.
+   3. Configurazione del plugin: Inserito il riferimento al plugin nel file app.json.
+   4. Aggiunta del `bundleIdentifier`: Inserito l'identificatore del bundle per iOS, anch'esso in app.json, che era mancante.
+   5. Tolto,fatto dei test e reinserito il codice di OneSignal escludendolo dalla causa dell errore.
+
+
+  Fase 2: Tentativi di risoluzione dell'errore `useEffect`
+
+
+  Una volta sistemato OneSignal, è emerso il vero problema, persistente: ReferenceError: Property 'useEffect' doesn't exist
+  nel file app/_layout.tsx.
+
+  Ecco tutti i tentativi che abbiamo fatto per correggerlo:
+
+
+   1. Pulizia della cache:
+       * Abbiamo eseguito il comando expo start --clear per avviare il server di sviluppo con una cache pulita.
+       * Abbiamo eseguito una pulizia manuale molto più aggressiva, cancellando le cartelle node_modules, .expo, il file
+         package-lock.json e reinstallando tutte le dipendenze da zero.
+
+
+   2. Verifica delle versioni delle dipendenze:
+       * Abbiamo controllato le versioni di react e react-native e, dopo una verifica sulla documentazione ufficiale di Expo
+         53, abbiamo confermato che le versioni in uso (react@19, react-native@0.79) erano corrette.
+
+
+   3. Reset dei file di configurazione:
+       * Abbiamo riscritto da zero i file metro.config.js e babel.config.js per eliminare la possibilità che fossero corrotti
+         o contenessero configurazioni errate.
+
+
+   4. Semplificazione del codice:
+       * Su tuo suggerimento, abbiamo semplificato il codice all'interno della funzione useEffect nel file app/_layout.tsx
+         per escludere che l'errore fosse causato da una delle funzioni chiamate al suo interno.
+
+
+   5. Test di un entry point alternativo:
+       * Hai correttamente ipotizzato che il problema potesse essere nell'entry point dell'applicazione. Per verificare,
+         abbiamo creato un file AppTestEntry.js e lo abbiamo impostato come punto di ingresso principale. L'app si è avviata
+         (confermando la tua diagnosi), ma questo ha rotto la navigazione di Expo Router.
+
+
+   6. Reset forzato del file problematico:
+       * Abbiamo provato a forzare Metro (il bundler di React Native) a ricaricare da zero il file app/_layout.tsx,
+         rinominandolo e poi ripristinando il nome originale.
+
+  Conclusione e Stato Attuale:
+
+
+  Nonostante tutti questi tentativi, l'errore persiste ogni volta che si utilizza l'entry point standard richiesto da Expo
+  Router. La conclusione a cui siamo giunti è che il problema risiede molto probabilmente in una corruzione profonda
+  dell'ambiente di sviluppo che le normali procedure di pulizia non riescono a risolvere.

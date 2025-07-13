@@ -1,8 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react-native';
 import { StatsCard } from './StatsCard';
 import { useTheme } from '@/context/ThemeContext';
+import { router } from 'expo-router';
+
+console.log('[DEBUG] Rendering components/HistoryStats.tsx');
 
 interface HistoryStatsProps {
   totalProducts: number;
@@ -11,9 +14,24 @@ interface HistoryStatsProps {
 }
 
 export function HistoryStats({ totalProducts, expiredProducts, consumedProducts }: HistoryStatsProps) {
-  const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const { } = useTheme();
   const wastePercentage = totalProducts > 0 ? Math.round((expiredProducts / totalProducts) * 100) : 0;
+
+  const handlePress = (type: 'consumed' | 'expired' | 'all', title: string) => {
+    router.push({ pathname: '/history-detail', params: { type, title } });
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      paddingHorizontal: 20,
+      marginBottom: 16,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+  });
 
   return (
     <View style={styles.container}>
@@ -22,68 +40,34 @@ export function HistoryStats({ totalProducts, expiredProducts, consumedProducts 
           title="Totale Gestiti"
           value={totalProducts.toString()}
           icon={<TrendingUp size={24} color="#2563EB" />}
-          backgroundColor="#EFF6FF"
+          lightBackgroundColor="#EFF6FF"
+          darkBackgroundColor="#1e293b"
+          onPress={() => handlePress('all', 'Storico Completo')}
         />
         <StatsCard
           title="Consumati"
           value={consumedProducts.toString()}
           icon={<CheckCircle size={24} color="#10B981" />}
-          backgroundColor="#F0FDF4"
+          lightBackgroundColor="#F0FDF4"
+          darkBackgroundColor="#162d21"
+          onPress={() => router.push('/consumed-list')}
         />
         <StatsCard
           title="Sprecati"
           value={expiredProducts.toString()}
           icon={<AlertTriangle size={24} color="#EF4444" />}
-          backgroundColor="#FEF2F2"
+          lightBackgroundColor="#FEF2F2"
+          darkBackgroundColor="#2a1212"
+          onPress={() => handlePress('expired', 'Prodotti Scaduti')}
         />
         <StatsCard
           title="% Spreco"
           value={`${wastePercentage}%`}
           icon={<AlertTriangle size={24} color="#F59E0B" />}
-          backgroundColor="#FFFBEB"
+          lightBackgroundColor="#FFFBEB"
+          darkBackgroundColor="#302a0f"
         />
       </View>
-      
-      {wastePercentage > 30 && (
-        <View style={styles.suggestionCard}>
-          <Text style={styles.suggestionTitle}>💡 Suggerimento</Text>
-          <Text style={styles.suggestionText}>
-            La percentuale di spreco è alta ({wastePercentage}%). 
-            Considera di impostare notifiche più anticipate o di pianificare meglio i tuoi acquisti.
-          </Text>
-        </View>
-      )}
     </View>
   );
 }
-
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-  },
-  suggestionCard: {
-    backgroundColor: isDarkMode ? '#161b22' : '#FFFBEB', // Darker background for dark mode
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#FEF3C7',
-  },
-  suggestionTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#c9d1d9' : '#92400E', // White-ish text for dark mode
-    marginBottom: 8,
-  },
-  suggestionText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#A16207', // Lighter gray text for dark mode
-    lineHeight: 20,
-  },
-});

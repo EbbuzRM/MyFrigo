@@ -1,5 +1,4 @@
 import * as TaskManager from 'expo-task-manager';
-import { TaskManagerTaskResult } from 'expo-task-manager';
 import { StorageService } from './StorageService';
 
 const BACKGROUND_SYNC_TASK = 'background-sync';

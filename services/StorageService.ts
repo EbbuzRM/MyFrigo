@@ -1,24 +1,14 @@
-import { Product, ProductCategory, PRODUCT_CATEGORIES } from '@/types/Product';
+
+import { Product, ProductCategory } from '@/types/Product';
 import { NotificationService } from './NotificationService';
 import * as Notifications from 'expo-notifications';
-import { firestoreDB } from './firebaseConfig';
+import { supabase } from './supabaseClient';
 import { Platform } from 'react-native';
-import {
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  writeBatch,
-  query,
-  onSnapshot,
-  orderBy,
-} from 'firebase/firestore';
+import { snakeToCamel, camelToSnake } from '../utils/caseConverter';
+import { randomUUID } from 'expo-crypto';
 
 export interface AppSettings {
-  notificationsEnabled: boolean;
+  notifications_enabled: boolean;
   notificationDays: number;
   theme: 'light' | 'dark' | 'auto';
 }
@@ -31,43 +21,33 @@ export interface ProductTemplate {
   imageUrl?: string;
 }
 
-export class StorageService {
-  private static readonly CATEGORIES_DOC = 'appData/categories';
-  private static readonly PRODUCTS_COLLECTION = 'products';
-  private static readonly HISTORY_COLLECTION = 'productHistory';
-  private static readonly SETTINGS_DOC = 'appData/settings';
-  private static readonly BARCODE_TEMPLATES_COLLECTION = 'barcodeTemplates';
+// Note: In Supabase, we don't need to define collection names as constants
+// as we interact with tables directly.
 
-  // Categories
-  static async getCategories(): Promise<ProductCategory[]> {
+export class StorageService {
+
+  // Categories are now stored in the 'categories' table, not in a JSON document.
+  // This part needs to be redesigned based on the new table structure if needed.
+  // For now, we'll return an empty array as a placeholder.
+  static async getCustomCategories(): Promise<ProductCategory[]> {
     try {
-      const docRef = doc(firestoreDB, this.CATEGORIES_DOC);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists() && docSnap.data()?.custom) {
-        const customCategories = docSnap.data()?.custom as ProductCategory[];
-        const combined = [...PRODUCT_CATEGORIES];
-        customCategories.forEach(storedCat => {
-          if (!combined.some(defaultCat => defaultCat.id === storedCat.id)) {
-            combined.push(storedCat);
-          }
-        });
-        return combined;
-      }
-      return [...PRODUCT_CATEGORIES];
+      const { data, error } = await supabase.from('categories').select('*');
+      if (error) throw error;
+      return snakeToCamel(data) || [];
     } catch (error) {
-      console.error('Error getting categories from Firestore:', error);
-      return [...PRODUCT_CATEGORIES];
+      console.error('Error getting categories from Supabase:', error);
+      return [];
     }
   }
 
-  static async saveCategories(categories: ProductCategory[]): Promise<void> {
+  static async saveCustomCategories(categories: ProductCategory[]): Promise<void> {
     try {
-      const defaultCategoryIds = PRODUCT_CATEGORIES.map(c => c.id);
-      const customCategoriesToSave = categories.filter(c => !defaultCategoryIds.includes(c.id));
-      const docRef = doc(firestoreDB, this.CATEGORIES_DOC);
-      await setDoc(docRef, { custom: customCategoriesToSave }, { merge: true });
+      // Assuming 'categories' table has 'id' as primary key.
+      // Upsert will insert new categories and update existing ones.
+      const { error } = await supabase.from('categories').upsert(camelToSnake(categories));
+      if (error) throw error;
     } catch (error) {
-      console.error('Error saving custom categories to Firestore:', error);
+      console.error('Error saving categories to Supabase:', error);
       throw error;
     }
   }
@@ -75,158 +55,186 @@ export class StorageService {
   // Products
   static async getProducts(): Promise<Product[]> {
     try {
-      const productsCollectionRef = collection(firestoreDB, StorageService.PRODUCTS_COLLECTION);
-      const querySnapshot = await getDocs(productsCollectionRef);
-      const products: Product[] = [];
-      querySnapshot.forEach((doc) => {
-        products.push({ id: doc.id, ...doc.data() } as Product);
-      });
-      return products;
+      const { data, error } = await supabase.from('products').select('*');
+      if (error) throw error;
+      return snakeToCamel(data) || [];
     } catch (error) {
-      console.error('Error getting products from Firestore:', error);
+      console.error('Error getting products from Supabase:', error);
       return [];
     }
   }
 
   static listenToProducts(callback: (products: Product[]) => void): () => void {
-    const productsCollectionRef = collection(firestoreDB, StorageService.PRODUCTS_COLLECTION);
-    const q = query(productsCollectionRef, orderBy('expirationDate', 'asc'));
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const products: Product[] = [];
-      querySnapshot.forEach((doc) => {
-        products.push({ id: doc.id, ...doc.data() } as Product);
-      });
-      callback(products);
-    }, (error) => {
-      console.error("Error listening to products:", error);
-      callback([]);
-    });
+    const channel = supabase
+      .channel('public:products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+        const products = await this.getProducts();
+        callback(products);
+      })
+      .subscribe();
 
-    return unsubscribe;
+    // Initial fetch
+    this.getProducts().then(callback);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 
   static async getProductById(productId: string): Promise<Product | null> {
     try {
-      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, productId);
-      const docSnap = await getDoc(productDocRef);
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Product;
-      }
-      return null;
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+      if (error) throw error;
+      return snakeToCamel(data);
     } catch (error) {
       console.error(`Error getting product by ID ${productId}:`, error);
       return null;
     }
   }
 
-  static async saveProduct(product: Product): Promise<void> {
+  static async getUserProfile(userId: string): Promise<any | null> {
     try {
-      const productToSave = { ...product };
-      if (typeof productToSave.imageUrl !== 'string') {
-        productToSave.imageUrl = null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return null;
+    }
+  }
+
+  static async saveProduct(product: Partial<Product>): Promise<void> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('User not authenticated to save product.');
+      }
+      const userId = session.user.id;
+
+      const productToUpsert = { ...product };
+      if (!productToUpsert.id) {
+        productToUpsert.id = randomUUID();
       }
 
-      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, product.id);
+      const productWithUser = {
+        ...productToUpsert,
+        userId: userId,
+      };
+
+      const { data: existingProduct, error: fetchError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productToUpsert.id)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // Ignore 'not found' errors
+        throw fetchError;
+      }
+      
+      const { error } = await supabase.from('products').upsert(camelToSnake(productWithUser));
+      if (error) throw error;
+
       const settings = await this.getSettings();
-      const docSnap = await getDoc(productDocRef);
-      const existingProductData = docSnap.exists() ? docSnap.data() as Product : null;
+      const fullProduct = productWithUser as Product;
 
-      await setDoc(productDocRef, productToSave);
-
-      if (existingProductData) {
-        if (existingProductData.expirationDate !== product.expirationDate ||
-            (existingProductData.status !== 'active' && product.status === 'active') ||
-            (existingProductData.status === 'active' && product.status !== 'active')) {
-          await NotificationService.cancelNotification(product.id);
-          if (product.status === 'active' && settings.notificationsEnabled) {
-            await NotificationService.scheduleExpirationNotification(product, settings.notificationDays);
+      if (existingProduct) {
+         if (existingProduct.expiration_date !== fullProduct.expirationDate ||
+            (existingProduct.status !== 'active' && fullProduct.status === 'active') ||
+            (existingProduct.status === 'active' && fullProduct.status !== 'active')) {
+          await NotificationService.cancelNotification(fullProduct.id!);
+          if (fullProduct.status === 'active' && settings.notifications_enabled) {
+            await NotificationService.scheduleExpirationNotification(fullProduct, settings.notificationDays);
           }
         }
       } else {
-        if (product.status === 'active' && settings.notificationsEnabled) {
-          await NotificationService.scheduleExpirationNotification(product, settings.notificationDays);
+         if (fullProduct.status === 'active' && settings.notifications_enabled) {
+            await NotificationService.scheduleExpirationNotification(fullProduct, settings.notificationDays);
         }
       }
-      if (product.barcode) {
-        await this.saveProductTemplate(product);
+
+      if (fullProduct.barcode) {
+        await this.saveProductTemplate(fullProduct);
       }
     } catch (error) {
-      console.error('Error saving product to Firestore:', error);
+      console.error('Error saving product to Supabase:', error);
       throw error;
     }
   }
 
   static async deleteProduct(productId: string): Promise<void> {
     try {
-      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, productId);
-      await deleteDoc(productDocRef);
+      const { error } = await supabase.from('products').delete().eq('id', productId);
+      if (error) throw error;
       await NotificationService.cancelNotification(productId);
     } catch (error) {
-      console.error('Error deleting product from Firestore:', error);
+      console.error('Error deleting product from Supabase:', error);
       throw error;
     }
   }
 
   static async updateProductStatus(productId: string, status: Product['status']): Promise<void> {
     try {
-      const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, productId);
-      const docSnap = await getDoc(productDocRef);
+        const { data: product, error: fetchError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .single();
 
-      if (!docSnap.exists()) {
-        console.error(`Product with ID ${productId} not found in Firestore.`);
-        return;
-      }
-
-      const product = { id: docSnap.id, ...docSnap.data() } as Product;
-      const oldStatus = product.status;
-      
-      const updatedFields: Partial<Product> = { status };
-
-      if (status === 'consumed' || status === 'expired') {
-        updatedFields.consumedDate = (status === 'consumed' && !product.consumedDate)
-          ? new Date().toISOString()
-          : product.consumedDate;
-        
-        if (oldStatus === 'active') {
-          await NotificationService.cancelNotification(productId);
+        if (fetchError) throw fetchError;
+        if (!product) {
+            console.error(`Product with ID ${productId} not found.`);
+            return;
         }
-      } else if (status === 'active' && oldStatus !== 'active') {
-        const settings = await this.getSettings();
-        if (settings.notificationsEnabled) {
-          const tempProductForNotification = { ...product, status: 'active' as Product['status'] };
-          await NotificationService.scheduleExpirationNotification(tempProductForNotification, settings.notificationDays);
-        }
-      }
-      
-      await updateDoc(productDocRef, updatedFields);
 
-      if (status === 'consumed') {
-        const consumedDateValue = updatedFields.consumedDate || new Date().toISOString();
-        const { status: originalStatus, consumedDate: originalConsumedDate, ...restOfProduct } = product;
-        const consumedProductEntry: Product = {
-          ...restOfProduct,
-          id: product.id, 
-          status: 'consumed',
-          consumedDate: consumedDateValue,
-        };
-        await this.addToHistory(consumedProductEntry);
-      }
+        const oldStatus = product.status;
+        const updatedFields: Partial<Product> = { status };
+
+        if (status === 'consumed' || status === 'expired') {
+            updatedFields.consumedDate = (status === 'consumed' && !product.consumed_date)
+                ? new Date().toISOString()
+                : product.consumed_date;
+
+            if (oldStatus === 'active') {
+                await NotificationService.cancelNotification(productId);
+            }
+        } else if (status === 'active' && oldStatus !== 'active') {
+            const settings = await this.getSettings();
+            if (settings.notifications_enabled) {
+                await NotificationService.scheduleExpirationNotification(snakeToCamel(product), settings.notificationDays);
+            }
+        }
+
+        const { error: updateError } = await supabase
+            .from('products')
+            .update(camelToSnake(updatedFields))
+            .eq('id', productId);
+
+        if (updateError) throw updateError;
+
     } catch (error) {
-      console.error('Error updating product status in Firestore:', error);
-      throw error;
+        console.error('Error updating product status in Supabase:', error);
+        throw error;
     }
   }
 
   // Barcode Templates
   static async getProductTemplate(barcode: string): Promise<ProductTemplate | null> {
     try {
-      const templateDocRef = doc(firestoreDB, this.BARCODE_TEMPLATES_COLLECTION, barcode);
-      const docSnap = await getDoc(templateDocRef);
-      if (docSnap.exists()) {
-        return docSnap.data() as ProductTemplate;
-      }
-      return null;
+      const { data, error } = await supabase
+        .from('barcode_templates')
+        .select('*')
+        .eq('barcode', barcode)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return snakeToCamel(data);
     } catch (error) {
       console.error(`Error getting product template for barcode ${barcode}:`, error);
       return null;
@@ -236,109 +244,94 @@ export class StorageService {
   static async saveProductTemplate(product: Product): Promise<void> {
     if (!product.barcode) return;
     try {
-      const templateData: ProductTemplate = {
+      const templateData: Partial<ProductTemplate> = {
         barcode: product.barcode,
         name: product.name,
         brand: product.brand,
         category: product.category,
-        imageUrl: product.imageUrl ?? null,
+        imageUrl: product.imageUrl ?? undefined,
       };
-      const templateDocRef = doc(firestoreDB, this.BARCODE_TEMPLATES_COLLECTION, product.barcode);
-      await setDoc(templateDocRef, templateData, { merge: true });
+      const { error } = await supabase.from('barcode_templates').upsert(camelToSnake(templateData));
+      if (error) throw error;
     } catch (error) {
       console.error(`Error saving product template for barcode ${product.barcode}:`, error);
     }
   }
 
-  // History
+  // History is now just a filter on the products table
   static listenToHistory(callback: (history: Product[]) => void): () => void {
-    const historyCollectionRef = collection(firestoreDB, StorageService.HISTORY_COLLECTION);
-    const q = query(historyCollectionRef, orderBy('consumedDate', 'desc'));
+     const channel = supabase
+      .channel('public:products:history')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: 'status=eq.consumed' }, async () => {
+        const history = await this.getHistory();
+        callback(history);
+      })
+      .subscribe();
+      
+    this.getHistory().then(callback);
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const history: Product[] = [];
-      querySnapshot.forEach((doc) => {
-        history.push({ id: doc.id, ...doc.data() } as Product);
-      });
-      callback(history);
-    }, (error) => {
-      console.error("Error listening to history:", error);
-      callback([]);
-    });
-
-    return unsubscribe;
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 
   static async getHistory(): Promise<Product[]> {
     try {
-      const historyCollectionRef = collection(firestoreDB, StorageService.HISTORY_COLLECTION);
-      const q = query(historyCollectionRef, orderBy('consumedDate', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const history: Product[] = [];
-      querySnapshot.forEach((doc) => {
-        history.push({ id: doc.id, ...doc.data() } as Product);
-      });
-      return history;
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'consumed')
+        .order('consumed_date', { ascending: false });
+      if (error) throw error;
+      return snakeToCamel(data) || [];
     } catch (error) {
-      console.error('Error getting history from Firestore:', error);
+      console.error('Error getting history from Supabase:', error);
       return [];
     }
   }
+  
+  // No need for addToHistory, as updateProductStatus handles it.
 
-  static async addToHistory(product: Product): Promise<void> {
+  static async restoreConsumedProduct(productId: string): Promise<void> {
     try {
-      const historyDocRef = doc(collection(firestoreDB, StorageService.HISTORY_COLLECTION));
-      await setDoc(historyDocRef, { ...product, id: historyDocRef.id });
+        await this.updateProductStatus(productId, 'active');
+        console.log(`Product ${productId} restored successfully.`);
     } catch (error) {
-      console.error('Error adding to history in Firestore:', error);
-      throw error;
+        console.error(`Error restoring product ${productId}:`, error);
+        throw error;
     }
   }
 
   // Settings
   static listenToSettings(callback: (settings: AppSettings) => void): () => void {
-    const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
-    
-    const unsubscribe = onSnapshot(settingsDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        callback(docSnap.data() as AppSettings);
-      } else {
-        // Se il documento non esiste, restituisce le impostazioni di default
-        callback({
-          notificationsEnabled: true,
-          notificationDays: 3,
-          theme: 'auto',
-        });
-      }
-    }, (error) => {
-      console.error("Error listening to settings:", error);
-      // In caso di errore, restituisce le impostazioni di default
-      callback({
-        notificationsEnabled: true,
-        notificationDays: 3,
-        theme: 'auto',
-      });
-    });
+    const channel = supabase
+      .channel('public:app_settings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, async () => {
+        const settings = await this.getSettings();
+        callback(settings);
+      })
+      .subscribe();
 
-    return unsubscribe;
+    this.getSettings().then(callback);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 
   static async getSettings(): Promise<AppSettings> {
     try {
-      const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
-      const docSnap = await getDoc(settingsDocRef);
-      if (docSnap.exists()) {
-        return docSnap.data() as AppSettings;
-      }
-      return {
-        notificationsEnabled: true,
-        notificationDays: 3,
-        theme: 'auto',
-      };
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('id', 1)
+        .single();
+      if (error) throw error;
+      return snakeToCamel(data);
     } catch (error) {
-      console.error('Error getting settings from Firestore:', error);
+      console.error('Error getting settings from Supabase:', error);
       return {
-        notificationsEnabled: true,
+        notifications_enabled: true,
         notificationDays: 3,
         theme: 'auto',
       };
@@ -347,115 +340,52 @@ export class StorageService {
 
   static async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
     try {
-      const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
-      await setDoc(settingsDocRef, newSettings, { merge: true }); 
+      const { error } = await supabase
+        .from('app_settings')
+        .update(camelToSnake(newSettings))
+        .eq('id', 1);
+      if (error) throw error;
       
       if (Platform.OS !== 'web') {
         const updatedSettings = await this.getSettings();
-
-        if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationsEnabled') || Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
-          const activeProducts = (await this.getProducts()).filter(p => p.status === 'active');
+        if (Object.prototype.hasOwnProperty.call(newSettings, 'notifications_enabled') || Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
+          const products = await this.getProducts();
+          const activeProducts = products.filter(p => p.status === 'active');
           await Notifications.cancelAllScheduledNotificationsAsync();
-          if (updatedSettings.notificationsEnabled) {
+          if (updatedSettings.notifications_enabled) {
             await NotificationService.scheduleMultipleNotifications(activeProducts, updatedSettings);
           }
         }
       }
     } catch (error) {
-      console.error('Error updating settings in Firestore:', error);
-      console.error('Full error object:', JSON.stringify(error, null, 2));
+      console.error('Error updating settings in Supabase:', error);
       throw error;
     }
   }
 
-  // Data management
+  // Data management - These need to be re-implemented for Supabase
   static async exportData(): Promise<string> {
-    try {
-      const products = await this.getProducts();
-      const historySnapshot = await getDocs(collection(firestoreDB, StorageService.HISTORY_COLLECTION));
-      const history = historySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      const settings = await this.getSettings();
-      
-      const exportData = {
-        products,
-        history,
-        settings,
-        exportDate: new Date().toISOString(),
-        version: '2.0.0',
-      };
-      
-      return JSON.stringify(exportData, null, 2);
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      throw error;
-    }
+    console.warn("exportData is not implemented for Supabase yet.");
+    return "{}";
   }
 
   static async importData(data: string): Promise<void> {
-    try {
-      const importedData = JSON.parse(data);
-      const batch = writeBatch(firestoreDB);
-
-      if (importedData.products && Array.isArray(importedData.products)) {
-        importedData.products.forEach((product: Product) => {
-          const productDocRef = doc(firestoreDB, StorageService.PRODUCTS_COLLECTION, product.id);
-          batch.set(productDocRef, product);
-        });
-      }
-      
-      if (importedData.history && Array.isArray(importedData.history)) {
-        importedData.history.forEach((historyEntry: Product) => {
-          const historyDocRef = doc(collection(firestoreDB, StorageService.HISTORY_COLLECTION), historyEntry.id || undefined);
-          batch.set(historyDocRef, historyEntry);
-        });
-      }
-      
-      if (importedData.settings) {
-        const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
-        batch.set(settingsDocRef, importedData.settings, { merge: true });
-      }
-
-      await batch.commit();
-      
-      const settings = await this.getSettings();
-      if (settings.notificationsEnabled) {
-        const activeProducts = (await this.getProducts()).filter(p => p.status === 'active');
-        await Notifications.cancelAllScheduledNotificationsAsync();
-        await NotificationService.scheduleMultipleNotifications(activeProducts, settings);
-      }
-
-    } catch (error) {
-      console.error('Error importing data to Firestore:', error);
-      throw error;
-    }
+    console.warn("importData is not implemented for Supabase yet.");
   }
 
   static async clearAllData(): Promise<void> {
     try {
-      const productsSnapshot = await getDocs(collection(firestoreDB, StorageService.PRODUCTS_COLLECTION));
-      const productBatch = writeBatch(firestoreDB);
-      productsSnapshot.forEach(doc => productBatch.delete(doc.ref));
-      await productBatch.commit();
+        const { error: productError } = await supabase.from('products').delete().neq('id', 0); // delete all
+        if(productError) throw productError;
 
-      const historySnapshot = await getDocs(collection(firestoreDB, StorageService.HISTORY_COLLECTION));
-      const historyBatch = writeBatch(firestoreDB);
-      historySnapshot.forEach(doc => historyBatch.delete(doc.ref));
-      await historyBatch.commit();
+        const { error: templateError } = await supabase.from('barcode_templates').delete().neq('barcode', '0'); // delete all
+        if(templateError) throw templateError;
 
-      const settingsDocRef = doc(firestoreDB, StorageService.SETTINGS_DOC);
-      const defaultSettings: AppSettings = {
-        notificationsEnabled: true,
-        notificationDays: 3,
-        theme: 'auto',
-      };
-      await setDoc(settingsDocRef, defaultSettings);
-      
-      await Notifications.cancelAllScheduledNotificationsAsync();
-      console.log('All data cleared from Firestore and notifications cancelled.');
-
+        await Notifications.cancelAllScheduledNotificationsAsync();
+        console.log('All data cleared from Supabase and notifications cancelled.');
     } catch (error) {
-      console.error('Error clearing data from Firestore:', error);
-      throw error;
+        console.error('Error clearing data from Supabase:', error);
+        throw error;
     }
   }
 }

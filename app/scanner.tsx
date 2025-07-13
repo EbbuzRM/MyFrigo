@@ -6,12 +6,53 @@ import { useIsFocused } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageService } from '@/services/StorageService';
+import { useCategories } from '@/context/CategoryContext';
+import { ProductCategory } from '@/types/Product';
+
+const mapOffCategoryToAppCategory = (
+  offCategories: string[] | undefined,
+  appCategories: ProductCategory[]
+): string | null => {
+  if (!offCategories || offCategories.length === 0) {
+    return null;
+  }
+
+  const keywordMap: { [key: string]: string[] } = {
+      'latticini': ['dairy', 'cheeses', 'yogurts', 'milks', 'butters', 'creams'],
+      'carne': ['meats', 'poultry', 'beef', 'pork', 'sausages', 'hams', 'salami', 'turkey', 'lamb'],
+      'pesce': ['seafood', 'fishes', 'tuna', 'salmon', 'cod', 'shrimps', 'clams', 'mussels'],
+      'frutta': ['fruits', 'apples', 'bananas', 'oranges', 'strawberries', 'grapes', 'peaches', 'apricots', 'kiwis'],
+      'verdura': ['vegetables', 'tomatoes', 'lettuces', 'zucchini', 'eggplants', 'carrots', 'potatoes', 'onions', 'spinach'],
+      'surgelati': ['frozen-foods', 'ice-creams', 'frozen-pizzas', 'frozen-ready-meals', 'frozen-vegetables'],
+      'bevande': ['beverages', 'waters', 'juices', 'sodas', 'wines', 'beers', 'teas', 'coffees'],
+      'dispensa': ['pantry', 'pastas', 'rices', 'breads', 'biscuits', 'flours', 'sugars', 'salts', 'oils', 'vinegars', 'canned-foods', 'pulses', 'beans', 'chickpeas', 'lentils'],
+      'snack': ['snacks', 'crisps', 'chocolates', 'sweets', 'crackers'],
+      'colazione': ['breakfasts', 'cereals', 'rusks', 'jams', 'croissants'],
+      'condimenti': ['condiments', 'sauces', 'mayonnaises', 'ketchups', 'mustards'],
+      'uova': ['eggs'],
+      'dolci': ['desserts', 'cakes', 'puddings', 'pastries'],
+  };
+
+  const lowerCaseOffCategories = offCategories.map(c => c.toLowerCase());
+
+  for (const appCategoryId in keywordMap) {
+    const keywords = keywordMap[appCategoryId];
+    if (keywords.some(keyword => lowerCaseOffCategories.some(offCat => offCat.includes(keyword)))) {
+      if (appCategories.some(cat => cat.id === appCategoryId)) {
+        return appCategoryId;
+      }
+    }
+  }
+
+  return null;
+};
 
 export default function BarcodeScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Added for loading state
+  const [isLoading, setIsLoading] = useState(false);
   const isFocused = useIsFocused();
+  const { categories: appCategories } = useCategories();
 
   useEffect(() => {
     if (permission && !permission.granted && permission.canAskAgain) {
@@ -67,11 +108,15 @@ export default function BarcodeScannerScreen() {
             const productInfo = jsonResponse.product;
             productInfoFound = true;
             alertMessage = `Prodotto Trovato (Online): ${productInfo.product_name || data}`;
+            
+            const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
+
             paramsForAddScreen = {
               ...paramsForAddScreen,
               productName: productInfo.product_name || '',
               brand: productInfo.brands || '',
               imageUrl: productInfo.image_url || '',
+              category: suggestedCategoryId || '', // Passa la categoria suggerita
             };
           } else {
             alertMessage = `Prodotto non trovato (codice: ${data}). Puoi inserirlo manualmente.`;
