@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera as CameraIcon, Check, Image as ImageIcon } from 'lucide-react-native';
-import TextRecognition, { TextRecognitionResult, TextBlock } from '@react-native-ml-kit/text-recognition';
+import TextRecognition, { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { useTheme } from '@/context/ThemeContext';
 
 export default function PhotoCaptureScreen() {
@@ -111,20 +111,19 @@ export default function PhotoCaptureScreen() {
     let potentialDates: { date: Date, score: number }[] = [];
 
     for (const text of ocrResult) {
-      const cleanedText = text.replace(/\s/g, '');
-      const lowerText = cleanedText.toLowerCase();
+      const lowerText = text.toLowerCase();
       let keywordBonus = 0;
       for (const keyword of dateKeywords) {
-        if (lowerText.includes(keyword.replace(/\s/g, ''))) {
-          keywordBonus = 1; 
+        if (lowerText.includes(keyword)) { // No space removal
+          keywordBonus = 1;
           break;
         }
       }
 
       for (const p of patterns) {
-        p.regex.lastIndex = 0; 
+        p.regex.lastIndex = 0;
         let match;
-        while ((match = p.regex.exec(cleanedText)) !== null) {
+        while ((match = p.regex.exec(text)) !== null) { // Use original text
           try {
             const dayStr = p.day ? match[p.day] : '01';
             const monthStr = match[p.month];
@@ -156,7 +155,8 @@ export default function PhotoCaptureScreen() {
               potentialDates.push({ date: parsedDate, score: keywordBonus });
               console.log(`Potential date: ${parsedDate.toISOString()} from text: "${text}" with keyword bonus: ${keywordBonus}`);
             }
-          } catch (e) {
+          } catch (__) {
+            void __; // Explicitly mark as used
             // console.error("Error parsing date from match:", match, e);
           }
         }

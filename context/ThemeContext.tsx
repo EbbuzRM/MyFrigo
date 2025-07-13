@@ -1,8 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Appearance } from 'react-native';
-import { StorageService, AppSettings } from '@/services/StorageService';
+import { StorageService } from '@/services/StorageService';
 
-type Theme = AppSettings['theme']; // 'light' | 'dark' | 'auto'
+type Theme = 'light' | 'dark';
 type ThemeContextType = {
   theme: Theme;
   isDarkMode: boolean;
@@ -12,19 +12,24 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>('light'); // Default to 'light'
+  const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
     const loadThemePreference = async () => {
       const settings = await StorageService.getSettings();
-      console.log('Loaded settings:', settings);
-      setTheme(settings.theme);
+      const savedTheme = settings.theme;
+      if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
+        setTheme(savedTheme);
+      } else {
+        // Fallback to system's color scheme if no valid theme is saved
+        const systemTheme = Appearance.getColorScheme() || 'light';
+        setTheme(systemTheme);
+      }
     };
     loadThemePreference();
   }, []);
 
-  const systemColorScheme = Appearance.getColorScheme(); // 'light' or 'dark' or null
-  const isDarkMode = theme === 'auto' ? systemColorScheme === 'dark' : theme === 'dark';
+  const isDarkMode = theme === 'dark';
 
   const setAppTheme = async (newTheme: Theme) => {
     setTheme(newTheme);

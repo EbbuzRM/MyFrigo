@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { AlertTriangle, Calendar, Package } from 'lucide-react-native';
-import { Product, PRODUCT_CATEGORIES } from '@/types/Product';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Calendar, Package } from 'lucide-react-native';
+import { Product } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
+import { useCategories } from '@/context/CategoryContext';
+import { useExpirationStatus } from '@/hooks/useExpirationStatus';
 
 interface ExpirationCardProps {
   product: Product;
@@ -12,28 +14,14 @@ interface ExpirationCardProps {
 export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const getExpirationStatus = () => {
-    const now = new Date();
-    const expirationDate = new Date(product.expirationDate);
-    const daysUntilExpiration = Math.ceil((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const { getCategoryById } = useCategories();
+  const expirationInfo = useExpirationStatus(product.expirationDate);
+  
+  const categoryInfo = getCategoryById(product.category);
 
-    if (daysUntilExpiration < 0) {
-      return { status: 'expired', color: '#EF4444', backgroundColor: isDarkMode ? '#2a1212' : '#ffffff', text: 'Scaduto' };
-    } else if (daysUntilExpiration === 0) {
-      return { status: 'today', color: '#FBBF24', backgroundColor: isDarkMode ? '#2a200f' : '#FEF3C7', text: 'Scade oggi' };
-    } else if (daysUntilExpiration <= 3) {
-      return { status: 'soon', color: '#FBBF24', backgroundColor: isDarkMode ? '#2a200f' : '#FEF3C7', text: `${daysUntilExpiration} giorni` };
-    } else {
-      return { status: 'good', color: '#10B981', backgroundColor: isDarkMode ? '#162d21' : '#ffffff', text: `${daysUntilExpiration} giorni` };
-    }
-  };
-
-  const getCategoryInfo = () => {
-    return PRODUCT_CATEGORIES.find(cat => cat.id === product.category) || PRODUCT_CATEGORIES[PRODUCT_CATEGORIES.length - 1];
-  };
-
-  const expirationInfo = getExpirationStatus();
-  const categoryInfo = getCategoryInfo();
+  if (!categoryInfo) {
+    return null;
+  }
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
@@ -41,7 +29,11 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
         <View style={styles.header}>
           <View style={styles.productInfo}>
             <View style={[styles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
-              <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
+              {categoryInfo.iconUrl ? (
+                <Image source={{ uri: categoryInfo.iconUrl }} style={styles.categoryImage} />
+              ) : (
+                <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
+              )}
             </View>
             <View style={styles.textContainer}>
               <Text style={styles.productName} numberOfLines={1}>
@@ -88,10 +80,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -118,7 +107,11 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
+  },
+  categoryImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
   },
   categoryEmoji: {
     fontSize: 20,
@@ -146,7 +139,6 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   details: {
     flexDirection: 'row',

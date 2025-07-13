@@ -118,3 +118,17 @@ local.properties
 *.orig
 
 .clinerules
+
+# Secrets
+/services/secrets.ts
+
+# Development Tools
+.ra-aid/
+RA.Aid/
+.gemini/
+
+# Logs
+supabase/log.txt
+
+# Node Modules in subdirectories
+functions/node_modules/

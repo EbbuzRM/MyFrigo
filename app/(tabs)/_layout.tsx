@@ -1,45 +1,36 @@
-import { Platform } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useLocalSearchParams } from 'expo-router';
 import { Home, Plus, Package, Settings, History } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AnimatedTabBar from '@/components/AnimatedTabBar';
 
-export default function TabLayout() {
+// Esportazione predefinita del componente di layout delle tab
+const TabLayout = () => {
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { user } = useLocalSearchParams(); // Ottieni l'oggetto utente dai parametri
 
   return (
     <Tabs
+      tabBar={props => <AnimatedTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: isDarkMode ? '#121212' : '#ffffff',
-          borderTopWidth: 1,
-          borderTopColor: isDarkMode ? '#272727' : '#f1f5f9',
-          paddingBottom: Platform.OS === 'ios' ? 20 : 15,
-          paddingTop: 5,
-          height: Platform.OS === 'ios' ? 80 : 60,
-        },
-        tabBarActiveTintColor: '#2563EB',
-        tabBarInactiveTintColor: '#64748B',
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontFamily: 'Inter-Medium',
-          marginTop: 0,
-        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ size, color }) => (
+          tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} />
           ),
         }}
+        initialParams={{ user: user }}
       />
       <Tabs.Screen
         name="products"
         options={{
           title: 'Prodotti',
-          tabBarIcon: ({ size, color }) => (
+          tabBarIcon: ({ color, size }) => (
             <Package size={size} color={color} />
           ),
         }}
@@ -48,7 +39,7 @@ export default function TabLayout() {
         name="add"
         options={{
           title: 'Aggiungi',
-          tabBarIcon: ({ size, color }) => (
+          tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} />
           ),
         }}
@@ -57,7 +48,7 @@ export default function TabLayout() {
         name="history"
         options={{
           title: 'Storico',
-          tabBarIcon: ({ size, color }) => (
+          tabBarIcon: ({ color, size }) => (
             <History size={size} color={color} />
           ),
         }}
@@ -66,11 +57,14 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Impostazioni',
-          tabBarIcon: ({ size, color }) => (
+          tabBarIcon: ({ color, size }) => (
             <Settings size={size} color={color} />
           ),
         }}
       />
     </Tabs>
   );
-}
+};
+
+// Assicuriamoci che l'esportazione predefinita sia chiara
+export default TabLayout;

@@ -4,44 +4,42 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Switch,
   Alert,
-  Platform,
   Modal,
   TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Bell, 
   Trash2, 
-  Download, 
-  Upload, 
   Info, 
-  ChevronRight,
   Sun,
   Moon,
-  Smartphone,
-  ListTree
+  ListTree,
+  Calendar,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import { StorageService, AppSettings } from '@/services/StorageService';
 import { NotificationService } from '@/services/NotificationService';
 import { SettingsCard } from '@/components/SettingsCard';
 import { Toast } from '@/components/Toast';
 import { useTheme } from '@/context/ThemeContext';
 
-export default function Settings() {
-  const { theme: contextTheme, setAppTheme, isDarkMode } = useTheme();
+// Componente per le impostazioni dell'app
+const Settings = () => {
+  const { setAppTheme, isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
   const [settings, setSettings] = useState<AppSettings>({
-    notificationsEnabled: true,
+    notifications_enabled: true,
     notificationDays: 3,
-    theme: 'auto',
+    theme: 'light',
   });
   const [isDaysModalVisible, setIsDaysModalVisible] = useState(false);
-  const [isThemeModalVisible, setIsThemeModalVisible] = useState(false);
   const [daysInput, setDaysInput] = useState(settings.notificationDays?.toString() ?? '3');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -50,65 +48,61 @@ export default function Settings() {
       if (newSettings) {
         setSettings(newSettings);
         setDaysInput(newSettings.notificationDays?.toString() ?? '3');
-        if (newSettings.theme && newSettings.theme !== contextTheme) {
-          setAppTheme(newSettings.theme);
-        }
       }
     });
     return () => unsubscribe();
-  }, [contextTheme, setAppTheme]);
+  }, []);
 
-  const handleThemeChange = async (newTheme: AppSettings['theme']) => {
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast(null); // Resetta il toast precedente
+    setTimeout(() => {
+      setToast({ message, type });
+      Haptics.notificationAsync(type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
+    }, 100);
+  };
+
+  const updateSetting = async (newSetting: Partial<AppSettings>) => {
     try {
-      await StorageService.updateSettings({ theme: newTheme });
-      setIsThemeModalVisible(false);
-    } catch (error) {
-      console.error('Error updating theme:', error);
-      Alert.alert("Errore", "Impossibile aggiornare il tema.");
+      await StorageService.updateSettings(newSetting);
+      return true;
+    } catch (__) {
+      void __; // Explicitly mark as used
+      showToast('Impossibile salvare le impostazioni.', 'error');
+      return false;
     }
   };
 
   const handleNotificationToggle = async (value: boolean) => {
-    try {
-      await StorageService.updateSettings({ notificationsEnabled: value });
-      if (value) { 
-        const granted = await NotificationService.requestPermissions();
-        if(!granted) {
-          Alert.alert("Permesso Negato", "Le notifiche non funzioneranno senza i permessi.");
-          await StorageService.updateSettings({ notificationsEnabled: false });
-        }
+    if (value) { 
+      const granted = await NotificationService.requestPermissions();
+      if(!granted) {
+        Alert.alert("Permesso Negato", "Le notifiche non funzioneranno senza i permessi.");
+        return;
       }
-    } catch (error) {
-      console.error('Error updating notification settings:', error);
-      Alert.alert("Errore", "Impossibile aggiornare le impostazioni di notifica.");
     }
-  };
-
-  const openDaysModal = () => {
-    setDaysInput(settings.notificationDays?.toString() ?? '3');
-    setIsDaysModalVisible(true);
+    const success = await updateSetting({ notifications_enabled: value });
+    if (success) {
+      showToast(`Notifiche ${value ? 'attivate' : 'disattivate'}.`);
+    }
   };
 
   const handleSaveNotificationDays = async () => {
     const days = parseInt(daysInput, 10);
     if (!isNaN(days) && days > 0 && days <= 30) {
-      try {
-        await StorageService.updateSettings({ notificationDays: days });
-        setToast({ message: `Giorni di preavviso impostati a ${days}.`, type: 'success' });
+      const success = await updateSetting({ notificationDays: days });
+      if (success) {
+        showToast(`Giorni di preavviso impostati a ${days}.`);
         setIsDaysModalVisible(false);
-      } catch (error) {
-        console.error('Error updating notification days:', error);
-        setToast({ message: "Impossibile aggiornare i giorni di preavviso.", type: 'error' });
       }
     } else {
-      setToast({ message: 'Inserisci un numero di giorni valido (es. 1-30).', type: 'error' });
+      showToast('Inserisci un numero di giorni valido (1-30).', 'error');
     }
   };
 
   const handleClearData = () => {
     Alert.alert(
       'Conferma Eliminazione',
-      'Sei sicuro di voler eliminare tutti i dati? Questa azione non può essere annullata.',
+      'Sei sicuro di voler eliminare tutti i dati? Questa azione è irreversibile.',
       [
         { text: 'Annulla', style: 'cancel' },
         {
@@ -117,27 +111,15 @@ export default function Settings() {
           onPress: async () => {
             try {
               await StorageService.clearAllData();
-              Alert.alert('Successo', 'Tutti i dati sono stati eliminati.');
-            } catch (error) {
-              Alert.alert('Errore', 'Impossibile eliminare i dati.');
+              showToast('Tutti i dati sono stati eliminati.');
+            } catch (__) {
+              void __; // Explicitly mark as used
+              showToast('Impossibile eliminare i dati.', 'error');
             }
           },
         },
       ]
     );
-  };
-
-  const handleExportData = async () => {
-    try {
-      await StorageService.exportData();
-      Alert.alert('Esportazione', 'Dati esportati con successo! (Controlla la console per il JSON)');
-    } catch (error) {
-      Alert.alert('Errore', 'Impossibile esportare i dati.');
-    }
-  };
-
-  const handleImportData = () => {
-    Alert.alert('Importazione', 'Funzionalità di importazione in arrivo.');
   };
 
   return (
@@ -151,97 +133,64 @@ export default function Settings() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifiche</Text>
           <SettingsCard
-            title="Notifiche Push"
-            description="Ricevi avvisi per prodotti in scadenza"
-            icon={<Bell size={24} color="#2563EB" />}
-            rightElement={
+            icon={<Bell size={24} color={isDarkMode ? '#60a5fa' : '#2563eb'} />}
+            title="Notifiche di Scadenza"
+            control={
               <Switch
-                value={settings.notificationsEnabled}
+                value={settings.notifications_enabled}
                 onValueChange={handleNotificationToggle}
-                trackColor={{ false: '#f1f5f9', true: '#DBEAFE' }}
-                thumbColor={settings.notificationsEnabled ? '#2563EB' : '#94a3b8'}
+                trackColor={{ false: '#e5e7eb', true: '#818cf8' }}
+                thumbColor={isDarkMode ? (settings.notifications_enabled ? '#6366f1' : '#94a3b8') : (settings.notifications_enabled ? '#4f46e5' : '#f1f5f9')}
               />
             }
-            isDarkMode={isDarkMode}
           />
           <SettingsCard
+            icon={<Calendar size={24} color={isDarkMode ? '#fcd34d' : '#f59e0b'} />}
             title="Giorni di Preavviso"
-            description={`Ricevi notifiche ${settings.notificationDays ?? 3} giorni prima della scadenza`}
-            icon={<Bell size={24} color="#F59E0B" />}
-            rightElement={<Text style={styles.daysText}>{settings.notificationDays}</Text>}
-            onPress={openDaysModal}
-            isDarkMode={isDarkMode}
+            description={`Avvisami ${settings.notificationDays ?? 3} giorni prima`}
+            onPress={() => setIsDaysModalVisible(true)}
           />
         </View>
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Aspetto</Text>
           <SettingsCard
-            title="Tema App"
-            description={`Attualmente: ${settings.theme ? settings.theme.charAt(0).toUpperCase() + settings.theme.slice(1) : 'Auto'}`}
-            icon={
-              settings.theme === 'light' ? <Sun size={24} color="#F59E0B" /> :
-              settings.theme === 'dark' ? <Moon size={24} color="#6366F1" /> :
-              <Smartphone size={24} color="#64748B" />
+            icon={isDarkMode ? <Moon size={24} color="#818cf8" /> : <Sun size={24} color="#f59e0b" />}
+            title="Modalità Scura"
+            control={
+              <Switch
+                value={isDarkMode}
+                onValueChange={(value) => setAppTheme(value ? 'dark' : 'light')}
+                trackColor={{ false: '#e5e7eb', true: '#818cf8' }}
+                thumbColor={isDarkMode ? '#6366f1' : '#f1f5f9'}
+              />
             }
-            rightElement={<ChevronRight size={20} color="#94a3b8" />}
-            onPress={() => setIsThemeModalVisible(true)}
-            isDarkMode={isDarkMode}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dati</Text>
+          <Text style={styles.sectionTitle}>Gestione Dati</Text>
           <SettingsCard
+            icon={<ListTree size={24} color={isDarkMode ? '#4ade80' : '#16a34a'} />}
             title="Gestisci Categorie"
-            description="Modifica o elimina le categorie personalizzate"
-            icon={<ListTree size={24} color="#10B981" />}
-            rightElement={<ChevronRight size={20} color="#94a3b8" />}
             onPress={() => router.push('/manage-categories')}
-            isDarkMode={isDarkMode}
           />
           <SettingsCard
-            title="Esporta Dati"
-            description="Scarica tutti i tuoi dati in formato JSON"
-            icon={<Download size={24} color="#10B981" />}
-            rightElement={<ChevronRight size={20} color="#94a3b8" />}
-            onPress={handleExportData}
-            isDarkMode={isDarkMode}
-          />
-          <SettingsCard
-            title="Importa Dati"
-            description="Carica dati da un backup precedente"
-            icon={<Upload size={24} color="#8B5CF6" />}
-            rightElement={<ChevronRight size={20} color="#94a3b8" />}
-            onPress={handleImportData}
-            isDarkMode={isDarkMode}
-          />
-          <SettingsCard
+            icon={<Trash2 size={24} color={isDarkMode ? '#f87171' : '#dc2626'} />}
             title="Elimina Tutti i Dati"
-            description="Rimuovi tutti i prodotti e le impostazioni"
-            icon={<Trash2 size={24} color="#EF4444" />}
-            rightElement={<ChevronRight size={20} color="#94a3b8" />}
             onPress={handleClearData}
-            variant="danger"
-            isDarkMode={isDarkMode}
           />
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: 250 }]}>
           <Text style={styles.sectionTitle}>Informazioni</Text>
           <SettingsCard
+            icon={<Info size={24} color={isDarkMode ? '#9ca3af' : '#6b7280'} />}
             title="Informazioni sull'App"
-            description="Versione 2.0.0 - Smart Food Manager"
-            icon={<Info size={24} color="#64748B" />}
-            rightElement={<ChevronRight size={20} color="#94a3b8" />}
-            onPress={() => Alert.alert('Smart Food Manager', 'Versione 2.0.0\n\nGestione intelligente degli alimenti domestici con riconoscimento automatico e notifiche.')}
-            isDarkMode={isDarkMode}
+            description={`Versione ${Constants.expoConfig?.version}`}
+            onPress={() => Alert.alert('MyFrigo', `Versione ${Constants.expoConfig?.version}`)}
           />
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Smart Food Manager v2.0.0</Text>
-          <Text style={styles.footerSubtext}>Gestione intelligente degli alimenti</Text>
+          
         </View>
       </ScrollView>
 
@@ -253,7 +202,7 @@ export default function Settings() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Giorni di Preavviso Notifica</Text>
+            <Text style={styles.modalTitle}>Giorni di Preavviso</Text>
             <TextInput
               style={styles.modalInput}
               placeholder="Numero di giorni (es. 3)"
@@ -274,33 +223,6 @@ export default function Settings() {
         </View>
       </Modal>
 
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={isThemeModalVisible}
-        onRequestClose={() => setIsThemeModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Scegli Tema</Text>
-            <TouchableOpacity style={styles.themeOption} onPress={() => handleThemeChange('light')}>
-              <Sun size={20} color="#F59E0B" style={styles.themeIcon} />
-              <Text style={styles.themeOptionText}>Chiaro</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.themeOption} onPress={() => handleThemeChange('dark')}>
-              <Moon size={20} color="#6366F1" style={styles.themeIcon} />
-              <Text style={styles.themeOptionText}>Scuro</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.themeOption} onPress={() => handleThemeChange('auto')}>
-              <Smartphone size={20} color="#64748B" style={styles.themeIcon} />
-              <Text style={styles.themeOptionText}>Sistema</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel, {marginTop: 10}]} onPress={() => setIsThemeModalVisible(false)}>
-              <Text style={styles.modalButtonTextCancel}>Annulla</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
       {toast && (
         <Toast
           message={toast.message}
@@ -311,45 +233,27 @@ export default function Settings() {
       )}
     </SafeAreaView>
   );
-}
+};
+
+// Esportazione predefinita del componente
+export default Settings;
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: isDarkMode ? '#0d1117' : '#ffffff' },
+  container: { flex: 1, backgroundColor: isDarkMode ? '#0d1117' : '#f8f9fa' },
   scrollView: { flex: 1 },
-  header: { padding: 20, paddingBottom: 10 },
+  header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
   title: { fontSize: 28, fontFamily: 'Inter-Bold', color: isDarkMode ? '#c9d1d9' : '#1e293b', marginBottom: 4 },
   subtitle: { fontSize: 16, fontFamily: 'Inter-Regular', color: isDarkMode ? '#8b949e' : '#64748B' },
-  section: { paddingHorizontal: 20, marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontFamily: 'Inter-SemiBold', color: isDarkMode ? '#c9d1d9' : '#1e293b', marginBottom: 12 },
-  daysText: { fontSize: 16, fontFamily: 'Inter-Medium', color: isDarkMode ? '#c9d1d9' : '#334155' },
-  footer: { padding: 20, alignItems: 'center', marginTop: 20 },
-  footerText: { fontSize: 14, fontFamily: 'Inter-Medium', color: isDarkMode ? '#8b949e' : '#64748B', marginBottom: 4 },
-  footerSubtext: { fontSize: 12, fontFamily: 'Inter-Regular', color: isDarkMode ? '#6b7280' : '#94a3b8' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContainer: { backgroundColor: isDarkMode ? '#161b22' : '#ffffff', padding: 20, borderRadius: 10, width: '80%', alignItems: 'stretch', borderColor: isDarkMode ? '#30363d' : '#e2e8f0', borderWidth: 1 },
-  modalTitle: { fontSize: 18, fontFamily: 'Inter-Bold', marginBottom: 15, textAlign: 'center', color: isDarkMode ? '#c9d1d9' : '#1e293b' },
-  modalInput: { borderWidth: 1, borderColor: isDarkMode ? '#30363d' : '#cbd5e1', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, fontFamily: 'Inter-Regular', marginBottom: 20, color: isDarkMode ? '#c9d1d9' : '#1e293b', backgroundColor: isDarkMode ? '#0d1117' : '#ffffff' },
-  modalButtonContainer: { flexDirection: 'row', justifyContent: 'space-around' },
-  modalButton: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, flex: 1, alignItems: 'center' },
-  modalButtonCancel: { backgroundColor: isDarkMode ? '#30363d' : '#ffffff', marginRight: 10, borderWidth: 1, borderColor: isDarkMode ? '#30363d' : '#e2e8f0' },
-  modalButtonConfirm: { backgroundColor: '#2563EB', marginLeft: 10 },
-  modalButtonTextCancel: { color: isDarkMode ? '#c9d1d9' : '#1e293b', fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  section: { paddingHorizontal: 20, marginVertical: 12 },
+  sectionTitle: { fontSize: 16, fontFamily: 'Inter-SemiBold', color: isDarkMode ? '#8b949e' : '#64748B', marginBottom: 12 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.6)', justifyContent: 'center', alignItems: 'center' },
+  modalContainer: { backgroundColor: isDarkMode ? '#161b22' : '#ffffff', padding: 24, borderRadius: 16, width: '85%', alignItems: 'stretch', borderColor: isDarkMode ? '#30363d' : '#e2e8f0', borderWidth: 1 },
+  modalTitle: { fontSize: 18, fontFamily: 'Inter-Bold', marginBottom: 20, textAlign: 'center', color: isDarkMode ? '#c9d1d9' : '#1e293b' },
+  modalInput: { borderWidth: 1, borderColor: isDarkMode ? '#30363d' : '#cbd5e1', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, fontFamily: 'Inter-Regular', marginBottom: 24, color: isDarkMode ? '#c9d1d9' : '#1e293b', backgroundColor: isDarkMode ? '#0d1117' : '#ffffff', textAlign: 'center' },
+  modalButtonContainer: { flexDirection: 'row', justifyContent: 'space-between' },
+  modalButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, flex: 1, alignItems: 'center' },
+  modalButtonCancel: { backgroundColor: isDarkMode ? '#30363d' : '#e5e7eb', marginRight: 8 },
+  modalButtonConfirm: { backgroundColor: '#4f46e5', marginLeft: 8 },
+  modalButtonTextCancel: { color: isDarkMode ? '#c9d1d9' : '#374151', fontFamily: 'Inter-SemiBold', fontSize: 16 },
   modalButtonTextConfirm: { color: 'white', fontFamily: 'Inter-SemiBold', fontSize: 16 },
-  themeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: isDarkMode ? '#30363d' : '#f1f5f9',
-    marginBottom: 10,
-  },
-  themeIcon: {
-    marginRight: 15,
-  },
-  themeOptionText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
-  },
 });

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MyfrigoApp",
+    "name": "MyFrigo",
     "slug": "myfrigoapp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,12 +8,13 @@
     "icon": "./assets/images/icon.png",
     "backgroundColor": "#ffffff",
     "splash": {
-      "image": "./assets/images/icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/images/splashscreen.png",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.example.myfrigo",
       "backgroundModes": [
         "fetch",
         "processing"
@@ -25,9 +26,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.example.myfrigo",
+      "launchMode": "singleTask",
+      
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
-        "com.google.android.c2dm.permission.RECEIVE"
+        "com.google.android.c2dm.permission.RECEIVE",
+        "android.permission.SCHEDULE_EXACT_ALARM"
       ]
     },
     "web": {
@@ -43,6 +47,13 @@
       "expo-router",
       "@react-native-google-signin/google-signin",
       [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development",
+          "devTeam": "YOUR_DEV_TEAM_ID"
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
@@ -54,7 +65,21 @@
       "expo-build-properties",
       "expo-font",
       "expo-web-browser",
-      "expo-background-task"
-    ]
+      "expo-background-task",
+      [
+        "expo-splash-screen",
+        {
+          "resizeMode": "cover",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"
+      },
+      "pexelsApiKey": "U0vYDQ9V9rjDggsDZC6PJCTSC2VpAfR1zYn0fyx0HEzr9c7sv9eQzcfs"
+    }
   }
 }

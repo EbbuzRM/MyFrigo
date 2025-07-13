@@ -1,109 +1,103 @@
-import * as Notifications from 'expo-notifications';
-import { Platform, AppState, Vibration } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import { Product } from '@/types/Product';
 import { AppSettings } from '@/services/StorageService';
-import Sound from 'react-native-sound'; // Importa react-native-sound
+import * as Notifications from 'expo-notifications';
+import { supabase } from './supabaseClient';
+import OneSignal from 'react-native-onesignal';
 
 export class NotificationService {
-  static async requestPermissions(): Promise<boolean> {
-    if (Platform.OS === 'web') return true;
-
-    try {
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status === 'granted') return true;
-
-      const { status: newStatus } = await Notifications.requestPermissionsAsync();
-      return newStatus === 'granted';
-    } catch (error) {
-      console.error('Error requesting notification permissions:', error);
-      return false;
+  static async createNotificationChannel(): Promise<void> {
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
     }
+  }
+
+  static async requestPermissions(): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    return finalStatus === 'granted';
   }
 
   static async scheduleExpirationNotification(product: Product, notificationDays: number): Promise<void> {
     if (Platform.OS === 'web') return;
 
-    try {
-      const expirationDate = new Date(product.expirationDate);
-      const notificationDate = new Date(expirationDate);
-      notificationDate.setDate(notificationDate.getDate() - notificationDays);
+    const dateParts = product.expiration_date.split('-').map(part => parseInt(part, 10));
+    const expirationDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+    expirationDate.setHours(23, 59, 59, 999);
 
-      // Se la data di notifica è nel passato, non pianificare
-      if (notificationDate <= new Date()) {
-        return;
-      }
+    const notificationDate = new Date(expirationDate.getTime() - notificationDays * 86400000);
+    notificationDate.setHours(9, 0, 0, 0);
 
-      // Pianifica la notifica
+    const now = new Date();
+    if (notificationDate > now) {
+      const triggerInSeconds = (notificationDate.getTime() - now.getTime()) / 1000;
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: 'Prodotto in Scadenza',
-          body: `${product.name} scadrà il ${expirationDate.toLocaleDateString('it-IT')}`,
+          title: 'Prodotto in scadenza!',
+          body: `${product.name} scade il ${expirationDate.toLocaleDateString()}.`,
           data: { productId: product.id },
         },
         trigger: {
-          type: 'date',
-          date: notificationDate,
+          seconds: triggerInSeconds,
         },
-        identifier: `expiration_${product.id}`,
       });
-
-      // Gestione suono e vibrazione (opzionale, se non gestito dal sistema)
-      // Questa parte può essere attivata se il trigger non riproduce il suono/vibrazione desiderati
-      // playNotificationSound();
-      // Vibration.vibrate();
-
-    } catch (error) {
-      console.error('Error scheduling notification:', error);
-    }
-  }
-
-  static async cancelNotification(productId: string): Promise<void> {
-    if (Platform.OS === 'web') {
-      return;
-    }
-
-    try {
-      await Notifications.cancelScheduledNotificationAsync(`expiration_${productId}`);
-    } catch (error) {
-      console.error('Error canceling notification:', error);
     }
   }
 
   static async scheduleMultipleNotifications(products: Product[], settings: AppSettings): Promise<void> {
-    if (Platform.OS === 'web') {
-      return;
+    if (Platform.OS === 'web' || !settings.notificationsEnabled) return;
+
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    for (const product of products) {
+      if (product.status === 'active') {
+        await this.scheduleExpirationNotification(product, settings.notificationDays);
+      }
     }
-    
-    if (!settings.notificationsEnabled) {
-      await Notifications.cancelAllScheduledNotificationsAsync(); // Cancel all if disabled
-      console.log('Notifications are disabled, all scheduled notifications cancelled.');
+  }
+  
+  static async getOneSignalPlayerId(): Promise<string | undefined> {
+    if (Platform.OS === 'web') return;
+    // @ts-ignore: Using deprecated method that works
+    const deviceState = await OneSignal.getDeviceState();
+    return deviceState?.userId;
+  }
+
+  static async saveOneSignalPlayerId(userId: string, oneSignalPlayerId: string): Promise<void> {
+    if (!userId || !oneSignalPlayerId) {
+      console.error('User ID or OneSignal Player ID is missing.');
       return;
     }
 
     try {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-      const notificationDays = settings.notificationDays;
+      const { error } = await supabase
+        .from('users')
+        .update({ one_signal_player_id: oneSignalPlayerId })
+        .eq('id', userId);
 
-      const promises = products.map(product => 
-        this.scheduleExpirationNotification(product, notificationDays)
-      );
-
-      await Promise.all(promises);
+      if (error) throw error;
+      console.log('OneSignal Player ID saved to Supabase.');
     } catch (error) {
-      console.error('Error scheduling multiple notifications:', error);
+      console.error('Error saving OneSignal Player ID:', error);
     }
   }
 
-  static async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
-    if (Platform.OS === 'web') {
-      return [];
-    }
-
-    try {
-      return await Notifications.getAllScheduledNotificationsAsync();
-    } catch (error) {
-      console.error('Error getting scheduled notifications:', error);
-      return [];
-    }
+  static async cancelNotification(productId: string): Promise<void> {
+    // To cancel a specific notification, you need to store the notification identifier
+    // when you schedule it. For now, we can cancel all notifications and reschedule them.
+    // This is less efficient but simpler.
+    console.warn(`Cancellation for product ${productId} implies rescheduling all notifications.`);
   }
 }

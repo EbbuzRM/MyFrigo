@@ -1,70 +1,98 @@
 import 'react-native-url-polyfill/auto';
-import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { ThemeProvider as NavThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { useFonts } from 'expo-font';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold
-} from '@expo-google-fonts/inter';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
-import * as Updates from 'expo-updates';
-import { Platform, AppState } from 'react-native';
-import { NotificationService } from '@/services/NotificationService';
-import { StorageService } from '@/services/StorageService';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Session } from '@supabase/supabase-js';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
-import '@/services/firebaseConfig';
-import '@/services/backgroundSync';
-import * as BackgroundTask from 'expo-background-task';
+import { CategoryProvider } from '@/context/CategoryContext';
+import { supabase } from '@/services/supabaseClient';
+import * as Progress from 'react-native-progress';
 
-const BACKGROUND_SYNC_TASK = 'background-sync';
-
-const MyDefaultTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: '#007bff',
-    background: '#ffffff',
-    card: '#ffffff',
-    text: '#212529',
-    border: '#e9ecef',
-    notification: '#dc3545',
-  },
-};
-
-const MyDarkTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: '#007bff',
-    background: '#121212',
-    card: '#1e1e1e',
-    text: '#ffffff',
-    border: '#272727',
-    notification: '#dc3545',
-  },
-};
-
-async function registerBackgroundTask() {
-  try {
-    await BackgroundTask.registerTaskAsync(BACKGROUND_SYNC_TASK, {
-      minimumInterval: 60 * 15, // 15 minutes
-    });
-    console.log('Background sync task registered');
-  } catch (error) {
-    console.error('Failed to register background sync task:', error);
-  }
-}
-
+// Keep the native splash screen visible while the app initializes.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  useFrameworkReady();
+// Define app themes
+const MyDefaultTheme = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, primary: '#007bff', background: '#ffffff', card: '#ffffff', text: '#212529', border: '#e9ecef', notification: '#dc3545' },
+};
+const MyDarkTheme = {
+  ...DarkTheme,
+  colors: { ...DarkTheme.colors, primary: '#007bff', background: '#121212', card: '#1e1e1e', text: '#ffffff', border: '#272727', notification: '#dc3545' },
+};
 
+// --- Custom Loading Screen Component ---
+function LoadingScreen({ progress }) {
+  return (
+    <View style={loadingStyles.container}>
+      <Image source={require('@/assets/images/icon.png')} style={loadingStyles.logo} />
+      <Text style={loadingStyles.appName}>MyFrigo</Text>
+      <Progress.Bar progress={progress} width={200} color="#007bff" />
+      <Text style={loadingStyles.loadingText}>Caricamento... {Math.round(progress * 100)}%</Text>
+    </View>
+  );
+}
+
+const loadingStyles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff' },
+  logo: { width: 100, height: 100, marginBottom: 20 },
+  appName: { fontSize: 32, fontWeight: 'bold', color: '#007bff', marginBottom: 20 },
+  loadingText: { marginTop: 10, fontSize: 16, color: '#8b949e' },
+});
+
+// --- Main App Navigation ---
+function RootLayoutNav() {
+  const { isDarkMode } = useTheme();
+  const theme = isDarkMode ? MyDarkTheme : MyDefaultTheme;
+  const [session, setSession] = useState<Session | null>(null);
+  const [initialized, setInitialized] = useState(false);
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    setSession(supabase.auth.getSession()?.data?.session ?? null);
+    setInitialized(true);
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!initialized) return;
+    const inTabsGroup = segments[0] === '(tabs)';
+    if (session && !inTabsGroup) {
+      router.replace('/(tabs)');
+    } else if (!session && inTabsGroup) {
+      router.replace('/login');
+    }
+  }, [session, initialized, segments, router]);
+
+  return (
+    <NavThemeProvider value={theme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+    </NavThemeProvider>
+  );
+}
+
+// --- Root Layout with Loading Logic ---
+export default function RootLayout() {
+  const [fontsReady, setFontsReady] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [timerReady, setTimerReady] = useState(false);
+
+  // Load fonts
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': Inter_400Regular,
     'Inter-Medium': Inter_500Medium,
@@ -73,103 +101,46 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    registerBackgroundTask();
-  }, []);
-
-  useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      setFontsReady(true);
     }
   }, [fontsLoaded, fontError]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', async (nextAppState) => {
-      if (nextAppState === 'active') {
-        // Ricarica l'app quando ritorna in primo piano
-        if (Platform.OS !== 'web') {
-          Updates.reloadAsync();
-        }
-      }
+    supabase.auth.getSession().finally(() => {
+      setSessionReady(true);
     });
 
-    return () => subscription.remove();
+    const timer = setTimeout(() => {
+      setTimerReady(true);
+    }, 2000); // Minimum 2 seconds splash/loading screen
+
+    return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const requestNotifPermissions = async () => {
-      const granted = await NotificationService.requestPermissions();
-      if (granted) {
-        console.log('Notification permissions granted.');
-        const syncNotifications = async () => {
-          try {
-            const settings = await StorageService.getSettings();
-            if (settings.notificationsEnabled) {
-              const products = await StorageService.getProducts();
-              const activeProducts = products.filter(p => p.status === 'active');
-              await NotificationService.scheduleMultipleNotifications(activeProducts, settings);
-              console.log('Initial notification sync complete for active products.');
-            }
-          } catch (error) {
-            console.error("Error during initial notification sync:", error);
-          }
-        };
-        syncNotifications();
-      } else {
-        console.log('Notification permissions denied.');
-      }
-    };
-    requestNotifPermissions();
-    
-    const AppState = require('react-native').AppState;
-    const subscription = AppState.addEventListener('change', async (nextAppState: string) => {
-      if (nextAppState === 'active') {
-        console.log('App has come to the foreground, re-syncing notifications.');
-        try {
-          const settings = await StorageService.getSettings();
-          if (settings.notificationsEnabled) {
-            const products = await StorageService.getProducts();
-            const activeProducts = products.filter(p => p.status === 'active');
-            await NotificationService.scheduleMultipleNotifications(activeProducts, settings);
-            console.log('Foreground notification sync complete.');
-          }
-        } catch (error) {
-          console.error("Error during foreground notification sync:", error);
-        }
-      }
-    });
+  const appReady = fontsReady && sessionReady && timerReady;
+  
+  const progress = (Number(fontsReady) + Number(sessionReady) + Number(timerReady)) / 3;
 
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+  const onLayoutRootView = useCallback(async () => {
+    if (appReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appReady]);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
+  if (!appReady) {
+    return <LoadingScreen progress={progress} />;
   }
 
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
-  );
-}
-
-function AppContent() {
-  const { isDarkMode } = useTheme();
-  const theme = isDarkMode ? MyDarkTheme : MyDefaultTheme;
-
-  return (
-    <NavThemeProvider value={theme}>
-      <Stack screenOptions={{ 
-        headerShown: false,
-        contentStyle: {
-          backgroundColor: isDarkMode ? '#0d1117' : '#ffffff'
-        }
-      }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-    </NavThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <CategoryProvider>
+            <RootLayoutNav />
+          </CategoryProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

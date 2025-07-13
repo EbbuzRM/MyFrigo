@@ -1,14 +1,6 @@
-# MyFrigo - Project Brief
+## Breve Descrizione del Progetto
 
-## 🎯 Obiettivo
-MyFrigo è un’app mobile progettata per aiutare famiglie e utenti comuni a gestire la scadenza dei prodotti nel frigorifero e in dispensa, evitando sprechi e semplificandone l’organizzazione.
+MyFrigo è un'applicazione mobile per la gestione dei prodotti alimentari, con funzionalità di tracciamento delle scadenze e notifiche.
 
-## ⚡️ Caratteristiche principali
-- Scansione dei prodotti con barcode
-- Tracciamento e gestione scadenze
-- Notifiche e alert dei prodotti in scadenza
-- Inserimento manuale dei dati dei prodotti
-- Visualizzazione chiara e intuitiva dei prodotti salvati
-
-## 👥 Target
-Famiglie e persone che vogliono ridurre sprechi e gestire in modo più efficiente scadenze e inventario dei prodotti.
+**Stato Attuale:**
+Il progetto è pienamente operativo e lo sviluppo procede attivamente. Un precedente blocco critico, dovuto a un'incompatibilità tra React 19 e l'ambiente di build di Expo, è stato risolto con successo implementando una soluzione basata su un "polyfill" e un entry point personalizzato. Questa soluzione si è dimostrata stabile e ha permesso di riprendere lo sviluppo senza compromessi.

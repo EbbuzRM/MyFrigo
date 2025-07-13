@@ -1,20 +1,9 @@
-# Product Context
+## Contesto Prodotto
 
-## ❓ Perché esiste
-MyFrigo nasce per aiutare chiunque voglia tenere sotto controllo scadenze e prodotti nel frigo e in dispensa, evitando sprechi e risparmiando sulla spesa.
+**Funzionalità Notifiche:**
+- Implementazione delle notifiche di scadenza prodotti tramite `expo-notifications`.
+- Integrazione con Supabase Edge Functions per l'invio di notifiche push.
+- Gestione del token di notifica push del dispositivo.
 
-## 🛠️ Problemi che risolve
-- Difficoltà nel tenere traccia dei prodotti e dei dati di scadenza
-- Sprechi alimentari legati a prodotti scaduti
-- Mancanza di un unico punto di accesso per gestire frigo e dispensa
-
-## ✅ Come funziona
-- Inserimento prodotti manuale o tramite scansione barcode
-- Visualizzazione dei prodotti e alert in prossimità della scadenza
-- Notifiche sul telefono quando un prodotto sta per scadere
-- Integrazione futura con sistemi domotici e smart home
-
-## 👥 Obiettivi UX
-- Rendere l’app semplice e amichevole
-- Offrire una visione chiara e intuitiva dei prodotti
-- Rendere la scansione dei prodotti veloce e accessibile
+**Stato Attuale del Progetto:**
+Lo sviluppo del prodotto è **ripreso regolarmente**. Il blocco critico causato dall'errore di compatibilità con React 19 (`useEffect`) è stato superato grazie a una soluzione stabile (polyfill). Ora è possibile procedere con lo sviluppo e il test di tutte le funzionalità, incluse quelle relative alle notifiche.
