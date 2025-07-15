@@ -19,6 +19,7 @@ import {
   Moon,
   ListTree,
   Calendar,
+  User,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
@@ -128,6 +129,15 @@ const Settings = () => {
         <View style={styles.header}>
           <Text style={styles.title}>Impostazioni</Text>
           <Text style={styles.subtitle}>Personalizza l'app secondo le tue preferenze</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <SettingsCard
+            icon={<User size={24} color={isDarkMode ? '#a78bfa' : '#7c3aed'} />}
+            title="Profilo"
+            onPress={() => router.push('/profile')}
+          />
         </View>
 
         <View style={styles.section}>

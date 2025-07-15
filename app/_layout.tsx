@@ -8,16 +8,13 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Session } from '@supabase/supabase-js';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { CategoryProvider } from '@/context/CategoryContext';
-import { supabase } from '@/services/supabaseClient';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import * as Progress from 'react-native-progress';
 
-// Keep the native splash screen visible while the app initializes.
 SplashScreen.preventAutoHideAsync();
 
-// Define app themes
 const MyDefaultTheme = {
   ...DefaultTheme,
   colors: { ...DefaultTheme.colors, primary: '#007bff', background: '#ffffff', card: '#ffffff', text: '#212529', border: '#e9ecef', notification: '#dc3545' },
@@ -27,14 +24,13 @@ const MyDarkTheme = {
   colors: { ...DarkTheme.colors, primary: '#007bff', background: '#121212', card: '#1e1e1e', text: '#ffffff', border: '#272727', notification: '#dc3545' },
 };
 
-// --- Custom Loading Screen Component ---
-function LoadingScreen({ progress }) {
+function LoadingScreen({ onLayout }) {
   return (
-    <View style={loadingStyles.container}>
+    <View style={loadingStyles.container} onLayout={onLayout}>
       <Image source={require('@/assets/images/icon.png')} style={loadingStyles.logo} />
       <Text style={loadingStyles.appName}>MyFrigo</Text>
-      <Progress.Bar progress={progress} width={200} color="#007bff" />
-      <Text style={loadingStyles.loadingText}>Caricamento... {Math.round(progress * 100)}%</Text>
+      <Progress.Bar indeterminate width={200} color="#007bff" />
+      <Text style={loadingStyles.loadingText}>Inizializzazione...</Text>
     </View>
   );
 }
@@ -46,53 +42,82 @@ const loadingStyles = StyleSheet.create({
   loadingText: { marginTop: 10, fontSize: 16, color: '#8b949e' },
 });
 
-// --- Main App Navigation ---
+function NavigationController() {
+  const { session, loading, profile } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) {
+      return; // Non fare nulla finché il contesto non è pronto
+    }
+
+    const inTabsGroup = segments[0] === '(tabs)';
+
+    if (session) {
+      // L'utente è loggato
+      const profileComplete = profile?.first_name && profile?.last_name;
+
+      if (profileComplete) {
+        // Profilo completo, l'utente deve stare nel gruppo (tabs)
+        if (!inTabsGroup) {
+          router.replace('/(tabs)');
+        }
+      } else {
+        // Profilo incompleto, l'utente deve andare a completarlo
+        router.replace('/complete-profile');
+      }
+    } else {
+      // L'utente non è loggato, deve andare al login
+      if (inTabsGroup) {
+        router.replace('/login');
+      }
+    }
+  }, [session, loading, profile, segments]);
+
+  return null; // Questo componente non renderizza nulla
+}
+
 function RootLayoutNav() {
   const { isDarkMode } = useTheme();
   const theme = isDarkMode ? MyDarkTheme : MyDefaultTheme;
-  const [session, setSession] = useState<Session | null>(null);
-  const [initialized, setInitialized] = useState(false);
-  const router = useRouter();
-  const segments = useSegments();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-    setSession(supabase.auth.getSession()?.data?.session ?? null);
-    setInitialized(true);
-    return () => subscription?.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!initialized) return;
-    const inTabsGroup = segments[0] === '(tabs)';
-    if (session && !inTabsGroup) {
-      router.replace('/(tabs)');
-    } else if (!session && inTabsGroup) {
-      router.replace('/login');
-    }
-  }, [session, initialized, segments, router]);
 
   return (
     <NavThemeProvider value={theme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="complete-profile" />
         <Stack.Screen name="+not-found" />
       </Stack>
+      <NavigationController />
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
     </NavThemeProvider>
   );
 }
 
-// --- Root Layout with Loading Logic ---
-export default function RootLayout() {
-  const [fontsReady, setFontsReady] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [timerReady, setTimerReady] = useState(false);
+function AppInitializer() {
+  const { loading } = useAuth();
+  const [layoutReady, setLayoutReady] = useState(false);
 
-  // Load fonts
+  const onLayout = useCallback(async () => {
+    if (layoutReady) return;
+    setLayoutReady(true);
+    await SplashScreen.hideAsync();
+  }, [layoutReady]);
+
+  if (loading) {
+    return <LoadingScreen onLayout={onLayout} />;
+  }
+
+  return (
+    <View style={{ flex: 1 }} onLayout={onLayout}>
+      <RootLayoutNav />
+    </View>
+  );
+}
+
+export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': Inter_400Regular,
     'Inter-Medium': Inter_500Medium,
@@ -100,47 +125,19 @@ export default function RootLayout() {
     'Inter-Bold': Inter_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      setFontsReady(true);
-    }
-  }, [fontsLoaded, fontError]);
-
-  useEffect(() => {
-    supabase.auth.getSession().finally(() => {
-      setSessionReady(true);
-    });
-
-    const timer = setTimeout(() => {
-      setTimerReady(true);
-    }, 2000); // Minimum 2 seconds splash/loading screen
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const appReady = fontsReady && sessionReady && timerReady;
-  
-  const progress = (Number(fontsReady) + Number(sessionReady) + Number(timerReady)) / 3;
-
-  const onLayoutRootView = useCallback(async () => {
-    if (appReady) {
-      await SplashScreen.hideAsync();
-    }
-  }, [appReady]);
-
-  if (!appReady) {
-    return <LoadingScreen progress={progress} />;
+  if (!fontsLoaded && !fontError) {
+    return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
         <ThemeProvider>
           <CategoryProvider>
-            <RootLayoutNav />
+            <AppInitializer />
           </CategoryProvider>
         </ThemeProvider>
-      </SafeAreaProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }
