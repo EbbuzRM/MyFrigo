@@ -21,6 +21,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { supabase } from '@/services/supabaseClient';
 
+import { useAuth } from '@/context/AuthContext';
+
 function ProfileMenu({ isVisible, onClose, onLogout, userName }) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
@@ -53,50 +55,30 @@ function ProfileMenu({ isVisible, onClose, onLogout, userName }) {
 
 function Dashboard() {
   const { isDarkMode } = useTheme();
-  const { } = useCategories();
+  const { user, profile, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [user, setUser] = useState<any | null>(null);
-  const [userName, setUserName] = useState('');
-
-  const fetchUser = useCallback(async () => {
-    const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-    setUser(supabaseUser);
-    let displayUserName = supabaseUser?.email || '';
-    if (supabaseUser?.user_metadata) {
-      if (supabaseUser.user_metadata.full_name) {
-        displayUserName = supabaseUser.user_metadata.full_name;
-      } else if (supabaseUser.user_metadata.name) {
-        displayUserName = supabaseUser.user_metadata.name;
-      }
-    }
-    setUserName(displayUserName);
-  }, []);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    setRefreshing(true);
     try {
       const storedProducts = await StorageService.getProducts();
       setProducts(storedProducts.filter(p => p.status === 'active'));
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      fetchUser();
       loadData();
-    }, [fetchUser, loadData])
+    }, [loadData])
   );
 
   const onRefresh = () => {
-    setRefreshing(true);
     loadData();
   };
 
@@ -119,7 +101,15 @@ function Dashboard() {
   
   const styles = getStyles(isDarkMode);
 
-  if (loading && products.length === 0) {
+  const displayName = profile?.first_name && profile?.last_name
+    ? `${profile.first_name} ${profile.last_name}`
+    : user?.email;
+
+  const displayInitials = profile?.first_name && profile?.last_name
+    ? `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase()
+    : user?.email?.charAt(0).toUpperCase();
+
+  if (authLoading && products.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Caricamento...</Text>
@@ -136,7 +126,7 @@ function Dashboard() {
         isVisible={menuVisible} 
         onClose={() => setMenuVisible(false)}
         onLogout={handleLogout}
-        userName={userName}
+        userName={displayName}
       />
       <View style={styles.header}>
         <View>
@@ -144,9 +134,9 @@ function Dashboard() {
           <Text style={styles.subtitle}>Tutto sotto controllo</Text>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={() => setMenuVisible(true)}>
-            {userName ? (
+            {displayInitials ? (
                 <Text style={styles.profileButtonText}>
-                    {userName.charAt(0).toUpperCase()}
+                    {displayInitials}
                 </Text>
             ) : (
                 <User size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />

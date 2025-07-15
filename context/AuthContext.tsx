@@ -1,87 +1,166 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../services/supabaseClient';
-import { StorageService } from '@/services/StorageService';
+import { supabase } from '@/services/supabaseClient';
+import { Linking } from 'react-native';
 
-interface AuthContextType {
+// Definiamo un tipo per il profilo utente
+export type UserProfile = {
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type AuthContextType = {
   session: Session | null;
   user: User | null;
-  profile: any | null; // You can define a stricter type for profile
+  profile: UserProfile | null;
   loading: boolean;
-  logout: () => Promise<void>;
-}
+  refreshProfile: () => Promise<void>;
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  session: null,
+  user: null,
+  profile: null,
+  loading: true,
+  refreshProfile: async () => {},
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSessionAndProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error("Error fetching session and profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+    // Funzione di avvio per caricare la sessione iniziale
+    const initializeAuth = async () => {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profileData } = await supabase.from('users').select('first_name, last_name').eq('id', session.user.id).single();
+        setProfile(profileData);
         setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          const userProfile = await StorageService.getUserProfile(session.user.id);
-          setProfile(userProfile);
-        }
-      } catch (e) {
-        console.error('Failed to fetch session:', e);
-      } finally {
-        setLoading(false);
+        setUser(session.user);
       }
+      setLoading(false);
     };
 
-    fetchSession();
+    initializeAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setLoading(true);
-          const userProfile = await StorageService.getUserProfile(session.user.id);
-          setProfile(userProfile);
-          setLoading(false);
-        } else {
-          setProfile(null);
-        }
+    // Listener per SIGNED_OUT e altri eventi (es. password recovery)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'SIGNED_OUT') {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
       }
-    );
+    });
+
+    // Listener per il ritorno da OAuth (Google Login)
+    const handleAuthRedirect = async (event: { url: string }) => {
+      if (!event.url.includes('#access_token=')) return;
+
+      setLoading(true);
+      
+      const params = new URLSearchParams(event.url.split('#')[1]);
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+
+      if (access_token && refresh_token) {
+        // 1. Imposta la sessione nel client Supabase
+        const { data: { session }, error } = await supabase.auth.setSession({ access_token, refresh_token });
+
+        if (error || !session) {
+          console.error("Errore impostando la sessione da URL", error);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Controlla se è un utente Google e popola il profilo se necessario
+        const isGoogleUser = session.user.app_metadata.provider === 'google';
+        if (isGoogleUser) {
+          const { data: profileData } = await supabase.from('users').select('first_name').eq('id', session.user.id).single();
+          if (!profileData?.first_name) {
+            const fullName = session.user.user_metadata.full_name;
+            const firstName = fullName.split(' ')[0] || '';
+            const lastName = fullName.substring(firstName.length).trim() || '';
+            if (firstName) {
+              await supabase.from('users').update({ first_name: firstName, last_name: lastName }).eq('id', session.user.id);
+            }
+          }
+        }
+
+        // 3. Ricarica il profilo finale e aggiorna lo stato dell'app
+        const { data: finalProfile } = await supabase.from('users').select('first_name, last_name').eq('id', session.user.id).single();
+        setProfile(finalProfile);
+        setSession(session);
+        setUser(session.user);
+      }
+      
+      setLoading(false);
+    };
+    
+    const linkingSubscription = Linking.addEventListener('url', handleAuthRedirect);
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription?.unsubscribe();
+      linkingSubscription.remove();
     };
   }, []);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const value = {
-    session,
-    user,
-    profile,
-    loading,
-    logout,
+  const refreshProfile = async () => {
+    if (user) {
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
+        setProfile(profileData);
+      } catch (error) {
+        console.error("Error refreshing profile:", error);
+      }
+    }
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
