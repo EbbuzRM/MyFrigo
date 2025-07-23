@@ -85,7 +85,7 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
                   <Text style={styles.consumeText}>Consumato</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress} testID="delete-button">
                 <Trash2 size={20} color="#EF4444" />
               </TouchableOpacity>
             </View>

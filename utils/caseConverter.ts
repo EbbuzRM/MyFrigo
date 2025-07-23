@@ -3,28 +3,29 @@ import { camelCase, snakeCase } from 'lodash';
 
 const isObject = (obj: any): obj is object => obj !== null && typeof obj === 'object' && !Array.isArray(obj);
 
-const convertKeys = (obj: any, converter: (key: string) => string): any => {
-  if (!isObject(obj)) {
-    if (Array.isArray(obj)) {
-      return obj.map(item => convertKeys(item, converter));
-    }
-    return obj;
+export const convertObjectKeys = (obj: any, converter: (key: string) => string): any => {
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertObjectKeys(item, converter));
   }
 
-  const newObj: { [key: string]: any } = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const newKey = converter(key);
-      newObj[newKey] = convertKeys((obj as any)[key], converter);
+  if (isObject(obj)) {
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const newKey = converter(key);
+        newObj[newKey] = convertObjectKeys((obj as any)[key], converter);
+      }
     }
+    return newObj;
   }
-  return newObj;
+
+  return obj;
 };
 
-export const snakeToCamel = (obj: any): any => {
-  return convertKeys(obj, camelCase);
+export const toCamelCase = (str: string): string => {
+    return camelCase(str);
 };
 
-export const camelToSnake = (obj: any): any => {
-  return convertKeys(obj, snakeCase);
+export const toSnakeCase = (str: string): string => {
+    return snakeCase(str);
 };

@@ -10,7 +10,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,
+
     persistSession: true,
     detectSessionInUrl: false,
   },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+  // Disabilita i devtools in produzione per evitare l'errore di connessione
+  ...(process.env.NODE_ENV === 'development' ? {} : { global: { devtools: false } }),
 });

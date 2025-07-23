@@ -9,28 +9,41 @@ interface AddMethodCardProps {
   description: string;
   icon: React.ReactNode;
   onPress: () => void;
-  backgroundColor: string;
-  borderColor: string;
+  variant: 'barcode' | 'manual';
 }
+
+const getColors = (isDarkMode: boolean, variant: 'barcode' | 'manual') => {
+  const barcode = {
+    light: { bg: '#EFF6FF', border: '#DBEAFE', icon: '#3B82F6', title: '#1E3A8A', desc: '#3B82F6' },
+    dark: { bg: '#1E3A8A', border: '#2563EB', icon: '#93C5FD', title: '#DBEAFE', desc: '#93C5FD' },
+  };
+  const manual = {
+    light: { bg: '#EEF2FF', border: '#C7D2FE', icon: '#6366F1', title: '#4338CA', desc: '#4F46E5' },
+    dark: { bg: '#3730A3', border: '#4F46E5', icon: '#A5B4FC', title: '#E0E7FF', desc: '#A5B4FC' },
+  };
+  
+  const themeColors = isDarkMode ? 'dark' : 'light';
+  return variant === 'barcode' ? barcode[themeColors] : manual[themeColors];
+};
 
 export function AddMethodCard({
   title,
   description,
   icon,
   onPress,
-  backgroundColor,
-  borderColor,
+  variant,
 }: AddMethodCardProps) {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const colors = getColors(isDarkMode, variant);
+  const styles = getStyles(isDarkMode, colors);
 
   return (
     <AnimatedPressable
-      style={[styles.card, { backgroundColor, borderColor }]}
+      style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.border }]}
       onPress={onPress}
     >
       <View style={styles.iconContainer}>
-        {icon}
+        {React.cloneElement(icon as React.ReactElement, { color: colors.icon })}
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
@@ -43,7 +56,7 @@ export function AddMethodCard({
   );
 }
 
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -51,14 +64,6 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   iconContainer: {
     marginRight: 16,
@@ -66,16 +71,16 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   content: {
     flex: 1,
   },
-    title: {
+  title: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#000000' : '#1e293b',
+    color: colors.title,
     marginBottom: 4,
   },
   description: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#000000' : '#64748B',
+    color: colors.desc,
     lineHeight: 20,
   },
   chevronContainer: {

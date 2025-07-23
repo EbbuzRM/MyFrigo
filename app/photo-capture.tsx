@@ -105,25 +105,18 @@ export default function PhotoCaptureScreen() {
       { regex: /(\d{1,2})[\s/.,-](\d{1,2})[\s/.,-](\d{2})/g, day: 1, month: 2, year: 3 },
       { regex: /(\d{4})[\s/.,-](\d{1,2})[\s/.,-](\d{1,2})/g, year: 1, month: 2, day: 3 },
       { regex: /(\d{1,2})[\s/.,-](\d{4})/g, day: null, month: 1, year: 2 },
-      { regex: /(\d{1,2})[\s/.,-](\d{2})/g, day: null, month: 1, year: 2 },
+      { regex: /(\d{1,2})[\s/.,-](\d{2})/g, day: null, month: 1, year: 2 }
     ];
 
     let potentialDates: { date: Date, score: number }[] = [];
+    const fullText = ocrResult.join(' ').toLowerCase();
+    const keywordInText = dateKeywords.some(k => fullText.includes(k));
 
     for (const text of ocrResult) {
-      const lowerText = text.toLowerCase();
-      let keywordBonus = 0;
-      for (const keyword of dateKeywords) {
-        if (lowerText.includes(keyword)) { // No space removal
-          keywordBonus = 1;
-          break;
-        }
-      }
-
       for (const p of patterns) {
         p.regex.lastIndex = 0;
         let match;
-        while ((match = p.regex.exec(text)) !== null) { // Use original text
+        while ((match = p.regex.exec(text)) !== null) {
           try {
             const dayStr = p.day ? match[p.day] : '01';
             const monthStr = match[p.month];
@@ -139,25 +132,26 @@ export default function PhotoCaptureScreen() {
               year += 2000;
             }
 
-            // Limita la data a un massimo di 10 anni nel futuro
             const currentYear = new Date().getFullYear();
-            if (year > currentYear + 10) continue;
+            if (year < currentYear || year > currentYear + 15) continue;
 
             if (month < 1 || month > 12) continue;
-            const daysInMonth = new Date(year, month, 0).getDate();
+            // Usiamo UTC per calcolare i giorni del mese per evitare problemi di fuso orario
+            const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
             if (day < 1 || day > daysInMonth) continue;
 
-            const parsedDate = new Date(year, month - 1, day);
+            // Crea la data in UTC per evitare errori di fuso orario
+            const parsedDate = new Date(Date.UTC(year, month - 1, day));
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            today.setUTCHours(0, 0, 0, 0);
 
-            if (parsedDate.getFullYear() === year && parsedDate.getMonth() === month - 1 && parsedDate.getDate() === day && parsedDate >= today) {
-              potentialDates.push({ date: parsedDate, score: keywordBonus });
-              console.log(`Potential date: ${parsedDate.toISOString()} from text: "${text}" with keyword bonus: ${keywordBonus}`);
+            if (parsedDate.getUTCFullYear() === year && parsedDate.getUTCMonth() === month - 1 && parsedDate.getUTCDate() === day && parsedDate >= today) {
+              const score = keywordInText ? 1 : 0;
+              potentialDates.push({ date: parsedDate, score });
+              console.log(`Potential date: ${parsedDate.toISOString()} from text: "${text}" with score: ${score}`);
             }
-          } catch (__) {
-            void __; // Explicitly mark as used
-            // console.error("Error parsing date from match:", match, e);
+          } catch (e) {
+            console.error("Error parsing date from match:", match, e);
           }
         }
       }
@@ -172,12 +166,13 @@ export default function PhotoCaptureScreen() {
       if (b.score !== a.score) {
         return b.score - a.score;
       }
-      return b.date.getTime() - a.date.getTime();
+      return a.date.getTime() - b.date.getTime();
     });
     
     const bestDate = potentialDates[0].date;
-    const formattedDate = `${bestDate.getFullYear()}-${String(bestDate.getMonth() + 1).padStart(2, '0')}-${String(bestDate.getDate()).padStart(2, '0')}`;
-    console.log("Best potential date:", formattedDate);
+    // Formatta la data basandosi sui valori UTC
+    const formattedDate = `${bestDate.getUTCFullYear()}-${String(bestDate.getUTCMonth() + 1).padStart(2, '0')}-${String(bestDate.getUTCDate()).padStart(2, '0')}`;
+    console.log("Best potential date selected:", formattedDate);
     return formattedDate;
   };
 
@@ -269,6 +264,7 @@ export default function PhotoCaptureScreen() {
             ref={cameraRef}
             style={styles.camera}
             facing="back"
+            ratio="4:3"
           />
           <View style={styles.cameraControlsContainer}>
             <TouchableOpacity style={styles.controlButton} onPress={pickImage}>

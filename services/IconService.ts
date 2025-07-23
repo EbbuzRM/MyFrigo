@@ -25,7 +25,7 @@ async function fetchIconForCategory(categoryName: string): Promise<string | null
   console.log(`[IconService] Attempting to fetch icon with API Key: "${PEXELS_API_KEY}"`);
 
   try {
-    const searchQuery = `${categoryName} icon`;
+    const searchQuery = `${categoryName} food object`;
     const response = await fetch(`${PEXELS_API_URL}?query=${encodeURIComponent(searchQuery)}&per_page=1&size=small&orientation=square`, {
       headers: {
         Authorization: PEXELS_API_KEY,

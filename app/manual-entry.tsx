@@ -12,6 +12,7 @@ import {
   Modal,
   FlatList,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Product, ProductCategory } from '@/types/Product';
@@ -78,7 +79,7 @@ const ProductFormHeader = React.memo(({ isEditMode, imageUrl, barcode, name, bra
   </>
 ));
 
-const ProductFormFooter = React.memo(({ quantity, unit, purchaseDate, expirationDate, notes, setQuantity, setUnit, setShowPurchaseDatePicker, setShowExpirationDatePicker, setNotes, handleSaveProduct, isEditMode, showPurchaseDatePicker, showExpirationDatePicker, onChangePurchaseDate, onChangeExpirationDate, styles, name, brand, selectedCategory, barcode, imageUrl }) => (
+const ProductFormFooter = React.memo(({ quantity, unit, purchaseDate, expirationDate, notes, setQuantity, setUnit, setShowPurchaseDatePicker, setShowExpirationDatePicker, setNotes, handleSaveProduct, isEditMode, showPurchaseDatePicker, showExpirationDatePicker, onChangePurchaseDate, onChangeExpirationDate, styles, name, brand, selectedCategory, barcode, imageUrl, loading }) => (
   <>
     <View style={styles.row}>
       <View style={styles.column}>
@@ -140,15 +141,15 @@ const ProductFormFooter = React.memo(({ quantity, unit, purchaseDate, expiration
       numberOfLines={3}
       placeholderTextColor={styles.placeholder.color}
     />
-    <TouchableOpacity style={styles.saveButton} onPress={handleSaveProduct}>
-      <Text style={styles.saveButtonText}>{isEditMode ? 'Aggiorna Prodotto' : 'Salva Prodotto'}</Text>
+    <TouchableOpacity style={[styles.saveButton, loading && styles.saveButtonDisabled]} onPress={handleSaveProduct} disabled={loading}>
+      {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveButtonText}>{isEditMode ? 'Aggiorna Prodotto' : 'Salva Prodotto'}</Text>}
     </TouchableOpacity>
   </>
 ));
 
 export default function ManualEntryScreen() {
   const { isDarkMode } = useTheme();
-  const { categories, addCategory, loading: categoriesLoading } = useCategories();
+  const { categories, addCategory, loading } = useCategories();
   const params = useLocalSearchParams();
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
@@ -203,13 +204,13 @@ export default function ManualEntryScreen() {
   }, []);
 
   useEffect(() => {
-    if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
+    if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !loading) {
       const guessedCategoryId = guessCategory(name, brand, categories);
       if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
         setSelectedCategory(guessedCategoryId);
       }
     }
-  }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory, selectedCategory]);
+  }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, loading, guessCategory, selectedCategory]);
 
   const handleAddNewCategory = useCallback(async () => {
     if (!newCategoryNameInput.trim()) {
@@ -240,13 +241,13 @@ export default function ManualEntryScreen() {
   }, []);
 
   useEffect(() => {
-    if (!categoriesLoading && categories.length > 0 && !selectedCategory) {
+    if (!loading && categories.length > 0 && !selectedCategory) {
       const isValidCurrentSelection = categories.some(cat => cat.id === selectedCategory);
       if (!isValidCurrentSelection) {
         setSelectedCategory(categories[0].id);
       }
     }
-  }, [categories, categoriesLoading, selectedCategory]);
+  }, [categories, loading, selectedCategory]);
 
   useEffect(() => {
     const loadProductForEdit = async (id: string) => {
@@ -290,8 +291,6 @@ export default function ManualEntryScreen() {
   useEffect(() => {
     if (params.extractedExpirationDate && typeof params.extractedExpirationDate === 'string') {
       setExpirationDate(params.extractedExpirationDate);
-      const { extractedExpirationDate, ...rest } = params;
-      router.replace({ pathname: '/manual-entry', params: rest });
     }
   }, [params.extractedExpirationDate]);
 
@@ -314,7 +313,8 @@ export default function ManualEntryScreen() {
       Alert.alert('Errore', 'Per favore, compila tutti i campi obbligatori.');
       return;
     }
-    const productToSave: Partial<Product> = {
+
+    const productData: Partial<Product> = {
       name,
       brand: brand || '',
       category: selectedCategory,
@@ -330,20 +330,29 @@ export default function ManualEntryScreen() {
     };
 
     if (isEditMode && originalProductId) {
-      productToSave.id = originalProductId;
+      productData.id = originalProductId;
     }
+
+    console.log("Attempting to save product with data:", JSON.stringify(productData, null, 2));
+
     try {
-      await StorageService.saveProduct(productToSave);
-      Alert.alert('Prodotto Salvato', `${name} è stato aggiunto e salvato nella tua dispensa.`);
-      if (Platform.OS === 'web') {
-        setTimeout(() => {
-          if (router.canGoBack()) router.back();
-          else router.replace('/(tabs)');
-        }, 100);
-      } else {
-        if (router.canGoBack()) router.back();
-        else router.replace('/(tabs)');
-      }
+      await StorageService.saveProduct(productData);
+      Alert.alert(
+        'Prodotto Salvato',
+        `${name} è stato aggiunto e salvato nella tua dispensa.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
+            },
+          },
+        ]
+      );
     } catch (error) {
       console.error('Errore durante il salvataggio del prodotto:', error);
       Alert.alert('Errore', 'Si è verificato un errore durante il salvataggio del prodotto.');
@@ -398,6 +407,17 @@ export default function ManualEntryScreen() {
     return formatData(categories, numColumns);
   }, [categories]);
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={isDarkMode ? '#ffffff' : '#000000'} />
+          <Text style={{ color: isDarkMode ? '#ffffff' : '#000000', marginTop: 10 }}>Caricamento categorie...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
@@ -411,16 +431,14 @@ export default function ManualEntryScreen() {
           setBrand={setBrand}
           styles={styles}
         />
-        {!categoriesLoading && (
-          <FlatList
-            data={categoryData}
-            renderItem={renderCategoryItem}
-            keyExtractor={item => item.id}
-            numColumns={numColumns}
-            columnWrapperStyle={styles.rowStyle}
-            scrollEnabled={false}
-          />
-        )}
+        <FlatList
+          data={categoryData}
+          renderItem={renderCategoryItem}
+          keyExtractor={item => item.id}
+          numColumns={numColumns}
+          columnWrapperStyle={styles.rowStyle}
+          scrollEnabled={false}
+        />
         <ProductFormFooter
           quantity={quantity}
           unit={unit}
@@ -444,6 +462,7 @@ export default function ManualEntryScreen() {
           selectedCategory={selectedCategory}
           barcode={barcode}
           imageUrl={imageUrl}
+          loading={loading}
         />
       </ScrollView>
       <Modal transparent={true} animationType="fade" visible={isCategoryModalVisible} onRequestClose={() => setIsCategoryModalVisible(false)}>
@@ -505,7 +524,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     backgroundColor: isDarkMode ? '#0d419d' : '#dbeafe',
   },
   categoryIcon: {
-    fontSize: 32, // Aumentato per coerenza
+    fontSize: 32,
     marginBottom: 4,
   },
   categoryImage: {
@@ -515,7 +534,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 8,
   },
   categoryName: {
-    fontSize: 13, // Aumentato per leggibilità
+    fontSize: 13,
     textAlign: 'center',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
     fontFamily: 'Inter-Regular',
@@ -649,6 +668,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     height: 200,
     borderRadius: 8,
     marginBottom: 16,
+    resizeMode: 'contain',
   },
   saveButton: {
     backgroundColor: isDarkMode ? '#238636' : '#10b981',
@@ -662,6 +682,9 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#9ca3af',
   },
   modalOverlay: {
     flex: 1,

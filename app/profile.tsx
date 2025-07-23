@@ -6,44 +6,27 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/services/supabaseClient';
 
 export default function ProfileScreen() {
-  const { user, refreshProfile } = useAuth();
+  // Aggiorniamo per includere setProfile per l'aggiornamento ottimistico
+  const { user, profile, setProfile } = useAuth();
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Inizia come false, i dati arrivano dal contesto
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) {
-        Alert.alert('Errore', 'Nessun utente loggato.');
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('first_name, last_name')
-          .eq('id', user.id)
-          .single();
-        if (error && error.code !== 'PGRST116') throw error;
-        if (data) {
-          setFirstName(data.first_name || '');
-          setLastName(data.last_name || '');
-        }
-      } catch (error: any) {
-        Alert.alert('Errore', 'Impossibile caricare il profilo: ' + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, [user]);
+    // Popola i campi di input con i dati del profilo dal contesto
+    if (profile) {
+      setFirstName(profile.first_name || '');
+      setLastName(profile.last_name || '');
+    }
+  }, [profile]);
 
   const handleUpdateProfile = async () => {
+    console.log('[PROFILE_UPDATE] Inizio della funzione.');
     if (!user) {
       Alert.alert('Errore', 'Nessun utente loggato.');
+      console.log('[PROFILE_UPDATE] Uscita: utente non trovato.');
       return;
     }
     
@@ -52,42 +35,48 @@ export default function ProfileScreen() {
 
     if (!trimmedFirstName || !trimmedLastName) {
       Alert.alert('Attenzione', 'Nome e cognome non possono essere vuoti.');
+      console.log('[PROFILE_UPDATE] Uscita: campi vuoti.');
       return;
     }
 
+    console.log('[PROFILE_UPDATE] Imposto saving a true.');
     setSaving(true);
+
+    console.log('[PROFILE_UPDATE] Eseguo aggiornamento ottimistico UI.');
+    setProfile({ first_name: trimmedFirstName, last_name: trimmedLastName });
+
     try {
-      // 1. Aggiorna la nostra tabella 'users'
+      console.log('[PROFILE_UPDATE] Inizio blocco try. Chiamo supabase.from("users").update()');
       const { error: dbError } = await supabase
         .from('users')
         .update({
           first_name: trimmedFirstName,
           last_name: trimmedLastName,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
+      console.log('[PROFILE_UPDATE] Fine chiamata a supabase.from("users").update().');
 
       if (dbError) {
+        console.log('[PROFILE_UPDATE] Errore da "users".update():', dbError);
+        setProfile(profile); 
         throw dbError;
       }
+      console.log('[PROFILE_UPDATE] "users".update() completato con successo.');
 
-      // 2. Aggiorna i metadati dell'utente in Supabase Auth
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { 
-          full_name: `${trimmedFirstName} ${trimmedLastName}` 
-        }
-      });
-
-      if (authError) {
-        console.warn('Auth user metadata update failed:', authError.message);
-      }
+      // La chiamata a supabase.auth.updateUser() è stata rimossa perché causava il blocco.
       
-      await refreshProfile();
-      Alert.alert('Successo', 'Profilo aggiornato con successo!');
-      router.back();
+      Alert.alert('Successo', 'Profilo aggiornato!');
+      if (router.canGoBack()) {
+        console.log('[PROFILE_UPDATE] Navigo indietro.');
+        router.back();
+      }
 
     } catch (error: any) {
-      Alert.alert('Errore', 'Impossibile aggiornare il profilo: ' + error.message);
+      console.error("[PROFILE_UPDATE] Errore nel blocco catch:", error);
+      Alert.alert('Errore', `Impossibile aggiornare il profilo: ${error.message}`);
     } finally {
+      console.log('[PROFILE_UPDATE] Eseguo blocco finally. Imposto saving a false.');
       setSaving(false);
     }
   };
@@ -198,3 +187,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+

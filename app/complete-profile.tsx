@@ -1,23 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/services/supabaseClient';
 
 export default function CompleteProfileScreen() {
-  const { user, refreshProfile } = useAuth();
-  const router = useRouter();
+  const { updateProfile, refreshUserProfile } = useAuth(); // Usa refreshUserProfile
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleCompleteProfile = async () => {
-    if (!user) {
-      Alert.alert('Errore', 'Nessun utente loggato.');
-      return;
-    }
-
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
 
@@ -28,40 +20,12 @@ export default function CompleteProfileScreen() {
 
     setSaving(true);
     try {
-      // 1. Aggiorna la nostra tabella 'users'
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({
-          first_name: trimmedFirstName,
-          last_name: trimmedLastName,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+      // Ora basta chiamare updateProfile.
+      // Al suo interno, salverà i dati e poi aggiornerà lo stato locale.
+      await updateProfile(trimmedFirstName, trimmedLastName);
 
-      if (dbError) {
-        throw dbError;
-      }
-
-      // 2. Aggiorna i metadati dell'utente in Supabase Auth
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { 
-          full_name: `${trimmedFirstName} ${trimmedLastName}` 
-        }
-      });
-
-      if (authError) {
-        // Se questo fallisce, potremmo considerare un rollback o un log,
-        // ma per ora lo segnaliamo.
-        console.warn('Auth user metadata update failed:', authError.message);
-      }
-      
-      // Attendi che il profilo sia effettivamente aggiornato nel contesto
-      await refreshProfile(); 
-      
-      Alert.alert('Successo', 'Profilo completato!');
-      // NON reindirizzare da qui. Lascia che sia _layout.tsx a gestire
-      // il reindirizzamento quando rileva il cambiamento del profilo.
-      // router.replace('/(tabs)');
+      // La navigazione verrà gestita automaticamente dal layout principale
+      // non appena rileverà che il profilo è stato completato.
 
     } catch (error: any) {
       Alert.alert('Errore', 'Impossibile salvare il profilo: ' + error.message);

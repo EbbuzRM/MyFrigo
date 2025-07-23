@@ -106,6 +106,7 @@ export default function ManageCategoriesScreen() {
   );
 }
 
+
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,

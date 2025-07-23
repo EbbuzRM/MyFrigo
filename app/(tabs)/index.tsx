@@ -9,19 +9,20 @@ import {
   FlatList,
   Modal,
   Pressable,
+  Alert,
+  Linking,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, ScanBarcode, Package, AlertTriangle, User, Settings, LogOut } from 'lucide-react-native';
-import { StorageService } from '@/services/StorageService';
-import { Product } from '@/types/Product';
-import { useFocusEffect, router } from 'expo-router';
+import { Plus, ScanBarcode, Package, AlertTriangle, User, Settings, LogOut, Bell, BellOff } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { ExpirationCard } from '@/components/ExpirationCard';
 import { StatsCard } from '@/components/StatsCard';
 import { useTheme } from '@/context/ThemeContext';
-import { useCategories } from '@/context/CategoryContext';
 import { supabase } from '@/services/supabaseClient';
-
 import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
+import { useProducts } from '@/context/ProductContext';
 
 function ProfileMenu({ isVisible, onClose, onLogout, userName }) {
   const { isDarkMode } = useTheme();
@@ -52,52 +53,71 @@ function ProfileMenu({ isVisible, onClose, onLogout, userName }) {
   );
 }
 
-
 function Dashboard() {
   const { isDarkMode } = useTheme();
-  const { user, profile, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { user, profile } = useAuth();
+  const { settings, permissionStatus, refreshPermissions, loading: settingsLoading } = useSettings();
+  const { products: allProducts, loading: productsLoading, refreshProducts } = useProducts();
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    try {
-      const storedProducts = await StorageService.getProducts();
-      setProducts(storedProducts.filter(p => p.status === 'active'));
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setRefreshing(false);
+    await refreshProducts();
+    setRefreshing(false);
+  }, [refreshProducts]);
+
+  // Aggiunto listener per l'AppState per aggiornare i permessi quando l'utente torna all'app
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') {
+        console.log('App has come to the foreground, refreshing permissions...');
+        refreshPermissions();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [refreshPermissions]);
+
+  const handleBellPress = () => {
+    if (permissionStatus === 'denied') {
+      Alert.alert(
+        "Permessi Notifiche",
+        "Le notifiche sono disattivate. Per riattivarle, devi modificare le impostazioni del tuo dispositivo.",
+        [
+          { text: "Annulla", style: "cancel" },
+          { text: "Apri Impostazioni", onPress: () => Linking.openSettings() }
+        ]
+      );
     }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
-
-  const onRefresh = () => {
-    loadData();
   };
 
   const handleLogout = async () => {
     setMenuVisible(false);
     await supabase.auth.signOut();
-    // The onAuthStateChange listener in _layout will handle navigation
   };
 
-  const expiringProducts = products
+  const expiringProducts = allProducts
     .filter(p => {
-      const now = new Date();
-      const expirationDate = new Date(p.expiration_date);
-      const daysUntil = (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-      return daysUntil >= 0 && daysUntil <= 7;
+      if (!settings || !p.expirationDate) return false;
+      const today = new Date();
+      const startOfTodayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+      const expirationParts = p.expirationDate.split('-').map(Number);
+      const startOfExpirationUTC = Date.UTC(expirationParts[0], expirationParts[1] - 1, expirationParts[2]);
+      const diffDays = (startOfExpirationUTC - startOfTodayUTC) / (1000 * 60 * 60 * 24);
+      return diffDays >= 0 && diffDays <= settings.notificationDays;
     })
-    .sort((a, b) => new Date(a.expiration_date).getTime() - new Date(b.expiration_date).getTime());
+    .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
-  const expiredCount = products.filter(p => new Date(p.expiration_date) < new Date()).length;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiredCount = allProducts.filter(p => {
+      const expirationDate = new Date(p.expiration_date);
+      expirationDate.setHours(0, 0, 0, 0);
+      return expirationDate < today;
+  }).length;
   
   const styles = getStyles(isDarkMode);
 
@@ -109,7 +129,7 @@ function Dashboard() {
     ? `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase()
     : user?.email?.charAt(0).toUpperCase();
 
-  if (authLoading && products.length === 0) {
+  if ((productsLoading || settingsLoading) && allProducts.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Caricamento...</Text>
@@ -129,10 +149,13 @@ function Dashboard() {
         userName={displayName}
       />
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity style={styles.titleContainer} onPress={handleBellPress} disabled={permissionStatus !== 'denied'}>
           <Text style={styles.title}>La Tua Dispensa</Text>
-          <Text style={styles.subtitle}>Tutto sotto controllo</Text>
-        </View>
+          {permissionStatus === 'granted' 
+            ? <Bell size={18} color={isDarkMode ? '#4ade80' : '#16a34a'} style={styles.notificationIcon} />
+            : <BellOff size={18} color={isDarkMode ? '#f87171' : '#dc2626'} style={styles.notificationIcon} />
+          }
+        </TouchableOpacity>
         <TouchableOpacity style={styles.profileButton} onPress={() => setMenuVisible(true)}>
             {displayInitials ? (
                 <Text style={styles.profileButtonText}>
@@ -143,7 +166,8 @@ function Dashboard() {
             )}
         </TouchableOpacity>
       </View>
-
+      <Text style={styles.subtitle}>Tutto sotto controllo</Text>
+      
       <View style={styles.ctaContainer}>
         <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/add')}>
           <Plus size={20} color="#ffffff" />
@@ -175,7 +199,7 @@ function Dashboard() {
           />
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Nessun prodotto in scadenza nei prossimi 7 giorni. Ottimo!</Text>
+            <Text style={styles.emptyStateText}>Nessun prodotto in scadenza nei prossimi {settings?.notificationDays || 7} giorni. Ottimo!</Text>
           </View>
         )}
       </View>
@@ -185,7 +209,7 @@ function Dashboard() {
         <View style={styles.statsContainer}>
           <StatsCard
             title="Prodotti Attivi"
-            value={products.length.toString()}
+            value={allProducts.filter(p => p.status === 'active').length.toString()}
             icon={<Package size={24} color="#2563EB" />}
             lightBackgroundColor="#EFF6FF"
             darkBackgroundColor="#1e293b"
@@ -302,12 +326,21 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 28,
     fontFamily: 'Inter-Bold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 4,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  notificationIcon: {
+    marginTop: 4, // Allinea l'icona verticalmente con il titolo
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
+    paddingHorizontal: 20, // Aggiunto per allineare
+    paddingBottom: 20, // Spostato qui
   },
   ctaContainer: {
     flexDirection: 'row',

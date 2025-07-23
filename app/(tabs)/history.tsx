@@ -23,12 +23,22 @@ const History = () => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const products = await StorageService.getProducts();
-      const now = new Date();
-      const history = products.filter(p => p.status === 'consumed' || p.status === 'expired' || (p.status === 'active' && new Date(p.expirationDate) < now));
-      setAllHistory(history);
+      const { data: products, error } = await StorageService.getProducts();
+      if (error) {
+        throw error;
+      }
+      
+      if (products) {
+        const now = new Date();
+        const history = products.filter(p => p.status === 'consumed' || p.status === 'expired' || (p.status === 'active' && new Date(p.expirationDate) < now));
+        setAllHistory(history);
+      } else {
+        setAllHistory([]);
+      }
+
     } catch (error) {
       console.error("Failed to load history stats:", error);
+      setAllHistory([]); // Assicura che lo stato sia pulito in caso di errore
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -104,6 +114,7 @@ const History = () => {
           totalProducts={consumedCount + expiredCount}
           expiredProducts={expiredCount}
           consumedProducts={consumedCount}
+          allProducts={allHistory}
         />
         
         <View style={styles.suggestionsContainer}>
