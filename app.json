@@ -7,18 +7,9 @@
     "scheme": "myfrigo",
     "icon": "./assets/images/icon.png",
     "backgroundColor": "#ffffff",
-    "splash": {
-      "image": "./assets/images/splashscreen.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.myfrigo",
-      "backgroundModes": [
-        "fetch",
-        "processing"
-      ]
+      "bundleIdentifier": "com.example.myfrigo"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,17 +17,40 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.example.myfrigo",
-      "launchMode": "singleTask",
-      
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.SCHEDULE_EXACT_ALARM"
+      ],
+      "queries": [
+        {
+          "intent": "android.intent.action.VIEW",
+          "data": {
+            "scheme": "https"
+          }
+        },
+        {
+          "intent": "android.intent.action.VIEW",
+          "data": {
+            "scheme": "http"
+          }
+        },
+        {
+          "intent": "android.intent.category.BROWSABLE",
+          "data": {
+            "scheme": "https"
+          }
+        }
       ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
       "index": "./index.html"
+    },
+    "notification": {
+      "icon": "./assets/images/notification_icon.png",
+      "color": "#ffffff",
+      "iosDisplayInForeground": true
     },
     "platforms": [
       "android",
@@ -49,32 +63,19 @@
       [
         "onesignal-expo-plugin",
         {
-          "mode": "development",
-          "devTeam": "YOUR_DEV_TEAM_ID"
+          "mode": "development"
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#ffffff",
-          "sounds": []
-        }
-      ],
+      "expo-notifications",
       "expo-updates",
       "expo-build-properties",
       "expo-font",
       "expo-web-browser",
-      "expo-background-task",
-      [
-        "expo-splash-screen",
-        {
-          "resizeMode": "cover",
-          "backgroundColor": "#ffffff"
-        }
-      ]
+      "expo-background-task"
     ],
     "extra": {
+      "oneSignalAppId": "0be59062-4413-49d5-b301-7038c3a0de1e",
+      "googleWebClientId": "849503699357-sauspamk0vl73ofrscs1jnuvsrje9pko.apps.googleusercontent.com",
       "router": {},
       "eas": {
         "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"

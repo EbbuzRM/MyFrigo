@@ -14,6 +14,7 @@ export default function ConsumedListScreen() {
   const styles = getStyles(isDarkMode);
   const [consumedProducts, setConsumedProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);

@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, View, TextInput, StyleSheet, Text, Pressable, ActivityIndicator, TouchableOpacity } from 'react-native';
+import {
+  Alert,
+  View,
+  TextInput,
+  StyleSheet,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import { supabase } from '@/services/supabaseClient';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import Constants from 'expo-constants';
 
-// Componente helper per la checklist di validazione
 const ValidationCheck = ({ isValid, text }: { isValid: boolean; text: string }) => (
   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-    <FontAwesome name={isValid ? 'check-circle' : 'circle-o'} size={16} color={isValid ? '#28a745' : '#6c757d'} />
+    <FontAwesome
+      name={isValid ? 'check-circle' : 'circle-o'}
+      size={16}
+      color={isValid ? '#28a745' : '#6c757d'}
+    />
     <Text style={{ marginLeft: 8, color: isValid ? '#28a745' : '#6c757d' }}>{text}</Text>
   </View>
 );
@@ -25,67 +38,95 @@ export default function LoginScreen() {
     hasLower: false,
     hasNumber: false,
   });
+
   const router = useRouter();
 
-  const validatePassword = (text: string) => {
-    const minLength = text.length >= 6;
-    const hasUpper = /[A-Z]/.test(text);
-    const hasLower = /[a-z]/.test(text);
-    const hasNumber = /\d/.test(text);
-    setPasswordValidation({ minLength, hasUpper, hasLower, hasNumber });
-  };
-
   useEffect(() => {
-    WebBrowser.warmUpAsync();
-    return () => {
-      WebBrowser.coolDownAsync();
-    };
+    const webClientId = Constants.expoConfig?.extra?.googleWebClientId;
+    if (!webClientId) {
+      console.error("FATAL: Google Web Client ID not found in app.json's extra config.");
+      return;
+    }
+    GoogleSignin.configure({
+      webClientId,
+    });
   }, []);
 
-  async function handleLogin() {
+  const validatePassword = (text: string) => {
+    setPasswordValidation({
+      minLength: text.length >= 6,
+      hasUpper: /[A-Z]/.test(text),
+      hasLower: /[a-z]/.test(text),
+      hasNumber: /\d/.test(text),
+    });
+  };
+
+  const handleLogin = async () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) Alert.alert('Errore nel Login', error.message);
     setLoading(false);
-  }
+  };
 
-  async function handleSignUp() {
+  const handleSignUp = async () => {
     setLoading(true);
-    const redirectUri = makeRedirectUri({ scheme: 'myfrigo', path: '/auth-callback' });
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: redirectUri },
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
     });
+
     if (error) {
-      Alert.alert('Errore nella Registrazione', error.message);
+      console.error('[SignUp] Errore durante la registrazione:', error.message);
+      Alert.alert('Errore di Registrazione', error.message);
+    } else if (data.user) {
+      console.log('[SignUp] Registrazione riuscita. Mostro l_alert di conferma.');
+      Alert.alert(
+        'Registrazione Avvenuta',
+        'Controlla la tua email per confermare l account e poter accedere.',
+        [{ text: 'OK', onPress: () => {
+          setEmail('');
+          setPassword('');
+        }}]
+      );
     } else {
-      router.replace('/registration-confirmation');
+      console.warn('[SignUp] Caso anomalo: nessuna sessione, utente o errore restituito da Supabase.');
+      Alert.alert('Errore Sconosciuto', 'Si è verificato un problema durante la registrazione. Riprova.');
     }
     setLoading(false);
-  }
+  };
 
-  async function handleGoogleLogin() {
+  const handleGoogleLogin = async () => {
+    if (Platform.OS !== 'android') {
+        Alert.alert('Supporto Piattaforma', 'Il login con Google è attualmente supportato solo su Android.');
+        return;
+    }
     setLoading(true);
-    const redirectUri = makeRedirectUri({ scheme: 'myfrigo' });
-    
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: redirectUri },
-    });
+    try {
+      await GoogleSignin.hasPlayServices();
+      const { idToken } = await GoogleSignin.signIn();
+      
+      if (idToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
 
-    if (error) {
-      Alert.alert('Errore Login Google', error.message);
-    } else if (data.url) {
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-      if (result.type === 'error' || result.type === 'cancel') {
-        // L'utente ha annullato o c'è stato un errore
-        console.log('OAuth flow cancelled or failed', result);
+        if (error) {
+          throw new Error(`Errore Supabase: ${error.message}`);
+        }
+        // Il listener onAuthStateChange in AuthContext gestirà il reindirizzamento
+        console.log('Login con Google (Nativo) riuscito. In attesa del listener...');
+
+      } else {
+        throw new Error('Impossibile ottenere l_idToken da Google.');
       }
-      // Se il login ha successo, il listener in AuthContext gestirà la sessione.
+    } catch (error: any) {
+      console.error('Errore durante il login con Google:', error);
+      Alert.alert('Errore di Autenticazione', error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
   const isRegistrationDisabled =
     !email ||
@@ -107,6 +148,7 @@ export default function LoginScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
       />
+
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.input}
@@ -137,7 +179,8 @@ export default function LoginScreen() {
 
       <Pressable
         style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={() => handleLogin()}
+        onPress={handleLogin}
+        disabled={loading}
       >
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
       </Pressable>
@@ -150,11 +193,16 @@ export default function LoginScreen() {
         <Text style={styles.secondaryButtonText}>Registrati</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+        <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
+      </TouchableOpacity>
+
       <View style={styles.divider} />
 
       <Pressable
-        style={[styles.button, styles.socialButton /* , loading && styles.buttonDisabled */]}
-        onPress={() => handleGoogleLogin()}
+        style={[styles.button, styles.socialButton]}
+        onPress={handleGoogleLogin}
+        disabled={loading}
       >
         <FontAwesome name="google" size={20} color="#fff" style={styles.socialIcon} />
         <Text style={styles.buttonText}>Accedi con Google</Text>
@@ -163,6 +211,7 @@ export default function LoginScreen() {
   );
 }
 
+/* ------------- Styles ------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
   header: { fontSize: 32, fontWeight: 'bold', color: '#212529', textAlign: 'center', marginBottom: 10 },
@@ -182,13 +231,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 15,
     position: 'relative',
   },
   eyeIcon: {
     position: 'absolute',
     right: 15,
-    top: 18, // Potrebbe richiedere un aggiustamento fine
+    top: 18,
   },
   validationContainer: {
     paddingHorizontal: 10,
@@ -219,4 +267,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#db4437',
   },
   socialIcon: { marginRight: 10 },
+  forgotPasswordText: {
+    color: '#007bff',
+    textAlign: 'center',
+    marginTop: 15,
+    marginBottom: 5,
+  },
 });

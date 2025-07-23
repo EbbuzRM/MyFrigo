@@ -4,11 +4,10 @@ import { NotificationService } from './NotificationService';
 import * as Notifications from 'expo-notifications';
 import { supabase } from './supabaseClient';
 import { Platform } from 'react-native';
-import { snakeToCamel, camelToSnake } from '../utils/caseConverter';
+import { convertObjectKeys, toCamelCase, toSnakeCase } from '../utils/caseConverter';
 import { randomUUID } from 'expo-crypto';
 
 export interface AppSettings {
-  notifications_enabled: boolean;
   notificationDays: number;
   theme: 'light' | 'dark' | 'auto';
 }
@@ -21,60 +20,98 @@ export interface ProductTemplate {
   imageUrl?: string;
 }
 
-// Note: In Supabase, we don't need to define collection names as constants
-// as we interact with tables directly.
-
 export class StorageService {
 
-  // Categories are now stored in the 'categories' table, not in a JSON document.
-  // This part needs to be redesigned based on the new table structure if needed.
-  // For now, we'll return an empty array as a placeholder.
   static async getCustomCategories(): Promise<ProductCategory[]> {
     try {
-      const { data, error } = await supabase.from('categories').select('*');
+      const { data, error } = await supabase.from('categories').select('*').eq('is_default', false);
       if (error) throw error;
-      return snakeToCamel(data) || [];
+      return data ? convertObjectKeys(data, toCamelCase) : [];
     } catch (error) {
       console.error('Error getting categories from Supabase:', error);
       return [];
     }
   }
 
-  static async saveCustomCategories(categories: ProductCategory[]): Promise<void> {
+  static async addCategory(category: ProductCategory): Promise<ProductCategory> {
     try {
-      // Assuming 'categories' table has 'id' as primary key.
-      // Upsert will insert new categories and update existing ones.
-      const { error } = await supabase.from('categories').upsert(camelToSnake(categories));
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(convertObjectKeys(category, toSnakeCase))
+        .select()
+        .single();
       if (error) throw error;
+      return convertObjectKeys(data, toCamelCase);
     } catch (error) {
-      console.error('Error saving categories to Supabase:', error);
+      console.error('Error adding category to Supabase:', error);
       throw error;
     }
   }
 
-  // Products
-  static async getProducts(): Promise<Product[]> {
+  static async updateCategory(category: Partial<ProductCategory>): Promise<void> {
     try {
-      const { data, error } = await supabase.from('products').select('*');
+      const { error } = await supabase
+        .from('categories')
+        .update(convertObjectKeys(category, toSnakeCase))
+        .eq('id', category.id!);
       if (error) throw error;
-      return snakeToCamel(data) || [];
     } catch (error) {
-      console.error('Error getting products from Supabase:', error);
-      return [];
+      console.error('Error updating category in Supabase:', error);
+      throw error;
     }
   }
 
-  static listenToProducts(callback: (products: Product[]) => void): () => void {
+  static async deleteCategory(categoryId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting category from Supabase:', error);
+      throw error;
+    }
+  }
+
+  static async getProducts(): Promise<{ data: Product[] | null, error: Error | null }> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        return { data: [], error: null };
+      }
+      const userId = session.user.id;
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+
+      return { data: convertObjectKeys(data, toCamelCase) || [], error: null };
+    } catch (error) {
+      console.error('Error in getProducts:', error);
+      return { data: null, error: error as Error };
+    }
+  }
+
+  static listenToProducts(callback: () => void): () => void {
     const channel = supabase
       .channel('public:products')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
-        const products = await this.getProducts();
-        callback(products);
-      })
-      .subscribe();
-
-    // Initial fetch
-    this.getProducts().then(callback);
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          console.log('Change detected in products table, invoking callback...');
+          callback();
+        }
+      )
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Realtime channel subscribed for products.');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -89,7 +126,7 @@ export class StorageService {
         .eq('id', productId)
         .single();
       if (error) throw error;
-      return snakeToCamel(data);
+      return convertObjectKeys(data, toCamelCase);
     } catch (error) {
       console.error(`Error getting product by ID ${productId}:`, error);
       return null;
@@ -122,46 +159,21 @@ export class StorageService {
       const productToUpsert = { ...product };
       if (!productToUpsert.id) {
         productToUpsert.id = randomUUID();
+        if (!productToUpsert.status) {
+          productToUpsert.status = 'active';
+        }
       }
 
       const productWithUser = {
         ...productToUpsert,
-        userId: userId,
+        user_id: userId,
       };
-
-      const { data: existingProduct, error: fetchError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', productToUpsert.id)
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') { // Ignore 'not found' errors
-        throw fetchError;
-      }
       
-      const { error } = await supabase.from('products').upsert(camelToSnake(productWithUser));
+      const { error } = await supabase.from('products').upsert(convertObjectKeys(productWithUser, toSnakeCase));
       if (error) throw error;
 
-      const settings = await this.getSettings();
-      const fullProduct = productWithUser as Product;
-
-      if (existingProduct) {
-         if (existingProduct.expiration_date !== fullProduct.expirationDate ||
-            (existingProduct.status !== 'active' && fullProduct.status === 'active') ||
-            (existingProduct.status === 'active' && fullProduct.status !== 'active')) {
-          await NotificationService.cancelNotification(fullProduct.id!);
-          if (fullProduct.status === 'active' && settings.notifications_enabled) {
-            await NotificationService.scheduleExpirationNotification(fullProduct, settings.notificationDays);
-          }
-        }
-      } else {
-         if (fullProduct.status === 'active' && settings.notifications_enabled) {
-            await NotificationService.scheduleExpirationNotification(fullProduct, settings.notificationDays);
-        }
-      }
-
-      if (fullProduct.barcode) {
-        await this.saveProductTemplate(fullProduct);
+      if (product.barcode) {
+        await this.saveProductTemplate(convertObjectKeys(productWithUser, toCamelCase) as Product);
       }
     } catch (error) {
       console.error('Error saving product to Supabase:', error);
@@ -173,7 +185,6 @@ export class StorageService {
     try {
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
-      await NotificationService.cancelNotification(productId);
     } catch (error) {
       console.error('Error deleting product from Supabase:', error);
       throw error;
@@ -182,39 +193,15 @@ export class StorageService {
 
   static async updateProductStatus(productId: string, status: Product['status']): Promise<void> {
     try {
-        const { data: product, error: fetchError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', productId)
-            .single();
-
-        if (fetchError) throw fetchError;
-        if (!product) {
-            console.error(`Product with ID ${productId} not found.`);
-            return;
-        }
-
-        const oldStatus = product.status;
         const updatedFields: Partial<Product> = { status };
 
-        if (status === 'consumed' || status === 'expired') {
-            updatedFields.consumedDate = (status === 'consumed' && !product.consumed_date)
-                ? new Date().toISOString()
-                : product.consumed_date;
-
-            if (oldStatus === 'active') {
-                await NotificationService.cancelNotification(productId);
-            }
-        } else if (status === 'active' && oldStatus !== 'active') {
-            const settings = await this.getSettings();
-            if (settings.notifications_enabled) {
-                await NotificationService.scheduleExpirationNotification(snakeToCamel(product), settings.notificationDays);
-            }
+        if (status === 'consumed') {
+            updatedFields.consumedDate = new Date().toISOString();
         }
 
         const { error: updateError } = await supabase
             .from('products')
-            .update(camelToSnake(updatedFields))
+            .update(convertObjectKeys(updatedFields, toSnakeCase))
             .eq('id', productId);
 
         if (updateError) throw updateError;
@@ -225,7 +212,6 @@ export class StorageService {
     }
   }
 
-  // Barcode Templates
   static async getProductTemplate(barcode: string): Promise<ProductTemplate | null> {
     try {
       const { data, error } = await supabase
@@ -234,7 +220,7 @@ export class StorageService {
         .eq('barcode', barcode)
         .single();
       if (error && error.code !== 'PGRST116') throw error;
-      return snakeToCamel(data);
+      return convertObjectKeys(data, toCamelCase);
     } catch (error) {
       console.error(`Error getting product template for barcode ${barcode}:`, error);
       return null;
@@ -251,14 +237,13 @@ export class StorageService {
         category: product.category,
         imageUrl: product.imageUrl ?? undefined,
       };
-      const { error } = await supabase.from('barcode_templates').upsert(camelToSnake(templateData));
+      const { error } = await supabase.from('barcode_templates').upsert(convertObjectKeys(templateData, toSnakeCase));
       if (error) throw error;
     } catch (error) {
       console.error(`Error saving product template for barcode ${product.barcode}:`, error);
     }
   }
 
-  // History is now just a filter on the products table
   static listenToHistory(callback: (history: Product[]) => void): () => void {
      const channel = supabase
       .channel('public:products:history')
@@ -277,21 +262,24 @@ export class StorageService {
 
   static async getHistory(): Promise<Product[]> {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return [];
+      const userId = session.user.id;
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('user_id', userId)
         .eq('status', 'consumed')
         .order('consumed_date', { ascending: false });
       if (error) throw error;
-      return snakeToCamel(data) || [];
+      return convertObjectKeys(data, toCamelCase) || [];
     } catch (error) {
       console.error('Error getting history from Supabase:', error);
       return [];
     }
   }
   
-  // No need for addToHistory, as updateProductStatus handles it.
-
   static async restoreConsumedProduct(productId: string): Promise<void> {
     try {
         await this.updateProductStatus(productId, 'active');
@@ -302,17 +290,16 @@ export class StorageService {
     }
   }
 
-  // Settings
   static listenToSettings(callback: (settings: AppSettings) => void): () => void {
     const channel = supabase
       .channel('public:app_settings')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, async () => {
-        const settings = await this.getSettings();
+        const settings = await this.getSettings(true);
         callback(settings);
       })
       .subscribe();
 
-    this.getSettings().then(callback);
+    this.getSettings(true).then(callback);
 
     return () => {
       supabase.removeChannel(channel);
@@ -326,44 +313,70 @@ export class StorageService {
         .select('*')
         .eq('id', 1)
         .single();
-      if (error) throw error;
-      return snakeToCamel(data);
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        return convertObjectKeys(data, toCamelCase);
+      }
+
+      console.log('No settings found, creating default settings...');
+      const defaultSettings = {
+        id: 1,
+        notification_days: 3,
+        theme: 'auto',
+      };
+      
+      const { error: insertError } = await supabase
+        .from('app_settings')
+        .insert(defaultSettings);
+
+      if (insertError) {
+        throw insertError;
+      }
+      
+      return convertObjectKeys(defaultSettings, toCamelCase);
+
     } catch (error) {
-      console.error('Error getting settings from Supabase:', error);
+      console.error('Error getting or creating settings in Supabase:', error);
       return {
-        notifications_enabled: true,
         notificationDays: 3,
         theme: 'auto',
       };
     }
   }
 
-  static async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
+  static async updateSettings(newSettings: Partial<AppSettings>): Promise<AppSettings | null> {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('app_settings')
-        .update(camelToSnake(newSettings))
-        .eq('id', 1);
+        .upsert({ id: 1, ...convertObjectKeys(newSettings, toSnakeCase) })
+        .select()
+        .single();
+        
       if (error) throw error;
       
+      const updatedSettings = convertObjectKeys(data, toCamelCase);
+
       if (Platform.OS !== 'web') {
-        const updatedSettings = await this.getSettings();
-        if (Object.prototype.hasOwnProperty.call(newSettings, 'notifications_enabled') || Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
-          const products = await this.getProducts();
-          const activeProducts = products.filter(p => p.status === 'active');
-          await Notifications.cancelAllScheduledNotificationsAsync();
-          if (updatedSettings.notifications_enabled) {
+        if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
+          const { data: products, error: productsError } = await this.getProducts();
+          if (products && !productsError) {
+            const activeProducts = products.filter(p => p.status === 'active');
+            await Notifications.cancelAllScheduledNotificationsAsync();
             await NotificationService.scheduleMultipleNotifications(activeProducts, updatedSettings);
           }
         }
       }
+      return updatedSettings;
     } catch (error) {
       console.error('Error updating settings in Supabase:', error);
       throw error;
     }
   }
 
-  // Data management - These need to be re-implemented for Supabase
   static async exportData(): Promise<string> {
     console.warn("exportData is not implemented for Supabase yet.");
     return "{}";
@@ -375,10 +388,10 @@ export class StorageService {
 
   static async clearAllData(): Promise<void> {
     try {
-        const { error: productError } = await supabase.from('products').delete().neq('id', 0); // delete all
+        const { error: productError } = await supabase.from('products').delete().neq('id', 0);
         if(productError) throw productError;
 
-        const { error: templateError } = await supabase.from('barcode_templates').delete().neq('barcode', '0'); // delete all
+        const { error: templateError } = await supabase.from('barcode_templates').delete().neq('barcode', '0');
         if(templateError) throw templateError;
 
         await Notifications.cancelAllScheduledNotificationsAsync();

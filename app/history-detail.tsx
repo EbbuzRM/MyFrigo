@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
-import { useCategories } from '@/context/CategoryContext';
 import { HistoryCard } from '@/components/HistoryCard';
 import { Product } from '@/types/Product';
 import { ArrowLeft } from 'lucide-react-native';
@@ -12,63 +11,37 @@ import { StorageService } from '@/services/StorageService';
 export default function HistoryDetailScreen() {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const { } = useCategories();
-  const { type, title } = useLocalSearchParams<{ type: 'consumed' | 'expired' | 'all', title: string }>();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products: productsJson, title } = useLocalSearchParams<{ products: string, title: string }>();
 
-  useEffect(() => {
-    const loadAndFilterProducts = async () => {
-      setLoading(true);
-      try {
-        const allProducts = await StorageService.getProducts();
-        const now = new Date();
-
-        const finalProducts = allProducts
-          .map(p => {
-            // Assegna uno stato 'expired' temporaneo ai prodotti attivi ma la cui data di scadenza è passata
-            if (p.status === 'active' && new Date(p.expirationDate) < now) {
-              return { ...p, status: 'expired' as const }; 
-            }
-            return p;
-          })
-          .filter(p => {
-            // Filtra in base al tipo richiesto
-            if (type === 'all') {
-              return p.status === 'consumed' || p.status === 'expired';
-            }
-            return p.status === type;
-          })
-          .sort((a, b) => {
-            // Ordina usando la data corretta in base allo stato
-            const dateA = new Date(a.status === 'consumed' ? a.consumedDate! : a.expirationDate);
-            const dateB = new Date(b.status === 'consumed' ? b.consumedDate! : b.expirationDate);
-            return dateB.getTime() - dateA.getTime();
-          });
-          
-        setProducts(finalProducts);
-
-      } catch (error) {
-        console.error("Failed to load history details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (type) {
-      loadAndFilterProducts();
+  // Usiamo useState per poter aggiornare la lista dopo il ripristino
+  const [productList, setProductList] = useState<Product[]>(() => {
+    try {
+      return productsJson ? JSON.parse(productsJson) : [];
+    } catch (e) {
+      console.error("Failed to parse initial products:", e);
+      return [];
     }
-  }, [type]);
+  });
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Caricamento...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const sortedProducts = useMemo(() => {
+    return [...productList].sort((a, b) => {
+      const dateA = new Date(a.status === 'consumed' ? a.consumedDate! : a.expirationDate);
+      const dateB = new Date(b.status === 'consumed' ? b.consumedDate! : b.expirationDate);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [productList]);
+
+  const handleRestoreProduct = useCallback(async (productId: string) => {
+    try {
+      await StorageService.restoreConsumedProduct(productId);
+      // Rimuovi il prodotto dalla lista corrente invece di ricaricare tutto
+      setProductList(currentProducts => currentProducts.filter(p => p.id !== productId));
+      Alert.alert('Prodotto Ripristinato', 'Il prodotto è stato spostato nuovamente nella tua dispensa.');
+    } catch (error) {
+      Alert.alert('Errore', 'Si è verificato un errore durante il ripristino del prodotto.');
+      console.error('Error restoring product:', error);
+    }
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -79,11 +52,12 @@ export default function HistoryDetailScreen() {
         <Text style={styles.title}>{title || 'Dettaglio Storico'}</Text>
       </View>
       <FlatList
-        data={products}
+        data={sortedProducts}
         renderItem={({ item }) => (
           <HistoryCard
             product={item}
             type={item.status as 'consumed' | 'expired'}
+            onRestore={item.status === 'consumed' ? handleRestoreProduct : undefined}
           />
         )}
         keyExtractor={(item) => `${item.id}-${item.status}`}

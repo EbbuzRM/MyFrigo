@@ -20,81 +20,46 @@ import {
   ListTree,
   Calendar,
   User,
+  MessageSquareQuote,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
-import { StorageService, AppSettings } from '@/services/StorageService';
-import { NotificationService } from '@/services/NotificationService';
 import { SettingsCard } from '@/components/SettingsCard';
 import { Toast } from '@/components/Toast';
 import { useTheme } from '@/context/ThemeContext';
+import { useSettings } from '@/context/SettingsContext';
+import { StorageService } from '@/services/StorageService';
 
-// Componente per le impostazioni dell'app
 const Settings = () => {
   const { setAppTheme, isDarkMode } = useTheme();
+  const { settings, loading, updateSettings } = useSettings();
   const styles = getStyles(isDarkMode);
 
-  const [settings, setSettings] = useState<AppSettings>({
-    notifications_enabled: true,
-    notificationDays: 3,
-    theme: 'light',
-  });
   const [isDaysModalVisible, setIsDaysModalVisible] = useState(false);
-  const [daysInput, setDaysInput] = useState(settings.notificationDays?.toString() ?? '3');
+  const [daysInput, setDaysInput] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    const unsubscribe = StorageService.listenToSettings((newSettings) => {
-      if (newSettings) {
-        setSettings(newSettings);
-        setDaysInput(newSettings.notificationDays?.toString() ?? '3');
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+    if (settings) {
+      setDaysInput(settings.notificationDays?.toString() ?? '3');
+    }
+  }, [settings]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast(null); // Resetta il toast precedente
+    setToast(null);
     setTimeout(() => {
       setToast({ message, type });
       Haptics.notificationAsync(type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
     }, 100);
   };
 
-  const updateSetting = async (newSetting: Partial<AppSettings>) => {
-    try {
-      await StorageService.updateSettings(newSetting);
-      return true;
-    } catch (__) {
-      void __; // Explicitly mark as used
-      showToast('Impossibile salvare le impostazioni.', 'error');
-      return false;
-    }
-  };
-
-  const handleNotificationToggle = async (value: boolean) => {
-    if (value) { 
-      const granted = await NotificationService.requestPermissions();
-      if(!granted) {
-        Alert.alert("Permesso Negato", "Le notifiche non funzioneranno senza i permessi.");
-        return;
-      }
-    }
-    const success = await updateSetting({ notifications_enabled: value });
-    if (success) {
-      showToast(`Notifiche ${value ? 'attivate' : 'disattivate'}.`);
-    }
-  };
-
   const handleSaveNotificationDays = async () => {
     const days = parseInt(daysInput, 10);
     if (!isNaN(days) && days > 0 && days <= 30) {
-      const success = await updateSetting({ notificationDays: days });
-      if (success) {
-        showToast(`Giorni di preavviso impostati a ${days}.`);
-        setIsDaysModalVisible(false);
-      }
+      await updateSettings({ notificationDays: days });
+      showToast(`Giorni di preavviso impostati a ${days}.`);
+      setIsDaysModalVisible(false);
     } else {
       showToast('Inserisci un numero di giorni valido (1-30).', 'error');
     }
@@ -113,8 +78,7 @@ const Settings = () => {
             try {
               await StorageService.clearAllData();
               showToast('Tutti i dati sono stati eliminati.');
-            } catch (__) {
-              void __; // Explicitly mark as used
+            } catch {
               showToast('Impossibile eliminare i dati.', 'error');
             }
           },
@@ -122,6 +86,17 @@ const Settings = () => {
       ]
     );
   };
+
+  if (loading || !settings) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Impostazioni</Text>
+          <Text style={styles.subtitle}>Caricamento...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -143,21 +118,9 @@ const Settings = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifiche</Text>
           <SettingsCard
-            icon={<Bell size={24} color={isDarkMode ? '#60a5fa' : '#2563eb'} />}
-            title="Notifiche di Scadenza"
-            control={
-              <Switch
-                value={settings.notifications_enabled}
-                onValueChange={handleNotificationToggle}
-                trackColor={{ false: '#e5e7eb', true: '#818cf8' }}
-                thumbColor={isDarkMode ? (settings.notifications_enabled ? '#6366f1' : '#94a3b8') : (settings.notifications_enabled ? '#4f46e5' : '#f1f5f9')}
-              />
-            }
-          />
-          <SettingsCard
             icon={<Calendar size={24} color={isDarkMode ? '#fcd34d' : '#f59e0b'} />}
             title="Giorni di Preavviso"
-            description={`Avvisami ${settings.notificationDays ?? 3} giorni prima`}
+            description={`Avvisami ${settings.notificationDays ?? '...'} giorni prima`}
             onPress={() => setIsDaysModalVisible(true)}
           />
         </View>
@@ -192,15 +155,20 @@ const Settings = () => {
           />
         </View>
 
-        <View style={[styles.section, { marginBottom: 250 }]}>
-          <Text style={styles.sectionTitle}>Informazioni</Text>
+        <View style={[styles.section, { marginBottom: 40 }]}>
+          <Text style={styles.sectionTitle}>Informazioni e Supporto</Text>
           <SettingsCard
             icon={<Info size={24} color={isDarkMode ? '#9ca3af' : '#6b7280'} />}
             title="Informazioni sull'App"
             description={`Versione ${Constants.expoConfig?.version}`}
             onPress={() => Alert.alert('MyFrigo', `Versione ${Constants.expoConfig?.version}`)}
           />
-          
+          <SettingsCard
+            icon={<MessageSquareQuote size={24} color={isDarkMode ? '#a78bfa' : '#7c3aed'} />}
+            title="Invia un Feedback"
+            description="Segnala un bug o suggerisci un'idea"
+            onPress={() => router.push('/feedback')}
+          />
         </View>
       </ScrollView>
 
@@ -245,7 +213,6 @@ const Settings = () => {
   );
 };
 
-// Esportazione predefinita del componente
 export default Settings;
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({

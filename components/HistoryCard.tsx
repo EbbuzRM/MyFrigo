@@ -161,7 +161,7 @@ export function HistoryCard({ product, type, onRestore }: HistoryCardProps) {
             </Text>
           </View>
           {type === 'consumed' && onRestore && (
-            <TouchableOpacity style={componentStyles.restoreButton} onPress={() => onRestore(product.id)}>
+            <TouchableOpacity testID="restore-button" style={componentStyles.restoreButton} onPress={() => onRestore(product.id)}>
               <RotateCcw size={20} color={isDarkMode ? '#4ade80' : '#16a34a'} />
             </TouchableOpacity>
           )}

@@ -38,6 +38,17 @@ export function SettingsCard({ icon, title, description, onPress, control }: Set
     </>
   );
 
+  // Se c'è un controllo (come lo Switch), rendiamo la card come una View non cliccabile
+  // per evitare di intercettare gli eventi destinati allo Switch.
+  if (control) {
+    return (
+      <View style={styles.card}>
+        <CardContent />
+      </View>
+    );
+  }
+
+  // Se c'è un onPress (e non un controllo), la rendiamo cliccabile.
   if (onPress) {
     return (
       <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
@@ -46,6 +57,7 @@ export function SettingsCard({ icon, title, description, onPress, control }: Set
     );
   }
 
+  // Fallback per card puramente informative (senza onPress o control)
   return (
     <View style={styles.card}>
       <CardContent />
