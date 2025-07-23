@@ -1,12 +1,19 @@
+<div align="center">
+  <a href="#-italiano">Italiano</a> •
+  <a href="#-english">English</a>
+</div>
+
 # MyFrigo - Smart Food Manager 🍏
+
+---
+
+## 🇮🇹 Italiano
 
 MyFrigo è un'applicazione mobile cross-platform che aiuta a gestire l'inventario alimentare domestico. Traccia le date di scadenza, invia notifiche locali per i prodotti in avvicinamento alla scadenza e fornisce statistiche sui consumi per minimizzare gli sprechi.
 
 L'app è costruita utilizzando React Native ed Expo, con un backend completamente basato su **Supabase** per il database PostgreSQL, l'autenticazione e le funzioni serverless.
 
----
-
-## ✨ Caratteristiche principali
+### ✨ Caratteristiche principali
 
 -   **Inventario Prodotti**: Tieni traccia di tutti i tuoi prodotti alimentari con dettagli su quantità, marca e date.
 -   **Notifiche Locali Affidabili**: Ricevi avvisi push personalizzabili prima che i prodotti scadano, gestiti localmente per la massima affidabilità.
@@ -15,9 +22,7 @@ L'app è costruita utilizzando React Native ed Expo, con un backend completament
 -   **Statistiche di Consumo**: Visualizza report sui prodotti consumati e scaduti per migliorare le tue abitudini di acquisto.
 -   **Tema Chiaro/Scuro**: Interfaccia utente adattabile alle preferenze di sistema o manuali.
 
----
-
-## 🛠️ Stack Tecnologico
+### 🛠️ Stack Tecnologico
 
 -   **Framework**: React Native con Expo
 -   **Linguaggio**: TypeScript
@@ -27,13 +32,11 @@ L'app è costruita utilizzando React Native ed Expo, con un backend completament
 -   **Navigazione**: Expo Router
 -   **UI**: Componenti personalizzati
 
----
-
-## 🚀 Installazione e Avvio
+### 🚀 Installazione e Avvio
 
 Per eseguire il progetto in locale, segui questi passaggi.
 
-### Prerequisiti
+#### Prerequisiti
 
 -   [Node.js](https://nodejs.org/) (versione LTS raccomandata)
 -   [npm](https://www.npmjs.com/) o [yarn](https://yarnpkg.com/)
@@ -41,33 +44,33 @@ Per eseguire il progetto in locale, segui questi passaggi.
 -   [EAS CLI](https://docs.expo.dev/get-started/installation/): `npm install -g eas-cli`
 -   App [Expo Go](https://expo.dev/go) installata sul tuo dispositivo mobile (iOS o Android).
 
-### 1. Clonazione del Repository
+#### 1. Clonazione del Repository
 
 ```bash
 git clone https://github.com/tuo-username/myfrigo.git
 cd myfrigo
 ```
 
-### 2. Installazione delle Dipendenze
+#### 2. Installazione delle Dipendenze
 
 ```bash
 npm install
 ```
 
-### 3. Configurazione delle Variabili d'Ambiente
+#### 3. Configurazione delle Variabili d'Ambiente
 
 1.  Crea un file chiamato `.env` nella directory principale del progetto.
 2.  Copia il contenuto del file `.env.example` (se presente) o aggiungi le seguenti variabili:
 
     ```env
-    EXPO_PUBLIC_SUPABASE_URL="IL_TUO_URL_DEL_PROGETTO_SUPABASE"
-    EXPO_PUBLIC_SUPABASE_ANON_KEY="LA_TUA_ANON_KEY_DI_SUPABASE"
-    EXPO_PUBLIC_ONESIGNAL_APP_ID="IL_TUO_APP_ID_DI_ONESIGNAL"
+    EXPO_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
+    EXPO_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+    EXPO_PUBLIC_ONESIGNAL_APP_ID="YOUR_ONESIGNAL_APP_ID"
     ```
 
     Puoi trovare i valori di URL e ANON KEY nella dashboard del tuo progetto Supabase in `Project Settings > API`.
 
-### 4. Avvio del Server di Sviluppo
+#### 4. Avvio del Server di Sviluppo
 
 ```bash
 npx expo start
@@ -75,12 +78,12 @@ npx expo start
 
 Scansiona il QR code generato dal terminale con l'app Expo Go sul tuo telefono per avviare l'applicazione.
 
-### 5. Script Utili
+#### 5. Script Utili
 
 -   `npm run test`: Esegue la suite di test con Jest.
 -   `npm run lint`: Analizza il codice con ESLint per trovare errori e problemi di stile.
 
-### 6. Creare una Build Standalone
+#### 6. Creare una Build Standalone
 
 Per creare un file `.apk` o `.ipa` installabile:
 
@@ -97,23 +100,111 @@ eas build -p ios --profile preview
 
 ---
 
-## 🤝 Contributi
+## 🇬🇧 English
 
-I contributi sono sempre ben accetti! Se vuoi contribuire al progetto, per favore segui questi passaggi:
+MyFrigo is a cross-platform mobile application that helps manage home food inventory. It tracks expiration dates, sends local notifications for products nearing their expiration, and provides consumption statistics to minimize waste.
 
-1.  **Forka** il repository.
-2.  Crea un nuovo **branch** per la tua modifica (`git checkout -b feature/nome-feature`).
-3.  **Committa** le tue modifiche (`git commit -am 'Aggiunta nuova feature'`).
-4.  **Pusha** sul tuo branch (`git push origin feature/nome-feature`).
-5.  Apri una **Pull Request**.
+The app is built using React Native and Expo, with a backend fully powered by **Supabase** for the PostgreSQL database, authentication, and serverless functions.
+
+### ✨ Key Features
+
+-   **Product Inventory**: Keep track of all your food items with details on quantity, brand, and dates.
+-   **Reliable Local Notifications**: Receive customizable push alerts before products expire, managed locally for maximum reliability.
+-   **Quick Add**: Add products manually, by scanning a barcode, or by taking a photo with OCR for the expiration date.
+-   **Supabase Backend**: All data is synchronized in real-time on a PostgreSQL database, with secure authentication and Row Level Security.
+-   **Consumption Statistics**: View reports on consumed and expired products to improve your shopping habits.
+-   **Light/Dark Theme**: UI adaptable to system or manual preferences.
+
+### 🛠️ Tech Stack
+
+-   **Framework**: React Native with Expo
+-   **Language**: TypeScript
+-   **Backend**: Supabase (PostgreSQL, Auth, Storage)
+-   **Push Notifications**: OneSignal (for remote notifications, e.g., marketing)
+-   **Local Notifications**: Expo Notifications
+-   **Navigation**: Expo Router
+-   **UI**: Custom Components
+
+### 🚀 Installation and Setup
+
+To run the project locally, follow these steps.
+
+#### Prerequisites
+
+-   [Node.js](https://nodejs.org/) (LTS version recommended)
+-   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+-   [Expo CLI](https://docs.expo.dev/get-started/installation/): `npm install -g expo-cli`
+-   [EAS CLI](https://docs.expo.dev/get-started/installation/): `npm install -g eas-cli`
+-   [Expo Go](https://expo.dev/go) app installed on your mobile device (iOS or Android).
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/myfrigo.git
+cd myfrigo
+```
+
+#### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+#### 3. Configure Environment Variables
+
+1.  Create a file named `.env` in the project's root directory.
+2.  Copy the contents of the `.env.example` file (if present) or add the following variables:
+
+    ```env
+    EXPO_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
+    EXPO_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+    EXPO_PUBLIC_ONESIGNAL_APP_ID="YOUR_ONESIGNAL_APP_ID"
+    ```
+
+    You can find the URL and ANON KEY values in your Supabase project dashboard under `Project Settings > API`.
+
+#### 4. Start the Development Server
+
+```bash
+npx expo start
+```
+
+Scan the QR code generated in the terminal with the Expo Go app on your phone to launch the application.
+
+#### 5. Useful Scripts
+
+-   `npm run test`: Runs the test suite with Jest.
+-   `npm run lint`: Lints the code with ESLint to find errors and style issues.
+
+#### 6. Create a Standalone Build
+
+To create an installable `.apk` or `.ipa` file:
+
+```bash
+# Configure the project (if not already done)
+eas build:configure --platform all
+
+# Start the build for Android
+eas build -p android --profile preview
+
+# Start the build for iOS
+eas build -p ios --profile preview
+```
 
 ---
 
-## 📄 Licenza
+## 🤝 Contributing
 
-Questo progetto è rilasciato sotto la **Licenza MIT**. Vedi il file `LICENSE` per maggiori dettagli.
-MIT License                                                                                                                                                                                   
+Contributions are always welcome! If you want to contribute to the project, please follow these steps:
 
-Copyright (c) [2025] [Ebbuz RM]
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+1.  **Fork** the repository.
+2.  Create a new **branch** for your feature (`git checkout -b feature/feature-name`).
+3.  **Commit** your changes (`git commit -am 'Add new feature'`).
+4.  **Push** to your branch (`git push origin feature/feature-name`).
+5.  Open a **Pull Request**.
+
+---
+
+## 📄 License
+
+This project is released under the **MIT License**. See the `LICENSE` file for more details.
