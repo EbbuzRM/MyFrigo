@@ -66,19 +66,17 @@ const AddProduct = () => {
         <AddMethodCard
           title="Scansiona Codice a Barre"
           description="Usa la fotocamera per una scansione rapida"
-          icon={<Barcode size={28} color="#3B82F6" />}
+          icon={<Barcode size={28} />}
           onPress={handleBarcodeScanner}
-          backgroundColor={isDarkMode ? '#1E293B' : '#EFF6FF'}
-          borderColor={isDarkMode ? '#3B82F6' : '#DBEAFE'}
+          variant="barcode"
         />
 
         <AddMethodCard
           title="Inserimento Manuale"
           description="Aggiungi i dettagli del prodotto manualmente"
-          icon={<Keyboard size={28} color="#6366F1" />}
+          icon={<Keyboard size={28} />}
           onPress={handleManualEntry}
-          backgroundColor={isDarkMode ? '#312E81' : '#EEF2FF'}
-          borderColor={isDarkMode ? '#4F46E5' : '#C7D2FE'}
+          variant="manual"
         />
       </View>
 

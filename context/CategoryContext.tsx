@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect, useContext, useCallback, Rea
 import { ProductCategory, PRODUCT_CATEGORIES } from '@/types/Product';
 import { StorageService } from '@/services/StorageService';
 import { IconService } from '@/services/IconService';
+import { useAuth } from './AuthContext';
+import { randomUUID } from 'expo-crypto';
 
 interface CategoryContextType {
   categories: ProductCategory[];
@@ -11,56 +13,41 @@ interface CategoryContextType {
   loading: boolean;
 }
 
-/**
- * @context CategoryContext
- * @description Fornisce uno stato globale per le categorie di prodotti, gestendo il caricamento,
- * l'aggiunta, l'eliminazione e la sincronizzazione con lo storage.
- * Centralizza la logica per evitare discrepanze tra le diverse schermate.
- */
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
-/**
- * @provider CategoryProvider
- * @description Il provider che avvolge l'applicazione e fornisce i dati delle categorie.
- * Gestisce il ciclo di vita dello stato delle categorie, incluso il download in background delle icone.
- */
 export const CategoryProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      setLoading(true);
-      try {
-        const customCategories = await StorageService.getCustomCategories();
-        const mergedCategories = [...PRODUCT_CATEGORIES, ...customCategories];
-        setCategories(mergedCategories);
-      } catch (error) {
-        console.error('[CategoryContext] Errore durante il caricamento delle categorie:', error);
-        setCategories(PRODUCT_CATEGORIES);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCategories();
+  const loadCategories = useCallback(async () => {
+    setLoading(true);
+    try {
+      const customCategories = await StorageService.getCustomCategories();
+      const mergedCategories = [...PRODUCT_CATEGORIES, ...customCategories];
+      setCategories(mergedCategories);
+    } catch (error) {
+      console.error('[CategoryContext] Errore durante il caricamento delle categorie:', error);
+      setCategories(PRODUCT_CATEGORIES);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const saveCustomCategories = async (cats: ProductCategory[]) => {
-    const customCategories = cats.filter(c => !PRODUCT_CATEGORIES.some(pc => pc.id === c.id));
-    await StorageService.saveCustomCategories(customCategories);
-  };
+  useEffect(() => {
+    if (user) {
+      loadCategories();
+    } else {
+      setCategories(PRODUCT_CATEGORIES);
+      setLoading(false);
+    }
+  }, [user, loadCategories]);
 
-  /**
-   * @function addCategory
-   * @description Aggiunge una nuova categoria personalizzata.
-   * 1. Crea la categoria e aggiorna immediatamente l'UI (aggiornamento ottimistico).
-   * 2. Salva la nuova categoria nello storage.
-   * 3. Avvia il download dell'icona in background.
-   * 4. Se il download ha successo, aggiorna di nuovo l'UI e lo storage con l'URL dell'icona.
-   * @param {string} name - Il nome della nuova categoria.
-   */
   const addCategory = useCallback(async (name: string): Promise<ProductCategory | null> => {
+    if (!user) {
+      throw new Error('Devi essere loggato per creare una categoria.');
+    }
+
     const trimmedName = name.trim();
     if (trimmedName === '') {
       throw new Error('Il nome della categoria non può essere vuoto.');
@@ -69,41 +56,42 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       throw new Error('Una categoria con questo nome esiste già.');
     }
 
-    const newId = trimmedName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
-    const newCategory: ProductCategory = {
-      id: newId,
+    const newCategoryData = {
       name: trimmedName,
       icon: trimmedName.charAt(0).toUpperCase(),
       color: '#808080',
+      user_id: user.id,
+      is_default: false,
+      id: randomUUID(),
     };
 
-    const optimisticCategories = [...categories, newCategory];
-    setCategories(optimisticCategories);
-    await saveCustomCategories(optimisticCategories);
+    const savedCategory = await StorageService.addCategory(newCategoryData);
 
-    const iconUrl = await IconService.fetchIconForCategory(trimmedName);
+    if (savedCategory) {
+      setCategories(prev => [...prev, savedCategory]);
 
-    if (iconUrl) {
-      const finalCategory = { ...newCategory, iconUrl };
-      const finalCategories = optimisticCategories.map(cat => cat.id === newId ? finalCategory : cat);
-      setCategories(finalCategories);
-      await saveCustomCategories(finalCategories);
-      return finalCategory;
+      const iconUrl = await IconService.fetchIconForCategory(trimmedName);
+      if (iconUrl) {
+        const finalCategory = { ...savedCategory, iconUrl };
+        await StorageService.updateCategory(finalCategory);
+        setCategories(prev => prev.map(cat => cat.id === finalCategory.id ? finalCategory : cat));
+        return finalCategory;
+      }
+      return savedCategory;
     }
     
-    return newCategory;
-  }, [categories]);
+    return null;
+  }, [categories, user]);
 
-  /**
-   * @function deleteCategory
-   * @description Elimina una categoria personalizzata dallo stato e dallo storage.
-   * @param {string} id - L'ID della categoria da eliminare.
-   */
   const deleteCategory = useCallback(async (id: string) => {
-    const updatedCategories = categories.filter(cat => cat.id !== id);
-    setCategories(updatedCategories);
-    await saveCustomCategories(updatedCategories);
-  }, [categories]);
+    setCategories(prev => prev.filter(cat => cat.id !== id));
+    try {
+      await StorageService.deleteCategory(id);
+    } catch (error) {
+      console.error("Errore durante l'eliminazione della categoria, ripristino.", error);
+      loadCategories();
+    }
+  }, [loadCategories]);
 
   const getCategoryById = useCallback((id: string) => {
     return categories.find(cat => cat.id === id);
@@ -124,10 +112,6 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-/**
- * @hook useCategories
- * @description Hook personalizzato per accedere facilmente al CategoryContext da qualsiasi componente.
- */
 export const useCategories = () => {
   const context = useContext(CategoryContext);
   if (context === undefined) {

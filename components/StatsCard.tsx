@@ -2,8 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 
-console.log('[DEBUG] Rendering components/StatsCard.tsx');
-
 interface StatsCardProps {
   title: string;
   value: string;
@@ -21,6 +19,7 @@ export function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgr
 
   return (
     <CardComponent 
+      testID="stats-card"
       style={[styles.card, { backgroundColor }]} 
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}

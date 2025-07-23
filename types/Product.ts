@@ -24,10 +24,12 @@ export interface Product {
 export interface ProductCategory {
   id: string;
   name: string;
-  icon?: string; // Reso opzionale
+  icon?: string; 
   color: string;
   iconUrl?: string;
-  localIcon?: any; // Usiamo 'any' per compatibilità con require
+  localIcon?: any; 
+  user_id?: string;
+  is_default?: boolean;
 }
 
 export const PRODUCT_CATEGORIES: ProductCategory[] = [
@@ -48,10 +50,11 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
   { id: 'jam', name: 'Marmellate', icon: '🍓', color: '#D946EF' },
   { id: 'honey', name: 'Miele', icon: '🍯', color: '#F59E0B' },
   { id: 'pasta', name: 'Pasta', icon: '🍝', color: '#F97316' },
+  { id: 'pomodoro', name: 'Pomodoro', icon: '🍅', color: '#E53E3E' },
   { id: 'fish', name: 'Pesce', icon: '🐟', color: '#06B6D4' },
   { id: 'rice', name: 'Riso', icon: '🍚', color: '#FBBF24' },
   { id: 'snacks', name: 'Snack', icon: '🍿', color: '#EC4899' },
-  { id: 'sauces', name: 'Sughi', icon: '🍅', color: '#DC2626' },
+  { id: 'sauces', name: 'Sughi', icon: '🍲', color: '#DC2626' },
   { id: 'frozen', name: 'Surgelati', icon: '❄️', color: '#0EA5E9' },
   { id: 'eggs', name: 'Uova', icon: '🥚', color: '#FCD34D' },
   { id: 'vegan', name: 'Vegano', icon: '🌱', color: '#22C55E' },

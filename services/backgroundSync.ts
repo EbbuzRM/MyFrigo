@@ -1,28 +1,53 @@
 import * as TaskManager from 'expo-task-manager';
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as Notifications from 'expo-notifications';
 import { StorageService } from './StorageService';
+import { NotificationService } from './NotificationService';
 
-const BACKGROUND_SYNC_TASK = 'background-sync';
+export const BACKGROUND_FETCH_TASK = 'background-notification-sync';
 
-TaskManager.defineTask(BACKGROUND_SYNC_TASK, async () => {
+// 1. Definisci il task
+TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+  const now = new Date();
+  console.log(`[BackgroundFetch] Task ${BACKGROUND_FETCH_TASK} eseguito alle: ${now.toISOString()}`);
+
   try {
-    console.log('Starting background sync...');
-    // Fetch products to sync data. The actual data is handled by the StorageService listener.
-    // This just ensures we are connecting to Firestore in the background.
-    await StorageService.getProducts(); 
-    console.log('Background sync completed successfully.');
-    return TaskManager.TaskManagerTaskResult.Success;
+    // Questa logica verrà eseguita in background
+    console.log('[BackgroundFetch] Recupero impostazioni e prodotti...');
+    const settings = await StorageService.getSettings();
+    const { data: products } = await StorageService.getProducts();
+
+    if (products && settings) {
+      console.log(`[BackgroundFetch] Dati recuperati. Riprogrammo le notifiche per ${products.length} prodotti.`);
+      // Cancella le vecchie e riprogramma tutto per assicurarsi che siano aggiornate
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      await NotificationService.scheduleMultipleNotifications(
+        products.filter(p => p.status === 'active'),
+        settings
+      );
+      console.log('[BackgroundFetch] Riprogrammazione completata.');
+      return BackgroundFetch.BackgroundFetchResult.NewData;
+    }
+
+    console.log('[BackgroundFetch] Nessun dato da processare.');
+    return BackgroundFetch.BackgroundFetchResult.NoData;
   } catch (error) {
-    console.error('Background sync task failed:', error);
-    return TaskManager.TaskManagerTaskResult.Failure;
+    console.error('[BackgroundFetch] Errore durante l_esecuzione del task:', error);
+    return BackgroundFetch.BackgroundFetchResult.Failed;
   }
 });
 
-export const registerBackgroundSync = async () => {
+// 2. Funzione helper per registrare il task
+export async function registerBackgroundFetchAsync() {
+  console.log('[BackgroundFetch] Tentativo di registrazione del task...');
   try {
-    // This is a placeholder for the registration logic which will be added to _layout.tsx
-    // The actual registration needs to be done using the BackgroundTask module.
-    console.log('Background sync task defined.');
+    await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+      minimumInterval: 15 * 60, // 15 minuti
+      stopOnTerminate: false, // false: continua a funzionare anche se l'app è terminata
+      startOnBoot: true,      // true: si riattiva al riavvio del dispositivo
+    });
+    console.log('[BackgroundFetch] Task registrato con successo.');
   } catch (error) {
-    console.error('Failed to define background sync task:', error);
+    console.error('[BackgroundFetch] Errore durante la registrazione del task:', error);
   }
-};
+}

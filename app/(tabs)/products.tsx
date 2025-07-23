@@ -11,39 +11,28 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search } from 'lucide-react-native';
-import { StorageService } from '@/services/StorageService';
-import { Product } from '@/types/Product';
 import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
+import { useProducts } from '@/context/ProductContext'; // Importa il contesto
+import { StorageService } from '@/services/StorageService'; // Mantenuto per delete/update
 import * as Haptics from 'expo-haptics';
 
 type ProductFilter = 'all' | 'expired' | 'expiring';
 
-// Componente per la visualizzazione dei prodotti
 const Products = () => {
   const { isDarkMode } = useTheme();
   const { categories, getCategoryById, loading: categoriesLoading } = useCategories();
+  const { products: allProducts, loading: productsLoading, refreshProducts } = useProducts(); // Usa il contesto
   const params = useLocalSearchParams();
-  const [products, setProducts] = useState<Product[]>([]);
+  
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [currentFilter, setCurrentFilter] = useState<ProductFilter>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    const unsubscribe = StorageService.listenToProducts((storedProducts) => {
-      setProducts(storedProducts.filter(p => p.status !== 'consumed'));
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -56,44 +45,52 @@ const Products = () => {
   );
 
   useEffect(() => {
+    const filterProducts = () => {
+      // Inizia con i prodotti non consumati
+      let filtered = allProducts.filter(p => p.status !== 'consumed');
+
+      if (searchQuery.trim()) {
+        filtered = filtered.filter(product =>
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      if (selectedCategory !== 'all') {
+        filtered = filtered.filter(product => product.category === selectedCategory);
+      }
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      if (currentFilter === 'expired') {
+        filtered = filtered.filter(product => {
+          const expirationDate = new Date(product.expirationDate);
+          expirationDate.setHours(0, 0, 0, 0);
+          return expirationDate < now;
+        });
+      } else if (currentFilter === 'expiring') {
+        const notificationDaysForExpiring = 7; // O leggere dalle impostazioni se necessario
+        const limitDate = new Date(now.getTime() + notificationDaysForExpiring * 24 * 60 * 60 * 1000);
+        filtered = filtered.filter(product => {
+          const expirationDate = new Date(product.expirationDate);
+          expirationDate.setHours(0, 0, 0, 0);
+          return expirationDate >= now && expirationDate <= limitDate;
+        });
+      }
+
+      filtered.sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
+      setFilteredProducts(filtered);
+    };
+
     filterProducts();
-  }, [products, searchQuery, selectedCategory, currentFilter]);
+  }, [allProducts, searchQuery, selectedCategory, currentFilter]);
 
-  const filterProducts = () => {
-    let filtered = [...products];
-
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    const now = new Date();
-    if (currentFilter === 'expired') {
-      filtered = filtered.filter(product => new Date(product.expirationDate) < now);
-    } else if (currentFilter === 'expiring') {
-      const notificationDaysForExpiring = 7;
-      const notificationPeriod = new Date(now.getTime() + notificationDaysForExpiring * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(product => {
-        const expirationDate = new Date(product.expirationDate);
-        return expirationDate <= notificationPeriod && expirationDate >= now;
-      });
-    }
-
-    filtered.sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
-
-    setFilteredProducts(filtered);
-  };
-
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+    await refreshProducts();
+    setRefreshing(false);
+  }, [refreshProducts]);
 
   const handleDeleteProduct = useCallback(async (productId: string) => {
     try {
@@ -120,7 +117,7 @@ const Products = () => {
 
   const styles = getStyles(isDarkMode);
 
-  if (loading || categoriesLoading) {
+  if (productsLoading || categoriesLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -134,7 +131,7 @@ const Products = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>I Miei Prodotti</Text>
-        <Text style={styles.subtitle}>{filteredProducts.length} prodotti attivi trovati</Text>
+        <Text style={styles.subtitle}>{filteredProducts.length} prodotti trovati</Text>
       </View>
 
       <View style={styles.searchContainer}>
@@ -174,7 +171,7 @@ const Products = () => {
       <CategoryFilter
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
-        products={products}
+        products={allProducts.filter(p => p.status !== 'consumed')}
         categories={categories}
       />
 
@@ -272,7 +269,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   productsContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 100, // Aggiunto spazio in fondo
   },
   emptyState: {
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',

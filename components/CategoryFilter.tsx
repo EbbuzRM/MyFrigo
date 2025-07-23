@@ -17,7 +17,8 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, products, c
     if (categoryId === 'all') {
       return products.length;
     }
-    return products.filter(product => product.category === categoryId).length;
+    // Gestisce sia 'category' che 'categoryId' per robustezza
+    return products.filter(product => product.categoryId === categoryId || product.category === categoryId).length;
   };
 
   const categories = [

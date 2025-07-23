@@ -4,21 +4,36 @@ import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react-native';
 import { StatsCard } from './StatsCard';
 import { useTheme } from '@/context/ThemeContext';
 import { router } from 'expo-router';
-
-console.log('[DEBUG] Rendering components/HistoryStats.tsx');
+import { Product } from '@/types/Product';
 
 interface HistoryStatsProps {
   totalProducts: number;
   expiredProducts: number;
   consumedProducts: number;
+  allProducts: Product[];
 }
 
-export function HistoryStats({ totalProducts, expiredProducts, consumedProducts }: HistoryStatsProps) {
+export function HistoryStats({ totalProducts, expiredProducts, consumedProducts, allProducts }: HistoryStatsProps) {
   const { } = useTheme();
   const wastePercentage = totalProducts > 0 ? Math.round((expiredProducts / totalProducts) * 100) : 0;
 
   const handlePress = (type: 'consumed' | 'expired' | 'all', title: string) => {
-    router.push({ pathname: '/history-detail', params: { type, title } });
+    let productList: Product[] = [];
+    if (type === 'all') {
+      productList = allProducts;
+    } else if (type === 'consumed') {
+      productList = allProducts.filter(p => p.status === 'consumed');
+    } else {
+      productList = allProducts.filter(p => p.status !== 'consumed');
+    }
+    
+    router.push({ 
+      pathname: '/history-detail', 
+      params: { 
+        products: JSON.stringify(productList), 
+        title 
+      } 
+    });
   };
 
   const styles = StyleSheet.create({
@@ -50,7 +65,7 @@ export function HistoryStats({ totalProducts, expiredProducts, consumedProducts 
           icon={<CheckCircle size={24} color="#10B981" />}
           lightBackgroundColor="#F0FDF4"
           darkBackgroundColor="#162d21"
-          onPress={() => router.push('/consumed-list')}
+          onPress={() => handlePress('consumed', 'Prodotti Consumati')}
         />
         <StatsCard
           title="Sprecati"
