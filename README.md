@@ -47,7 +47,7 @@ Per eseguire il progetto in locale, segui questi passaggi.
 #### 1. Clonazione del Repository
 
 ```bash
-git clone https://github.com/tuo-username/myfrigo.git
+git clone https://github.com/EbbuzRM/myfrigo.git
 cd myfrigo
 ```
 
@@ -140,7 +140,7 @@ To run the project locally, follow these steps.
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/myfrigo.git
+git clone https://github.com/EbbuzRM/myfrigo.git
 cd myfrigo
 ```
 
