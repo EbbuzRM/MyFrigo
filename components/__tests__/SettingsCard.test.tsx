@@ -8,7 +8,17 @@ import { Home } from 'lucide-react-native';
 jest.mock('@/context/ThemeContext', () => ({
   useTheme: () => ({
     isDarkMode: false,
+    colors: {
+      primary: '#007AFF',
+      background: '#ffffff',
+      text: '#000000',
+    },
   }),
+}));
+
+// Mock delle funzioni di accessibilità
+jest.mock('@/utils/accessibility', () => ({
+  getSettingsCardAccessibilityProps: jest.fn(() => ({})),
 }));
 
 describe('SettingsCard', () => {

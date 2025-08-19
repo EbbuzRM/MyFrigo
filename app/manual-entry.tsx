@@ -1,5 +1,5 @@
 import { AnimatedPressable } from '@/components/AnimatedPressable';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   FlatList,
   ScrollView,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Product, ProductCategory } from '@/types/Product';
@@ -23,6 +24,8 @@ import { CustomDatePicker } from '@/components/CustomDatePicker';
 import { useTheme } from '@/context/ThemeContext';
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useCategories } from '@/context/CategoryContext';
+import { LoggingService } from '@/services/LoggingService';
+import { formStateLogger } from '@/utils/FormStateLogger';
 
 const COMMON_UNITS = [
   { id: 'pz', name: 'pz (pezzi)' },
@@ -36,13 +39,78 @@ const COMMON_UNITS = [
   { id: 'vasetto', name: 'vasetto' },
 ];
 
-const ProductFormHeader = React.memo(({ isEditMode, imageUrl, barcode, name, brand, setName, setBrand, styles }) => (
+interface ProductFormHeaderProps {
+  isEditMode: boolean;
+  imageUrl: string | null;
+  barcode: string;
+  name: string;
+  brand: string;
+  selectedCategory: string;
+  quantity: string;
+  unit: string;
+  purchaseDate: string;
+  expirationDate: string;
+  notes: string;
+  setName: (value: string) => void;
+  setBrand: (value: string) => void;
+  styles: any; // Migliora con tipi specifici se possibile
+  navigatingToPhotoCapture: React.MutableRefObject<boolean>;
+}
+const ProductFormHeader = React.memo(({
+  isEditMode,
+  imageUrl,
+  barcode,
+  name,
+  brand,
+  selectedCategory,
+  quantity,
+  unit,
+  purchaseDate,
+  expirationDate,
+  notes,
+  setName,
+  setBrand,
+  styles,
+  navigatingToPhotoCapture
+}: ProductFormHeaderProps) => {
+  return (
   <>
     <Text style={styles.title}>{isEditMode ? 'Modifica Prodotto' : 'Inserimento Manuale'}</Text>
     {!imageUrl && !isEditMode && (
       <TouchableOpacity
         style={styles.takePhotoButton}
-        onPress={() => router.push({ pathname: '/photo-capture', params: { fromManualEntry: 'true' } })}
+        onPress={() => {
+          // Salva lo stato corrente del form prima di navigare
+          const currentFormData = {
+            name: name,
+            brand: brand,
+            selectedCategory: selectedCategory,
+            quantity: quantity,
+            unit: unit,
+            purchaseDate: purchaseDate,
+            expirationDate: expirationDate,
+            notes: notes,
+            barcode: barcode,
+            fromManualEntry: 'true'
+          };
+          
+          // Registra la navigazione
+          formStateLogger.logNavigation('TAKE_PHOTO', 'manual-entry', 'photo-capture', currentFormData);
+          
+          // Imposta il flag di navigazione
+          navigatingToPhotoCapture.current = true;
+          
+          // Naviga alla schermata di cattura foto
+          router.push({
+            pathname: '/photo-capture',
+            params: currentFormData
+          });
+          
+          // Resetta il flag dopo un breve ritardo
+          setTimeout(() => {
+            navigatingToPhotoCapture.current = false;
+          }, 500);
+        }}
       >
         <Text style={styles.takePhotoButtonText}>Scatta Foto Prodotto</Text>
       </TouchableOpacity>
@@ -77,15 +145,67 @@ const ProductFormHeader = React.memo(({ isEditMode, imageUrl, barcode, name, bra
     />
     <Text style={styles.label}>Categoria*</Text>
   </>
-));
+  );
+});
 
-const ProductFormFooter = React.memo(({ quantity, unit, purchaseDate, expirationDate, notes, setQuantity, setUnit, setShowPurchaseDatePicker, setShowExpirationDatePicker, setNotes, handleSaveProduct, isEditMode, showPurchaseDatePicker, showExpirationDatePicker, onChangePurchaseDate, onChangeExpirationDate, styles, name, brand, selectedCategory, barcode, imageUrl, loading }) => (
+interface ProductFormFooterProps {
+  quantity: string;
+  unit: string;
+  purchaseDate: string;
+  expirationDate: string;
+  notes: string;
+  setQuantity: (value: string) => void;
+  setUnit: (value: string) => void;
+  setShowPurchaseDatePicker: (value: boolean) => void;
+  setShowExpirationDatePicker: (value: boolean) => void;
+  setNotes: (value: string) => void;
+  handleSaveProduct: () => void;
+  isEditMode: boolean;
+  showPurchaseDatePicker: boolean;
+  showExpirationDatePicker: boolean;
+  onChangePurchaseDate: (event: DateTimePickerEvent, selectedDate?: Date) => void;
+  onChangeExpirationDate: (event: DateTimePickerEvent, selectedDate?: Date) => void;
+  styles: any;
+  name: string;
+  brand: string;
+  selectedCategory: string;
+  barcode: string;
+  imageUrl: string | null;
+  loading: boolean;
+  navigatingToPhotoCapture: React.MutableRefObject<boolean>;
+}
+const ProductFormFooter = React.memo(({
+  quantity,
+  unit,
+  purchaseDate,
+  expirationDate,
+  notes,
+  setQuantity,
+  setUnit,
+  setShowPurchaseDatePicker,
+  setShowExpirationDatePicker,
+  setNotes,
+  handleSaveProduct,
+  isEditMode,
+  showPurchaseDatePicker,
+  showExpirationDatePicker,
+  onChangePurchaseDate,
+  onChangeExpirationDate,
+  styles,
+  name,
+  brand,
+  selectedCategory,
+  barcode,
+  imageUrl,
+  loading,
+  navigatingToPhotoCapture
+}: ProductFormFooterProps) => (
   <>
     <View style={styles.row}>
       <View style={styles.column}>
         <Text style={styles.label}>Quantità*</Text>
         <View style={styles.quantityContainer}>
-          <AnimatedPressable onPress={() => setQuantity(q => String(Math.max(1, parseInt(q, 10) - 1)))} style={styles.quantityButton}>
+          <AnimatedPressable onPress={() => { const newValue = String(Math.max(1, parseInt(quantity, 10) - 1)); setQuantity(newValue); }} style={styles.quantityButton}>
             <Text style={styles.quantityButtonText}>-</Text>
           </AnimatedPressable>
           <TextInput
@@ -95,7 +215,7 @@ const ProductFormFooter = React.memo(({ quantity, unit, purchaseDate, expiration
             keyboardType="numeric"
             placeholderTextColor={styles.placeholder.color}
           />
-          <AnimatedPressable onPress={() => setQuantity(q => String(parseInt(q, 10) + 1))} style={styles.quantityButton}>
+          <AnimatedPressable onPress={() => { const newValue = String(parseInt(quantity, 10) + 1); setQuantity(newValue); }} style={styles.quantityButton}>
             <Text style={styles.quantityButtonText}>+</Text>
           </AnimatedPressable>
         </View>
@@ -119,8 +239,37 @@ const ProductFormFooter = React.memo(({ quantity, unit, purchaseDate, expiration
       <TouchableOpacity
         style={styles.photoButton}
         onPress={() => {
-          const currentFormData = { name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode, imageUrl };
-          router.push({ pathname: '/photo-capture', params: { ...currentFormData, captureMode: 'expirationDateOnly' } });
+          // Salva lo stato corrente del form prima di navigare
+          const currentFormData = {
+            name: name,
+            brand: brand,
+            selectedCategory: selectedCategory,
+            quantity: quantity,
+            unit: unit,
+            purchaseDate: purchaseDate,
+            expirationDate: expirationDate,
+            notes: notes,
+            barcode: barcode,
+            imageUrl: imageUrl,
+            captureMode: 'expirationDateOnly'
+          };
+          
+          // Registra la navigazione
+          formStateLogger.logNavigation('CAPTURE_EXPIRATION', 'manual-entry', 'photo-capture', currentFormData);
+          
+          // Imposta il flag di navigazione
+          navigatingToPhotoCapture.current = true;
+          
+          // Naviga alla schermata di cattura foto
+          router.push({
+            pathname: '/photo-capture',
+            params: currentFormData
+          });
+          
+          // Resetta il flag dopo un breve ritardo
+          setTimeout(() => {
+            navigatingToPhotoCapture.current = false;
+          }, 500);
         }}
       >
         <Text style={styles.photoButtonText}>Fotografa la scadenza</Text>
@@ -145,7 +294,25 @@ const ProductFormFooter = React.memo(({ quantity, unit, purchaseDate, expiration
       {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveButtonText}>{isEditMode ? 'Aggiorna Prodotto' : 'Salva Prodotto'}</Text>}
     </TouchableOpacity>
   </>
-));
+), (prevProps, nextProps) => {
+  // Confronto personalizzato per React.memo - assicura che il componente si ri-renderizzi quando unit cambia
+  return (
+    prevProps.quantity === nextProps.quantity &&
+    prevProps.unit === nextProps.unit &&
+    prevProps.purchaseDate === nextProps.purchaseDate &&
+    prevProps.expirationDate === nextProps.expirationDate &&
+    prevProps.notes === nextProps.notes &&
+    prevProps.isEditMode === nextProps.isEditMode &&
+    prevProps.showPurchaseDatePicker === nextProps.showPurchaseDatePicker &&
+    prevProps.showExpirationDatePicker === nextProps.showExpirationDatePicker &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.name === nextProps.name &&
+    prevProps.brand === nextProps.brand &&
+    prevProps.selectedCategory === nextProps.selectedCategory &&
+    prevProps.barcode === nextProps.barcode &&
+    prevProps.imageUrl === nextProps.imageUrl
+  );
+});
 
 export default function ManualEntryScreen() {
   const { isDarkMode } = useTheme();
@@ -168,6 +335,12 @@ export default function ManualEntryScreen() {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
   const [hasManuallySelectedCategory, setHasManuallySelectedCategory] = useState(false);
+  
+  // Identificatore unico per questa istanza del form
+  const formInstanceId = useRef(`manual-entry-${Date.now()}`).current;
+  
+  // Flag per tracciare se stiamo navigando verso la schermata di cattura foto
+  const navigatingToPhotoCapture = useRef(false);
 
   const ADD_NEW_CATEGORY_ID = 'add_new_category_sentinel_value';
 
@@ -211,6 +384,148 @@ export default function ManualEntryScreen() {
       }
     }
   }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, loading, guessCategory, selectedCategory]);
+  
+  // Preserva la categoria selezionata quando si torna dalla schermata di cattura foto
+  useEffect(() => {
+    if (params.fromPhotoCapture === 'true' && params.selectedCategory) {
+      const categoryParam = Array.isArray(params.selectedCategory)
+        ? params.selectedCategory[0]
+        : params.selectedCategory;
+      
+      if (categoryParam) {
+        LoggingService.info('ManualEntry', `Preserving selected category: ${categoryParam} after photo capture`);
+        setSelectedCategory(categoryParam);
+        setHasManuallySelectedCategory(true);
+      }
+    }
+  }, [params.fromPhotoCapture, params.selectedCategory]);
+  
+  // Riferimenti ai valori iniziali per verificare se ci sono modifiche
+  const initialValues = useRef<{
+    name: string;
+    brand: string;
+    selectedCategory: string;
+    quantity: string;
+    unit: string;
+    purchaseDate: string;
+    expirationDate: string;
+    notes: string;
+    barcode: string;
+    imageUrl: string | null;
+  }>({
+    name: '',
+    brand: '',
+    selectedCategory: '',
+    quantity: '1',
+    unit: 'pz',
+    purchaseDate: new Date().toISOString().split('T')[0],
+    expirationDate: '',
+    notes: '',
+    barcode: '',
+    imageUrl: null
+  });
+  
+  // Funzione per verificare se ci sono modifiche non salvate
+  const hasUnsavedChanges = useCallback(() => {
+    // Verifica se i valori attuali sono diversi dai valori iniziali
+    return (
+      name !== initialValues.current.name ||
+      brand !== initialValues.current.brand ||
+      selectedCategory !== initialValues.current.selectedCategory ||
+      quantity !== initialValues.current.quantity ||
+      unit !== initialValues.current.unit ||
+      purchaseDate !== initialValues.current.purchaseDate ||
+      expirationDate !== initialValues.current.expirationDate ||
+      notes !== initialValues.current.notes ||
+      barcode !== initialValues.current.barcode ||
+      imageUrl !== initialValues.current.imageUrl
+    );
+  }, [
+    isEditMode,
+    name,
+    brand,
+    selectedCategory,
+    quantity,
+    unit,
+    purchaseDate,
+    expirationDate,
+    notes,
+    barcode,
+    imageUrl
+  ]);
+  
+  // Aggiorna i valori iniziali quando vengono caricati i parametri
+  useEffect(() => {
+    // Aggiorna i valori iniziali sia in modalità creazione che modifica
+    initialValues.current = {
+      name,
+      brand,
+      selectedCategory,
+      quantity,
+      unit,
+      purchaseDate,
+      expirationDate,
+      notes,
+      barcode,
+      imageUrl
+    };
+    LoggingService.debug('ManualEntry', 'Valori iniziali impostati', initialValues.current);
+  }, [loading, params.productId]);
+  
+  // Gestisce il pulsante indietro hardware
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Se stiamo navigando verso la schermata di cattura foto, salviamo lo stato del form
+      if (navigatingToPhotoCapture.current) {
+        return false; // Lascia che la navigazione proceda normalmente
+      }
+      
+      // Esci direttamente senza conferma
+      LoggingService.info('ManualEntry', 'Uscita diretta senza conferma');
+      formStateLogger.logNavigation('BACK_BUTTON_DIRECT', 'manual-entry', 'previous-screen', null);
+      router.back();
+      return true; // Previene il comportamento predefinito
+    });
+
+    return () => backHandler.remove();
+  }, []);
+  
+  // Salva lo stato del form quando cambia
+  useEffect(() => {
+    const formState = {
+      name,
+      brand,
+      selectedCategory,
+      quantity,
+      unit,
+      purchaseDate,
+      expirationDate,
+      notes,
+      barcode,
+      imageUrl,
+      hasManuallySelectedCategory,
+      isEditMode,
+      originalProductId
+    };
+    
+    formStateLogger.saveFormState(formInstanceId, formState);
+  }, [
+    formInstanceId,
+    name,
+    brand,
+    selectedCategory,
+    quantity,
+    unit,
+    purchaseDate,
+    expirationDate,
+    notes,
+    barcode,
+    imageUrl,
+    hasManuallySelectedCategory,
+    isEditMode,
+    originalProductId
+  ]);
+  
 
   const handleAddNewCategory = useCallback(async () => {
     if (!newCategoryNameInput.trim()) {
@@ -222,12 +537,22 @@ export default function ManualEntryScreen() {
       if (newCategory) {
         setSelectedCategory(newCategory.id);
         setHasManuallySelectedCategory(true);
+        
+        // Mostra un messaggio aggiuntivo se l'icona non è stata trovata
+        if (newCategory.iconNotFound) {
+          // Il messaggio principale è già mostrato dal context, ma possiamo aggiungere un feedback visivo
+          LoggingService.info('ManualEntry', `Category "${newCategory.name}" created without icon`);
+        }
       }
       setIsCategoryModalVisible(false);
       setNewCategoryNameInput('');
-    } catch (error: any) {
-      Alert.alert('Errore', error.message);
+    } catch (error: unknown) {
+    let message = 'Si è verificato un errore sconosciuto.';
+    if (error instanceof Error) {
+      message = error.message;
     }
+    Alert.alert('Errore', message);
+  }
   }, [newCategoryNameInput, addCategory]);
 
   const handleCategoryChange = useCallback((itemValue: string) => {
@@ -252,45 +577,120 @@ export default function ManualEntryScreen() {
   useEffect(() => {
     const loadProductForEdit = async (id: string) => {
       const productToEdit = await StorageService.getProductById(id);
-      if (productToEdit) {
-        setName(productToEdit.name);
-        setBrand(productToEdit.brand || '');
-        setSelectedCategory(productToEdit.category);
-        setQuantity(productToEdit.quantity.toString());
-        setUnit(productToEdit.unit);
-        setPurchaseDate(productToEdit.purchaseDate);
-        setExpirationDate(productToEdit.expirationDate);
-        setNotes(productToEdit.notes || '');
-        setBarcode(productToEdit.barcode || '');
-        setImageUrl(productToEdit.imageUrl || null);
-        setOriginalProductId(productToEdit.id);
-        setIsEditMode(true);
-        setHasManuallySelectedCategory(true);
-      } else {
-        console.warn(`Product with ID ${id} not found for editing.`);
-      }
+    if (productToEdit) {
+      setName(productToEdit.name);
+      setBrand(productToEdit.brand || '');
+      setSelectedCategory(productToEdit.category);
+      setQuantity(productToEdit.quantity.toString());
+      setUnit(productToEdit.unit);
+      setPurchaseDate(productToEdit.purchaseDate);
+      setExpirationDate(productToEdit.expirationDate);
+      setNotes(productToEdit.notes || '');
+      setBarcode(productToEdit.barcode || '');
+      setImageUrl(productToEdit.imageUrl || null);
+      setOriginalProductId(productToEdit.id);
+      setIsEditMode(true);
+      setHasManuallySelectedCategory(true);
+    } else {
+      LoggingService.info('ManualEntry', `Product with ID ${id} not found for editing.`);
+    }
     };
-    if (params.productId && typeof params.productId === 'string') {
-      loadProductForEdit(params.productId);
+    let productId = params.productId;
+    if (Array.isArray(productId)) {
+      productId = productId[0];
+    }
+    if (productId && typeof productId === 'string') {
+      loadProductForEdit(productId);
     }
   }, [params.productId]);
 
   useEffect(() => {
     if (!params.productId) {
-      if (params.barcode && typeof params.barcode === 'string') setBarcode(params.barcode);
-      if (params.productName && typeof params.productName === 'string') setName(params.productName);
-      if (params.brand && typeof params.brand === 'string') setBrand(params.brand);
-      if (params.imageUrl && typeof params.imageUrl === 'string') setImageUrl(params.imageUrl);
-      if (params.category && typeof params.category === 'string') {
-        setSelectedCategory(params.category);
+      // Funzione helper per gestire parametri che potrebbero essere array
+      const getStringParam = (param: string | string[] | undefined): string => {
+        if (Array.isArray(param)) {
+          return param[0] || '';
+        }
+        return param || '';
+      };
+
+      // Ripristina tutti i dati del form dai parametri
+      const barcodeParam = getStringParam(params.barcode);
+      if (barcodeParam) setBarcode(barcodeParam);
+
+      const productNameParam = getStringParam(params.productName || params.name);
+      if (productNameParam) setName(productNameParam);
+
+      const brandParam = getStringParam(params.brand);
+      if (brandParam) setBrand(brandParam);
+
+      const imageUrlParam = getStringParam(params.imageUrl);
+      if (imageUrlParam) {
+        setImageUrl(imageUrlParam);
+      }
+
+      const categoryParam = getStringParam(params.category || params.selectedCategory);
+      if (categoryParam) {
+        setSelectedCategory(categoryParam);
         setHasManuallySelectedCategory(true);
       }
+
+      // Ripristina quantità e unità se presenti
+      const quantityParam = getStringParam(params.quantity);
+      if (quantityParam) setQuantity(quantityParam);
+
+      const unitParam = getStringParam(params.unit);
+      if (unitParam) setUnit(unitParam);
+
+      // Ripristina le date se presenti
+      const purchaseDateParam = getStringParam(params.purchaseDate);
+      if (purchaseDateParam) setPurchaseDate(purchaseDateParam);
+
+      const expirationDateParam = getStringParam(params.expirationDate);
+      if (expirationDateParam) setExpirationDate(expirationDateParam);
+
+      // Ripristina le note se presenti
+      const notesParam = getStringParam(params.notes);
+      if (notesParam) setNotes(notesParam);
+
+      // Log per debug
+      if (params.fromPhotoCapture === 'true') {
+        formStateLogger.logNavigation('RETURN_FROM_PHOTO_CAPTURE', 'photo-capture', 'manual-entry', {
+          name: productNameParam,
+          brand: brandParam,
+          selectedCategory: categoryParam,
+          quantity: quantityParam,
+          unit: unitParam,
+          purchaseDate: purchaseDateParam,
+          expirationDate: expirationDateParam,
+          notes: notesParam,
+          barcode: barcodeParam,
+          imageUrl: imageUrlParam
+        });
+        
+        LoggingService.info('ManualEntry', 'Restoring form data from photo capture:', {
+          name: productNameParam,
+          brand: brandParam,
+          selectedCategory: categoryParam,
+          quantity: quantityParam,
+          unit: unitParam,
+          purchaseDate: purchaseDateParam,
+          expirationDate: expirationDateParam,
+          notes: notesParam,
+          barcode: barcodeParam,
+          imageUrl: imageUrlParam
+        });
+      }
     }
-  }, []);
+  }, [params]);
 
   useEffect(() => {
-    if (params.extractedExpirationDate && typeof params.extractedExpirationDate === 'string') {
-      setExpirationDate(params.extractedExpirationDate);
+    let extractedExpirationDateParam = params.extractedExpirationDate;
+    if (Array.isArray(extractedExpirationDateParam)) {
+      extractedExpirationDateParam = extractedExpirationDateParam[0];
+    }
+    if (extractedExpirationDateParam && typeof extractedExpirationDateParam === 'string') {
+      setExpirationDate(extractedExpirationDateParam);
     }
   }, [params.extractedExpirationDate]);
 
@@ -307,6 +707,138 @@ export default function ManualEntryScreen() {
     }
     setShowExpirationDatePicker(false);
   }, []);
+
+  // Funzione per salvare lo stato completo del form
+  const saveCurrentFormState = useCallback(() => {
+    const currentState = {
+      name,
+      brand,
+      selectedCategory,
+      quantity,
+      unit,
+      purchaseDate,
+      expirationDate,
+      notes,
+      barcode,
+      imageUrl,
+      hasManuallySelectedCategory,
+      isEditMode,
+      originalProductId,
+      formInstanceId: formInstanceId // Usa direttamente la stringa formInstanceId
+    };
+    formStateLogger.saveFormState(formInstanceId, currentState);
+    LoggingService.info('ManualEntry', 'Current form state saved:', currentState);
+  }, [
+    name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes,
+    barcode, imageUrl, hasManuallySelectedCategory, isEditMode, originalProductId, formInstanceId
+  ]);
+
+  // Funzione per ripristinare lo stato del form
+  const restoreFormState = useCallback(() => {
+    const savedState = formStateLogger.getFormState(formInstanceId);
+    if (savedState) {
+      LoggingService.info('ManualEntry', 'Restoring form state:', savedState);
+      setName(savedState.name || '');
+      setBrand(savedState.brand || '');
+      setSelectedCategory(savedState.selectedCategory || '');
+      setQuantity(savedState.quantity || '1');
+      setUnit(savedState.unit || 'pz');
+      setPurchaseDate(savedState.purchaseDate || new Date().toISOString().split('T')[0]);
+      setExpirationDate(savedState.expirationDate || '');
+      setNotes(savedState.notes || '');
+      setBarcode(savedState.barcode || '');
+      setImageUrl(savedState.imageUrl || null);
+      setHasManuallySelectedCategory(savedState.hasManuallySelectedCategory || false);
+      setIsEditMode(savedState.isEditMode || false);
+      setOriginalProductId(savedState.originalProductId || null);
+      return true; // Stato ripristinato con successo
+    }
+    LoggingService.warning('ManualEntry', 'No saved form state found to restore.');
+    return false; // Nessuno stato da ripristinare
+  }, [formInstanceId]);
+
+  // Log per debug della persistenza dei dati e ripristino stato
+  useEffect(() => {
+    if (params.fromPhotoCapture === 'true') {
+      LoggingService.info('ManualEntry', 'Form data after photo capture:', {
+        name,
+        brand,
+        selectedCategory,
+        quantity,
+        unit,
+        purchaseDate,
+        expirationDate,
+        notes,
+        barcode,
+        imageUrl: params.imageUrl, // Usa params.imageUrl qui
+        hasManuallySelectedCategory
+      });
+      
+      // Prova a ripristinare lo stato del form
+      const restorationSuccessful = restoreFormState();
+      if (restorationSuccessful) {
+        LoggingService.info('ManualEntry', 'Form state restored successfully after photo capture.');
+      } else {
+        LoggingService.warning('ManualEntry', 'Form state restoration failed after photo capture.');
+      }
+      
+      // Confronta con lo stato salvato prima della navigazione (per log aggiuntivi)
+      const previousState = formStateLogger.getFormState(formInstanceId);
+      if (previousState) {
+        const comparison = formStateLogger.compareStates(previousState, {
+          name,
+          brand,
+          selectedCategory,
+          quantity,
+          unit,
+          purchaseDate,
+          expirationDate,
+          notes,
+          barcode,
+          imageUrl: params.imageUrl, // Usa params.imageUrl qui
+          hasManuallySelectedCategory
+        });
+        
+        if (comparison.hasDifferences) {
+          LoggingService.warning('ManualEntry', 'Differences detected in form state after photo capture (after restoration attempt):', comparison.differences);
+        } else {
+          LoggingService.info('ManualEntry', 'No differences detected in form state after photo capture (after restoration attempt).');
+        }
+      }
+    }
+  }, [
+    formInstanceId,
+    params.fromPhotoCapture,
+    params.imageUrl, // Aggiungi params.imageUrl alle dipendenze
+    name,
+    brand,
+    selectedCategory,
+    quantity,
+    unit,
+    purchaseDate,
+    expirationDate,
+    notes,
+    barcode,
+    hasManuallySelectedCategory,
+    restoreFormState
+  ]);
+
+  // Effetto speciale per aggiornare imageUrl quando arriva da photo-capture
+  useEffect(() => {
+    if (params.fromPhotoCapture === 'true' && params.imageUrl) {
+      const imageUrlParam = Array.isArray(params.imageUrl) ? params.imageUrl[0] : params.imageUrl;
+      setImageUrl(imageUrlParam);
+    }
+  }, [params.fromPhotoCapture, params.imageUrl]);
+
+  // Effetto speciale per aggiornare expirationDate quando arriva da photo-capture (modalità data di scadenza)
+  useEffect(() => {
+    if (params.fromPhotoCapture === 'true' && params.expirationDate) {
+      const expirationDateParam = Array.isArray(params.expirationDate) ? params.expirationDate[0] : params.expirationDate;
+      LoggingService.info('ManualEntry', 'Setting expirationDate from params:', expirationDateParam);
+      setExpirationDate(expirationDateParam);
+    }
+  }, [params.fromPhotoCapture, params.expirationDate]);
 
   const handleSaveProduct = useCallback(async () => {
     if (!name || !selectedCategory || !quantity || !unit || !purchaseDate || !expirationDate) {
@@ -333,31 +865,34 @@ export default function ManualEntryScreen() {
       productData.id = originalProductId;
     }
 
-    console.log("Attempting to save product with data:", JSON.stringify(productData, null, 2));
+    LoggingService.info('ManualEntry', "Attempting to save product with data:", JSON.stringify(productData, null, 2));
 
     try {
       await StorageService.saveProduct(productData);
+      
+      // Pulisci lo stato del form per evitare problemi di navigazione
+      formStateLogger.clearFormStates();
+      
+      // Mostra un toast o un alert temporaneo
       Alert.alert(
         'Prodotto Salvato',
-        `${name} è stato aggiunto e salvato nella tua dispensa.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)');
-              }
-            },
-          },
-        ]
+        `${name} è stato aggiunto e salvato nella tua dispensa.`
       );
-    } catch (error) {
-      console.error('Errore durante il salvataggio del prodotto:', error);
+      
+      // Log dell'operazione completata
+      LoggingService.info('ManualEntry', 'Prodotto salvato con successo, navigazione alla schermata prodotti');
+      
+      // Naviga alla schermata prodotti per evitare problemi di stato
+      // Questo risolve il problema del ritorno alla finestra pre-cattura
+      setTimeout(() => {
+        // Forza la navigazione alla schermata prodotti
+        router.replace('/(tabs)/products');
+      }, 1500); // Ritardo di 1.5 secondi per permettere all'utente di vedere il messaggio
+    } catch (error: unknown) {
+      LoggingService.error('ManualEntry', 'Errore durante il salvataggio del prodotto:', error);
       Alert.alert('Errore', 'Si è verificato un errore durante il salvataggio del prodotto.');
     }
-  }, [name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode, imageUrl, isEditMode, originalProductId, params.addedMethod]);
+  }, [name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode, imageUrl, isEditMode, originalProductId, params.addedMethod, formInstanceId]);
 
   const styles = getStyles(isDarkMode);
 
@@ -366,6 +901,8 @@ export default function ManualEntryScreen() {
       return <View style={styles.categoryItemSpacer} />;
     }
     
+    const hasIcon = (item.localIcon || (item.icon && item.icon !== '+')) && !item.iconNotFound;
+
     return (
       <TouchableOpacity
         style={[
@@ -374,17 +911,20 @@ export default function ManualEntryScreen() {
         ]}
         onPress={() => handleCategoryChange(item.id)}
       >
-        {item.localIcon ? (
-          <Image source={item.localIcon} style={{ width: 40, height: 40, marginBottom: 4, borderRadius: 8 }} />
-        ) : item.iconUrl ? (
-          <Image source={{ uri: item.iconUrl }} style={styles.categoryImage} />
-        ) : (
-          <Text style={styles.categoryIcon}>{item.icon}</Text>
-        )}
-        <Text 
-          style={styles.categoryName} 
-          numberOfLines={1} 
-          adjustsFontSizeToFit
+        {hasIcon ? (
+          <View style={styles.iconContainer}>
+            {item.localIcon ? (
+              <Image source={item.localIcon} style={styles.categoryImage} />
+            ) : item.icon && item.icon.startsWith('http') ? (
+              <Image source={{ uri: item.icon }} style={styles.categoryImage} />
+            ) : (
+              <Text style={styles.categoryIcon}>{item.icon}</Text>
+            )}
+          </View>
+        ) : null}
+        <Text
+          style={[styles.categoryName, !hasIcon && styles.categoryNameNoIcon]}
+          numberOfLines={2}
         >
           {item.name}
         </Text>
@@ -394,12 +934,12 @@ export default function ManualEntryScreen() {
 
   const numColumns = 4;
   const categoryData = useMemo(() => {
-    const formatData = (data, columns) => {
+    const formatData = (data: ProductCategory[], columns: number) => {
       const dataWithButton = [...data, { id: ADD_NEW_CATEGORY_ID, name: 'Aggiungi', icon: '+', color: '#808080' }];
       const numberOfFullRows = Math.floor(dataWithButton.length / columns);
       let numberOfElementsLastRow = dataWithButton.length - (numberOfFullRows * columns);
       while (numberOfElementsLastRow !== columns && numberOfElementsLastRow !== 0) {
-        dataWithButton.push({ id: `spacer-${numberOfElementsLastRow}`, spacer: true });
+        dataWithButton.push({ id: `spacer-${numberOfElementsLastRow}`, name: '', color: 'transparent', spacer: true } as ProductCategory & { spacer: boolean });
         numberOfElementsLastRow++;
       }
       return dataWithButton;
@@ -427,9 +967,16 @@ export default function ManualEntryScreen() {
           barcode={barcode}
           name={name}
           brand={brand}
+          selectedCategory={selectedCategory}
+          quantity={quantity}
+          unit={unit}
+          purchaseDate={purchaseDate}
+          expirationDate={expirationDate}
+          notes={notes}
           setName={setName}
           setBrand={setBrand}
           styles={styles}
+          navigatingToPhotoCapture={navigatingToPhotoCapture}
         />
         <FlatList
           data={categoryData}
@@ -463,6 +1010,7 @@ export default function ManualEntryScreen() {
           barcode={barcode}
           imageUrl={imageUrl}
           loading={loading}
+          navigatingToPhotoCapture={navigatingToPhotoCapture}
         />
       </ScrollView>
       <Modal transparent={true} animationType="fade" visible={isCategoryModalVisible} onRequestClose={() => setIsCategoryModalVisible(false)}>
@@ -523,21 +1071,41 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderColor: isDarkMode ? '#58a6ff' : '#3b82f6',
     backgroundColor: isDarkMode ? '#0d419d' : '#dbeafe',
   },
-  categoryIcon: {
-    fontSize: 32,
+  iconContainer: {
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 4,
   },
+  categoryIcon: {
+    fontSize: 32,
+  },
   categoryImage: {
-    width: 40,
-    height: 40,
-    marginBottom: 4,
+    width: 50,
+    height: 50,
     borderRadius: 8,
   },
   categoryName: {
-    fontSize: 13,
+    fontSize: 11,
     textAlign: 'center',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
     fontFamily: 'Inter-Regular',
+    width: '100%',
+    marginBottom: 4,
+    paddingHorizontal: 2,
+    fontWeight: '500',
+  },
+  categoryNameNoIcon: {
+    fontSize: 14, // Più grande
+    textAlign: 'center',
+    fontWeight: 'bold',
+    position: 'absolute', // Per centrare perfettamente
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    textAlignVertical: 'center',
   },
   title: {
     fontSize: 24,

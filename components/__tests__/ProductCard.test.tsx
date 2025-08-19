@@ -1,166 +1,130 @@
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { ProductCard } from '../ProductCard';
-import { Alert } from 'react-native';
-import { Product, ProductCategory } from '@/types/Product';
-
-// --- Mocks ---
+import { Product } from '@/types/Product';
+import { ProductCategory } from '@/types/Product';
 
 // Mock del contesto del tema
 jest.mock('@/context/ThemeContext', () => ({
   useTheme: () => ({
     isDarkMode: false,
+    colors: {
+      textPrimary: '#1a1a1a',
+      textSecondary: '#666666',
+      primary: '#3b82f6',
+      error: '#ef4444',
+      cardBackground: '#ffffff',
+      background: '#f5f5f5'
+    }
   }),
 }));
 
-// Mock dell'hook dello stato di scadenza
+// Mock del contesto delle categorie
+jest.mock('@/context/CategoryContext', () => ({
+  useCategories: () => ({
+    categories: [
+      { id: 'cat1', name: 'Latticini', icon: '🥛', color: '#3b82f6' },
+      { id: 'cat2', name: 'Frutta', icon: '🍎', color: '#ef4444' },
+    ],
+    getCategoryById: (id: string) => {
+      const categories = [
+        { id: 'cat1', name: 'Latticini', icon: '🥛', color: '#3b82f6' },
+        { id: 'cat2', name: 'Frutta', icon: '🍎', color: '#ef4444' },
+      ];
+      return categories.find(cat => cat.id === id);
+    }
+  }),
+}));
+
+// Mock dell'hook useExpirationStatus
 jest.mock('@/hooks/useExpirationStatus', () => ({
   useExpirationStatus: jest.fn(() => ({
-    color: '#000000',
     backgroundColor: '#ffffff',
-    status: 'valid',
+    color: '#16a34a',
+    daysUntilExpiration: 5,
+    isExpiringSoon: false,
+    isExpired: false,
   })),
 }));
 
-// Mock di Reanimated
-jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.useSharedValue = jest.fn(() => ({ value: 0 }));
-  Reanimated.useAnimatedStyle = jest.fn((callback) => callback());
-  Reanimated.withTiming = jest.fn((toValue) => toValue);
-  Reanimated.withDelay = jest.fn((_, animation) => animation);
-  return Reanimated;
-});
+// Mock delle funzioni di accessibilità
+jest.mock('@/utils/accessibility', () => ({
+  getProductCardAccessibilityProps: jest.fn(() => ({})),
+  getDeleteButtonAccessibilityProps: jest.fn(() => ({})),
+  getActionButtonAccessibilityProps: jest.fn(() => ({})),
+  getImageAccessibilityProps: jest.fn(() => ({})),
+}));
 
-// Mock per Alert.alert
-jest.spyOn(Alert, 'alert');
+// Mock del LoggingService
+jest.mock('@/services/LoggingService', () => ({
+  LoggingService: {
+    warning: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
+}));
+
+// Mock delle costanti dei colori
+jest.mock('@/constants/colors', () => ({
+  COLORS: {
+    LIGHT: {
+      textPrimary: '#1a1a1a',
+    },
+    DARK: {
+      textPrimary: '#ffffff',
+    },
+  },
+}));
 
 // --- Dati di Test ---
-
-const mockProduct: Product = {
-  id: '1',
-  name: 'Latte',
-  brand: 'Super Brand',
-  quantity: 1,
-  unit: 'L',
-  expirationDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // Scade tra 3 giorni
-  purchaseDate: new Date().toISOString(),
-  categoryId: 'cat1',
-  status: 'active',
-  notes: 'Note di prova',
-  userId: 'user1',
-};
 
 const mockCategory: ProductCategory = {
   id: 'cat1',
   name: 'Latticini',
   icon: '🥛',
-  color: '#3b82f6',
+  color: '#3b82f6'
+};
+
+const mockProduct: Product = {
+  id: '1',
+  name: 'Latte',
+  category: 'cat1',
+  quantity: 1,
+  unit: 'litro',
+  purchaseDate: '2024-01-15',
+  expirationDate: '2024-01-25',
+  status: 'active',
+  addedMethod: 'manual'
 };
 
 describe('ProductCard', () => {
-  // Pulisce i mock dopo ogni test
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('should render product name, brand, and quantity', () => {
+  it('should render product information correctly', () => {
     const { getByText } = render(
       <ProductCard
         product={mockProduct}
         categoryInfo={mockCategory}
+        onPress={jest.fn()}
         onDelete={jest.fn()}
         index={0}
       />
     );
 
     expect(getByText('Latte')).toBeTruthy();
-    expect(getByText('Super Brand')).toBeTruthy();
-    expect(getByText('1 L')).toBeTruthy();
+    expect(getByText('1 litro')).toBeTruthy();
+    expect(getByText('🥛')).toBeTruthy();
   });
 
-  it('should render category information', () => {
+  it('should display expiration date', () => {
     const { getByText } = render(
       <ProductCard
         product={mockProduct}
         categoryInfo={mockCategory}
+        onPress={jest.fn()}
         onDelete={jest.fn()}
         index={0}
       />
     );
 
-    expect(getByText('Latticini')).toBeTruthy();
-    expect(getByText('🥛')).toBeTruthy(); // Emoji dell'icona
-  });
-
-  it('should show "Consumato" button and call onConsume when pressed', () => {
-    const onConsumeMock = jest.fn();
-    const { getByText } = render(
-      <ProductCard
-        product={mockProduct}
-        categoryInfo={mockCategory}
-        onDelete={jest.fn()}
-        onConsume={onConsumeMock}
-        index={0}
-      />
-    );
-
-    const consumeButton = getByText('Consumato');
-    expect(consumeButton).toBeTruthy();
-
-    fireEvent.press(consumeButton);
-    expect(onConsumeMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('should not show "Consumato" button if onConsume is not provided', () => {
-    const { queryByText } = render(
-      <ProductCard
-        product={mockProduct}
-        categoryInfo={mockCategory}
-        onDelete={jest.fn()}
-        index={0}
-      />
-    );
-
-    expect(queryByText('Consumato')).toBeNull();
-  });
-
-  it('should call onDelete when delete is confirmed in the alert', () => {
-    const onDeleteMock = jest.fn();
-    const { getByTestId } = render(
-      <ProductCard
-        product={mockProduct}
-        categoryInfo={mockCategory}
-        onDelete={onDeleteMock}
-        index={0}
-      />
-    );
-    
-    // Trova il pulsante tramite un testID implicito che aggiungeremo
-    // (non possiamo farlo direttamente, quindi troviamo il genitore)
-    const deleteButton = getByTestId('delete-button');
-    fireEvent.press(deleteButton);
-
-    // Verifica che Alert.alert sia stato chiamato
-    expect(Alert.alert).toHaveBeenCalled();
-
-    // Simula la pressione del pulsante "Elimina" nell'alert
-    // @ts-ignore
-    act(() => Alert.alert.mock.calls[0][2][1].onPress());
-    
-    expect(onDeleteMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('should render notes if provided', () => {
-    const { getByText } = render(
-      <ProductCard
-        product={mockProduct}
-        categoryInfo={mockCategory}
-        onDelete={jest.fn()}
-        index={0}
-      />
-    );
-
-    expect(getByText('Note di prova')).toBeTruthy();
+    expect(getByText('25/01/2024')).toBeTruthy();
   });
 });

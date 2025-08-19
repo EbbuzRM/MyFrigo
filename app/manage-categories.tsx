@@ -3,15 +3,19 @@ import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, M
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PRODUCT_CATEGORIES } from '@/types/Product';
 import { router } from 'expo-router';
-import { X, Plus } from 'lucide-react-native';
+import { X, Plus, Edit2 } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
+import { LoggingService } from '@/services/LoggingService';
 
 export default function ManageCategoriesScreen() {
   const { isDarkMode } = useTheme();
-  const { categories, addCategory, deleteCategory } = useCategories();
+  const { categories, addCategory, deleteCategory, updateCategory } = useCategories();
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
+  const [isEditModalVisible, setEditModalVisible] = useState(false);
   const [createCategoryName, setCreateCategoryName] = useState('');
+  const [editCategoryNameInput, setEditCategoryNameInput] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const customCategories = categories.filter(sc => !PRODUCT_CATEGORIES.some(dc => dc.id === sc.id));
 
@@ -28,7 +32,14 @@ export default function ManageCategoriesScreen() {
 
   const handleCreate = async () => {
     try {
-      await addCategory(createCategoryName);
+      const newCategory = await addCategory(createCategoryName);
+      if (newCategory) {
+        // Mostra un messaggio aggiuntivo se l'icona non è stata trovata
+        if (newCategory.iconNotFound) {
+          // Il messaggio principale è già mostrato dal context, ma possiamo aggiungere un feedback visivo
+          LoggingService.info('ManageCategories', `Category "${newCategory.name}" created without icon`);
+        }
+      }
       setCreateCategoryName('');
       setCreateModalVisible(false);
     } catch (error: any) {
@@ -36,19 +47,49 @@ export default function ManageCategoriesScreen() {
     }
   };
 
+  const handleEdit = (categoryId: string, currentName: string) => {
+    setSelectedCategoryId(categoryId);
+    setEditCategoryNameInput(currentName);
+    setEditModalVisible(true);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!selectedCategoryId) return;
+    
+    try {
+      if (!editCategoryNameInput.trim()) {
+        Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
+        return;
+      }
+
+      // Verifica se esiste già una categoria con lo stesso nome
+      if (categories.some(cat =>
+        cat.id !== selectedCategoryId &&
+        cat.name.toLowerCase() === editCategoryNameInput.trim().toLowerCase()
+      )) {
+        Alert.alert('Errore', 'Una categoria con questo nome esiste già.');
+        return;
+      }
+
+      await updateCategory(selectedCategoryId, editCategoryNameInput);
+      setEditModalVisible(false);
+      LoggingService.info('ManageCategories', `Categoria ${selectedCategoryId} rinominata in "${editCategoryNameInput}"`);
+    } catch (error: any) {
+      Alert.alert('Errore', error.message || 'Si è verificato un errore durante l\'aggiornamento della categoria.');
+    }
+  };
+
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.itemContainer}>
-      <View style={styles.categoryInfo}>
-        {item.iconUrl ? (
-          <Image source={{ uri: item.iconUrl }} style={styles.categoryImage} />
-        ) : (
-          <Text style={styles.categoryIcon}>{item.icon}</Text>
-        )}
-        <Text style={styles.categoryName}>{item.name}</Text>
+      <Text style={styles.categoryName}>{item.name}</Text>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity onPress={() => handleEdit(item.id, item.name)} style={styles.button}>
+          <Edit2 size={20} color={isDarkMode ? '#58a6ff' : '#3b82f6'} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.button}>
+          <X size={20} color={isDarkMode ? '#EF4444' : 'red'} />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.button}>
-        <X size={20} color={isDarkMode ? '#EF4444' : 'red'} />
-      </TouchableOpacity>
     </View>
   );
 
@@ -58,7 +99,7 @@ export default function ManageCategoriesScreen() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Gestisci Categorie</Text>
       <Text style={styles.infoText}>
-        Qui puoi creare o eliminare le categorie personalizzate. Le categorie predefinite non sono modificabili.
+        Qui puoi creare, modificare o eliminare le categorie personalizzate. Le categorie predefinite non sono modificabili.
       </Text>
       <TouchableOpacity style={styles.createButton} onPress={() => setCreateModalVisible(true)}>
         <Plus size={20} color="white" />
@@ -97,6 +138,35 @@ export default function ManageCategoriesScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleCreate}>
                 <Text style={styles.modalButtonTextConfirm}>Crea</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isEditModalVisible}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Modifica Nome Categoria</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Nuovo nome della categoria"
+              value={editCategoryNameInput}
+              onChangeText={setEditCategoryNameInput}
+              autoFocus
+              placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
+            />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setEditModalVisible(false)}>
+                <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleUpdateCategory}>
+                <Text style={styles.modalButtonTextConfirm}>Salva</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -266,3 +336,17 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 16,
   },
 });
+
+// Aggiungiamo gli stili di caricamento al getStyles
+const additionalStyles = {
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+  },
+};

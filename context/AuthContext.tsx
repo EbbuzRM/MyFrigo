@@ -1,196 +1,146 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabaseClient';
-import { NotificationService } from '@/services/NotificationService';
-import { OneSignal } from 'react-native-onesignal';
+import { LoggingService } from '@/services/LoggingService';
+import { useRouter } from 'expo-router';
 
-// --- TYPES ---
-export type UserProfile = {
-  first_name: string | null;
-  last_name: string | null;
-};
+// Definizione del tipo per il profilo utente
+interface UserProfile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  // Aggiungi altri campi del profilo se necessario
+}
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  updateProfile: (firstName: string, lastName: string) => Promise<void>;
-  refreshUserProfile: () => Promise<void>; // Aggiunta
-  setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  signOut: () => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 };
 
-// --- CONTEXT ---
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   profile: null,
   loading: true,
-  updateProfile: async () => {},
-  refreshUserProfile: async () => {}, // Aggiunta
-  setProfile: () => {},
+  signOut: async () => {},
+  refreshUserProfile: async () => {},
 });
 
-// --- PROVIDER ---
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  // Inizializza OneSignal una sola volta quando il provider viene montato
-  useEffect(() => {
-    NotificationService.initialize();
-  }, []);
-
-  const refreshUserProfile = useCallback(async (userId?: string) => {
-    const id = userId || user?.id;
-    if (!id) {
-      console.log("[AuthContext] refreshUserProfile skipped: no user id.");
+  const fetchUserProfile = async (user: User | null) => {
+    if (!user) {
       setProfile(null);
       return;
     }
-    console.log(`[AuthContext] Refreshing profile for user ${id}`);
-    const { data, error } = await supabase
-      .from('users')
-      .select('first_name, last_name')
-      .eq('id', id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('[AuthContext] Error refreshing profile:', error.message);
+      if (error) {
+        LoggingService.error('AuthProvider', 'Error fetching user profile', error);
+        setProfile(null);
+      } else {
+        setProfile(data);
+        LoggingService.info('AuthProvider', 'User profile fetched successfully', { userId: user.id });
+      }
+    } catch (error) {
+      LoggingService.error('AuthProvider', 'Unexpected error fetching profile', error);
       setProfile(null);
-    } else {
-      console.log('[AuthContext] Profile refreshed successfully:', data);
-      setProfile(data as UserProfile);
     }
-  }, [user?.id]);
+  };
 
-  const updateProfile = async (firstName: string, lastName: string) => {
-    if (!user) throw new Error("Nessun utente loggato.");
-
-    const { error } = await supabase
-      .from('users')
-      .update({
-        first_name: firstName,
-        last_name: lastName,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
-
-    if (error) throw error;
-
-    // Dopo l'aggiornamento, ricarica il profilo per aggiornare lo stato locale.
-    await refreshUserProfile();
+  const refreshUserProfile = async () => {
+    await fetchUserProfile(user);
   };
 
   useEffect(() => {
-    let mounted = true;
-    setLoading(true);
+    const initializeAuth = async () => {
+      setLoading(true);
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, currentSession) => {
-        if (!mounted) return;
-
-        const currentUser = currentSession?.user ?? null;
-
-        if (currentUser) {
-          // Utente loggato. Ora dobbiamo essere sicuri di ottenere il suo profilo.
-          let profileData: UserProfile | null = null;
-          
-          // 1. Tenta di caricare il profilo esistente
-          const { data: existingProfile } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', currentUser.id)
-            .single();
-
-          // 2. Controlla se il profilo è completo.
-          if (existingProfile && existingProfile.first_name) {
-            console.log('[AuthContext] Profilo completo trovato:', existingProfile);
-            profileData = existingProfile;
-          } else {
-            // 3. Se il profilo è incompleto o mancante, lo popoliamo.
-            console.warn('[AuthContext] Profilo incompleto o mancante. Tentativo di aggiornamento forzato...');
-            
-            const fullName = currentUser.user_metadata?.full_name || '';
-            const firstName = currentUser.user_metadata?.name || fullName.split(' ')[0] || '';
-            const lastName = currentUser.user_metadata?.family_name || fullName.split(' ').slice(1).join(' ') || '';
-
-            const { data: upsertedProfile, error: upsertError } = await supabase
-              .from('users')
-              .upsert({
-                id: currentUser.id,
-                first_name: firstName,
-                last_name: lastName,
-                updated_at: new Date().toISOString(),
-              })
-              .select('first_name, last_name')
-              .single();
-
-            if (upsertError) {
-              console.error('[AuthContext] Errore durante l\'upsert del profilo:', upsertError.message);
-            } else {
-              console.log('[AuthContext] Upsert del profilo riuscito. Profilo aggiornato:', upsertedProfile);
-              profileData = upsertedProfile;
-            }
-          }
-
-          // Aggiorna tutto lo stato INSIEME
+        if (error) {
+          LoggingService.error('AuthProvider', 'Error getting session', error);
+        } else if (currentSession) {
+          setUser(currentSession.user);
+          await fetchUserProfile(currentSession.user);
           setSession(currentSession);
-          setUser(currentUser);
-          setProfile(profileData);
-          
-          // Imposta l'ID utente esterno e invia i dati a OneSignal.
-          console.log(`[AuthContext] Logging user ${currentUser.id} into OneSignal.`);
-          OneSignal.login(currentUser.id);
-          
-          const userFullName = profileData?.first_name && profileData?.last_name 
-            ? `${profileData.first_name} ${profileData.last_name}`
-            : 'Utente';
-            
-          console.log(`[AuthContext] Sending tags to OneSignal:`, { user_name: userFullName, email: currentUser.email });
-          OneSignal.User.addTags({ 
-            user_name: userFullName,
-            email: currentUser.email
-          });
-
-        } else {
-          // Nessun utente, resetta tutto
-          console.log('[AuthContext] User logged out. Logging out from OneSignal.');
-          OneSignal.logout();
-          setSession(null);
-          setUser(null);
-          setProfile(null);
+          LoggingService.info('AuthProvider', 'Session restored', { userId: currentSession.user.id });
         }
-        
-        // Solo alla fine di tutto, sblocca l'app
+      } catch (error) {
+        LoggingService.error('AuthProvider', 'Unexpected error during auth initialization', error);
+      } finally {
         setLoading(false);
       }
-    );
+    };
+
+    initializeAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      LoggingService.info('AuthProvider', 'Auth state changed', { event });
+      
+      setUser(currentSession?.user ?? null);
+      setSession(currentSession);
+
+      if (event === 'SIGNED_IN') {
+        await fetchUserProfile(currentSession?.user ?? null);
+        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
+        if (isResetting) {
+          router.replace('/password-reset-form');
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null);
+        router.replace('/login');
+      } else if (event === 'USER_UPDATED') {
+        await fetchUserProfile(currentSession?.user ?? null);
+      }
+    });
 
     return () => {
-      mounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
+
+  const signOut = async () => {
+    try {
+      LoggingService.info('AuthProvider', 'Signing out user');
+      await supabase.auth.signOut();
+    } catch (error) {
+      LoggingService.error('AuthProvider', 'Unexpected error during sign out', error);
+    }
+  };
 
   return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        profile,
-        loading,
-        updateProfile,
-        refreshUserProfile, // Aggiunta
-        setProfile,
-      }}
-    >
+    <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshUserProfile }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// --- HOOKS ---
-export const useAuth = () => useContext(AuthContext);

@@ -1,0 +1,137 @@
+ Product Requirements Document: MyFrigo
+
+
+  Versione: 1.0
+  Data: 2 Agosto 2025
+  Autore: Gemini AI
+
+  1. Introduzione e Visione del Prodotto
+
+
+  1.1. Problema
+  Ogni anno, una quantità significativa di cibo viene sprecata a causa di una cattiva gestione delle
+  scadenze e di acquisti dimenticati. Le persone e le famiglie faticano a tenere traccia di ciò che hanno in
+   frigorifero e in dispensa, portando a sprechi alimentari, spese superflue e un impatto ambientale
+  negativo.
+
+
+  1.2. Soluzione
+  MyFrigo è un'applicazione mobile intelligente progettata per aiutare gli utenti a gestire le scorte
+  alimentari, monitorare le date di scadenza e ridurre gli sprechi. Attraverso un'interfaccia intuitiva, gli
+   utenti possono registrare rapidamente i prodotti, ricevere notifiche proattive sulle scadenze imminenti e
+   ottenere una visione chiara del proprio inventario alimentare.
+
+
+  1.3. Visione a Lungo Termine
+  Diventare l'assistente indispensabile per la gestione della spesa domestica, non solo prevenendo gli
+  sprechi ma anche suggerendo ricette, ottimizzando le liste della spesa e promuovendo un consumo più
+  consapevole e sostenibile.
+
+  2. Obiettivi di Prodotto
+
+
+   * Primario: Ridurre lo spreco alimentare domestico di almeno il 20% per gli utenti attivi.
+   * Secondario: Semplificare e velocizzare il processo di inventario dei prodotti alimentari.
+   * Terziario: Aumentare la consapevolezza dell'utente sulle proprie abitudini di consumo attraverso dati e
+     statistiche.
+   * Business: Raggiungere e mantenere un'elevata soddisfazione dell'utente, promuovendo la crescita organica
+     dell'app.
+
+  3. Target Audience
+
+
+   * Famiglie: Che desiderano ottimizzare il budget della spesa e ridurre gli sprechi.
+   * Single e Studenti: Che vivono da soli e hanno difficoltà a consumare tutti i prodotti prima della
+     scadenza.
+   * Individui Eco-consapevoli: Che cercano strumenti per ridurre il proprio impatto ambientale.
+   * Appassionati di Organizzazione: Che amano avere il controllo e la gestione precisa delle proprie risorse.
+
+
+  4. Requisiti Funzionali (Core Features)
+
+
+  4.1. Autenticazione e Gestione Utente
+   * F-AUTH-01: Gli utenti possono registrarsi tramite email e password.
+   * F-AUTH-02: Gli utenti possono accedere tramite Google Sign-In per un'esperienza più rapida.
+   * F-AUTH-03: È presente un flusso di recupero password tramite email.
+   * F-AUTH-04: I nuovi utenti vengono reindirizzati a una schermata per completare il proprio profilo (nome,
+     cognome) dopo la prima registrazione.
+   * F-AUTH-05: Gli utenti possono modificare le informazioni del proprio profilo (nome, cognome) e effettuare
+      il logout.
+
+
+  4.2. Aggiunta e Gestione dei Prodotti
+   * F-PROD-01: Gli utenti possono aggiungere un prodotto tramite inserimento manuale (nome, categoria, data
+     di scadenza).
+   * F-PROD-02: Gli utenti possono aggiungere un prodotto tramite scansione del codice a barre (funzionalità
+     da integrare con un database di prodotti).
+   * F-PROD-03: Gli utenti possono aggiungere un prodotto catturando una foto della data di scadenza. Il
+     sistema utilizzerà il riconoscimento ottico dei caratteri (OCR) per pre-compilare la data.
+   * F-PROD-04: Ogni prodotto nell'inventario è visualizzato tramite una ProductCard che mostra le
+     informazioni essenziali (nome, giorni rimanenti, categoria).
+   * F-PROD-05: Gli utenti possono modificare i dettagli di un prodotto esistente o eliminarlo.
+
+
+  4.3. Monitoraggio Scadenze e Notifiche
+   * F-NOTIF-01: Il sistema invia notifiche push per avvisare l'utente quando un prodotto è in scadenza (es. 3
+      giorni prima, 1 giorno prima).
+   * F-NOTIF-02: Il sistema invia una notifica il giorno stesso della scadenza del prodotto.
+   * F-NOTIF-03: Le notifiche sono gestite a livello di sistema operativo. L'app richiede i permessi
+     all'utente e lo guida nelle impostazioni del dispositivo se sono disabilitati.
+   * F-NOTIF-04: Le notifiche vengono programmate o cancellate dinamicamente quando un prodotto viene
+     aggiunto, consumato o eliminato.
+
+
+  4.4. Gestione Consumi e Storico
+   * F-HIST-01: Gli utenti possono contrassegnare un prodotto come "consumato", rimuovendolo dall'inventario
+     attivo.
+   * F-HIST-02: È presente una sezione "Storico" che mostra la lista dei prodotti consumati.
+   * F-HIST-03: Gli utenti possono "annullare" il consumo di un prodotto per errore, ripristinandolo
+     nell'inventario attivo.
+   * F-HIST-04: La dashboard principale mostra statistiche aggregate (es. prodotti consumati vs. scaduti).
+
+
+  4.5. Categorie e Filtri
+   * F-CAT-01: L'app fornisce un set di categorie predefinite (es. Latticini, Carne, Frutta).
+   * F-CAT-02: Gli utenti possono creare, modificare ed eliminare le proprie categorie personalizzate.
+   * F-CAT-03: La lista dei prodotti può essere filtrata per categoria per una visualizzazione più semplice.
+
+
+  5. Requisiti Non Funzionali
+
+
+   * NF-PERF-01 (Performance): L'app deve avviarsi in meno di 3 secondi. Le transizioni tra le schermate
+     devono essere fluide e senza lag.
+   * NF-SEC-01 (Sicurezza): I dati degli utenti devono essere isolati e protetti tramite le policy di Row
+     Level Security (RLS) di Supabase. Tutte le comunicazioni con il backend devono avvenire tramite HTTPS.
+   * NF-USAB-01 (Usabilità): L'interfaccia deve essere pulita, intuitiva e seguire le linee guida di design di
+      iOS e Android. L'app deve supportare sia il tema chiaro che il tema scuro.
+   * NF-REL-01 (Affidabilità): I dati devono essere sincronizzati in tempo reale tra i dispositivi dello
+     stesso utente grazie a Supabase Realtime. L'app deve avere un tasso di crash inferiore all'1%.
+   * NF-PLAT-01 (Piattaforma): L'applicazione è sviluppata con React Native (Expo) e deve essere compatibile
+     con le versioni recenti di iOS e Android.
+
+  6. Stack Tecnologico
+
+
+   * Frontend: React Native, Expo
+   * Linguaggio: TypeScript
+   * Backend (BaaS): Supabase (Auth, Postgres DB, Realtime Subscriptions, Edge Functions)
+   * Notifiche Push: OneSignal
+   * Navigazione: Expo Router
+   * Gestione dello Stato: React Context API
+
+
+  7. Potenziali Sviluppi Futuri (Future Scope)
+
+
+   * Liste della Spesa: Creazione di liste della spesa intelligenti basate sui prodotti consumati o in
+     esaurimento.
+   * Suggerimenti di Ricette: Proporre ricette basate sui prodotti prossimi alla scadenza per incentivarne
+     l'utilizzo.
+   * Condivisione Familiare: Possibilità di condividere un "frigo" virtuale con altri membri della famiglia o
+     coinquilini.
+   * Analytics Avanzate: Dashboard con grafici dettagliati sulle abitudini di consumo, sprechi e risparmi nel
+     tempo.
+   * Integrazione E-commerce: Collegamento con servizi di consegna di generi alimentari per riordinare
+     facilmente i prodotti esauriti.

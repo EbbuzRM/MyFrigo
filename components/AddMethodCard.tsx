@@ -3,6 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { AnimatedPressable } from './AnimatedPressable';
+import { LoggingService } from '@/services/LoggingService';
+import { getAnimatedPressableAccessibilityProps } from '@/utils/accessibility';
 
 interface AddMethodCardProps {
   title: string;
@@ -41,9 +43,13 @@ export function AddMethodCard({
     <AnimatedPressable
       style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.border }]}
       onPress={onPress}
+      accessibilityProps={getAnimatedPressableAccessibilityProps(
+        title,
+        `${description}. Tocca per ${variant === 'barcode' ? 'scansionare un codice a barre' : 'inserire manualmente un prodotto'}`
+      )}
     >
       <View style={styles.iconContainer}>
-        {React.cloneElement(icon as React.ReactElement, { color: colors.icon })}
+        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { style: { color: colors.icon } }) : icon}
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>

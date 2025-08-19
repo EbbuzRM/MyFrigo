@@ -1,10 +1,11 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { StorageService, AppSettings } from '@/services/StorageService';
 import { NotificationService, eventEmitter } from '@/services/NotificationService';
-import * as Notifications from 'expo-notifications'; // <-- ERRORE #1 CORRETTO
+import * as Notifications from 'expo-notifications';
 import { Product } from '@/types/Product';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
+import { LoggingService } from '@/services/LoggingService';
 
 interface ProductContextType {
   products: Product[];
@@ -16,7 +17,7 @@ const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 // Hook custom per tracciare lo stato precedente
 function usePrevious<T>(value: T): T | undefined {
-  const ref = useRef<T>();
+  const ref = useRef<T | undefined>(undefined);
   useEffect(() => {
     ref.current = value;
   });
@@ -42,41 +43,141 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     setLoading(true);
     try {
-      const { data, error } = await StorageService.getProducts();
+      // Tipizzazione più specifica per i risultati delle operazioni
+      const { data, error } = await StorageService.getProducts() as {
+        data: Product[] | null;
+        error: { message: string } | null;
+      };
       if (error) {
-        console.error("Failed to fetch products:", error.message);
+        LoggingService.error("ProductContext", `Failed to fetch products: ${error.message}`);
         setProducts([]);
       } else {
         setProducts(data || []);
       }
     } catch (e) {
-      console.error("An unexpected error occurred in fetchProducts:", e);
+      LoggingService.error("ProductContext", `An unexpected error occurred in fetchProducts: ${e}`);
       setProducts([]);
     } finally {
       setLoading(false);
     }
   }, [user]);
 
-  const handleNotificationReschedule = useCallback(async (currentSettings: AppSettings) => {
-    console.log('[ProductContext] handleNotificationReschedule triggered.');
-    const activeProducts = productsRef.current.filter(p => p.status === 'active');
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    await NotificationService.scheduleMultipleNotifications(activeProducts, currentSettings);
-    console.log(`[ProductContext] Re-scheduling complete for ${activeProducts.length} products.`);
+  // Funzione di utilità per validare le date di scadenza
+  const isValidExpirationDate = useCallback((dateString?: string): boolean => {
+    if (!dateString) return false;
+    
+    // Verifica che la data sia in formato ISO
+    if (!/^\d{4}-\d{2}-\d{2}/.test(dateString)) return false;
+    
+    try {
+      // Verifica che la data sia valida
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return false;
+      
+      // Verifica che la data sia nel futuro o oggi
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expirationDate = new Date(dateString);
+      expirationDate.setHours(0, 0, 0, 0);
+      
+      return expirationDate >= today;
+    } catch (e) {
+      LoggingService.error("ProductContext", `Invalid date format: ${dateString}`, e);
+      return false;
+    }
   }, []);
+
+  const handleNotificationReschedule = useCallback(async (currentSettings: AppSettings) => {
+    LoggingService.info('ProductContext', 'handleNotificationReschedule triggered.');
+    
+    // Filtra prodotti attivi con date di scadenza valide
+    const activeProducts = productsRef.current.filter(p =>
+      p.status === 'active' && isValidExpirationDate(p.expirationDate)
+    );
+    
+    if (activeProducts.length !== productsRef.current.filter(p => p.status === 'active').length) {
+      LoggingService.warning('ProductContext',
+        `Filtered out ${productsRef.current.filter(p => p.status === 'active').length - activeProducts.length} products with invalid expiration dates`);
+    }
+    
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      await NotificationService.scheduleMultipleNotifications(activeProducts, currentSettings);
+      LoggingService.info('ProductContext', `Re-scheduling complete for ${activeProducts.length} products.`);
+    } catch (error) {
+      LoggingService.error('ProductContext', 'Error rescheduling notifications', error);
+    }
+  }, [isValidExpirationDate]);
 
   useEffect(() => {
     if (user) {
-      fetchProducts();
-      const productsListener = StorageService.listenToProducts(() => {
-        fetchProducts();
+      // Riferimenti alle funzioni di cleanup
+      let productsUnsubscribe: (() => void) | null = null;
+      let settingsUnsubscribe: (() => void) | null = null;
+      
+      // Flag per tracciare se il componente è montato
+      let isMounted = true;
+      
+      // Carica i prodotti iniziali
+      fetchProducts().catch(error => {
+        if (isMounted) {
+          LoggingService.error("ProductContext", "Error fetching initial products", error);
+        }
       });
-      const settingsListener = eventEmitter.on('settingsChanged', (newSettings) => {
-        handleNotificationReschedule(newSettings);
-      });
+      
+      // Imposta il listener per i prodotti
+      try {
+        productsUnsubscribe = StorageService.listenToProducts(() => {
+          if (isMounted) {
+            fetchProducts().catch(error => {
+              LoggingService.error("ProductContext", "Error fetching products from listener", error);
+            });
+          }
+        });
+        LoggingService.info("ProductContext", "Products listener registered successfully");
+      } catch (error) {
+        LoggingService.error("ProductContext", "Error setting up products listener", error);
+      }
+      
+      // Imposta il listener per le impostazioni
+      if (eventEmitter) {
+        try {
+          settingsUnsubscribe = eventEmitter.on('settingsChanged', (newSettings) => {
+            if (isMounted) {
+              handleNotificationReschedule(newSettings);
+            }
+          });
+          LoggingService.info("ProductContext", "Settings listener registered successfully");
+        } catch (error) {
+          LoggingService.error("ProductContext", "Error setting up settings listener", error);
+        }
+      } else {
+        LoggingService.warning("ProductContext", "Event emitter not available, settings changes won't trigger notification reschedule");
+      }
+      
+      // Funzione di cleanup
       return () => {
-        productsListener();
-        settingsListener();
+        isMounted = false;
+        
+        // Rimuovi il listener dei prodotti
+        if (productsUnsubscribe) {
+          try {
+            productsUnsubscribe();
+            LoggingService.info("ProductContext", "Products listener unsubscribed");
+          } catch (error) {
+            LoggingService.error("ProductContext", "Error unsubscribing products listener", error);
+          }
+        }
+        
+        // Rimuovi il listener delle impostazioni
+        if (eventEmitter && settingsUnsubscribe) {
+          try {
+            settingsUnsubscribe();
+            LoggingService.info("ProductContext", "Settings listener unsubscribed");
+          } catch (error) {
+            LoggingService.error("ProductContext", "Error unsubscribing settings listener", error);
+          }
+        }
       };
     }
   }, [user, fetchProducts, handleNotificationReschedule]);
@@ -86,33 +187,84 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return;
     }
 
-    const prevMap = new Map(prevProducts.map(p => [p.id, p]));
-    const currentMap = new Map(products.map(p => [p.id, p]));
+    // Crea mappe per confronto efficiente con tipizzazione esplicita
+    const prevMap = new Map<string, Product>(
+      prevProducts.filter(p => p.id).map(p => [p.id as string, p])
+    );
+    const currentMap = new Map<string, Product>(
+      products.filter(p => p.id).map(p => [p.id as string, p])
+    );
 
+    // Traccia le operazioni di notifica per logging
+    let scheduledCount = 0;
+    let cancelledCount = 0;
+    let skippedCount = 0;
+
+    // Processa i prodotti correnti (non serve più verificare l'ID perché abbiamo già filtrato)
     currentMap.forEach((currentProduct, id) => {
+
       const prevProduct = prevMap.get(id);
+      
+      // Nuovo prodotto attivo
       if (!prevProduct && currentProduct.status === 'active') {
-        NotificationService.scheduleExpirationNotification(currentProduct, settings.notificationDays);
-      } else if (prevProduct && currentProduct.status === 'active') {
+        if (isValidExpirationDate(currentProduct.expirationDate)) {
+          NotificationService.scheduleExpirationNotification(currentProduct, settings.notificationDays)
+            .catch(error => LoggingService.error("ProductContext", `Error scheduling notification for new product ${id}`, error));
+          scheduledCount++;
+        } else {
+          LoggingService.warning("ProductContext", `Skipping notification for new product ${id} with invalid date: ${currentProduct.expirationDate}`);
+          skippedCount++;
+        }
+      }
+      // Prodotto esistente attivo con modifiche
+      else if (prevProduct && currentProduct.status === 'active') {
         const dateChanged = currentProduct.expirationDate !== prevProduct.expirationDate;
         const statusChangedToActive = prevProduct.status !== 'active';
+        
         if (dateChanged || statusChangedToActive) {
-          NotificationService.scheduleExpirationNotification(currentProduct, settings.notificationDays);
+          if (isValidExpirationDate(currentProduct.expirationDate)) {
+            NotificationService.scheduleExpirationNotification(currentProduct, settings.notificationDays)
+              .catch(error => LoggingService.error("ProductContext", `Error scheduling notification for updated product ${id}`, error));
+            scheduledCount++;
+          } else {
+            LoggingService.warning("ProductContext", `Skipping notification for updated product ${id} with invalid date: ${currentProduct.expirationDate}`);
+            skippedCount++;
+          }
         }
-      } else if (prevProduct && currentProduct.status !== 'active' && prevProduct.status === 'active') {
-        NotificationService.cancelNotification(currentProduct.id!);
+      }
+      // Prodotto cambiato da attivo a non attivo
+      else if (prevProduct && currentProduct.status !== 'active' && prevProduct.status === 'active') {
+        NotificationService.cancelNotification(id)
+          .catch(error => LoggingService.error("ProductContext", `Error cancelling notification for product ${id}`, error));
+        cancelledCount++;
       }
     });
 
+    // Gestisci prodotti rimossi
     prevMap.forEach((prevProduct, id) => {
-      if (!currentMap.has(id)) {
-        NotificationService.cancelNotification(prevProduct.id!);
+      if (!currentMap.has(id) && prevProduct.status === 'active') {
+        NotificationService.cancelNotification(id)
+          .catch(error => LoggingService.error("ProductContext", `Error cancelling notification for removed product ${id}`, error));
+        cancelledCount++;
       }
     });
-  }, [products, prevProducts, settings]);
+
+    // Log delle operazioni di notifica
+    if (scheduledCount > 0 || cancelledCount > 0 || skippedCount > 0) {
+      LoggingService.info("ProductContext",
+        `Notification operations: ${scheduledCount} scheduled, ${cancelledCount} cancelled, ${skippedCount} skipped due to invalid dates`);
+    }
+  }, [products, prevProducts, settings, isValidExpirationDate]);
+
+  // Memoizziamo il valore del contesto per evitare re-render inutili
+  const contextValue = React.useMemo(() => ({
+    products,
+    loading,
+    refreshProducts: fetchProducts
+  }), [products, loading, fetchProducts]);
 
   return (
-    <ProductContext.Provider value={{ products, loading, refreshProducts: fetchProducts }}>
+    <ProductContext.Provider value={contextValue}>
       {children}
     </ProductContext.Provider>
   );

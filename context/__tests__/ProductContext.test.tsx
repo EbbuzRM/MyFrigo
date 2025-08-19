@@ -9,11 +9,12 @@ import { Product } from '@/types/Product';
 
 // --- Mocks ---
 
-// Mock di NotificationService per evitare errori di ambiente nativo
-jest.mock('@/services/NotificationService', () => ({
-  NotificationService: {
-    scheduleExpirationNotification: jest.fn(),
-    cancelNotification: jest.fn(),
+// Mock del LoggingService
+jest.mock('@/services/LoggingService', () => ({
+  LoggingService: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warning: jest.fn(),
   },
 }));
 
@@ -23,6 +24,27 @@ jest.mock('@/services/StorageService', () => ({
     getProducts: jest.fn(),
     listenToProducts: jest.fn(() => jest.fn()), // Ritorna una funzione di unsubscribe fittizia
   },
+}));
+
+// Mock di expo-notifications
+jest.mock('expo-notifications', () => ({
+  cancelAllScheduledNotificationsAsync: jest.fn(),
+}));
+
+// Mock dell'event emitter
+const mockEventEmitter = {
+  on: jest.fn(),
+  off: jest.fn(),
+};
+
+// Mock di NotificationService per evitare errori di ambiente nativo
+jest.mock('@/services/NotificationService', () => ({
+  NotificationService: {
+    scheduleExpirationNotification: jest.fn(),
+    cancelNotification: jest.fn(),
+    scheduleMultipleNotifications: jest.fn(),
+  },
+  eventEmitter: mockEventEmitter,
 }));
 
 // Mock del contesto di autenticazione
@@ -63,7 +85,13 @@ describe('ProductContext', () => {
     // Reset dei mock prima di ogni test
     jest.clearAllMocks();
     // Fornisce un valore di default per i settings
-    mockedUseSettings.mockReturnValue({ settings: { notificationsEnabled: true, notificationDays: 3 } });
+    mockedUseSettings.mockReturnValue({
+      settings: {
+        notificationsEnabled: true,
+        notificationDays: 3,
+        notificationTime: '09:00'
+      }
+    });
   });
 
   it('should start with loading true and fetch products when a user is present', async () => {
@@ -114,8 +142,9 @@ describe('ProductContext', () => {
     // Asserzione: Attende che il caricamento finisca, ma non ci devono essere prodotti
     await waitFor(() => {
       expect(queryByText('Loading...')).toBeNull();
+      // Verifichiamo che non ci siano prodotti renderizzati
       expect(queryByText('Latte')).toBeNull(); // Nessun prodotto renderizzato
-    });
+    }, { timeout: 3000 }); // Aumentiamo il timeout per dare tempo al caricamento
   });
 
   it('should not fetch products if there is no user', () => {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,8 +23,9 @@ import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useProducts } from '@/context/ProductContext';
+import { LoggingService } from '@/services/LoggingService';
 
-function ProfileMenu({ isVisible, onClose, onLogout, userName }) {
+function ProfileMenu({ isVisible, onClose, onLogout, userName }: { isVisible: boolean; onClose: () => void; onLogout: () => void; userName: string }) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -71,7 +72,7 @@ function Dashboard() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (nextAppState === 'active') {
-        console.log('App has come to the foreground, refreshing permissions...');
+        LoggingService.info('Dashboard', 'App has come to the foreground, refreshing permissions...');
         refreshPermissions();
       }
     });
@@ -114,7 +115,7 @@ function Dashboard() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const expiredCount = allProducts.filter(p => {
-      const expirationDate = new Date(p.expiration_date);
+      const expirationDate = new Date(p.expirationDate);
       expirationDate.setHours(0, 0, 0, 0);
       return expirationDate < today;
   }).length;
@@ -146,7 +147,7 @@ function Dashboard() {
         isVisible={menuVisible} 
         onClose={() => setMenuVisible(false)}
         onLogout={handleLogout}
-        userName={displayName}
+        userName={displayName || ''}
       />
       <View style={styles.header}>
         <TouchableOpacity style={styles.titleContainer} onPress={handleBellPress} disabled={permissionStatus !== 'denied'}>
@@ -188,7 +189,7 @@ function Dashboard() {
               <View style={{ width: 300, marginRight: 16 }}>
                 <ExpirationCard
                   product={item}
-                  onPress={() => router.push({ pathname: '/manual-entry', params: { productId: item.id } })}
+                  onPress={() => router.push(`/manual-entry?productId=${item.id}`)}
                 />
               </View>
             )}

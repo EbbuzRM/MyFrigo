@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { LoggingService } from '@/services/LoggingService';
+import { getStatsCardAccessibilityProps } from '@/utils/accessibility';
 
 interface StatsCardProps {
   title: string;
@@ -18,11 +20,12 @@ export function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgr
   const backgroundColor = isDarkMode ? darkBackgroundColor : lightBackgroundColor;
 
   return (
-    <CardComponent 
+    <CardComponent
       testID="stats-card"
-      style={[styles.card, { backgroundColor }]} 
+      style={[styles.card, { backgroundColor }]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
+      {...getStatsCardAccessibilityProps(title, value, !!onPress)}
     >
       <View style={styles.iconContainer}>
         {icon}

@@ -46,7 +46,10 @@ describe('CustomDatePicker', () => {
   
   // Assicura che i test vengano eseguiti in un ambiente nativo simulato
   beforeAll(() => {
-    Platform.OS = 'ios';
+    // Verifica che Platform sia definito
+    if (Platform) {
+      Platform.OS = 'ios';
+    }
   });
 
   const today = new Date();

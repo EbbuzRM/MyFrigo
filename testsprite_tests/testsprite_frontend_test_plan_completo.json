@@ -1,0 +1,482 @@
+{
+  "testPlan": {
+    "title": "Piano di Test Completo MyFrigo",
+    "description": "Piano di test completo che copre tutte le funzionalità del progetto MyFrigo, inclusi i test esistenti e i test aggiuntivi per il sistema di resilienza e altre aree critiche",
+    "version": "2.0",
+    "totalTests": 34,
+    "categories": {
+      "functional": 18,
+      "security": 3,
+      "ui": 2,
+      "error_handling": 7,
+      "resilience": 4
+    }
+  },
+  "tests": [
+    {
+      "id": "TC001",
+      "title": "User registration with email and password",
+      "description": "Verify that a new user can register successfully using a valid email and password, with proper validation and error handling for invalid inputs.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Navigate to the registration screen"},
+        {"type": "action", "description": "Enter a valid email address and a strong password"},
+        {"type": "action", "description": "Submit the registration form"},
+        {"type": "assertion", "description": "Check that the user is registered and redirected to profile completion"},
+        {"type": "action", "description": "Attempt registration with invalid email format"},
+        {"type": "assertion", "description": "Verify validation error is shown for invalid email"},
+        {"type": "action", "description": "Attempt registration with weak password"},
+        {"type": "assertion", "description": "Verify validation error is shown for weak password"}
+      ]
+    },
+    {
+      "id": "TC002",
+      "title": "Login with email and password",
+      "description": "Ensure that users can log in securely using their registered email and password, and verify error messages on invalid credentials.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Navigate to the login screen"},
+        {"type": "action", "description": "Enter registered email and correct password"},
+        {"type": "action", "description": "Submit the login form"},
+        {"type": "assertion", "description": "Check the user is logged in and dashboard/inventory is displayed"},
+        {"type": "action", "description": "Enter registered email and incorrect password"},
+        {"type": "action", "description": "Submit the login form"},
+        {"type": "assertion", "description": "Verify error message indicating invalid credentials is displayed"}
+      ]
+    },
+    {
+      "id": "TC003",
+      "title": "Google Sign-In authentication",
+      "description": "Validate the Google Sign-In integration works correctly for user authentication and profile creation.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Navigate to the login screen"},
+        {"type": "action", "description": "Click on 'Sign in with Google' button"},
+        {"type": "action", "description": "Complete Google account selection and authentication"},
+        {"type": "assertion", "description": "Verify the user is authenticated, profile created if new, and redirected to inventory"}
+      ]
+    },
+    {
+      "id": "TC004",
+      "title": "Password recovery and reset",
+      "description": "Test password recovery flow using a registered email to receive reset link and successfully set a new password.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Navigate to the 'Forgot Password' screen"},
+        {"type": "action", "description": "Input a registered email address and submit"},
+        {"type": "assertion", "description": "Verify that an email with reset password link is sent"},
+        {"type": "action", "description": "Access the reset link and set a new password following validation rules"},
+        {"type": "assertion", "description": "Confirm password reset success and ability to login with new password"}
+      ]
+    },
+    {
+      "id": "TC005",
+      "title": "Manual product addition with valid data",
+      "description": "Verify that users can manually add a new product with all necessary fields including name, category, quantity, and expiration date.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Navigate to 'Add Product' screen via manual input method"},
+        {"type": "action", "description": "Fill in product name, select category, quantity, and expiration date"},
+        {"type": "action", "description": "Submit the product form"},
+        {"type": "assertion", "description": "Verify that the new product appears in the inventory list with correct details"}
+      ]
+    },
+    {
+      "id": "TC006",
+      "title": "Product addition via barcode scanning",
+      "description": "Test adding products to inventory by scanning a valid barcode, ensuring correct product data retrieval or manual entry if unknown.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Open 'Add Product' and select barcode scanning option"},
+        {"type": "action", "description": "Scan a known product barcode"},
+        {"type": "assertion", "description": "Verify product details retrieved and displayed for confirmation"},
+        {"type": "action", "description": "Confirm or edit expiration date and save product"},
+        {"type": "assertion", "description": "Verify product is added to inventory"},
+        {"type": "action", "description": "Scan an unknown barcode"},
+        {"type": "assertion", "description": "Verify user is prompted to enter product details manually"}
+      ]
+    },
+    {
+      "id": "TC007",
+      "title": "OCR-based expiration date entry",
+      "description": "Check that users can capture expiration dates using OCR-powered photo input and that the extracted date is accurate and editable before saving.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Select OCR capture method in 'Add Product' flow"},
+        {"type": "action", "description": "Take a photo of a product label showing expiration date"},
+        {"type": "assertion", "description": "Confirm that extracted expiration date is displayed correctly"},
+        {"type": "action", "description": "Edit the expiration date if OCR extraction is incorrect"},
+        {"type": "action", "description": "Save the product with the expiration date"},
+        {"type": "assertion", "description": "Verify product added with accurate expiration date"}
+      ]
+    },
+    {
+      "id": "TC008",
+      "title": "Editing product details in ProductCard view",
+      "description": "Ensure users can view and update product information from the ProductCard interface, including changing expiration dates and categories.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Navigate to the inventory and select a product's ProductCard"},
+        {"type": "action", "description": "Edit product attributes such as name, category, quantity, or expiration date"},
+        {"type": "action", "description": "Save the updated product information"},
+        {"type": "assertion", "description": "Verify that changes are reflected immediately in the product list"}
+      ]
+    },
+    {
+      "id": "TC009",
+      "title": "Push notifications for upcoming and same-day expirations",
+      "description": "Validate that the app sends push notifications for products nearing expiration according to the dynamic schedule, including handling notification permissions correctly.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Add multiple products with expiration dates set to upcoming and same-day"},
+        {"type": "action", "description": "Ensure notification permission is enabled on the device"},
+        {"type": "assertion", "description": "Check that notifications are received ahead of product expirations and on expiration day"},
+        {"type": "action", "description": "Deny notification permission and add expiring product"},
+        {"type": "assertion", "description": "Verify the app requests permission or prompts user to enable notifications"}
+      ]
+    },
+    {
+      "id": "TC010",
+      "title": "Mark product as consumed and view consumption history",
+      "description": "Test the consumption management feature allowing users to mark products as consumed, confirm inventory updates, and access a history list of consumed products.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "From inventory, mark a product as consumed"},
+        {"type": "assertion", "description": "Verify product status updated as consumed and inventory quantity reduced accordingly"},
+        {"type": "action", "description": "Navigate to consumption history screen"},
+        {"type": "assertion", "description": "Verify consumed product appears in consumption history with correct date"}
+      ]
+    },
+    {
+      "id": "TC011",
+      "title": "Undo consumption action",
+      "description": "Confirm that the user can undo a recent consumption action and the inventory and consumption history are updated accordingly.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Mark a product as consumed"},
+        {"type": "action", "description": "Invoke the undo consumption feature immediately after"},
+        {"type": "assertion", "description": "Verify inventory quantity is restored and product is removed from consumption history"}
+      ]
+    },
+    {
+      "id": "TC012",
+      "title": "Category management: create, edit, and delete custom categories",
+      "description": "Test full CRUD operations for user-customizable product categories, including creating a new category, modifying its name, and deleting it.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Navigate to category management screen"},
+        {"type": "action", "description": "Create a new custom category with a unique name"},
+        {"type": "assertion", "description": "Verify the new category is saved and listed"},
+        {"type": "action", "description": "Edit the name of the created category"},
+        {"type": "assertion", "description": "Verify the updated name is reflected correctly"},
+        {"type": "action", "description": "Delete the created category"},
+        {"type": "assertion", "description": "Confirm the category is removed and products assigned to this category are handled appropriately"}
+      ]
+    },
+    {
+      "id": "TC013",
+      "title": "Filter products by category",
+      "description": "Verify that filtering products by predefined and custom categories in the inventory view works correctly and shows only relevant products.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Go to inventory product list"},
+        {"type": "action", "description": "Apply filter to select a predefined category"},
+        {"type": "assertion", "description": "Verify only products in the selected category are displayed"},
+        {"type": "action", "description": "Apply filter to select a user-created custom category"},
+        {"type": "assertion", "description": "Verify products belonging to the custom category appear correctly"},
+        {"type": "action", "description": "Remove category filters"},
+        {"type": "assertion", "description": "Verify all products are displayed"}
+      ]
+    },
+    {
+      "id": "TC014",
+      "title": "App launch performance within 3 seconds",
+      "description": "Ensure the app launches completely and is interactive within 3 seconds on supported devices under normal conditions.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Launch the application on supported iOS and Android devices"},
+        {"type": "assertion", "description": "Measure and verify that the app launch time is under 3 seconds"}
+      ]
+    },
+    {
+      "id": "TC015",
+      "title": "Smooth and responsive screen transitions",
+      "description": "Validate that screen navigation between major app screens (inventory, add product, history, settings) is smooth with no lag or crashes.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Navigate sequentially through tabs: inventory, add product, history, settings"},
+        {"type": "assertion", "description": "Verify transitions are smooth, UI elements load promptly, and no crashes occur"}
+      ]
+    },
+    {
+      "id": "TC016",
+      "title": "Data security and privacy enforcement",
+      "description": "Verify that all user data is transmitted over HTTPS and that Supabase Row Level Security (RLS) restricts data access to authenticated users only.",
+      "category": "security",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Perform data operations such as fetching and updating inventory on a logged-in account"},
+        {"type": "assertion", "description": "Confirm all communications use HTTPS"},
+        {"type": "action", "description": "Attempt to access data of another user via API or UI manipulation"},
+        {"type": "assertion", "description": "Verify access is denied by Supabase RLS policies"}
+      ]
+    },
+    {
+      "id": "TC017",
+      "title": "Real-time data synchronization across devices",
+      "description": "Test that changes made in inventory or categories on one device are reflected immediately on another device logged in with the same account.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Log into the same user account on two different devices"},
+        {"type": "action", "description": "Add, edit or delete products/categories on device A"},
+        {"type": "assertion", "description": "Verify device B reflects the changes in real-time with minimal delay"}
+      ]
+    },
+    {
+      "id": "TC018",
+      "title": "Light and dark theme support and consistency",
+      "description": "Check that the app correctly supports toggling between light and dark themes and that UI elements adapt according to iOS and Android design guidelines.",
+      "category": "ui",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Go to settings and toggle between light and dark themes"},
+        {"type": "assertion", "description": "Verify UI color schemes switch accordingly, maintaining readability and design consistency"},
+        {"type": "action", "description": "Change system theme on device to light and dark"},
+        {"type": "assertion", "description": "Verify app follows system theme changes if applicable"}
+      ]
+    },
+    {
+      "id": "TC019",
+      "title": "Crash rate under 1% during normal operation",
+      "description": "Monitor app stability during typical user sessions covering common workflows to ensure crash rate remains below 1%.",
+      "category": "functional",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Execute thorough automated and manual exploratory testing covering login, product management, notifications, and settings"},
+        {"type": "assertion", "description": "Review crash logs and metrics; verify crash rate is below 1%"}
+      ]
+    },
+    {
+      "id": "TC020",
+      "title": "Undo consumption edge case: undo after app restart",
+      "description": "Verify that undoing a consumption action is not possible after app restart or after a certain timeout, ensuring data consistency.",
+      "category": "error_handling",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Mark a product as consumed"},
+        {"type": "action", "description": "Close and restart the app"},
+        {"type": "action", "description": "Attempt to undo the consumed action"},
+        {"type": "assertion", "description": "Verify undo option is disabled or not available and data is consistent"}
+      ]
+    },
+    {
+      "id": "TC021",
+      "title": "Adding product with invalid or missing mandatory fields",
+      "description": "Ensure that attempts to add a product with missing or invalid fields such as empty name or invalid expiration date are rejected with proper validation messages.",
+      "category": "error_handling",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Navigate to 'Add Product' screen"},
+        {"type": "action", "description": "Attempt to submit form with blank product name"},
+        {"type": "assertion", "description": "Verify validation error appears indicating product name is required"},
+        {"type": "action", "description": "Enter invalid expiration date format and submit"},
+        {"type": "assertion", "description": "Verify validation error related to expiration date"}
+      ]
+    },
+    {
+      "id": "TC022",
+      "title": "Handling barcode scanning errors and invalid barcodes",
+      "description": "Check that scanning a damaged or invalid barcode not in database triggers a user-friendly error or fallback to manual product entry.",
+      "category": "error_handling",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Initiate barcode scanning feature"},
+        {"type": "action", "description": "Scan a damaged or unrecognized barcode"},
+        {"type": "assertion", "description": "Verify error message is displayed and option to add product manually is provided"}
+      ]
+    },
+    {
+      "id": "TC023",
+      "title": "Notification permission denied scenario",
+      "description": "Validate app behavior when push notification permissions are denied by the user, including correct prompting and appropriate handling of delivery failures.",
+      "category": "error_handling",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Deny the app's notification permission on device"},
+        {"type": "action", "description": "Add product with upcoming expiration date"},
+        {"type": "assertion", "description": "Verify app prompts user to enable notifications and no notification is sent silently"}
+      ]
+    },
+    {
+      "id": "TC024",
+      "title": "Profile editing and validation",
+      "description": "Test that users can edit their profile details successfully, with validations on input fields and immediate update of user information.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Login and navigate to profile editing screen"},
+        {"type": "action", "description": "Edit profile fields such as name, email, and preferences"},
+        {"type": "action", "description": "Attempt to enter invalid email format"},
+        {"type": "assertion", "description": "Verify validation error message is shown"},
+        {"type": "action", "description": "Save valid changes"},
+        {"type": "assertion", "description": "Confirm profile information is updated across the app"}
+      ]
+    },
+    {
+      "id": "TC025",
+      "title": "Database Resilience Service - Automatic retry on connection failure",
+      "description": "Verify that the DatabaseResilienceService automatically retries failed database operations and handles connection timeouts gracefully.",
+      "category": "resilience",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Simulate network connectivity issues during database operations"},
+        {"type": "action", "description": "Attempt to add/edit/delete products while network is unstable"},
+        {"type": "assertion", "description": "Verify that the service automatically retries operations with exponential backoff"},
+        {"type": "assertion", "description": "Confirm that operations complete successfully when connection is restored"},
+        {"type": "action", "description": "Check that appropriate error messages are shown to users during retry attempts"}
+      ]
+    },
+    {
+      "id": "TC026",
+      "title": "Database Queue Service - Offline operation queuing",
+      "description": "Test that the DatabaseQueueService properly queues operations when offline and processes them when connection is restored.",
+      "category": "resilience",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Enable airplane mode or disconnect network"},
+        {"type": "action", "description": "Perform multiple database operations (add, edit, delete products)"},
+        {"type": "assertion", "description": "Verify operations are queued locally with appropriate status indicators"},
+        {"type": "action", "description": "Restore network connection"},
+        {"type": "assertion", "description": "Confirm queued operations are automatically processed in correct order"},
+        {"type": "assertion", "description": "Verify UI reflects the final state after all operations complete"}
+      ]
+    },
+    {
+      "id": "TC027",
+      "title": "Recovery Manager - Data corruption recovery",
+      "description": "Validate that the RecoveryManager can detect and recover from data corruption scenarios, restoring data from backups or consistent states.",
+      "category": "resilience",
+      "priority": "High",
+      "steps": [
+        {"type": "action", "description": "Simulate data corruption in local storage or database"},
+        {"type": "action", "description": "Trigger recovery process through app restart or manual recovery option"},
+        {"type": "assertion", "description": "Verify that corrupted data is detected and appropriate recovery actions are taken"},
+        {"type": "assertion", "description": "Confirm that data is restored to last known good state"},
+        {"type": "action", "description": "Verify that recovery logs are generated for troubleshooting"}
+      ]
+    },
+    {
+      "id": "TC028",
+      "title": "Resilience Service - Concurrent operation handling",
+      "description": "Test that the ResilienceService properly handles concurrent operations and prevents race conditions when multiple users or devices modify the same data.",
+      "category": "resilience",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Simultaneously modify the same product data from multiple devices/sessions"},
+        {"type": "action", "description": "Attempt conflicting operations on shared data"},
+        {"type": "assertion", "description": "Verify that conflicts are detected and resolved according to business rules"},
+        {"type": "assertion", "description": "Confirm that data integrity is maintained and appropriate conflict resolution messages are shown"}
+      ]
+    },
+    {
+      "id": "TC029",
+      "title": "Diagnostic Panel - System health monitoring",
+      "description": "Verify that the DiagnosticPanel provides comprehensive system health information and can identify potential issues before they become critical.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Navigate to DiagnosticPanel in settings"},
+        {"type": "action", "description": "Run comprehensive system diagnostics"},
+        {"type": "assertion", "description": "Verify that all system components are checked (database, network, storage, memory)"},
+        {"type": "assertion", "description": "Confirm that detailed health metrics and performance indicators are displayed"},
+        {"type": "action", "description": "Test that recommendations for issue resolution are provided when problems are detected"}
+      ]
+    },
+    {
+      "id": "TC030",
+      "title": "Background Sync Service - Intermittent connectivity handling",
+      "description": "Test that the background sync service properly handles intermittent network connectivity and ensures data consistency across devices.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Enable background sync and simulate intermittent network connectivity"},
+        {"type": "action", "description": "Make changes to data while connection is unstable"},
+        {"type": "assertion", "description": "Verify that sync operations resume automatically when connection is restored"},
+        {"type": "assertion", "description": "Confirm that data conflicts are resolved appropriately and no data is lost"},
+        {"type": "action", "description": "Verify that sync status indicators accurately reflect current sync state"}
+      ]
+    },
+    {
+      "id": "TC031",
+      "title": "OneSignal Integration - Device ID management",
+      "description": "Validate that OneSignal service properly manages device IDs and handles device registration/unregistration scenarios.",
+      "category": "functional",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Complete user registration and verify OneSignal device ID is generated"},
+        {"type": "action", "description": "Logout and login again to verify device ID consistency"},
+        {"type": "assertion", "description": "Confirm that device ID is properly stored in user profile"},
+        {"type": "action", "description": "Test notification delivery using the registered device ID"},
+        {"type": "assertion", "description": "Verify that notifications are received correctly on the registered device"}
+      ]
+    },
+    {
+      "id": "TC032",
+      "title": "Extreme edge case - Concurrent data modification",
+      "description": "Test extreme concurrency scenarios where multiple users modify the same data simultaneously to ensure data integrity and proper conflict resolution.",
+      "category": "error_handling",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Set up multiple user sessions accessing the same data"},
+        {"type": "action", "description": "Simultaneously modify the same product from multiple sessions"},
+        {"type": "action", "description": "Create conflicts by modifying different fields of the same record"},
+        {"type": "assertion", "description": "Verify that the system handles conflicts gracefully without data corruption"},
+        {"type": "assertion", "description": "Confirm that appropriate conflict resolution strategies are applied"}
+      ]
+    },
+    {
+      "id": "TC033",
+      "title": "Extreme edge case - Data corruption scenarios",
+      "description": "Test the app's behavior when encountering corrupted data, invalid JSON, or malformed database entries.",
+      "category": "error_handling",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Inject corrupted data into local storage or database"},
+        {"type": "action", "description": "Attempt to load and display corrupted product data"},
+        {"type": "assertion", "description": "Verify that the app handles corruption gracefully without crashing"},
+        {"type": "assertion", "description": "Confirm that appropriate error messages are shown to users"},
+        {"type": "action", "description": "Verify that corrupted data can be repaired or removed through recovery options"}
+      ]
+    },
+    {
+      "id": "TC034",
+      "title": "Extreme edge case - Extended network timeout",
+      "description": "Test the app's behavior during extended network timeouts and verify that timeout handling doesn't cause data loss or app freezes.",
+      "category": "error_handling",
+      "priority": "Medium",
+      "steps": [
+        {"type": "action", "description": "Simulate extended network timeouts (30+ seconds)"},
+        {"type": "action", "description": "Attempt various network-dependent operations during timeout"},
+        {"type": "assertion", "description": "Verify that the app remains responsive and doesn't freeze"},
+        {"type": "assertion", "description": "Confirm that operations are properly cancelled or retried after timeout"},
+        {"type": "action", "description": "Verify that user is informed about timeout issues and can retry operations"}
+      ]
+    }
+  ]
+}

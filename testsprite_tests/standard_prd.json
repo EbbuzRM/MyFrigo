@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "project": "MyFrigo",
+    "date": "2025-07-30",
+    "prepared_by": "Gemini AI"
+  },
+  "product_overview": "MyFrigo is an intelligent mobile application designed to help users manage their food inventory, track expiration dates, and reduce food waste. It offers an intuitive interface for quick product registration, proactive expiration notifications, and insightful inventory visibility to promote sustainable consumption habits.",
+  "core_goals": [
+    "Reduce domestic food waste by at least 20% for active users.",
+    "Simplify and speed up the food product inventory process.",
+    "Increase user awareness about their consumption habits through data and statistics.",
+    "Achieve and maintain high user satisfaction to promote organic growth of the app."
+  ],
+  "key_features": [
+    "User authentication and profile management with email/password and Google Sign-In, including password recovery and profile editing.",
+    "Product management allowing manual input, barcode scanning, and OCR-based expiration date entry with editable ProductCard views.",
+    "Expiration tracking with push notifications configured dynamically for upcoming and same-day expirations, including OS permission management.",
+    "Consumption management enabling marking products as consumed, viewing consumption history, and undoing consumption actions.",
+    "Category management with predefined and user-customizable categories, plus filtering products by category.",
+    "Smooth performance with app launch under 3 seconds and responsive screen transitions.",
+    "Data security and privacy enforced via Supabase Row Level Security and HTTPS communications.",
+    "Real-time data sync across user devices through Supabase Realtime subscriptions.",
+    "Support for both light and dark themes aligned with iOS and Android design guidelines.",
+    "Use of React Native with Expo for cross-platform compatibility on recent iOS and Android versions."
+  ],
+  "user_flow_summary": [
+    "Users register or login via email/password or Google Sign-In, then complete or edit their profile details.",
+    "Users add products manually, via barcode scanning, or capture expiration dates using OCR-powered photo input.",
+    "Users browse their inventory with products displayed in cards showing essential info and filter by categories.",
+    "Notifications alert users ahead of and on the expiration dates, guiding users to enable permissions if disabled.",
+    "Users mark products as consumed, view history of consumed items, and undo consumption if needed.",
+    "Users manage categories by creating, editing, or deleting custom categories.",
+    "Users access settings to adjust preferences and themes, ensuring a personalized experience."
+  ],
+  "validation_criteria": [
+    "All authentication flows work securely and reliably, including sign-up, login, Google Sign-In, password recovery, and profile completion.",
+    "Product addition supports manual entry, barcode scanning, and OCR expiration date capture accurately.",
+    "Push notifications trigger correctly for expiring products with dynamic schedule adjustments upon product updates.",
+    "Consumptions and history features correctly update inventory state and allow undo operations.",
+    "Category filters accurately reflect user selections and saved custom categories.",
+    "App launches within 3 seconds and navigation is smooth without lag.",
+    "User data is isolated and secured per Supabase RLS policies, with all data sent over HTTPS.",
+    "Real-time synchronization keeps inventory consistent across multiple user devices.",
+    "UI supports both light and dark modes consistent with platform guidelines.",
+    "Crash rates remain below 1% during normal operation on supported devices."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "React Native",
+      "Expo",
+      "Supabase",
+      "Jest"
+    ],
+    "features": [
+      {
+        "name": "Product Management",
+        "description": "Core functionality for managing food products including adding, editing, and tracking expiration dates",
+        "files": [
+          "components/ProductCard.tsx",
+          "context/ProductContext.tsx",
+          "services/StorageService.ts",
+          "types/Product.ts",
+          "components/__tests__/ProductCard.test.tsx",
+          "context/__tests__/ProductContext.test.tsx",
+          "services/__tests__/StorageService.test.ts"
+        ]
+      },
+      {
+        "name": "Authentication",
+        "description": "User authentication and profile management using Supabase auth",
+        "files": [
+          "context/AuthContext.tsx",
+          "app/login.tsx",
+          "app/complete-profile.tsx",
+          "app/forgot-password.tsx",
+          "app/password-reset.tsx",
+          "utils/authValidation.ts"
+        ]
+      },
+      {
+        "name": "Expiration Tracking",
+        "description": "Tracking and notification system for product expiration dates",
+        "files": [
+          "hooks/useExpirationStatus.ts",
+          "components/ExpirationCard.tsx",
+          "services/NotificationService.ts",
+          "hooks/__tests__/useExpirationStatus.test.ts",
+          "services/backgroundSync.ts"
+        ]
+      },
+      {
+        "name": "Category Management",
+        "description": "Product categorization and category management system",
+        "files": [
+          "context/CategoryContext.tsx",
+          "components/CategoryFilter.tsx",
+          "app/manage-categories.tsx"
+        ]
+      },
+      {
+        "name": "UI Components",
+        "description": "Reusable UI components for the application",
+        "files": [
+          "components/AddMethodCard.tsx",
+          "components/AnimatedPressable.tsx",
+          "components/AnimatedTabBar.tsx",
+          "components/CustomDatePicker.tsx",
+          "components/HistoryCard.tsx",
+          "components/HistoryStats.tsx",
+          "components/SettingsCard.tsx",
+          "components/StatsCard.tsx",
+          "components/SuggestionCard.tsx",
+          "components/Toast.tsx"
+        ]
+      },
+      {
+        "name": "Settings",
+        "description": "Application settings and user preferences management",
+        "files": [
+          "context/SettingsContext.tsx",
+          "context/ThemeContext.tsx",
+          "components/SettingsCard.tsx",
+          "app/settings.tsx"
+        ]
+      },
+      {
+        "name": "Data Services",
+        "description": "Backend services for data storage and retrieval using Supabase",
+        "files": [
+          "services/StorageService.ts",
+          "services/supabaseClient.ts",
+          "services/NotificationService.ts",
+          "services/IconService.ts",
+          "services/LoggingService.ts"
+        ]
+      },
+      {
+        "name": "Utilities",
+        "description": "Utility functions for data conversion, validation, and accessibility",
+        "files": [
+          "utils/caseConverter.ts",
+          "utils/accessibility.ts",
+          "utils/performance.ts",
+          "utils/authValidation.ts",
+          "constants/colors.ts"
+        ]
+      },
+      {
+        "name": "Testing",
+        "description": "Unit and integration tests for various components and services",
+        "files": [
+          "components/__tests__/",
+          "context/__tests__/",
+          "hooks/__tests__/",
+          "services/__tests__/",
+          "utils/__tests__/",
+          "jest.config.js"
+        ]
+      },
+      {
+        "name": "Navigation",
+        "description": "Application routing and navigation using Expo Router",
+        "files": [
+          "app/_layout.tsx",
+          "app/(tabs)/_layout.tsx",
+          "app/(tabs)/add.tsx",
+          "app/(tabs)/history.tsx",
+          "app/(tabs)/index.tsx",
+          "app/(tabs)/products.tsx",
+          "app/(tabs)/settings.tsx"
+        ]
+      }
+    ]
+  }
+}

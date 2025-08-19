@@ -1,53 +1,55 @@
+import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
-import * as BackgroundFetch from 'expo-background-fetch';
 import * as Notifications from 'expo-notifications';
 import { StorageService } from './StorageService';
 import { NotificationService } from './NotificationService';
+import { LoggingService } from './LoggingService';
 
-export const BACKGROUND_FETCH_TASK = 'background-notification-sync';
+export const BACKGROUND_TASK_NAME = 'background-notification-sync';
 
-// 1. Definisci il task
-TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+// 1. Definisci il task usando TaskManager e BackgroundTask
+TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
   const now = new Date();
-  console.log(`[BackgroundFetch] Task ${BACKGROUND_FETCH_TASK} eseguito alle: ${now.toISOString()}`);
+  LoggingService.info('BackgroundTask', `Task ${BACKGROUND_TASK_NAME} eseguito alle: ${now.toISOString()}`);
 
   try {
     // Questa logica verrà eseguita in background
-    console.log('[BackgroundFetch] Recupero impostazioni e prodotti...');
+    LoggingService.info('BackgroundTask', 'Recupero impostazioni e prodotti...');
     const settings = await StorageService.getSettings();
     const { data: products } = await StorageService.getProducts();
 
     if (products && settings) {
-      console.log(`[BackgroundFetch] Dati recuperati. Riprogrammo le notifiche per ${products.length} prodotti.`);
+      LoggingService.info('BackgroundTask', `Dati recuperati. Riprogrammo le notifiche per ${products.length} prodotti.`);
       // Cancella le vecchie e riprogramma tutto per assicurarsi che siano aggiornate
       await Notifications.cancelAllScheduledNotificationsAsync();
       await NotificationService.scheduleMultipleNotifications(
         products.filter(p => p.status === 'active'),
         settings
       );
-      console.log('[BackgroundFetch] Riprogrammazione completata.');
-      return BackgroundFetch.BackgroundFetchResult.NewData;
+      LoggingService.info('BackgroundTask', 'Riprogrammazione completata.');
+      return BackgroundTask.BackgroundTaskResult.Success;
     }
 
-    console.log('[BackgroundFetch] Nessun dato da processare.');
-    return BackgroundFetch.BackgroundFetchResult.NoData;
+    LoggingService.info('BackgroundTask', 'Nessun dato da processare.');
+    return BackgroundTask.BackgroundTaskResult.Success;
   } catch (error) {
-    console.error('[BackgroundFetch] Errore durante l_esecuzione del task:', error);
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+    LoggingService.error('BackgroundTask', `Errore durante l'esecuzione del task: ${error}`);
+    return BackgroundTask.BackgroundTaskResult.Failed;
   }
 });
 
 // 2. Funzione helper per registrare il task
-export async function registerBackgroundFetchAsync() {
-  console.log('[BackgroundFetch] Tentativo di registrazione del task...');
+export async function registerBackgroundTaskAsync() {
+  LoggingService.info('BackgroundTask', 'Tentativo di registrazione del task...');
   try {
-    await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+    await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
       minimumInterval: 15 * 60, // 15 minuti
-      stopOnTerminate: false, // false: continua a funzionare anche se l'app è terminata
-      startOnBoot: true,      // true: si riattiva al riavvio del dispositivo
     });
-    console.log('[BackgroundFetch] Task registrato con successo.');
+    LoggingService.info('BackgroundTask', 'Task registrato con successo.');
   } catch (error) {
-    console.error('[BackgroundFetch] Errore durante la registrazione del task:', error);
+    LoggingService.error('BackgroundTask', `Errore durante la registrazione del task: ${error}`);
   }
 }
+
+// Mantieni compatibilità con il vecchio nome per il codice esistente
+export const registerBackgroundFetchAsync = registerBackgroundTaskAsync;

@@ -1,10 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
-import { Trash2, Calendar, Package } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import { Calendar, Package, Trash2 } from 'lucide-react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay } from 'react-native-reanimated';
+import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+import { LoggingService } from '@/services/LoggingService';
+import { COLORS } from '@/constants/colors';
+import {
+  getProductCardAccessibilityProps,
+  getDeleteButtonAccessibilityProps,
+  getActionButtonAccessibilityProps,
+  getImageAccessibilityProps
+} from '@/utils/accessibility';
 
 interface ProductCardProps {
   product: Product;
@@ -16,8 +25,34 @@ interface ProductCardProps {
 }
 
 export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onConsume, onPress, index }: ProductCardProps) => {
-  const { isDarkMode } = useTheme();
-  const expirationInfo = useExpirationStatus(product.expirationDate);
+  // Verifica subito che product e categoryInfo siano definiti
+  if (!product || !categoryInfo) {
+    LoggingService.warning('ProductCard', 'Rendering skipped due to missing product or category data');
+    return null;
+  }
+
+  const { isDarkMode, colors } = useTheme();
+  
+  // Gestione sicura della data di scadenza
+  const safeExpirationDate = React.useMemo(() => {
+    if (!product.expirationDate) return null;
+    
+    try {
+      const date = new Date(product.expirationDate);
+      // Verifica che la data sia valida
+      if (isNaN(date.getTime())) {
+        LoggingService.warning('ProductCard', `Invalid expiration date: ${product.expirationDate}`);
+        return null;
+      }
+      return date;
+    } catch (error) {
+      LoggingService.error('ProductCard', `Error parsing expiration date: ${product.expirationDate}`, error);
+      return null;
+    }
+  }, [product.expirationDate]);
+  
+  // Passa la data sicura al hook
+  const expirationInfo = useExpirationStatus(safeExpirationDate ? safeExpirationDate.toISOString() : undefined);
   
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
@@ -34,12 +69,14 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
     };
   });
   
-  const styles = getStyles(isDarkMode);
+  // Memoizziamo gli stili per evitare ricalcoli inutili
+  const styles = React.useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
   const handleDeletePress = () => {
+    const productName = product.name || 'questo prodotto';
     Alert.alert(
       'Elimina Prodotto',
-      `Sei sicuro di voler eliminare "${product.name}"?`,
+      `Sei sicuro di voler eliminare "${productName}"?`,
       [
         { text: 'Annulla', style: 'cancel' },
         { text: 'Elimina', style: 'destructive', onPress: onDelete },
@@ -47,16 +84,13 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
     );
   };
 
-  if (!product || !categoryInfo) {
-    return null;
-  }
-
   return (
     <Animated.View style={animatedStyle}>
-      <TouchableOpacity 
-        style={[styles.card, { backgroundColor: expirationInfo.backgroundColor, borderColor: expirationInfo.color + '33' }]} 
-        onPress={onPress} 
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: expirationInfo.backgroundColor, borderColor: expirationInfo.color + '33' }]}
+        onPress={onPress}
         activeOpacity={0.7}
+        {...getProductCardAccessibilityProps(product, categoryInfo)}
       >
         <View style={[styles.statusIndicator, { backgroundColor: expirationInfo.color }]} />
         <View style={styles.content}>
@@ -64,9 +98,17 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
             <View style={styles.productInfo}>
               <View style={[styles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
                 {categoryInfo.localIcon ? (
-                  <Image source={categoryInfo.localIcon} style={styles.categoryImage} />
-                ) : categoryInfo.iconUrl ? (
-                  <Image source={{ uri: categoryInfo.iconUrl }} style={styles.categoryImage} />
+                  <Image
+                    source={categoryInfo.localIcon}
+                    style={styles.categoryImage}
+                    {...getImageAccessibilityProps(`Icona categoria ${categoryInfo.name}`)}
+                  />
+                ) : categoryInfo.icon && categoryInfo.icon.startsWith('http') ? (
+                  <Image
+                    source={{ uri: categoryInfo.icon }}
+                    style={styles.categoryImage}
+                    {...getImageAccessibilityProps(`Icona categoria ${categoryInfo.name}`)}
+                  />
                 ) : (
                   <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
                 )}
@@ -75,30 +117,50 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
                 <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
                 {product.brand && <Text style={styles.brandName} numberOfLines={1}>{product.brand}</Text>}
                 <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '33' }]}>
-                  <Text style={[styles.categoryName, { color: isDarkMode ? '#ffffff' : categoryInfo.color }]}>{categoryInfo.name}</Text>
+                  <Text
+                    style={[
+                      styles.categoryName,
+                      { color: isDarkMode ? COLORS.DARK.textPrimary : categoryInfo.color }
+                    ]}
+                  >
+                    {categoryInfo.name}
+                  </Text>
                 </View>
               </View>
             </View>
             <View style={styles.actionsContainer}>
               {onConsume && product.status === 'active' && (
-                <TouchableOpacity style={styles.actionButton} onPress={onConsume}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={onConsume}
+                  {...getActionButtonAccessibilityProps("Segna come consumato", product.name || "prodotto")}
+                >
                   <Text style={styles.consumeText}>Consumato</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress} testID="delete-button">
-                <Trash2 size={20} color="#EF4444" />
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDeletePress}
+                testID="delete-button"
+                {...getDeleteButtonAccessibilityProps(product.name || "prodotto")}
+              >
+                <Trash2 size={20} color={colors.error} />
               </TouchableOpacity>
             </View>
           </View>
           <View style={styles.details}>
             <View style={styles.detailRow}>
               <View style={styles.detailItem}>
-                <Package size={16} color="#64748B" />
+                <Package size={16} color={colors.textSecondary} />
                 <Text style={styles.detailText}>{product.quantity} {product.unit}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Calendar size={16} color="#64748B" />
-                <Text style={styles.dateText}>{new Date(product.expirationDate).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}</Text>
+                <Calendar size={16} color={colors.textSecondary} />
+                <Text style={styles.dateText}>
+                  {safeExpirationDate
+                    ? safeExpirationDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : 'Data non valida'}
+                </Text>
               </View>
             </View>
             {product.notes && <Text style={styles.notes} numberOfLines={2}>{product.notes}</Text>}
@@ -109,12 +171,20 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
   );
 });
 
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+// Utilizziamo una tipizzazione più precisa per i colori
+const getStyles = (isDarkMode: boolean, colors: {
+  textPrimary: string;
+  textSecondary: string;
+  primary: string;
+  error: string;
+  cardBackground: string;
+  background: string;
+}) => StyleSheet.create({
     card: {
     borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
-    shadowColor: '#000',
+    shadowColor: COLORS.LIGHT.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -164,12 +234,12 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   productName: {
     fontSize: 17,
     fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    color: colors.textPrimary,
   },
   brandName: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
+    color: colors.textSecondary,
   },
   categoryBadge: {
     alignSelf: 'flex-start',
@@ -190,13 +260,13 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 6,
-    backgroundColor: isDarkMode ? '#1e2530' : '#ffffff',
+    backgroundColor: colors.cardBackground,
     marginRight: 8,
   },
   consumeText: {
     fontSize: 12,
     fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#8b949e' : '#0EA5E9',
+    color: colors.primary,
   },
   deleteButton: {
     padding: 8,
@@ -217,17 +287,17 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   detailText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
+    color: colors.textSecondary,
   },
   dateText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#c9d1d9' : '#334155',
+    color: colors.textPrimary,
   },
   notes: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
 });

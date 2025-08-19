@@ -17,9 +17,39 @@ const mockCategories: ProductCategory[] = [
 ];
 
 const mockProducts: Product[] = [
-  { id: '1', name: 'Latte', categoryId: 'cat1' } as Product,
-  { id: '2', name: 'Formaggio', categoryId: 'cat1' } as Product,
-  { id: '3', name: 'Mela', categoryId: 'cat2' } as Product,
+  { 
+    id: '1', 
+    name: 'Latte', 
+    category: 'cat1', 
+    quantity: 1, 
+    unit: 'unit', 
+    purchaseDate: '2024-01-01', 
+    expirationDate: '2024-01-10', 
+    status: 'active',
+    addedMethod: 'manual'
+  },
+  { 
+    id: '2', 
+    name: 'Formaggio', 
+    category: 'cat1', 
+    quantity: 1, 
+    unit: 'unit', 
+    purchaseDate: '2024-01-01', 
+    expirationDate: '2024-01-15', 
+    status: 'active',
+    addedMethod: 'manual'
+  },
+  { 
+    id: '3', 
+    name: 'Mela', 
+    category: 'cat2', 
+    quantity: 1, 
+    unit: 'unit', 
+    purchaseDate: '2024-01-01', 
+    expirationDate: '2024-01-20', 
+    status: 'active',
+    addedMethod: 'manual'
+  },
 ];
 
 describe('CategoryFilter', () => {

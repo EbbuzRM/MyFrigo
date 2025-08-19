@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Lightbulb, TrendingDown, Zap } from 'lucide-react-native';
+import { LoggingService } from '@/services/LoggingService';
 
-console.log('[DEBUG] Rendering components/SuggestionCard.tsx');
+LoggingService.info('SuggestionCard', '[DEBUG] Rendering components/SuggestionCard.tsx');
 
 interface SuggestionCardProps {
   title: string;
@@ -63,7 +64,7 @@ export function SuggestionCard({ title, text, type }: SuggestionCardProps) {
   );
 }
 
-const getStyles = (isDarkMode, themeStyles) => StyleSheet.create({
+const getStyles = (isDarkMode: boolean, themeStyles: { background: string; borderColor: string; titleColor: string; textColor: string }) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     backgroundColor: themeStyles.background,
