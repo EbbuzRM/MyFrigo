@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,20 @@ import {
   Modal,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Bell, 
-  Trash2, 
-  Info, 
+import {
+  Bell,
+  Trash2,
+  Info,
   Sun,
   Moon,
   ListTree,
   Calendar,
   User,
   MessageSquareQuote,
+  Wrench,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
@@ -30,6 +32,9 @@ import { Toast } from '@/components/Toast';
 import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
 import { StorageService } from '@/services/StorageService';
+import { LoggingService } from '@/services/LoggingService';
+import { DiagnosticPanel } from '@/components/DiagnosticPanel';
+
 
 const Settings = () => {
   const { setAppTheme, isDarkMode } = useTheme();
@@ -39,6 +44,10 @@ const Settings = () => {
   const [isDaysModalVisible, setIsDaysModalVisible] = useState(false);
   const [daysInput, setDaysInput] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showDiagnosticPanel, setShowDiagnosticPanel] = useState(false);
+  const longPressTimerRef = useRef<number | null>(null);
+  const [longPressProgress, setLongPressProgress] = useState(0);
 
   useEffect(() => {
     if (settings) {
@@ -57,9 +66,17 @@ const Settings = () => {
   const handleSaveNotificationDays = async () => {
     const days = parseInt(daysInput, 10);
     if (!isNaN(days) && days > 0 && days <= 30) {
-      await updateSettings({ notificationDays: days });
-      showToast(`Giorni di preavviso impostati a ${days}.`);
-      setIsDaysModalVisible(false);
+      try {
+        setIsSaving(true);
+        await updateSettings({ notificationDays: days });
+        showToast(`Giorni di preavviso impostati a ${days}.`);
+        setIsDaysModalVisible(false);
+      } catch (error) {
+        LoggingService.error('Settings', 'Errore durante il salvataggio delle impostazioni:', error);
+        showToast('Errore durante il salvataggio.', 'error');
+      } finally {
+        setIsSaving(false);
+      }
     } else {
       showToast('Inserisci un numero di giorni valido (1-30).', 'error');
     }
@@ -161,7 +178,45 @@ const Settings = () => {
             icon={<Info size={24} color={isDarkMode ? '#9ca3af' : '#6b7280'} />}
             title="Informazioni sull'App"
             description={`Versione ${Constants.expoConfig?.version}`}
-            onPress={() => Alert.alert('MyFrigo', `Versione ${Constants.expoConfig?.version}`)}
+            onPress={() => {
+              // Cancella il timer di pressione prolungata se esiste
+              if (longPressTimerRef.current) {
+                clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+                setLongPressProgress(0);
+              }
+              
+              // Mostra le informazioni sull'app
+              Alert.alert('MyFrigo', `Versione ${Constants.expoConfig?.version}`);
+            }}
+            onLongPress={() => {
+              // Avvia un timer per rilevare la pressione prolungata di 5 secondi
+              LoggingService.info('Settings', 'Rilevata pressione prolungata su Informazioni App');
+              
+              // Inizializza il progresso
+              setLongPressProgress(0);
+              
+              // Crea un intervallo per aggiornare il progresso visivamente (opzionale)
+              const progressInterval = setInterval(() => {
+                setLongPressProgress(prev => {
+                  const newProgress = prev + 20; // Incrementa del 20% ogni secondo
+                  if (newProgress >= 100) {
+                    clearInterval(progressInterval);
+                  }
+                  return newProgress;
+                });
+              }, 1000);
+              
+              // Imposta il timer principale per attivare il pannello diagnostico dopo 5 secondi
+              longPressTimerRef.current = setTimeout(() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                LoggingService.info('Settings', 'Pannello diagnostico attivato dopo 5 secondi di pressione');
+                setShowDiagnosticPanel(true);
+                setLongPressProgress(0);
+                clearInterval(progressInterval);
+                longPressTimerRef.current = null;
+              }, 5000);
+            }}
           />
           <SettingsCard
             icon={<MessageSquareQuote size={24} color={isDarkMode ? '#a78bfa' : '#7c3aed'} />}
@@ -190,11 +245,32 @@ const Settings = () => {
               autoFocus
             />
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setIsDaysModalVisible(false)}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setIsDaysModalVisible(false)}
+                disabled={isSaving}
+              >
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleSaveNotificationDays}>
-                <Text style={styles.modalButtonTextConfirm}>Salva</Text>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.modalButtonConfirm,
+                  isSaving && styles.modalButtonDisabled
+                ]}
+                onPress={handleSaveNotificationDays}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <View style={styles.saveButtonContent}>
+                    <ActivityIndicator size="small" color="#ffffff" />
+                    <Text style={[styles.modalButtonTextConfirm, styles.saveButtonText]}>
+                      Salvataggio...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.modalButtonTextConfirm}>Salva</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -209,6 +285,28 @@ const Settings = () => {
           type={toast.type}
         />
       )}
+      
+      {/* Indicatore di progresso per la pressione prolungata (opzionale) */}
+      {longPressProgress > 0 && (
+        <View style={styles.progressOverlay}>
+          <View style={[styles.progressBar, { width: `${longPressProgress}%` }]} />
+          <Text style={styles.progressText}>
+            {longPressProgress < 100
+              ? `Tieni premuto per attivare la diagnostica (${Math.round(longPressProgress)}%)`
+              : 'Rilascia per attivare la diagnostica'}
+          </Text>
+        </View>
+      )}
+      
+      {/* Pannello Diagnostico */}
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={showDiagnosticPanel}
+        onRequestClose={() => setShowDiagnosticPanel(false)}
+      >
+        <DiagnosticPanel onClose={() => setShowDiagnosticPanel(false)} />
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -233,4 +331,39 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   modalButtonConfirm: { backgroundColor: '#4f46e5', marginLeft: 8 },
   modalButtonTextCancel: { color: isDarkMode ? '#c9d1d9' : '#374151', fontFamily: 'Inter-SemiBold', fontSize: 16 },
   modalButtonTextConfirm: { color: 'white', fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  modalButtonDisabled: {
+    backgroundColor: '#a5b4fc',
+    opacity: 0.8
+  },
+  saveButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  saveButtonText: {
+    marginLeft: 8,
+  },
+  progressOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: '#4f46e5',
+    borderRadius: 2,
+    alignSelf: 'stretch',
+    marginBottom: 8,
+  },
+  progressText: {
+    color: 'white',
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
 });

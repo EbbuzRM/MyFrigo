@@ -1,35 +1,92 @@
-export interface Product {
-  id: string;
-  name: string;
-  brand?: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  purchaseDate: string;
-  expirationDate: string;
-  barcode?: string;
-  imageUrl?: string;
-  notes?: string;
-  status: 'active' | 'expired' | 'consumed';
-  consumedDate?: string;
-  addedMethod: 'barcode' | 'photo' | 'manual';
-  nutritionalInfo?: {
-    calories?: number;
-    proteins?: number;
-    carbohydrates?: number;
-    fats?: number;
-  };
+/**
+ * Rappresenta una data in formato ISO 8601 (YYYY-MM-DD)
+ * @example "2023-12-31"
+ */
+export type ISODateString = string;
+
+/**
+ * Stato possibile di un prodotto
+ */
+export type ProductStatus = 'active' | 'expired' | 'consumed';
+
+/**
+ * Metodo di aggiunta di un prodotto
+ */
+export type AddMethod = 'barcode' | 'photo' | 'manual';
+
+/**
+ * Informazioni nutrizionali di un prodotto
+ */
+export interface NutritionalInfo {
+  calories?: number;
+  proteins?: number;
+  carbohydrates?: number;
+  fats?: number;
 }
 
-export interface ProductCategory {
+/**
+ * Rappresenta un prodotto nel sistema
+ */
+export interface Product {
+  /** Identificatore univoco del prodotto */
   id: string;
+  /** Nome del prodotto */
   name: string;
-  icon?: string; 
+  /** Marca del prodotto (opzionale) */
+  brand?: string;
+  /** ID della categoria del prodotto */
+  category: string;
+  /** Quantità del prodotto */
+  quantity: number;
+  /** Unità di misura della quantità */
+  unit: string;
+  /** Data di acquisto in formato ISO 8601 */
+  purchaseDate: ISODateString;
+  /** Data di scadenza in formato ISO 8601 */
+  expirationDate: ISODateString;
+  /** Codice a barre del prodotto (opzionale) */
+  barcode?: string;
+  /** URL dell'immagine del prodotto (opzionale) */
+  imageUrl?: string;
+  /** Note aggiuntive sul prodotto (opzionale) */
+  notes?: string;
+  /** Stato attuale del prodotto */
+  status: ProductStatus;
+  /** Data di consumo in formato ISO 8601 (opzionale) */
+  consumedDate?: ISODateString;
+  /** Metodo con cui è stato aggiunto il prodotto */
+  addedMethod: AddMethod;
+  /** Informazioni nutrizionali (opzionale) */
+  nutritionalInfo?: NutritionalInfo;
+}
+
+/**
+ * Tipo di icona locale per una categoria
+ */
+export type LocalIcon = {
+  uri: string;
+} | number;
+
+/**
+ * Rappresenta una categoria di prodotti
+ */
+export interface ProductCategory {
+  /** Identificatore univoco della categoria */
+  id: string;
+  /** Nome della categoria */
+  name: string;
+  /** Icona della categoria (emoji o URL) */
+  icon?: string;
+  /** Colore della categoria in formato HEX */
   color: string;
-  iconUrl?: string;
-  localIcon?: any; 
-  user_id?: string;
-  is_default?: boolean;
+  /** Icona locale della categoria (risorsa locale) */
+  localIcon?: LocalIcon;
+  /** ID dell'utente proprietario della categoria (per categorie personalizzate) */
+  userId?: string;
+  /** Indica se la categoria è predefinita */
+  isDefault?: boolean;
+  /** Indica se l'icona non è stata trovata */
+  iconNotFound?: boolean;
 }
 
 export const PRODUCT_CATEGORIES: ProductCategory[] = [

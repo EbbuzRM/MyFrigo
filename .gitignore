@@ -88,10 +88,13 @@ dist/
 .vscode/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Android
 /android/app/build/
@@ -99,6 +102,7 @@ Thumbs.db
 /android/build/
 local.properties
 *.keystore
+*.jks
 
 # iOS
 /ios/build/
@@ -107,18 +111,32 @@ local.properties
 *.xcuserdata
 *.xcscheme
 DerivedData/
+*.ipa
+*.dSYM.zip
 
-# Firebase (se non vuoi tracciare le configurazioni)
-# google-services.json
-# GoogleService-Info.plist
+# Supabase
+supabase/
 
 # Temporary folders
 tmp/
 temp/
+*.tmp
 
 # Backup files
 *.bak
 *.backup
+
+# Database files
+*.sqlite
+*.db
+
+# Testing
+.hypothesis/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
 
 # Gemini - Ignoriamo la cartella con i file di memoria e configurazione
 .gemini/
@@ -126,4 +144,8 @@ temp/
 #Cline
 .clinerules
 
+# Project specific
 ROADMAP.MD
+testsprite_test
+prd
+*.log

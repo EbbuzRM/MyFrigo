@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { StorageService } from '../StorageService';
 import { supabase } from '../supabaseClient';
 import { Product } from '@/types/Product';
@@ -14,8 +15,7 @@ jest.mock('../NotificationService', () => ({
 
 // Mock completo del client Supabase
 jest.mock('../supabaseClient', () => {
-  const mockSupabase = {
-    from: jest.fn().mockReturnThis(),
+  const mockQueryBuilder = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
@@ -23,15 +23,19 @@ jest.mock('../supabaseClient', () => {
     upsert: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     single: jest.fn(),
+    returns: jest.fn().mockReturnThis(),
+  };
+  
+  const mockSupabase = {
+    from: jest.fn(() => mockQueryBuilder),
     auth: {
       getSession: jest.fn(),
     },
     removeChannel: jest.fn(),
     channel: jest.fn(() => ({
       on: jest.fn().mockReturnThis(),
-      subscribe: jest.fn((callback) => {
-        // Simula una sottoscrizione riuscita
-        if (typeof callback === 'function') {
+      subscribe: jest.fn((callback?: (status: string) => void) => {
+        if (callback && typeof callback === 'function') {
           callback('SUBSCRIBED');
         }
         return {
@@ -67,7 +71,10 @@ describe('StorageService', () => {
       
       // Setup: Simula la risposta del database
       const mockProducts = [{ id: '1', name: 'Latte', user_id: 'test-user-id' }];
-      (supabase.from('products').select().eq as jest.Mock).mockResolvedValue({
+      const mockQueryBuilder = supabase.from('products');
+      (mockQueryBuilder.select as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (mockQueryBuilder.eq as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (mockQueryBuilder.returns as jest.Mock).mockResolvedValue({
         data: mockProducts,
         error: null,
       });
@@ -77,8 +84,8 @@ describe('StorageService', () => {
 
       // Asserzioni: Verifica che le funzioni corrette siano state chiamate
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(supabase.select).toHaveBeenCalledWith('*');
-      expect(supabase.eq).toHaveBeenCalledWith('user_id', 'test-user-id');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'test-user-id');
       
       // Asserzioni: Verifica che i dati restituiti siano corretti
       expect(error).toBeNull();
@@ -108,7 +115,8 @@ describe('StorageService', () => {
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
         data: { session: { user: { id: 'test-user-id' } } },
       });
-      (supabase.from('products').upsert as jest.Mock).mockResolvedValue({ error: null });
+      const mockQueryBuilder = supabase.from('products');
+      (mockQueryBuilder.upsert as jest.Mock).mockResolvedValue({ error: null });
 
       const newProduct: Partial<Product> = { name: 'Pane', quantity: 1, unit: 'kg' };
 
@@ -118,7 +126,7 @@ describe('StorageService', () => {
       // Asserzioni
       expect(supabase.from).toHaveBeenCalledWith('products');
       // Verifica che i dati inviati a upsert contengano l'ID utente e siano in snake_case
-      expect(supabase.upsert).toHaveBeenCalledWith(
+      expect(mockQueryBuilder.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Pane',
           quantity: 1,
@@ -135,7 +143,9 @@ describe('StorageService', () => {
   describe('deleteProduct', () => {
     it('should delete a product by its ID', async () => {
       // Setup
-      (supabase.from('products').delete().eq as jest.Mock).mockResolvedValue({ error: null });
+      const mockQueryBuilder = supabase.from('products');
+      (mockQueryBuilder.delete as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (mockQueryBuilder.eq as jest.Mock).mockResolvedValue({ error: null });
       
       const productId = 'product-to-delete';
 
@@ -144,8 +154,8 @@ describe('StorageService', () => {
 
       // Asserzioni
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(supabase.delete).toHaveBeenCalled();
-      expect(supabase.eq).toHaveBeenCalledWith('id', productId);
+      expect(mockQueryBuilder.delete).toHaveBeenCalled();
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', productId);
     });
   });
 
@@ -153,8 +163,9 @@ describe('StorageService', () => {
   describe('updateProductStatus', () => {
     it('should update a product status to "consumed" and set consumedDate', async () => {
       // Setup
-      (supabase.from('products').update as jest.Mock).mockReturnThis();
-      (supabase.eq as jest.Mock).mockResolvedValue({ error: null });
+      const mockQueryBuilder = supabase.from('products');
+      (mockQueryBuilder.update as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (mockQueryBuilder.eq as jest.Mock).mockResolvedValue({ error: null });
 
       const productId = 'product-to-consume';
 
@@ -164,13 +175,13 @@ describe('StorageService', () => {
       // Asserzioni
       expect(supabase.from).toHaveBeenCalledWith('products');
       // Verifica che i dati inviati a update siano corretti e in snake_case
-      expect(supabase.update).toHaveBeenCalledWith(
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'consumed',
           consumed_date: expect.any(String), // Verifichiamo che consumed_date sia una stringa (data ISO)
         })
       );
-      expect(supabase.eq).toHaveBeenCalledWith('id', productId);
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', productId);
     });
   });
 });

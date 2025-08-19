@@ -1,90 +1,36 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  RefreshControl,
-  Alert,
-} from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search } from 'lucide-react-native';
-import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { useFocusEffect } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
+import { useProducts } from '@/context/ProductContext';
 import { useCategories } from '@/context/CategoryContext';
-import { useProducts } from '@/context/ProductContext'; // Importa il contesto
-import { StorageService } from '@/services/StorageService'; // Mantenuto per delete/update
-import * as Haptics from 'expo-haptics';
-
-type ProductFilter = 'all' | 'expired' | 'expiring';
+import { useSettings } from '@/context/SettingsContext';
+import { router } from 'expo-router';
+import { Plus, Search } from 'lucide-react-native';
+import { Product } from '@/types/Product';
+import { StorageService } from '@/services/StorageService';
+import { LoggingService } from '@/services/LoggingService';
 
 const Products = () => {
   const { isDarkMode } = useTheme();
-  const { categories, getCategoryById, loading: categoriesLoading } = useCategories();
-  const { products: allProducts, loading: productsLoading, refreshProducts } = useProducts(); // Usa il contesto
-  const params = useLocalSearchParams();
-  
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const styles = getStyles(isDarkMode);
+  const { products: allProducts, loading, refreshProducts } = useProducts();
+  const { categories } = useCategories();
+  const { settings } = useSettings();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [currentFilter, setCurrentFilter] = useState<ProductFilter>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'fresh' | 'expiring' | 'expired'>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useFocusEffect(
-    React.useCallback(() => {
-      if (params.filter && typeof params.filter === 'string') {
-        setCurrentFilter(params.filter as ProductFilter);
-      } else {
-        setCurrentFilter('all');
-      }
-    }, [params.filter])
+    useCallback(() => {
+      refreshProducts();
+    }, [refreshProducts])
   );
-
-  useEffect(() => {
-    const filterProducts = () => {
-      // Inizia con i prodotti non consumati
-      let filtered = allProducts.filter(p => p.status !== 'consumed');
-
-      if (searchQuery.trim()) {
-        filtered = filtered.filter(product =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-
-      if (selectedCategory !== 'all') {
-        filtered = filtered.filter(product => product.category === selectedCategory);
-      }
-
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-
-      if (currentFilter === 'expired') {
-        filtered = filtered.filter(product => {
-          const expirationDate = new Date(product.expirationDate);
-          expirationDate.setHours(0, 0, 0, 0);
-          return expirationDate < now;
-        });
-      } else if (currentFilter === 'expiring') {
-        const notificationDaysForExpiring = 7; // O leggere dalle impostazioni se necessario
-        const limitDate = new Date(now.getTime() + notificationDaysForExpiring * 24 * 60 * 60 * 1000);
-        filtered = filtered.filter(product => {
-          const expirationDate = new Date(product.expirationDate);
-          expirationDate.setHours(0, 0, 0, 0);
-          return expirationDate >= now && expirationDate <= limitDate;
-        });
-      }
-
-      filtered.sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
-      setFilteredProducts(filtered);
-    };
-
-    filterProducts();
-  }, [allProducts, searchQuery, selectedCategory, currentFilter]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -92,224 +38,288 @@ const Products = () => {
     setRefreshing(false);
   }, [refreshProducts]);
 
-  const handleDeleteProduct = useCallback(async (productId: string) => {
-    try {
-      await StorageService.deleteProduct(productId);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Errore", "Impossibile eliminare il prodotto.");
-    }
-  }, []);
+  const filteredProducts = useMemo(() => {
+    let filtered = allProducts.filter(p => p.status === 'active');
 
-  const handleConsumeProduct = useCallback(async (productId: string) => {
+    if (selectedCategory) {
+      filtered = filtered.filter(product =>
+        product.category === selectedCategory
+      );
+    }
+
+    if (searchQuery) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (selectedStatus !== 'all') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      filtered = filtered.filter(product => {
+        const expirationDate = new Date(product.expirationDate);
+        expirationDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        const notificationDays = settings?.notificationDays || 4; // Default a 4 giorni se settings non è disponibile
+        
+        switch (selectedStatus) {
+          case 'fresh':
+            return diffDays > notificationDays;
+          case 'expiring':
+            return diffDays >= 0 && diffDays <= notificationDays;
+          case 'expired':
+            return diffDays < 0;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Ordina i prodotti per data di scadenza (dal più prossimo al più lontano)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.expirationDate).getTime();
+      const dateB = new Date(b.expirationDate).getTime();
+      return dateA - dateB;
+    });
+
+    return filtered;
+  }, [allProducts, selectedCategory, searchQuery, selectedStatus, settings?.notificationDays]);
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyStateText}>
+        {searchQuery || selectedCategory 
+          ? 'Nessun prodotto trovato' 
+          : 'Nessun prodotto ancora aggiunto'}
+      </Text>
+    </View>
+  );
+
+  const getCategoryInfo = (categoryId: string) => {
+    return categories.find(cat => cat.id === categoryId);
+  };
+
+  const handleConsumeProduct = async (productId: string) => {
     try {
       await StorageService.updateProductStatus(productId, 'consumed');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Prodotto Consumato", "Il prodotto è stato segnato come consumato e spostato nello storico.");
+      await refreshProducts();
     } catch (error) {
-      console.error('Error consuming product:', error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Errore", "Impossibile segnare il prodotto come consumato.");
+      LoggingService.error('Products', 'Errore durante il consumo del prodotto:', error);
     }
-  }, []);
+  };
 
-  const styles = getStyles(isDarkMode);
+  const handleMoveExpiredToHistory = useCallback(async () => {
+    try {
+      const expiredProducts = await StorageService.getExpiredProducts();
+      if (expiredProducts.length > 0) {
+        const productIds = expiredProducts.map(p => p.id!);
+        await StorageService.moveProductsToHistory(productIds);
+        await refreshProducts(); // Ricarica i prodotti dopo lo spostamento
+        LoggingService.info('Products', `${expiredProducts.length} prodotti scaduti sono stati spostati nella cronologia.`);
+      }
+    } catch (error) {
+      LoggingService.error('Products', 'Errore durante lo spostamento dei prodotti scaduti nella cronologia:', error);
+      // Non mostrare un alert all'utente per questo operazione di background, ma loggare l'errore.
+    }
+  }, [refreshProducts]);
 
-  if (productsLoading || categoriesLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Caricamento prodotti...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Esegui il controllo per i prodotti scaduti all'avvio e quando il guadagna il focus
+  useFocusEffect(
+    useCallback(() => {
+      handleMoveExpiredToHistory();
+    }, [handleMoveExpiredToHistory])
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>I Miei Prodotti</Text>
-        <Text style={styles.subtitle}>{filteredProducts.length} prodotti trovati</Text>
+        <Text style={styles.title}>Prodotti</Text>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => router.push('/(tabs)/add')}
+        >
+          <Plus size={24} color="#ffffff" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#64748B" />
+        <View style={styles.searchInputContainer}>
+          <Search size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Cerca prodotti..."
+            placeholder="Cerca per nome o marca..."
+            placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#94a3b8"
           />
         </View>
       </View>
 
-      <View style={styles.statusFilterContainer}>
-        <TouchableOpacity
-          style={[styles.statusFilterButton, currentFilter === 'all' && styles.statusFilterButtonActive]}
-          onPress={() => setCurrentFilter('all')}
-        >
-          <Text style={[styles.statusFilterText, currentFilter === 'all' && styles.statusFilterTextActive]}>Tutti</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.statusFilterButton, currentFilter === 'expiring' && styles.statusFilterButtonActive]}
-          onPress={() => setCurrentFilter('expiring')}
-        >
-          <Text style={[styles.statusFilterText, currentFilter === 'expiring' && styles.statusFilterTextActive]}>In Scadenza</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.statusFilterButton, currentFilter === 'expired' && styles.statusFilterButtonActive]}
-          onPress={() => setCurrentFilter('expired')}
-        >
-          <Text style={[styles.statusFilterText, currentFilter === 'expired' && styles.statusFilterTextActive]}>Scaduti</Text>
-        </TouchableOpacity>
+      <View style={styles.filtersContainer}>
+        <View style={styles.statusFilters}>
+          {[
+            { key: 'all', label: 'Tutti' },
+            { key: 'fresh', label: 'Freschi' },
+            { key: 'expiring', label: 'In Scadenza' },
+            { key: 'expired', label: 'Scaduti' }
+          ].map((status) => (
+            <TouchableOpacity
+              key={status.key}
+              style={[
+                styles.statusFilter,
+                selectedStatus === status.key && styles.statusFilterActive
+              ]}
+              onPress={() => setSelectedStatus(status.key as any)}
+            >
+              <Text style={[
+                styles.statusFilterText,
+                selectedStatus === status.key && styles.statusFilterTextActive
+              ]}>
+                {status.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       <CategoryFilter
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        products={allProducts.filter(p => p.status !== 'consumed')}
+        selectedCategory={selectedCategory || 'all'}
+        onCategoryChange={(category) => setSelectedCategory(category === 'all' ? null : category)}
+        products={allProducts}
         categories={categories}
       />
 
-      <ScrollView
-        style={styles.scrollView}
+      <FlatList
+        data={filteredProducts}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, index }) => (
+          <ProductCard
+            product={item}
+            categoryInfo={getCategoryInfo(item.category)}
+            onPress={() => router.push(`/manual-entry?productId=${item.id}`)}
+            onConsume={() => handleConsumeProduct(item.id)}
+            onDelete={async () => {
+              try {
+                setIsDeleting(true);
+                await StorageService.deleteProduct(item.id!);
+                await refreshProducts();
+                LoggingService.info('Products', `Prodotto ${item.name} eliminato con successo`);
+              } catch (error) {
+                LoggingService.error('Products', 'Errore durante l\'eliminazione del prodotto:', error);
+              } finally {
+                setIsDeleting(false);
+              }
+            }}
+            index={index}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={renderEmptyState}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={isDarkMode ? '#c9d1d9' : '#64748B'}
+          />
         }
-      >
-        <View style={styles.productsContainer}>
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                categoryInfo={getCategoryById(product.category)}
-                onDelete={() => handleDeleteProduct(product.id)}
-                onConsume={() => handleConsumeProduct(product.id)}
-                onPress={() => router.push({ pathname: '/manual-entry', params: { productId: product.id } })}
-                index={index}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                {searchQuery || selectedCategory !== 'all'
-                  ? 'Nessun prodotto trovato con i filtri applicati'
-                  : 'Nessun prodotto attivo. Inizia aggiungendo il tuo primo prodotto!'}
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+      />
     </SafeAreaView>
   );
 };
 
-// Esportazione predefinita del componente
 export default Products;
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#c9d1d9' : '#64748B',
+    backgroundColor: isDarkMode ? '#0d1117' : '#f8f9fa',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingVertical: 16,
   },
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 4,
   },
-  subtitle: {
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100, // Aumentato per garantire che l'ultima card sia completamente visibile
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
   },
   searchContainer: {
     paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingVertical: 12,
   },
-  searchBar: {
+  searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+    backgroundColor: isDarkMode ? '#21262d' : '#f8fafc',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
-  scrollView: {
-    flex: 1,
-  },
-  productsContainer: {
+  filtersContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 100, // Aggiunto spazio in fondo
+    paddingBottom: 12,
   },
-  emptyState: {
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    padding: 32,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
-    marginTop: 20,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
-    textAlign: 'center',
-  },
-  statusFilterContainer: {
+  statusFilters: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    gap: 8,
+    flexWrap: 'wrap',
   },
-  statusFilterButton: {
+  statusFilter: {
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    paddingHorizontal: 15,
     borderRadius: 20,
-    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+    backgroundColor: isDarkMode ? '#21262d' : '#f1f5f9',
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
-  statusFilterButtonActive: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
+  statusFilterActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
   },
   statusFilterText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#c9d1d9' : '#64748B',
+    color: isDarkMode ? '#8b949e' : '#64748b',
   },
   statusFilterTextActive: {
-    color: '#FFFFFF',
+    color: '#ffffff',
   },
 });

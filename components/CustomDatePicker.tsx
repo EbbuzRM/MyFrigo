@@ -3,6 +3,7 @@ import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Calendar } from 'react-native-calendars';
 import { useTheme } from '@/context/ThemeContext';
+import { LoggingService } from '@/services/LoggingService';
 
 interface CustomDatePickerProps {
   value: Date;
@@ -24,9 +25,9 @@ export function CustomDatePicker({ value, onChange, onClose, minimumDate, maximu
             <Text style={styles.modalTitle}>Select Date</Text>
             <Calendar
               current={value.toISOString().split('T')[0]}
-              onDayPress={(day) => {
-                onChange({ type: 'set' } as DateTimePickerEvent, new Date(day.timestamp));
-              }}
+onDayPress={(day) => {
+  onChange({ type: 'set' } as DateTimePickerEvent, new Date(day.dateString));
+}}
               minDate={minimumDate?.toISOString().split('T')[0]}
               maxDate={maximumDate?.toISOString().split('T')[0]}
               theme={{
@@ -84,6 +85,13 @@ const getStyles = (isDarkMode: boolean) =>
       borderRadius: 10,
       width: '80%',
       alignItems: 'stretch',
+    },
+    closeButton: {
+      backgroundColor: '#2563EB',
+      padding: 10,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginTop: 15,
     },
     modalTitle: {
       fontSize: 18,

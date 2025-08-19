@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
+import { LoggingService } from '@/services/LoggingService';
+import { getCategoryFilterAccessibilityProps } from '@/utils/accessibility';
 
 interface CategoryFilterProps {
   selectedCategory: string;
@@ -13,13 +15,12 @@ interface CategoryFilterProps {
 export function CategoryFilter({ selectedCategory, onCategoryChange, products, categories: customCategories }: CategoryFilterProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const getCategoryCount = (categoryId: string) => {
-    if (categoryId === 'all') {
-      return products.length;
-    }
-    // Gestisce sia 'category' che 'categoryId' per robustezza
-    return products.filter(product => product.categoryId === categoryId || product.category === categoryId).length;
-  };
+const getCategoryCount = (categoryId: string) => {
+  if (categoryId === 'all') {
+    return products.length;
+  }
+  return products.filter(product => product.category === categoryId).length;
+};
 
   const categories = [
     { id: 'all', name: 'Tutti', icon: '📦', color: '#64748B' },
@@ -48,8 +49,24 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, products, c
                 ]}
                 onPress={() => onCategoryChange(category.id)}
                 activeOpacity={0.7}
+                {...getCategoryFilterAccessibilityProps(category.name, count, isSelected)}
               >
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
+                {category.localIcon ? (
+                  // Mostra l'icona locale
+                  <Image
+                    source={category.localIcon}
+                    style={styles.categoryImage}
+                  />
+                ) : typeof category.icon === 'string' && category.icon.startsWith('http') ? (
+                  // Mostra l'icona remota
+                  <Image
+                    source={{ uri: category.icon }}
+                    style={styles.categoryImage}
+                  />
+                ) : (
+                  // Mostra l'icona come testo (emoji)
+                  <Text style={styles.categoryIcon}>{category.icon || '📦'}</Text>
+                )}
                 <Text
                   style={[
                     styles.categoryName,
@@ -119,6 +136,12 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, products, c
     fontSize: 16,
     marginRight: 6,
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
+  },
+  categoryImage: {
+    width: 20,
+    height: 20,
+    marginRight: 6,
+    borderRadius: 4,
   },
   categoryName: {
     fontSize: 14,

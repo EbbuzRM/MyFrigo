@@ -8,6 +8,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { Product } from '@/types/Product';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { ArrowLeft } from 'lucide-react-native';
+import { LoggingService } from '@/services/LoggingService';
 
 export default function ConsumedListScreen() {
   const { isDarkMode } = useTheme();
@@ -23,7 +24,7 @@ export default function ConsumedListScreen() {
       const consumed = history.filter(p => p.status === 'consumed');
       setConsumedProducts(consumed);
     } catch (error) {
-      console.error("Failed to load consumed products:", error);
+      LoggingService.error('ConsumedList', 'Failed to load consumed products:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,7 +49,7 @@ export default function ConsumedListScreen() {
       loadData(); // Ricarica la lista per riflettere il cambiamento
     } catch (error) {
       Alert.alert('Errore', 'Si è verificato un errore durante il ripristino del prodotto.');
-      console.error('Error restoring product:', error);
+      LoggingService.error('ConsumedList', 'Error restoring product:', error);
     }
   }, [loadData]);
 

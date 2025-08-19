@@ -30,14 +30,14 @@ describe('useExpirationStatus', () => {
     const { result } = renderHook(() => useExpirationStatus(getDate(3)));
     
     expect(result.current.text).toBe('3 giorni');
-    expect(result.current.color).toBe('#d97706'); // Colore "warning" per tema chiaro
+    expect(result.current.color).toBe('#f59e0b'); // Colore "warning" per tema chiaro
   });
 
   it('should return "expiring today" status for products expiring today', () => {
     const { result } = renderHook(() => useExpirationStatus(getDate(0)));
     
     expect(result.current.text).toBe('Scade oggi');
-    expect(result.current.color).toBe('#d97706'); // Colore "warning" per tema chiaro
+    expect(result.current.color).toBe('#f59e0b'); // Colore "warning" per tema chiaro
   });
 
   it('should return "expired" status for products that have expired', () => {
@@ -57,7 +57,7 @@ describe('useExpirationStatus', () => {
 
     // Test per lo stato "warning" in dark mode
     const { result: warningResult } = renderHook(() => useExpirationStatus(getDate(2)));
-    expect(warningResult.current.color).toBe('#facc15');
+    expect(warningResult.current.color).toBe('#fcd34d');
 
     // Test per lo stato "expired" in dark mode
     const { result: expiredResult } = renderHook(() => useExpirationStatus(getDate(-1)));

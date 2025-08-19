@@ -1,21 +1,33 @@
 import React from 'react';
 import { Pressable, PressableProps, Animated } from 'react-native';
+import { LoggingService } from '@/services/LoggingService';
+import { AccessibilityAttributes } from '@/utils/accessibility';
 
 interface AnimatedPressableProps extends PressableProps {
   children: React.ReactNode;
+  accessibilityProps?: Partial<AccessibilityAttributes>;
 }
 
-export function AnimatedPressable({ children, style, ...props }: AnimatedPressableProps) {
+export function AnimatedPressable({
+  children,
+  style,
+  accessibilityProps,
+  accessible = true,
+  accessibilityRole = 'button',
+  accessibilityLabel,
+  accessibilityHint,
+  ...props
+}: AnimatedPressableProps) {
   const animatedValue = new Animated.Value(1);
 
-  const handlePressIn = () => {
+  const handlePressIn = (event: any) => {
     Animated.spring(animatedValue, {
       toValue: 0.95,
       useNativeDriver: true,
     }).start();
   };
 
-  const handlePressOut = () => {
+  const handlePressOut = (event: any) => {
     Animated.spring(animatedValue, {
       toValue: 1,
       friction: 3,
@@ -28,15 +40,31 @@ export function AnimatedPressable({ children, style, ...props }: AnimatedPressab
     transform: [{ scale: animatedValue }],
   };
 
+  // Combina le proprietà di accessibilità passate direttamente con quelle in accessibilityProps
+  const combinedAccessibilityProps = {
+    accessible: accessibilityProps?.accessible ?? accessible,
+    accessibilityRole: accessibilityProps?.accessibilityRole ?? accessibilityRole,
+    accessibilityLabel: accessibilityProps?.accessibilityLabel ?? accessibilityLabel,
+    accessibilityHint: accessibilityProps?.accessibilityHint ?? accessibilityHint,
+  };
+
   return (
     <Pressable
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      {...combinedAccessibilityProps}
       {...props}
     >
-      <Animated.View style={[style, animatedStyle]}>
-        {children}
-      </Animated.View>
+      {({ pressed }) => (
+        <Animated.View 
+          style={[
+            typeof style === 'function' ? style({ pressed }) : style,
+            animatedStyle
+          ]}
+        >
+          {children}
+        </Animated.View>
+      )}
     </Pressable>
   );
 }

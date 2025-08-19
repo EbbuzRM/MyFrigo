@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { LoggingService } from '@/services/LoggingService';
 import { supabase } from '@/services/supabaseClient';
 
 export default function ProfileScreen() {
-  // Aggiorniamo per includere setProfile per l'aggiornamento ottimistico
-  const { user, profile, setProfile } = useAuth();
+  const { user, profile, refreshUserProfile } = useAuth();
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -23,10 +23,10 @@ export default function ProfileScreen() {
   }, [profile]);
 
   const handleUpdateProfile = async () => {
-    console.log('[PROFILE_UPDATE] Inizio della funzione.');
+    LoggingService.info('[PROFILE_UPDATE] Inizio della funzione.', 'Function started');
     if (!user) {
       Alert.alert('Errore', 'Nessun utente loggato.');
-      console.log('[PROFILE_UPDATE] Uscita: utente non trovato.');
+      LoggingService.error('[PROFILE_UPDATE] Uscita: utente non trovato.', 'User not authenticated', user);
       return;
     }
     
@@ -35,18 +35,15 @@ export default function ProfileScreen() {
 
     if (!trimmedFirstName || !trimmedLastName) {
       Alert.alert('Attenzione', 'Nome e cognome non possono essere vuoti.');
-      console.log('[PROFILE_UPDATE] Uscita: campi vuoti.');
+      LoggingService.error('[PROFILE_UPDATE] Uscita: campi vuoti.', 'Empty fields', { firstName, lastName });
       return;
     }
 
-    console.log('[PROFILE_UPDATE] Imposto saving a true.');
+    LoggingService.info('[PROFILE_UPDATE] Imposto saving a true.', 'Setting saving to true');
     setSaving(true);
 
-    console.log('[PROFILE_UPDATE] Eseguo aggiornamento ottimistico UI.');
-    setProfile({ first_name: trimmedFirstName, last_name: trimmedLastName });
-
     try {
-      console.log('[PROFILE_UPDATE] Inizio blocco try. Chiamo supabase.from("users").update()');
+      LoggingService.info('[PROFILE_UPDATE] Inizio blocco try. Chiamo supabase.from("users").update().', 'Block try started');
       const { error: dbError } = await supabase
         .from('users')
         .update({
@@ -55,28 +52,27 @@ export default function ProfileScreen() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
-      console.log('[PROFILE_UPDATE] Fine chiamata a supabase.from("users").update().');
+      LoggingService.info('[PROFILE_UPDATE] Fine chiamata a supabase.from("users").update().', 'Call to update completed');
 
       if (dbError) {
-        console.log('[PROFILE_UPDATE] Errore da "users".update():', dbError);
-        setProfile(profile); 
+        LoggingService.error('[PROFILE_UPDATE] Errore da "users".update():', 'Error in update', dbError);
         throw dbError;
       }
-      console.log('[PROFILE_UPDATE] "users".update() completato con successo.');
+      LoggingService.info('[PROFILE_UPDATE] "users".update() completato con successo.', 'Update completed successfully');
 
-      // La chiamata a supabase.auth.updateUser() è stata rimossa perché causava il blocco.
+      await refreshUserProfile();
       
       Alert.alert('Successo', 'Profilo aggiornato!');
       if (router.canGoBack()) {
-        console.log('[PROFILE_UPDATE] Navigo indietro.');
+        LoggingService.info('[PROFILE_UPDATE] Navigo indietro.', 'Navigating back');
         router.back();
       }
 
     } catch (error: any) {
-      console.error("[PROFILE_UPDATE] Errore nel blocco catch:", error);
+      LoggingService.error("[PROFILE_UPDATE] Errore nel blocco catch:", 'Error in catch block', error);
       Alert.alert('Errore', `Impossibile aggiornare il profilo: ${error.message}`);
     } finally {
-      console.log('[PROFILE_UPDATE] Eseguo blocco finally. Imposto saving a false.');
+      LoggingService.info('[PROFILE_UPDATE] Eseguo blocco finally. Imposto saving a false.', 'Finally block executed');
       setSaving(false);
     }
   };
@@ -154,7 +150,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   label: {
     fontSize: 20,
@@ -187,4 +183,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-

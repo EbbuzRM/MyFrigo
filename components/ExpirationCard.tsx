@@ -5,6 +5,8 @@ import { Product } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
+import { LoggingService } from '@/services/LoggingService';
+import { getExpirationCardAccessibilityProps, getImageAccessibilityProps } from '@/utils/accessibility';
 
 interface ExpirationCardProps {
   product: Product;
@@ -24,13 +26,28 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
   }
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.7}
+      {...getExpirationCardAccessibilityProps(product, expirationInfo)}
+    >
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.productInfo}>
             <View style={[styles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
-              {categoryInfo.iconUrl ? (
-                <Image source={{ uri: categoryInfo.iconUrl }} style={styles.categoryImage} />
+              {categoryInfo.localIcon ? (
+                <Image
+                  source={categoryInfo.localIcon}
+                  style={styles.categoryImage}
+                  {...getImageAccessibilityProps(`Icona categoria ${categoryInfo.name}`)}
+                />
+              ) : categoryInfo.icon && categoryInfo.icon.startsWith('http') ? (
+                <Image
+                  source={{ uri: categoryInfo.icon }}
+                  style={styles.categoryImage}
+                  {...getImageAccessibilityProps(`Icona categoria ${categoryInfo.name}`)}
+                />
               ) : (
                 <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
               )}

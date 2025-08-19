@@ -1,5 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { LoggingService } from "../../services/LoggingService";
 
 admin.initializeApp();
 
@@ -29,7 +30,7 @@ export const saveFCMToken = functions.https.onCall(async (data, _context) => {
 
     return { success: true };
   } catch (error) {
-    console.error("Error saving FCM token:", error);
+    LoggingService.error('Functions', `Error saving FCM token: ${error}`);
     throw new functions.https.HttpsError("internal", "Failed to save FCM token.");
   }
 });
@@ -64,7 +65,7 @@ export const sendPushNotification = functions.https.onCall(async (data, _context
     const response = await admin.messaging().send(message);
     return { success: true, response };
   } catch (error) {
-    console.error("Error sending message:", error);
+    LoggingService.error('Functions', `Error sending message: ${error}`);
     throw new functions.https.HttpsError("internal", "Failed to send message");
   }
 });
@@ -84,7 +85,7 @@ export const scheduleDailyNotifications = functions.pubsub.schedule('every day 0
       }
     });
   } catch (error) {
-    console.error("Error fetching FCM tokens:", error);
+    LoggingService.error('Functions', `Error fetching FCM tokens: ${error}`);
   }
 
   const message = {
@@ -106,11 +107,11 @@ export const scheduleDailyNotifications = functions.pubsub.schedule('every day 0
 
   const sendPromises = tokens.map(token =>
     admin.messaging().send({ ...message, token }).catch(err => {
-      console.error(`Errore con token ${token}:`, err);
+      LoggingService.error('Functions', `Errore con token ${token}: ${err}`);
     })
   );
 
   await Promise.all(sendPromises);
-  console.log("Notifiche programmate inviate.");
+  LoggingService.info('Functions', "Notifiche programmate inviate.");
   return null;
 });

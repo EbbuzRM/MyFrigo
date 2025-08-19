@@ -5,6 +5,7 @@ import { StatsCard } from './StatsCard';
 import { useTheme } from '@/context/ThemeContext';
 import { router } from 'expo-router';
 import { Product } from '@/types/Product';
+import { LoggingService } from '@/services/LoggingService';
 
 interface HistoryStatsProps {
   totalProducts: number;
@@ -18,21 +19,13 @@ export function HistoryStats({ totalProducts, expiredProducts, consumedProducts,
   const wastePercentage = totalProducts > 0 ? Math.round((expiredProducts / totalProducts) * 100) : 0;
 
   const handlePress = (type: 'consumed' | 'expired' | 'all', title: string) => {
-    let productList: Product[] = [];
-    if (type === 'all') {
-      productList = allProducts;
-    } else if (type === 'consumed') {
-      productList = allProducts.filter(p => p.status === 'consumed');
-    } else {
-      productList = allProducts.filter(p => p.status !== 'consumed');
-    }
-    
-    router.push({ 
-      pathname: '/history-detail', 
-      params: { 
-        products: JSON.stringify(productList), 
-        title 
-      } 
+    // Invece di passare l'intera lista di prodotti, passiamo solo il tipo di filtro
+    router.push({
+      pathname: '/history-detail',
+      params: {
+        filterType: type,
+        title
+      }
     });
   };
 

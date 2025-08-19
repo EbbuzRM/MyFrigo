@@ -1,116 +1,83 @@
-import 'react-native-url-polyfill/auto';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { ThemeProvider as NavThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useEffect, useState } from 'react';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { ThemeProvider, useTheme } from '@/context/ThemeContext';
-import { CategoryProvider } from '@/context/CategoryContext';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { ProductProvider } from '@/context/ProductContext';
+import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'react-native';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { useFonts } from 'expo-font';
+import { LoggingService } from '@/services/LoggingService';
 import { SettingsProvider } from '@/context/SettingsContext';
-import { NotificationService } from '@/services/NotificationService';
-import * as Progress from 'react-native-progress';
+import { AuthProvider } from '@/context/AuthContext';
+import { ProductProvider } from '@/context/ProductContext';
+import { CategoryProvider } from '@/context/CategoryContext';
 
 
-
-import { registerBackgroundFetchAsync } from '@/services/backgroundSync';
-
+// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-function NavigationController() {
-  const { session, loading, profile } = useAuth();
-  const router = useRouter();
-  const segments = useSegments();
-  const isReady = useFrameworkReady();
-
-  useEffect(() => {
-    if (!isReady || loading) return;
-
-    const inAuthGroup = segments[0] === '(tabs)';
-
-    if (session && profile?.first_name && !inAuthGroup) {
-      router.replace('/(tabs)');
-    } else if (session && !profile?.first_name && segments[1] !== 'complete-profile') {
-      router.replace('/complete-profile');
-    } else if (!session && inAuthGroup) {
-      router.replace('/login');
-    }
-    
-    if (!loading) {
-      SplashScreen.hideAsync();
-    }
-  }, [session, loading, profile, segments, isReady]);
-
-  return <Stack screenOptions={{ headerShown: false }} />;
-}
-
-function RootLayoutNav() {
-  const { isDarkMode } = useTheme();
-  const theme = isDarkMode ? MyDarkTheme : MyDefaultTheme;
-
-  // Registra il task in background qui, all'interno di un componente React
-  useEffect(() => {
-    registerBackgroundFetchAsync();
-  }, []);
-
-  return (
-    <NavThemeProvider value={theme}>
-      <NavigationController />
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-    </NavThemeProvider>
-  );
-}
-
-function AppInitializer() {
-  const { loading } = useAuth();
-  const [layoutReady, setLayoutReady] = useState(false);
-
-  const onLayout = useCallback(async () => {
-    if (layoutReady) return;
-    setLayoutReady(true);
-    await SplashScreen.hideAsync();
-  }, [layoutReady]);
-
-  if (loading) {
-    return <LoadingScreen onLayout={onLayout} />;
-  }
-
-  return (
-    <View style={{ flex: 1 }} onLayout={onLayout}>
-      <RootLayoutNav />
-    </View>
-  );
-}
-
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    'Inter-Regular': Inter_400Regular,
-    'Inter-Medium': Inter_500Medium,
-    'Inter-SemiBold': Inter_600SemiBold,
-    'Inter-Bold': Inter_700Bold,
+  const colorScheme = useColorScheme();
+  const [isReady, setIsReady] = useState(false);
+  
+  const [fontsLoaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  if (!fontsLoaded && !fontError) {
+  useEffect(() => {
+    const prepareApp = async () => {
+      try {
+        // Inizializza il logging
+        LoggingService.info('RootLayout', 'App initialization started');
+        
+        // Attendi che i font siano caricati
+        if (fontsLoaded) {
+          LoggingService.info('RootLayout', 'Fonts loaded successfully');
+          setIsReady(true);
+          await SplashScreen.hideAsync();
+        }
+      } catch (error) {
+        LoggingService.error('RootLayout', 'Error during app initialization', error);
+        // Nascondi comunque lo splash screen in caso di errore
+        await SplashScreen.hideAsync();
+      }
+    };
+
+    prepareApp();
+  }, [fontsLoaded]);
+
+  if (!isReady) {
+    // Lo splash screen rimane visibile finché non siamo pronti
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <ThemeProvider>
       <AuthProvider>
-        <ThemeProvider>
-          <SettingsProvider>
+        <SettingsProvider>
+          <ProductProvider>
             <CategoryProvider>
-              <ProductProvider>
-                <AppInitializer />
-              </ProductProvider>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="login" options={{ headerShown: false }} />
+                <Stack.Screen name="signup" options={{ headerShown: false }} />
+                <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+                <Stack.Screen name="password-reset-form" options={{ headerShown: false }} />
+                <Stack.Screen name="product-detail" options={{ headerShown: false }} />
+                <Stack.Screen name="scanner" options={{ headerShown: false }} />
+                <Stack.Screen name="photo-capture" options={{ headerShown: false }} />
+                <Stack.Screen name="manual-entry" options={{ headerShown: false }} />
+                <Stack.Screen name="history-detail" options={{ headerShown: false }} />
+                <Stack.Screen name="profile" options={{ headerShown: false }} />
+                <Stack.Screen name="manage-categories" options={{ headerShown: false }} />
+                <Stack.Screen name="feedback" options={{ headerShown: false }} />
+                <Stack.Screen name="email-sent" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" />
             </CategoryProvider>
-          </SettingsProvider>
-        </ThemeProvider>
+          </ProductProvider>
+        </SettingsProvider>
       </AuthProvider>
-    </GestureHandlerRootView>
+    </ThemeProvider>
   );
 }

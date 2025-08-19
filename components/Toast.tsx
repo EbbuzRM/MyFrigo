@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { LoggingService } from '@/services/LoggingService';
 
 interface ToastProps {
   message: string;

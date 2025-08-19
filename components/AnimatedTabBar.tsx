@@ -4,6 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Tabs } from 'expo-router';
+import { LoggingService } from '@/services/LoggingService';
 
 interface AnimatedTabBarProps {
   state: any;

@@ -1,5 +1,7 @@
+// @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { LoggingService } from '../../services/LoggingService.ts';
 
 // Carica le variabili d'ambiente
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -8,14 +10,14 @@ const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID');
 const ONESIGNAL_REST_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
-  console.error('Supabase and OneSignal credentials are required');
+  LoggingService.error('Functions', 'Supabase and OneSignal credentials are required');
   Deno.exit(1);
 }
 
 // Inizializza il client Supabase con la SERVICE_ROLE_KEY per bypassare le policy RLS
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-async function sendPushNotification(oneSignalPlayerId, title, body, data = {}) {
+async function sendPushNotification(oneSignalPlayerId: string, title: string, body: string, data: any = {}) {
   if (!oneSignalPlayerId) return;
   
   const message = {
@@ -38,18 +40,18 @@ async function sendPushNotification(oneSignalPlayerId, title, body, data = {}) {
 
     const responseData = await response.json();
     if (responseData.errors) {
-        console.error('OneSignal API Error:', responseData.errors);
+        LoggingService.error('Functions', `OneSignal API Error: ${responseData.errors}`);
     } else {
-        console.log(`OneSignal notification sent to ${oneSignalPlayerId}`);
+        LoggingService.info('Functions', `OneSignal notification sent to ${oneSignalPlayerId}`);
     }
   } catch (error) {
-    console.error('Error sending push notification:', error);
+    LoggingService.error('Functions', `Error sending push notification: ${error}`);
   }
 }
 
 serve(async () => {
   try {
-    console.log('Function execution started.');
+    LoggingService.info('Functions', 'Function execution started.');
 
     // 1. Recupera tutti gli utenti con le loro impostazioni di notifica
     const { data: users, error: usersError } = await supabase
@@ -63,11 +65,13 @@ serve(async () => {
 
     if (usersError) throw usersError;
 
-    console.log(`Found ${users.length} users with settings.`);
+    LoggingService.info('Functions', `Found ${users.length} users with settings.`);
 
+    // Use local date instead of UTC to match user's timezone
     const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
     const todayISO = today.toISOString().split('T')[0];
+    LoggingService.info('Functions', `Today (local): ${todayISO}`);
 
     // 2. Itera su ogni utente
     for (const settings of users) {
@@ -75,11 +79,11 @@ serve(async () => {
       const oneSignalPlayerId = user?.oneSignalPlayerId;
 
       if (!notifications_enabled || !oneSignalPlayerId) {
-        console.log(`Skipping user ${user_id}: notifications disabled or no player ID.`);
+        LoggingService.info('Functions', `Skipping user ${user_id}: notifications disabled or no player ID.`);
         continue;
       }
 
-      console.log(`Processing user ${user_id} with pre-warning days: ${notification_days}`);
+      LoggingService.info('Functions', `Processing user ${user_id} with pre-warning days: ${notification_days}`);
 
       // --- LOGICA PER PRODOTTI SCADUTI OGGI ---
       const { data: expiredProducts, error: expiredError } = await supabase
@@ -89,9 +93,9 @@ serve(async () => {
         .eq('expiration_date', todayISO);
 
       if (expiredError) {
-        console.error(`Error fetching expired products for user ${user_id}:`, expiredError);
+        LoggingService.error('Functions', `Error fetching expired products for user ${user_id}: ${expiredError}`);
       } else if (expiredProducts && expiredProducts.length > 0) {
-        console.log(`Found ${expiredProducts.length} expired products for user ${user_id}.`);
+        LoggingService.info('Functions', `Found ${expiredProducts.length} expired products for user ${user_id}.`);
         for (const product of expiredProducts) {
           await sendPushNotification(
             oneSignalPlayerId,
@@ -104,9 +108,12 @@ serve(async () => {
 
       // --- LOGICA PER NOTIFICHE DI PREAVVISO ---
       if (notification_days > 0) {
-        const preWarningDate = new Date(today);
-        preWarningDate.setUTCDate(today.getUTCDate() + notification_days);
+        // Use local date instead of UTC to match user's timezone
+        const preWarningDate = new Date();
+        preWarningDate.setDate(today.getDate() + notification_days);
+        preWarningDate.setHours(0, 0, 0, 0);
         const preWarningDateISO = preWarningDate.toISOString().split('T')[0];
+        LoggingService.info('Functions', `Pre-warning date (${notification_days} days): ${preWarningDateISO}`);
 
         const { data: preWarningProducts, error: preWarningError } = await supabase
           .from('products')
@@ -115,9 +122,9 @@ serve(async () => {
           .eq('expiration_date', preWarningDateISO);
 
         if (preWarningError) {
-          console.error(`Error fetching pre-warning products for user ${user_id}:`, preWarningError);
+          LoggingService.error('Functions', `Error fetching pre-warning products for user ${user_id}: ${preWarningError}`);
         } else if (preWarningProducts && preWarningProducts.length > 0) {
-          console.log(`Found ${preWarningProducts.length} pre-warning products for user ${user_id}.`);
+          LoggingService.info('Functions', `Found ${preWarningProducts.length} pre-warning products for user ${user_id}.`);
           for (const product of preWarningProducts) {
             await sendPushNotification(
               oneSignalPlayerId,
@@ -136,7 +143,7 @@ serve(async () => {
     });
 
   } catch (error) {
-    console.error('Function caught an error:', error);
+    LoggingService.error('Functions', `Function caught an error: ${error}`);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500,

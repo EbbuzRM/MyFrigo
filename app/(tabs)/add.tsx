@@ -84,13 +84,13 @@ const AddProduct = () => {
         <Text style={styles.infoTitle}>Suggerimenti</Text>
         <View style={styles.tipContainer}>
           <Text style={styles.tipText}>
-            • Per risultati migliori con la fotocamera, assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
+            • Puoi inserire la data di scadenza anche da un'immagine della galleria.Assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
           </Text>
           <Text style={styles.tipText}>
             • L'inserimento manuale ti permette il controllo completo sui dettagli
           </Text>
           <Text style={styles.tipText}>
-            • Puoi inserire la data di scadenza anche da un'immagine della galleria.
+            
           </Text>
         </View>
       </View>
@@ -121,19 +121,19 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
-    lineHeight: 24,
+    lineHeight: 20,
   },
   methodsContainer: {
-    gap: 16,
+    gap: 14,
   },
   infoSection: {
     // No specific padding needed if container has it
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   tipContainer: {
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
