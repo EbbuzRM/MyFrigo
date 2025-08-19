@@ -108,7 +108,7 @@ local.properties
 /ios/build/
 /ios/Pods/
 *.xcworkspace
-*.xcuserdata
+*.xcuserdata/
 *.xcscheme
 DerivedData/
 *.ipa
@@ -146,6 +146,11 @@ htmlcov/
 
 # Project specific
 ROADMAP.MD
-testsprite_test
-prd
-*.log
+testsprite_tests/
+prd.txt
+log.txt
+
+# User-specific and sensitive directories
+.kilocode/
+.npmrc
+memory-bank/
