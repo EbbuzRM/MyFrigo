@@ -33,7 +33,10 @@ module.exports = {
       permissions: [
         "RECEIVE_BOOT_COMPLETED",
         "com.google.android.c2dm.permission.RECEIVE",
-        "android.permission.SCHEDULE_EXACT_ALARM"
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.READ_EXTERNAL_STORAGE", // Added for gallery access
+        "android.permission.READ_MEDIA_IMAGES", // Added for Android 13+ gallery access
+        "android.permission.READ_MEDIA_VIDEO" // Added for Android 13+ media access
       ],
       queries: [
         {

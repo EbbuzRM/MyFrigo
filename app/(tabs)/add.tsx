@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Barcode, Keyboard } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AddMethodCard } from '@/components/AddMethodCard';
@@ -13,6 +13,7 @@ import { useTheme } from '@/context/ThemeContext';
 // Componente per l'aggiunta di prodotti
 const AddProduct = () => {
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   // const [someState, setSomeState] = useState(''); // Example if useState was needed
 
@@ -54,8 +55,9 @@ const AddProduct = () => {
   const styles = getStyles(isDarkMode);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container} testID="add-product-screen">
+      <View style={{ flex: 1, marginBottom: 60 + insets.bottom }}>
+        <View style={styles.header}>
         <Text style={styles.title}>Aggiungi Prodotto</Text>
         <Text style={styles.subtitle}>
           Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
@@ -64,6 +66,7 @@ const AddProduct = () => {
 
       <View style={styles.methodsContainer}>
         <AddMethodCard
+          testID="photo-capture-button"
           title="Scansiona Codice a Barre"
           description="Usa la fotocamera per una scansione rapida"
           icon={<Barcode size={28} />}
@@ -72,6 +75,7 @@ const AddProduct = () => {
         />
 
         <AddMethodCard
+          testID="manual-entry-button"
           title="Inserimento Manuale"
           description="Aggiungi i dettagli del prodotto manualmente"
           icon={<Keyboard size={28} />}
@@ -94,6 +98,7 @@ const AddProduct = () => {
           </Text>
         </View>
       </View>
+    </View>
     </SafeAreaView>
   );
 };
@@ -150,3 +155,4 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     lineHeight: 20,
   },
 });
+

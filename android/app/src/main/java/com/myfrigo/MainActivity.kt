@@ -3,6 +3,7 @@ import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -42,6 +43,20 @@ class MainActivity : ReactActivity() {
               mainComponentName,
               fabricEnabled
           ){})
+  }
+
+  /**
+   * Defensive override to avoid crashes when ReactDelegate is not yet initialized.
+   * Some devices/Android versions can trigger key events very early; wrap to prevent NPE.
+   */
+  override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    return try {
+      super.onKeyDown(keyCode, event)
+    } catch (e: NullPointerException) {
+      // Prevent crash during early lifecycle events while Detox instrumentation is connecting.
+      // Return true to indicate the event was handled.
+      true
+    }
   }
 
   /**

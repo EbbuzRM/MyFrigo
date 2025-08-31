@@ -12,6 +12,7 @@ interface AddMethodCardProps {
   icon: React.ReactNode;
   onPress: () => void;
   variant: 'barcode' | 'manual';
+  testID?: string;
 }
 
 const getColors = (isDarkMode: boolean, variant: 'barcode' | 'manual') => {
@@ -34,6 +35,7 @@ export function AddMethodCard({
   icon,
   onPress,
   variant,
+  testID,
 }: AddMethodCardProps) {
   const { isDarkMode } = useTheme();
   const colors = getColors(isDarkMode, variant);
@@ -41,6 +43,7 @@ export function AddMethodCard({
 
   return (
     <AnimatedPressable
+      testID={testID}
       style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.border }]}
       onPress={onPress}
       accessibilityProps={getAnimatedPressableAccessibilityProps(

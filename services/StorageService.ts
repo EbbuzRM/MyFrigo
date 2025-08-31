@@ -84,6 +84,55 @@ export class StorageService {
   }
 
   /**
+   * Recupera tutte le categorie, sia quelle predefinite che quelle personalizzate dall'utente.
+   * @returns Promise con la lista completa delle categorie.
+   */
+  static async getAllCategories(): Promise<ProductCategory[]> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        // Se l'utente non è loggato, restituisce solo le categorie predefinite
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('is_default', true)
+          .returns<Record<string, unknown>[]>();
+        if (error) throw error;
+        return data ? convertCategoriesToCamelCase(data) : [];
+      }
+
+      const userId = session.user.id;
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .or(`is_default.eq.true,user_id.eq.${userId}`)
+        .returns<Record<string, unknown>[]>();
+
+      if (error) throw error;
+      if (!data) return [];
+
+      const camelCasedData = convertCategoriesToCamelCase(data);
+
+      const parsedData = camelCasedData.map(category => {
+        if (category.localIcon && typeof category.localIcon === 'string') {
+          try {
+            return { ...category, localIcon: JSON.parse(category.localIcon) };
+          } catch (e) {
+            LoggingService.error('StorageService', `Failed to parse localIcon for category ${category.id}`, e);
+            return { ...category, localIcon: undefined };
+          }
+        }
+        return category;
+      });
+
+      return parsedData;
+    } catch (error: any) {
+      LoggingService.error('StorageService', 'Error getting all categories from Supabase', error);
+      return [];
+    }
+  }
+
+  /**
    * Aggiunge una nuova categoria
    * @param category Categoria da aggiungere
    * @returns Promise con la categoria aggiunta
@@ -707,6 +756,29 @@ export class StorageService {
     } catch (error: any) {
       LoggingService.error('StorageService', 'Error in moveProductsToHistory', error);
       throw error; // Propaga l'errore per permettere la gestione al chiamante
+    }
+  }
+
+  /**
+   * Aggiorna solo l'URL dell'immagine di un prodotto esistente.
+   * @param productId L'ID del prodotto da aggiornare.
+   * @param imageUrl Il nuovo URL dell'immagine.
+   * @returns Promise che si risolve quando l'immagine è stata aggiornata.
+   */
+  static async updateProductImage(productId: string, imageUrl: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ image_url: imageUrl })
+        .eq('id', productId);
+
+      if (error) {
+        throw error;
+      }
+      LoggingService.info('StorageService', `Immagine aggiornata per il prodotto ${productId}`);
+    } catch (error: any) {
+      LoggingService.error('StorageService', `Errore durante l'aggiornamento dell'immagine per il prodotto ${productId}`, error);
+      throw error;
     }
   }
 }

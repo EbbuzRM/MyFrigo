@@ -21,17 +21,17 @@ export function AnimatedPressable({
   const animatedValue = new Animated.Value(1);
 
   const handlePressIn = (event: any) => {
-    Animated.spring(animatedValue, {
-      toValue: 0.95,
+    Animated.timing(animatedValue, {
+      toValue: 0.96,
+      duration: 100, // Molto più veloce
       useNativeDriver: true,
     }).start();
   };
 
   const handlePressOut = (event: any) => {
-    Animated.spring(animatedValue, {
+    Animated.timing(animatedValue, {
       toValue: 1,
-      friction: 3,
-      tension: 40,
+      duration: 100, // Molto più veloce
       useNativeDriver: true,
     }).start();
   };

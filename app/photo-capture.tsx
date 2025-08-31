@@ -9,10 +9,12 @@ import { Camera as CameraIcon, Check, Image as ImageIcon } from 'lucide-react-na
 import TextRecognition, { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
-import { formStateLogger } from '@/utils/FormStateLogger';
+import { StorageService } from '@/services/StorageService';
+import { useManualEntry } from '@/context/ManualEntryContext';
 
 export default function PhotoCaptureScreen() {
   const { isDarkMode } = useTheme();
+  const { setImageUrl, setExpirationDate } = useManualEntry();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [galleryPermission, requestGalleryPermission] = ImagePicker.useMediaLibraryPermissions();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -20,47 +22,19 @@ export default function PhotoCaptureScreen() {
   const params = useLocalSearchParams();
   const isFocused = useIsFocused();
   const styles = getStyles(isDarkMode);
-  
-  // Identificatore unico per questa istanza della schermata
-  const screenInstanceId = useRef(`photo-capture-${Date.now()}`).current;
-  
-  // Salva i parametri originali per poterli ripristinare in caso di problemi
-  const originalParams = useRef(params);
-  
-  // Gestisce il pulsante indietro hardware
+
   useEffect(() => {
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+    const backAction = () => {
       if (capturedImage) {
-        // Se c'è un'immagine catturata, permetti di tornare alla modalità fotocamera
         setCapturedImage(null);
         return true;
-      } else {
-        // Altrimenti, torna alla schermata precedente con i parametri originali
-        formStateLogger.logNavigation('BACK_BUTTON', 'photo-capture', 'manual-entry', originalParams.current);
-        
-        // Assicurati di preservare tutti i parametri originali quando torni indietro
-        router.replace({
-          pathname: '/manual-entry',
-          params: {
-            ...originalParams.current,
-            fromPhotoCapture: 'true'
-          }
-        });
-        return true;
       }
-    });
-
+      router.back();
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
   }, [capturedImage]);
-  
-  // Registra i parametri ricevuti
-  useEffect(() => {
-    LoggingService.info('PhotoCapture', 'Received parameters:', params);
-    formStateLogger.logNavigation('SCREEN_MOUNTED', 'manual-entry', 'photo-capture', params);
-    
-    // Salva i parametri originali
-    originalParams.current = params;
-  }, []);
 
   useEffect(() => {
     if (cameraPermission && !cameraPermission.granted && cameraPermission.canAskAgain) {
@@ -72,7 +46,7 @@ export default function PhotoCaptureScreen() {
   }, [cameraPermission, galleryPermission]);
 
   if (!cameraPermission || !galleryPermission) {
-    return <View />; // Permissions still loading
+    return <View />; // Loading
   }
 
   if (!cameraPermission.granted) {
@@ -88,290 +62,147 @@ export default function PhotoCaptureScreen() {
   }
 
   const takePicture = async () => {
-    if (!cameraPermission?.granted) {
-      Alert.alert("Permesso Fotocamera Negato", "Non è possibile scattare foto senza il permesso della fotocamera.");
-      return;
-    }
-    if (!galleryPermission?.granted) {
-      Alert.alert("Permesso Galleria Negato", "Per salvare le foto o accedere alla galleria, è necessario il permesso.");
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        return;
-      }
-    }
-
     if (cameraRef.current) {
       try {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, base64: false });
-        if (photo && photo.uri) {
-          setCapturedImage(photo.uri);
-        } else {
-          Alert.alert("Errore", "Impossibile scattare la foto: nessun URI valido ricevuto.");
-        }
-      } catch (error: unknown) { // Explicitly type error as unknown
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+        if (photo && photo.uri) setCapturedImage(photo.uri);
+      } catch (error) {
         LoggingService.error("Errore scattando la foto:", "Error occurred", error);
-        Alert.alert("Errore", `Si è verificato un problema durante lo scatto della foto: ${(error as Error).message || 'Errore sconosciuto'}`);
+        Alert.alert("Errore", `Si è verificato un problema: ${(error as Error).message}`);
       }
     }
   };
 
   const pickImage = async () => {
-    if (!galleryPermission?.granted) {
-      Alert.alert("Permesso Negato", "Abbiamo bisogno del permesso per accedere alla galleria.");
-      if (galleryPermission?.canAskAgain) {
-        requestGalleryPermission();
-      }
-      return;
-    }
-
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
       quality: 1,
     });
-
     if (!result.canceled) {
       setCapturedImage(result.assets[0].uri);
     }
   };
 
-  const findDateInOcrResult = (ocrResult: string[]): string | null => {
-    if (!ocrResult || ocrResult.length === 0) {
-      LoggingService.error('PhotoCapture', "OCR result is undefined or empty", ocrResult);
-      return null;
-    }
+  const extractExpirationDateFromImage = async (imageUri: string): Promise<string | null> => {
+    const TAG = 'PhotoCapture-OCR';
+    try {
+      const result = await TextRecognition.recognize(imageUri);
+      if (!result || result.blocks.length === 0) {
+        LoggingService.debug(TAG, 'Nessun blocco di testo trovato.');
+        return null;
+      }
 
-    LoggingService.info('PhotoCapture', "OCR Text Blocks for date parsing:", ocrResult.join('\n'));
-    const dateKeywords = [
-      'exp', 'scad', 'best before', 'use by', 'entro il', 
-      'da consumarsi preferibilmente entro il', 
-      'da consumarsi preferibilmente entro fine'
-    ];
-    
-    const patterns = [
-      { regex: /(\d{1,2})[\s/.,-](\d{1,2})[\s/.,-](\d{4})/g, day: 1, month: 2, year: 3 },
-      { regex: /(\d{1,2})[\s/.,-](\d{1,2})[\s/.,-](\d{2})/g, day: 1, month: 2, year: 3 },
-      { regex: /(\d{4})[\s/.,-](\d{1,2})[\s/.,-](\d{1,2})/g, year: 1, month: 2, day: 3 },
-      { regex: /(\d{1,2})[\s/.,-](\d{4})/g, day: null, month: 1, year: 2 },
-      { regex: /(\d{1,2})[\s/.,-](\d{2})/g, day: null, month: 1, year: 2 }
-    ];
+      const allText = result.blocks.map((block: TextBlock) => block.text).join(' ').replace(/\n/g, ' ');
+      LoggingService.debug(TAG, 'Testo grezzo rilevato:', allText);
 
-    let potentialDates: { date: Date, score: number }[] = [];
-    const fullText = ocrResult.join(' ').toLowerCase();
-    const keywordInText = dateKeywords.some(k => fullText.includes(k));
+      // Regex più restrittiva: cerca date che sono "parole" a sé stanti, separate solo da ., / o -
+      const dateRegex = /\b(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-](\d{4}|\d{2}))\b/g;
+      const matches = allText.match(dateRegex);
 
-    for (const text of ocrResult) {
-      if (!text) continue;
+      if (!matches) {
+        LoggingService.debug(TAG, 'Nessuna data trovata con la nuova regex.');
+        return null;
+      }
 
-      for (const p of patterns) {
-        p.regex.lastIndex = 0;
-        let match;
-        while ((match = p.regex.exec(text)) !== null) {
-          try {
-            const dayStr = p.day ? match[p.day] : '01';
-            const monthStr = match[p.month];
-            const yearStr = match[p.year];
+      LoggingService.debug(TAG, 'Trovate possibili date:', matches);
 
-            let day = parseInt(dayStr, 10);
-            let month = parseInt(monthStr, 10);
-            let year = parseInt(yearStr, 0);
-            if (isNaN(day) || isNaN(month) || isNaN(year)) continue;
+      const candidateDates: Date[] = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Imposta a mezzanotte per un confronto corretto
 
-            if (yearStr.length === 2) {
-              year += 2000;
+      for (const match of matches) {
+        let cleanedMatch = match.replace(/[\.\-]/g, '/'); // Ora non include lo spazio
+        const parts = cleanedMatch.split('/');
+
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          if (day > 31 || month > 12) continue;
+
+          if (parts[2].length === 2) {
+            parts[2] = `20${parts[2]}`;
+          }
+          
+          const isoDateString = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          const parsedDate = new Date(isoDateString);
+
+          LoggingService.debug(TAG, `Analizzo match: "${match}" -> Parsato come: ${parsedDate.toISOString()}`);
+
+          if (!isNaN(parsedDate.getTime())) {
+            const year = parsedDate.getFullYear();
+            if (year >= 2000 && year < 2100 && parsedDate >= today) {
+              candidateDates.push(parsedDate);
+              LoggingService.debug(TAG, `---> Aggiunta data candidata valida: ${parsedDate.toISOString()}`);
             }
-
-            const currentYear = new Date().getFullYear();
-            if (year < currentYear || year > currentYear + 15) continue;
-
-            if (month < 1 || month > 12) continue;
-            // Usiamo UTC per calcolare i giorni del mese per evitare problemi di fuso orario
-            const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-            if (day < 1 || day > daysInMonth) continue;
-
-            // Crea la data in UTC per evitare errori di fuso orario
-            const parsedDate = new Date(Date.UTC(year, month - 1, day));
-            const today = new Date();
-            today.setUTCHours(0, 0, 0, 0);
-
-            if (parsedDate.getUTCFullYear() === year && parsedDate.getUTCMonth() === month - 1 && parsedDate.getUTCDate() === day && parsedDate >= today) {
-              const score = keywordInText ? 1 : 0;
-              potentialDates.push({ date: parsedDate, score });
-              LoggingService.info('PhotoCapture', `Potential date: ${parsedDate.toISOString()} from text: "${text}" with score: ${score}`);
-            }
-          } catch (e) {
-            LoggingService.error("Error parsing date from match:", String(match), e);
           }
         }
       }
-    }
 
-    if (potentialDates.length === 0) {
-      LoggingService.info('PhotoCapture', "No potential dates found after regex matching and validation.");
-      return null;
-    }
-
-    potentialDates.sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return a.date.getTime() - b.date.getTime();
-    });
-    
-    const bestDate = potentialDates[0].date;
-    // Formatta la data basandosi sui valori UTC
-    const formattedDate = `${bestDate.getUTCFullYear()}-${String(bestDate.getUTCMonth() + 1).padStart(2, '0')}-${String(bestDate.getUTCDate()).padStart(2, '0')}`;
-    LoggingService.info('PhotoCapture', "Best potential date selected:", formattedDate);
-    return formattedDate;
-  };
-
-  const extractExpirationDateFromImage = async (imageUri: string): Promise<string | null> => {
-    LoggingService.info('PhotoCapture', "Esecuzione OCR per l'immagine:", imageUri);
-    try {
-      const result = await TextRecognition.recognize(imageUri);
-      LoggingService.info('PhotoCapture', "Risultato OCR:", result);
-
-      if (result && result.blocks && result.blocks.length > 0) {
-        const allText = result.blocks.map((block: TextBlock) => block.text);
-        const extractedDate = findDateInOcrResult(allText);
-        if (extractedDate) {
-          LoggingService.info('PhotoCapture', "Data estratta tramite OCR:", extractedDate);
-          return extractedDate;
-        } else {
-          LoggingService.info('PhotoCapture', "Nessuna data rilevata nei blocchi di testo OCR.");
-          return null;
-        }
-      } else {
-        LoggingService.info('PhotoCapture', "Nessun blocco di testo rilevato dall'OCR.");
+      if (candidateDates.length === 0) {
+        LoggingService.debug(TAG, 'Nessuna data candidata valida e futura trovata.');
         return null;
       }
+
+      candidateDates.sort((a, b) => a.getTime() - b.getTime());
+
+      const bestDate = candidateDates[0];
+      const finalDate = bestDate.toISOString().split('T')[0];
+
+      LoggingService.debug(TAG, `Data migliore selezionata: ${finalDate}`);
+      return finalDate;
+
     } catch (error) {
-      LoggingService.error('PhotoCapture', "Errore durante il riconoscimento del testo:", error);
-      Alert.alert("Errore OCR", "Si è verificato un problema durante il riconoscimento del testo.");
+      LoggingService.error(TAG, "Errore durante l'OCR:", error);
       return null;
     }
-  };
-
-  // Funzione helper per preservare tutti i parametri del form
-  const getAllFormParams = (overrides: Record<string, string> = {}): Record<string, string> => {
-    // Estrai tutti i parametri esistenti
-    const formParams: Record<string, string> = {};
-    
-    // Lista di tutti i possibili parametri del form
-    const paramKeys = [
-      'name', 'brand', 'selectedCategory', 'quantity', 'unit',
-      'purchaseDate', 'expirationDate', 'notes', 'barcode',
-      'imageUrl', 'addedMethod', 'extractedExpirationDate'
-    ];
-    
-    // Copia tutti i parametri esistenti
-    for (const key of paramKeys) {
-      let value = params[key];
-      if (Array.isArray(value)) {
-        value = value[0];
-      }
-      if (value) {
-        formParams[key] = value;
-      }
-    }
-    
-    // Applica i valori di default per i campi mancanti
-    if (!formParams.quantity) formParams.quantity = '1';
-    if (!formParams.unit) formParams.unit = 'pz';
-    if (!formParams.addedMethod) formParams.addedMethod = 'manual';
-    
-    // Aggiungi il flag che indica che stiamo tornando dalla schermata di cattura
-    formParams.fromPhotoCapture = 'true';
-    
-    // Applica gli override
-    for (const [key, value] of Object.entries(overrides)) {
-      formParams[key] = value;
-    }
-    
-    // Log dettagliato dei parametri preservati
-    LoggingService.info('PhotoCapture', 'Form parameters preserved:', formParams);
-    formStateLogger.saveFormState(`${screenInstanceId}-params`, formParams);
-    
-    return formParams;
   };
 
   const confirmPhoto = async () => {
-    if (capturedImage) {
-      formStateLogger.logNavigation('CONFIRM_PHOTO', 'photo-capture', 'manual-entry', {
-        captureMode: params.captureMode,
-        hasImage: true
-      });
-      
-      if (params.captureMode === 'expirationDateOnly') {
-        Alert.alert("Elaborazione OCR", "Estrazione della data di scadenza in corso...");
-        const extractedDate = await extractExpirationDateFromImage(capturedImage);
+    if (!capturedImage) return;
 
-        if (extractedDate) {
-          Alert.alert("Data Rilevata", `Data di scadenza: ${extractedDate}. Controlla e conferma.`);
-          
-          // Preserva tutti i dati del form e aggiunge la data estratta
-          const forwardParams = getAllFormParams({
-            expirationDate: extractedDate,
-            extractedExpirationDate: extractedDate
-          });
-          
-          // Salva lo stato prima di navigare
-          formStateLogger.saveFormState(screenInstanceId, {
-            ...originalParams.current,
-            expirationDate: extractedDate,
-            extractedExpirationDate: extractedDate,
-            imageUrl: capturedImage // Aggiungi l'immagine anche per la modalità data di scadenza
-          });
-          
-          // Usa router.replace per navigare direttamente a manual-entry con i nuovi parametri
-          // Questo forza la ricaricazione della schermata con i dati aggiornati
-          router.replace({
-            pathname: '/manual-entry',
-            params: forwardParams
-          });
-        } else {
-          Alert.alert("Data Non Rilevata", "Nessuna data di scadenza rilevata automaticamente. Inseriscila manualmente.");
-          
-          // Preserva tutti i dati del form senza modificare la data
-          const forwardParams = getAllFormParams();
-          
-          // Salva lo stato prima di navigare
-          formStateLogger.saveFormState(screenInstanceId, {
-            ...originalParams.current,
-            imageUrl: capturedImage
-          });
-          
-          // Naviga indietro invece di sostituire
-          router.setParams(forwardParams); // Imposta i parametri correnti
-          router.back(); // Torna alla schermata precedente
-        }
-      } else {
-        // Per la cattura dell'immagine del prodotto
-        const forwardParams = getAllFormParams({
-          imageUrl: capturedImage,
-          addedMethod: 'photo'
-        });
-        
-        // Salva lo stato prima di navigare
-        formStateLogger.saveFormState(screenInstanceId, {
-          ...originalParams.current,
-          imageUrl: capturedImage,
-          addedMethod: 'photo'
-        });
-        
-        // Usa router.replace() per consistenza con expirationDateOnly
-        // Questo garantisce che tutti i parametri vengano passati correttamente
-        router.replace({
-          pathname: '/manual-entry',
-          params: forwardParams
-        });
+    const originalParams = params;
+
+    // New mode for updating just the product photo
+    if (params.captureMode === 'updateProductPhoto' && typeof params.productId === 'string') {
+      try {
+        await StorageService.updateProductImage(params.productId, capturedImage);
+        Alert.alert("Foto Aggiornata", "L'immagine del prodotto è stata aggiornata.", [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      } catch (error) {
+        LoggingService.error('PhotoCapture', 'Error updating product image', error);
+        Alert.alert("Errore", "Si è verificato un errore durante l'aggiornamento della foto.");
       }
+    } else if (params.captureMode === 'expirationDateOnly') {
+      const extractedDate = await extractExpirationDateFromImage(capturedImage);
+      if (extractedDate) {
+        setExpirationDate(extractedDate);
+        const returnParams = { ...originalParams, expirationDate: extractedDate, fromPhotoCapture: 'true' };
+        Alert.alert("Data Rilevata", `Data di scadenza: ${extractedDate}. Premi OK per tornare al modulo.`, [
+          { text: 'OK', onPress: () => router.replace({ pathname: '/manual-entry', params: returnParams }) }
+        ]);
+      } else {
+        Alert.alert(
+          "Data Non Rilevata",
+          "Non è stato possibile trovare una data. Puoi riprovare o inserirla manualmente.",
+          [
+            { 
+              text: 'Inserisci a mano', 
+              onPress: () => router.replace({ pathname: '/manual-entry', params: originalParams }),
+              style: 'cancel' 
+            },
+            { text: 'Riprova', onPress: () => setCapturedImage(null) }
+          ]
+        );
+      }
+    } else {
+      // Original logic for setting image for a new product
+      setImageUrl(capturedImage);
+      router.back();
     }
   };
 
-  const retakePhoto = () => {
-    setCapturedImage(null);
-  };
+  const retakePhoto = () => setCapturedImage(null);
 
   if (capturedImage) {
     return (
@@ -394,12 +225,7 @@ export default function PhotoCaptureScreen() {
     <SafeAreaView style={styles.container}>
       {isFocused && (
         <>
-          <CameraView
-            ref={cameraRef}
-            style={styles.camera}
-            facing="back"
-            ratio="4:3"
-          />
+          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
           <View style={styles.cameraControlsContainer}>
             <TouchableOpacity style={styles.controlButton} onPress={pickImage}>
               <ImageIcon size={24} color="#fff" />

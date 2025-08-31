@@ -95,6 +95,31 @@ export default function ProductDetailScreen() {
     );
   };
 
+  const handleChangePhoto = () => {
+    LoggingService.info('ProductDetail', 'handleChangePhoto called');
+    if (!product) return;
+
+    Alert.alert(
+      "Modifica Foto",
+      "Vuoi scattare una nuova foto per questo prodotto?",
+      [
+        { text: "Annulla", style: "cancel" },
+        { 
+          text: "Scatta nuova foto", 
+          onPress: () => {
+            router.push({
+              pathname: '/photo-capture',
+              params: { 
+                productId: product.id,
+                captureMode: 'updateProductPhoto' 
+              } 
+            });
+          } 
+        }
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -148,7 +173,7 @@ export default function ProductDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="product-detail-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
@@ -158,6 +183,7 @@ export default function ProductDetailScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.productCard}>
+          <Text style={{color: isDarkMode ? 'white' : 'black', marginBottom: 10}}>DEBUG - Image URL: {product.imageUrl || 'NESSUN URL'}</Text>
           <View style={styles.productHeader}>
             <View style={[styles.categoryIcon, { backgroundColor: categoryInfo ? categoryInfo.color + '20' : '#808080' }]}>
               {categoryInfo && categoryInfo.localIcon ? (
@@ -169,7 +195,7 @@ export default function ProductDetailScreen() {
               )}
             </View>
             <View style={styles.productInfo}>
-              <Text style={styles.productName}>{typeof product.name === 'string' ? product.name : 'Nome non disponibile'}</Text>
+              <Text style={styles.productName} testID="product-name">{typeof product.name === 'string' ? product.name : 'Nome non disponibile'}</Text>
               {typeof product.brand === 'string' && product.brand.length > 0 && (
                 <Text style={styles.brandName}>{product.brand}</Text>
               )}
@@ -180,6 +206,10 @@ export default function ProductDetailScreen() {
               </View>
             </View>
           </View>
+
+          {product.imageUrl && (
+            <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+          )}
 
           <View style={[styles.statusBadge, { backgroundColor: expirationInfo.backgroundColor }]}>
             <Text style={[styles.statusText, { color: expirationInfo.color }]}>
@@ -329,6 +359,13 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
+  },
+  productImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 16,
+    resizeMode: 'cover',
   },
   productHeader: {
     flexDirection: 'row',

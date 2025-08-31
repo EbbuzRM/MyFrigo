@@ -87,6 +87,7 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
   return (
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
+        testID={`product-item-${index}`}
         style={[styles.card, { backgroundColor: expirationInfo.backgroundColor, borderColor: expirationInfo.color + '33' }]}
         onPress={onPress}
         activeOpacity={0.7}

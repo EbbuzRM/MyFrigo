@@ -449,7 +449,7 @@ export default function LoginScreen() {
 
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="login-screen">
       <Text style={styles.header}>MyFrigo</Text>
       <Text style={styles.subtitle}>Accedi o inserisci i tuoi dati per registrarti.</Text>
 
@@ -464,6 +464,7 @@ export default function LoginScreen() {
       )}
 
       <TextInput
+        testID="email-input"
         style={styles.input}
         placeholder="Email"
         value={email}
@@ -474,6 +475,7 @@ export default function LoginScreen() {
 
       <View style={styles.passwordContainer}>
         <TextInput
+          testID="password-input"
           style={styles.input}
           placeholder="Password"
           value={password}
@@ -511,6 +513,7 @@ export default function LoginScreen() {
       )}
 
       <TouchableOpacity
+        testID="login-button"
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleLogin}
         disabled={loading}

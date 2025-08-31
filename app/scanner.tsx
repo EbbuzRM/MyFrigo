@@ -131,9 +131,7 @@ export default function BarcodeScannerScreen() {
     setCurrentBarcode(data);
     setLoadingProgress('Inizializzazione scansione...');
 
-    let productInfoFound = false;
-    let alertMessage = `Codice: ${data}`;
-    let paramsForAddScreen: any = { barcode: data, barcodeType: type };
+    let paramsForManualEntry: any = { barcode: data, barcodeType: type, addedMethod: 'barcode' };
 
     try {
       // 1. Prima controlla se esiste un template salvato
@@ -141,93 +139,72 @@ export default function BarcodeScannerScreen() {
       const template = await fetchProductFromSupabase(data);
       
       if (template) {
-        productInfoFound = true;
-        alertMessage = `Prodotto Trovato (salvato): ${template.name}`;
-        paramsForAddScreen = {
-          ...paramsForAddScreen,
-          productName: template.name,
-          brand: template.brand || '',
-          category: template.category,
-          imageUrl: template.imageUrl || '',
-        };
-      } else {
-        // 2. Se non c'è un template, prova con Open Food Facts
-        try {
-          setLoadingProgress('Cercando prodotto online...');
-          const productInfo = await fetchProductFromOpenFoodFacts(data);
-          
-          productInfoFound = true;
-          alertMessage = `Prodotto Trovato (Online): ${productInfo.product_name || data}`;
-          
-          const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
-
-          paramsForAddScreen = {
-            ...paramsForAddScreen,
-            productName: productInfo.product_name || '',
-            brand: productInfo.brands || '',
-            imageUrl: productInfo.image_url || '',
-            category: suggestedCategoryId || '',
-          };
-        } catch (apiError) {
-          LoggingService.error('Scanner', "Failed to fetch product from API:", apiError);
-          alertMessage = `Prodotto non trovato online (codice: ${data}). Puoi inserirlo manualmente.`;
-        }
-      }
-    } catch (error) {
-      LoggingService.error('Scanner', "Failed to fetch product info:", error);
-      setLoadingError("Errore durante il recupero delle informazioni del prodotto. Riprova o inserisci manualmente.");
-    } finally {
-      setIsLoading(false);
-      clearApiTimeout();
-    }
-
-    if (!loadingError) {
-      Alert.alert(
-        productInfoFound ? 'Prodotto Trovato!' : 'Prodotto Non Trovato',
-        alertMessage,
-        [
+        Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${template.name}`, [
           {
             text: 'Continua',
-            onPress: () => {
-              // Chiedi se vogliono fotografare la data di scadenza
-              Alert.alert(
-                'Data di Scadenza',
-                'Vuoi fotografare la data di scadenza per provare a inserirla automaticamente?',
-                [
-                  {
-                    text: 'Sì, Fotografa',
-                    onPress: () => {
-                      router.push({
-                        pathname: '/photo-capture',
-                        params: {
-                          ...paramsForAddScreen,
-                          captureMode: 'expirationDateOnly'
-                        }
-                      });
-                    }
-                  },
-                  {
-                    text: 'No, Inserisci Manualmente',
-                    onPress: () => {
-                      router.replace({ pathname: '/(tabs)/add', params: paramsForAddScreen });
-                    },
-                    style: 'cancel'
-                  }
-                ],
-                { cancelable: false }
-              );
-            },
+            onPress: () => router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, ...template } })
           },
           {
             text: 'Scansiona di Nuovo',
-            onPress: () => {
-              setScanned(false);
-              setLoadingError(null);
-            },
+            onPress: () => setScanned(false),
             style: 'cancel',
           },
-        ]
-      );
+        ]);
+      } else {
+        // 2. Se non c'è un template, prova con Open Food Facts
+        setLoadingProgress('Cercando prodotto online...');
+        const productInfo = await fetchProductFromOpenFoodFacts(data);
+        
+        const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
+
+        paramsForManualEntry = {
+          ...paramsForManualEntry,
+          name: productInfo.product_name || '',
+          brand: productInfo.brands || '',
+          imageUrl: productInfo.image_url || '',
+          category: suggestedCategoryId || '',
+        };
+
+        Alert.alert('Prodotto Trovato!', `Trovato online: ${productInfo.product_name || data}`, [
+          {
+            text: 'Continua',
+            onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry })
+          },
+          {
+            text: 'Scansiona di Nuovo',
+            onPress: () => setScanned(false),
+            style: 'cancel',
+          },
+        ]);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+      LoggingService.error('Scanner', "Errore durante la ricerca del prodotto:", errorMessage);
+
+      // Se l'errore è che il prodotto non è stato trovato (o è un 404), lo gestiamo come un caso normale
+      if (errorMessage.includes('Prodotto non trovato') || errorMessage.includes('Errore HTTP: 404')) {
+        Alert.alert(
+          'Prodotto Non Trovato',
+          `Il prodotto con codice ${data} non è nel nostro database. Vuoi aggiungerlo manualmente?`,
+          [
+            {
+              text: 'Sì, Aggiungi',
+              onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry })
+            },
+            {
+              text: 'Scansiona di Nuovo',
+              onPress: () => setScanned(false),
+              style: 'cancel',
+            },
+          ]
+        );
+      } else {
+        // Per tutti gli altri errori (rete, timeout, etc.), mostriamo un errore bloccante
+        setLoadingError(`Errore: ${errorMessage}. Riprova o inserisci manualmente.`);
+      }
+    } finally {
+      setIsLoading(false);
+      clearApiTimeout();
     }
   }, [appCategories, clearApiTimeout, fetchProductFromSupabase, fetchProductFromOpenFoodFacts]);
 

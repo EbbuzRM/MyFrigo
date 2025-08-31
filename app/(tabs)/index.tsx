@@ -44,7 +44,7 @@ function ProfileMenu({ isVisible, onClose, onLogout, userName }: { isVisible: bo
             <Settings size={20} color={isDarkMode ? '#c9d1d9' : '#4b5563'} />
             <Text style={styles.menuItemText}>Impostazioni</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={onLogout}>
+          <TouchableOpacity style={styles.menuItem} onPress={onLogout} testID="logout-button">
             <LogOut size={20} color="#EF4444" />
             <Text style={[styles.menuItemText, { color: '#EF4444' }]}>Logout</Text>
           </TouchableOpacity>
@@ -157,14 +157,12 @@ function Dashboard() {
             : <BellOff size={18} color={isDarkMode ? '#f87171' : '#dc2626'} style={styles.notificationIcon} />
           }
         </TouchableOpacity>
-        <TouchableOpacity style={styles.profileButton} onPress={() => setMenuVisible(true)}>
-            {displayInitials ? (
-                <Text style={styles.profileButtonText}>
-                    {displayInitials}
-                </Text>
-            ) : (
-                <User size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-            )}
+        <TouchableOpacity style={styles.profileButton} onPress={() => setMenuVisible(true)} testID="profile-button">
+          {displayInitials ? (
+            <Text style={styles.profileButtonText}>{displayInitials}</Text>
+          ) : (
+            <User size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
+          )}
         </TouchableOpacity>
       </View>
       <Text style={styles.subtitle}>Tutto sotto controllo</Text>
@@ -234,7 +232,7 @@ export default function DashboardScreen() {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="index-screen">
       <Dashboard />
     </SafeAreaView>
   );
