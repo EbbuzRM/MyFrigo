@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
+import { isTestMode } from '@/services/test-env';
 
 // Definizione del tipo per il profilo utente
 interface UserProfile {
@@ -57,7 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select<'*', UserProfile>('*')
         .eq('id', user.id)
         .single();
 
@@ -80,17 +81,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // In modalità test, bypassiamo l'inizializzazione automatica della sessione
+      // per garantire un avvio pulito sulla schermata di login.
+      if (isTestMode) {
+        LoggingService.info('AuthProvider', 'Test mode detected, skipping session restore.');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
+        LoggingService.info('AuthProvider', 'Attempting to get session...');
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        LoggingService.info('AuthProvider', 'Finished getSession call.');
 
         if (error) {
           LoggingService.error('AuthProvider', 'Error getting session', error);
         } else if (currentSession) {
+          LoggingService.info('AuthProvider', 'Session found, processing...');
           setUser(currentSession.user);
           await fetchUserProfile(currentSession.user);
           setSession(currentSession);
           LoggingService.info('AuthProvider', 'Session restored', { userId: currentSession.user.id });
+        } else {
+          LoggingService.info('AuthProvider', 'No active session found.');
         }
       } catch (error) {
         LoggingService.error('AuthProvider', 'Unexpected error during auth initialization', error);
@@ -137,8 +151,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const contextValue = useMemo(() => ({
+    session,
+    user,
+    profile,
+    loading,
+    signOut,
+    refreshUserProfile
+  }), [session, user, profile, loading]);
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshUserProfile }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

@@ -94,6 +94,13 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+
+        // Detox configuration
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        testInstrumentationRunnerArguments = [
+            'detoxServer': 'ws://localhost:8099',
+            'detoxSessionId': 'test'
+        ]
     }
     signingConfigs {
         debug {
@@ -117,9 +124,25 @@ android {
             crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
         }
     }
-    packagingOptions {
+    packaging {
         jniLibs {
-            useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
+            useLegacyPackaging = (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
+        }
+
+        // Resolve duplicate META-INF files coming from test/runtime dependencies (e.g. junit-jupiter).
+        // Prevents "files found with path 'META-INF/LICENSE.md'" merge errors during test APK assembly.
+        resources {
+            excludes += [
+                'META-INF/DEPENDENCIES',
+                'META-INF/LICENSE',
+                'META-INF/LICENSE.txt',
+                'META-INF/NOTICE',
+                'META-INF/NOTICE.txt',
+                'META-INF/LICENSE.md'
+            ]
+            pickFirsts += [
+                'META-INF/LICENSE.md'
+            ]
         }
     }
     androidResources {
@@ -174,4 +197,16 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Detox dependencies
+    androidTestImplementation('com.wix:detox:+') {
+        // Exclude JUnit 5 and platform artifacts brought transitively by Detox to avoid
+        // duplicate META-INF files (LICENSE.md) during test APK assembly.
+        exclude group: 'org.junit.jupiter'
+        exclude group: 'org.junit.platform'
+    }
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }

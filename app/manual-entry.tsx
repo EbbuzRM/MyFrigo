@@ -24,6 +24,7 @@ import { CustomDatePicker } from '@/components/CustomDatePicker';
 import { useTheme } from '@/context/ThemeContext';
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useCategories } from '@/context/CategoryContext';
+import { useManualEntry } from '@/context/ManualEntryContext';
 import { LoggingService } from '@/services/LoggingService';
 import { formStateLogger } from '@/utils/FormStateLogger';
 
@@ -116,10 +117,33 @@ const ProductFormHeader = React.memo(({
       </TouchableOpacity>
     )}
     {imageUrl && (
-      <>
-        <Text style={styles.label}>Immagine Prodotto</Text>
+      <TouchableOpacity 
+        onPress={() => {
+          const currentFormData = {
+            name: name,
+            brand: brand,
+            selectedCategory: selectedCategory,
+            quantity: quantity,
+            unit: unit,
+            purchaseDate: purchaseDate,
+            expirationDate: expirationDate,
+            notes: notes,
+            barcode: barcode,
+            fromManualEntry: 'true'
+          };
+          navigatingToPhotoCapture.current = true;
+          router.push({
+            pathname: '/photo-capture',
+            params: currentFormData
+          });
+          setTimeout(() => {
+            navigatingToPhotoCapture.current = false;
+          }, 500);
+        }}
+      >
+        <Text style={styles.label}>Immagine Prodotto (clicca per modificare)</Text>
         <Image source={{ uri: imageUrl }} style={styles.productImagePreview} />
-      </>
+      </TouchableOpacity>
     )}
     {barcode && !imageUrl && (
       <>
@@ -205,17 +229,17 @@ const ProductFormFooter = React.memo(({
       <View style={styles.column}>
         <Text style={styles.label}>Quantità*</Text>
         <View style={styles.quantityContainer}>
-          <AnimatedPressable onPress={() => { const newValue = String(Math.max(1, parseInt(quantity, 10) - 1)); setQuantity(newValue); }} style={styles.quantityButton}>
+          <AnimatedPressable onPress={() => { const currentVal = parseFloat(quantity.replace(',', '.')) || 0; const newValue = String(Math.max(0, currentVal - 1)); setQuantity(newValue); }} style={styles.quantityButton}>
             <Text style={styles.quantityButtonText}>-</Text>
           </AnimatedPressable>
           <TextInput
             style={styles.quantityInput}
             value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="numeric"
+            onChangeText={(text) => setQuantity(text.replace(',', '.'))}
+            keyboardType="decimal-pad"
             placeholderTextColor={styles.placeholder.color}
           />
-          <AnimatedPressable onPress={() => { const newValue = String(parseInt(quantity, 10) + 1); setQuantity(newValue); }} style={styles.quantityButton}>
+          <AnimatedPressable onPress={() => { const currentVal = parseFloat(quantity.replace(',', '.')) || 0; const newValue = String(currentVal + 1); setQuantity(newValue); }} style={styles.quantityButton}>
             <Text style={styles.quantityButtonText}>+</Text>
           </AnimatedPressable>
         </View>
@@ -318,23 +342,30 @@ export default function ManualEntryScreen() {
   const { isDarkMode } = useTheme();
   const { categories, addCategory, loading } = useCategories();
   const params = useLocalSearchParams();
-  const [name, setName] = useState('');
-  const [brand, setBrand] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [quantity, setQuantity] = useState('1');
-  const [unit, setUnit] = useState('pz');
-  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
-  const [expirationDate, setExpirationDate] = useState('');
-  const [notes, setNotes] = useState('');
-  const [barcode, setBarcode] = useState('');
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [originalProductId, setOriginalProductId] = useState<string | null>(null);
+  
+  const {
+    name, setName,
+    brand, setBrand,
+    selectedCategory, setSelectedCategory,
+    quantity, setQuantity,
+    unit, setUnit,
+    purchaseDate, setPurchaseDate,
+    expirationDate, setExpirationDate,
+    notes, setNotes,
+    barcode, setBarcode,
+    imageUrl, setImageUrl,
+    isEditMode, setIsEditMode,
+    originalProductId, setOriginalProductId,
+    hasManuallySelectedCategory, setHasManuallySelectedCategory,
+    initializeForm,
+    clearForm
+  } = useManualEntry();
+
+  // UI-specific state remains local
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
   const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(false);
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
-  const [hasManuallySelectedCategory, setHasManuallySelectedCategory] = useState(false);
   
   // Identificatore unico per questa istanza del form
   const formInstanceId = useRef(`manual-entry-${Date.now()}`).current;
@@ -344,188 +375,81 @@ export default function ManualEntryScreen() {
 
   const ADD_NEW_CATEGORY_ID = 'add_new_category_sentinel_value';
 
+  // 3. Logica di inizializzazione e pulizia centralizzata
+  useEffect(() => {
+    const loadProductForEdit = async (id: string) => {
+      const productToEdit = await StorageService.getProductById(id);
+      if (productToEdit) {
+        initializeForm({
+          ...productToEdit,
+          // Correzione: Gestisce il caso in cui la quantità sia null
+          quantity: productToEdit.quantity ? productToEdit.quantity.toString() : '1',
+          isEditMode: true,
+          originalProductId: productToEdit.id,
+          hasManuallySelectedCategory: true,
+        });
+      }
+    };
+
+    const productId = Array.isArray(params.productId) ? params.productId[0] : params.productId;
+
+    if (productId) {
+      loadProductForEdit(productId);
+    } else {
+      // Inizializza il form per un nuovo prodotto, usando i parametri se disponibili
+      // (es. da scanner barcode o dal vecchio flusso di cattura foto)
+      initializeForm(params as any);
+    }
+
+    // La funzione di cleanup di useEffect viene eseguita quando il componente viene smontato.
+    // Questo assicura che lo stato del form venga resettato quando l'utente lascia la schermata.
+    return () => {
+      clearForm();
+    };
+  }, [params.productId]); // Esegui solo quando productId cambia
+
+  // Effetto per aggiornare l'immagine quando si torna dalla schermata della fotocamera
+  useEffect(() => {
+    if (params.fromPhotoCapture && params.imageUrl) {
+      const url = Array.isArray(params.imageUrl) ? params.imageUrl[0] : params.imageUrl;
+      if (url) setImageUrl(url);
+    }
+  }, [params.fromPhotoCapture, params.imageUrl]);
+
   const guessCategory = useCallback((productName: string, productBrand: string, allCategories: ProductCategory[]): string | null => {
     const fullText = `${productName.toLowerCase()} ${productBrand.toLowerCase()}`;
-    
     const keywordMap: { [key: string]: string[] } = {
-      'latticini': ['latte', 'formaggio', 'yogurt', 'mozzarella', 'ricotta', 'burro', 'panna', 'mascarpone'],
-      'carne': ['pollo', 'manzo', 'maiale', 'salsiccia', 'prosciutto', 'salame', 'tacchino', 'agnello', 'wurstel'],
-      'pesce': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola'],
-      'frutta': ['mela', 'banana', 'arancia', 'fragola', 'uva', 'pesca', 'albicocca', 'kiwi'],
-      'verdura': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci'],
-      'surgelati': ['gelato', 'pizz', 'basta', 'minestrone', 'patatine fritte'],
-      'bevande': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè'],
-      'dispensa': ['pasta', 'riso', 'pane', 'biscotti', 'farina', 'zucchero', 'sale', 'olio', 'aceto', 'conserve', 'pelati', 'legumi', 'fagioli', 'ceci', 'lenticchie'],
-      'snack': ['patatine', 'cioccolato', 'caramelle', 'merendine', 'cracker', 'taralli'],
-      'colazione': ['cereali', 'fette biscottate', 'marmellata', 'croissant'],
-      'condimenti': ['maionese', 'ketchup', 'senape', 'salsa'],
-      'uova': ['uova', 'uovo'],
-      'dolci': ['torta', 'crostata', 'budino', 'pasticcini'],
+        'latticini': ['latte', 'formaggio', 'yogurt', 'mozzarella', 'ricotta', 'burro', 'panna', 'mascarpone'],
+        'carne': ['pollo', 'manzo', 'maiale', 'salsiccia', 'prosciutto', 'salame', 'tacchino', 'agnello', 'wurstel'],
+        'pesce': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola'],
+        'frutta': ['mela', 'banana', 'arancia', 'fragola', 'uva', 'pesca', 'albicocca', 'kiwi'],
+        'verdura': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci'],
+        'surgelati': ['gelato', 'pizz', 'basta', 'minestrone', 'patatine fritte'],
+        'bevande': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè'],
+        'dispensa': ['pasta', 'riso', 'pane', 'biscotti', 'farina', 'zucchero', 'sale', 'olio', 'aceto', 'conserve', 'pelati', 'legumi', 'fagioli', 'ceci', 'lenticchie'],
+        'snack': ['patatine', 'cioccolato', 'caramelle', 'merendine', 'cracker', 'taralli'],
+        'colazione': ['cereali', 'fette biscottate', 'marmellata', 'croissant'],
+        'condimenti': ['maionese', 'ketchup', 'senape', 'salsa'],
+        'uova': ['uova', 'uovo'],
+        'dolci': ['torta', 'crostata', 'budino', 'pasticcini'],
     };
 
     for (const categoryId in keywordMap) {
-      const keywords = keywordMap[categoryId];
-      if (keywords.some(keyword => fullText.includes(keyword))) {
-        const categoryExists = allCategories.some(cat => cat.id === categoryId);
-        if (categoryExists) {
-          return categoryId;
+        if (keywordMap[categoryId].some(keyword => fullText.includes(keyword))) {
+            if (allCategories.some(cat => cat.id === categoryId)) return categoryId;
         }
-      }
     }
-    
     return null;
   }, []);
 
   useEffect(() => {
     if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !loading) {
-      const guessedCategoryId = guessCategory(name, brand, categories);
-      if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
-        setSelectedCategory(guessedCategoryId);
-      }
+        const guessedCategoryId = guessCategory(name, brand, categories);
+        if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
+            setSelectedCategory(guessedCategoryId);
+        }
     }
   }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, loading, guessCategory, selectedCategory]);
-  
-  // Preserva la categoria selezionata quando si torna dalla schermata di cattura foto
-  useEffect(() => {
-    if (params.fromPhotoCapture === 'true' && params.selectedCategory) {
-      const categoryParam = Array.isArray(params.selectedCategory)
-        ? params.selectedCategory[0]
-        : params.selectedCategory;
-      
-      if (categoryParam) {
-        LoggingService.info('ManualEntry', `Preserving selected category: ${categoryParam} after photo capture`);
-        setSelectedCategory(categoryParam);
-        setHasManuallySelectedCategory(true);
-      }
-    }
-  }, [params.fromPhotoCapture, params.selectedCategory]);
-  
-  // Riferimenti ai valori iniziali per verificare se ci sono modifiche
-  const initialValues = useRef<{
-    name: string;
-    brand: string;
-    selectedCategory: string;
-    quantity: string;
-    unit: string;
-    purchaseDate: string;
-    expirationDate: string;
-    notes: string;
-    barcode: string;
-    imageUrl: string | null;
-  }>({
-    name: '',
-    brand: '',
-    selectedCategory: '',
-    quantity: '1',
-    unit: 'pz',
-    purchaseDate: new Date().toISOString().split('T')[0],
-    expirationDate: '',
-    notes: '',
-    barcode: '',
-    imageUrl: null
-  });
-  
-  // Funzione per verificare se ci sono modifiche non salvate
-  const hasUnsavedChanges = useCallback(() => {
-    // Verifica se i valori attuali sono diversi dai valori iniziali
-    return (
-      name !== initialValues.current.name ||
-      brand !== initialValues.current.brand ||
-      selectedCategory !== initialValues.current.selectedCategory ||
-      quantity !== initialValues.current.quantity ||
-      unit !== initialValues.current.unit ||
-      purchaseDate !== initialValues.current.purchaseDate ||
-      expirationDate !== initialValues.current.expirationDate ||
-      notes !== initialValues.current.notes ||
-      barcode !== initialValues.current.barcode ||
-      imageUrl !== initialValues.current.imageUrl
-    );
-  }, [
-    isEditMode,
-    name,
-    brand,
-    selectedCategory,
-    quantity,
-    unit,
-    purchaseDate,
-    expirationDate,
-    notes,
-    barcode,
-    imageUrl
-  ]);
-  
-  // Aggiorna i valori iniziali quando vengono caricati i parametri
-  useEffect(() => {
-    // Aggiorna i valori iniziali sia in modalità creazione che modifica
-    initialValues.current = {
-      name,
-      brand,
-      selectedCategory,
-      quantity,
-      unit,
-      purchaseDate,
-      expirationDate,
-      notes,
-      barcode,
-      imageUrl
-    };
-    LoggingService.debug('ManualEntry', 'Valori iniziali impostati', initialValues.current);
-  }, [loading, params.productId]);
-  
-  // Gestisce il pulsante indietro hardware
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      // Se stiamo navigando verso la schermata di cattura foto, salviamo lo stato del form
-      if (navigatingToPhotoCapture.current) {
-        return false; // Lascia che la navigazione proceda normalmente
-      }
-      
-      // Esci direttamente senza conferma
-      LoggingService.info('ManualEntry', 'Uscita diretta senza conferma');
-      formStateLogger.logNavigation('BACK_BUTTON_DIRECT', 'manual-entry', 'previous-screen', null);
-      router.back();
-      return true; // Previene il comportamento predefinito
-    });
-
-    return () => backHandler.remove();
-  }, []);
-  
-  // Salva lo stato del form quando cambia
-  useEffect(() => {
-    const formState = {
-      name,
-      brand,
-      selectedCategory,
-      quantity,
-      unit,
-      purchaseDate,
-      expirationDate,
-      notes,
-      barcode,
-      imageUrl,
-      hasManuallySelectedCategory,
-      isEditMode,
-      originalProductId
-    };
-    
-    formStateLogger.saveFormState(formInstanceId, formState);
-  }, [
-    formInstanceId,
-    name,
-    brand,
-    selectedCategory,
-    quantity,
-    unit,
-    purchaseDate,
-    expirationDate,
-    notes,
-    barcode,
-    imageUrl,
-    hasManuallySelectedCategory,
-    isEditMode,
-    originalProductId
-  ]);
-  
 
   const handleAddNewCategory = useCallback(async () => {
     if (!newCategoryNameInput.trim()) {
@@ -537,23 +461,14 @@ export default function ManualEntryScreen() {
       if (newCategory) {
         setSelectedCategory(newCategory.id);
         setHasManuallySelectedCategory(true);
-        
-        // Mostra un messaggio aggiuntivo se l'icona non è stata trovata
-        if (newCategory.iconNotFound) {
-          // Il messaggio principale è già mostrato dal context, ma possiamo aggiungere un feedback visivo
-          LoggingService.info('ManualEntry', `Category "${newCategory.name}" created without icon`);
-        }
       }
       setIsCategoryModalVisible(false);
       setNewCategoryNameInput('');
     } catch (error: unknown) {
-    let message = 'Si è verificato un errore sconosciuto.';
-    if (error instanceof Error) {
-      message = error.message;
+      const message = error instanceof Error ? error.message : 'Si è verificato un errore sconosciuto.';
+      Alert.alert('Errore', message);
     }
-    Alert.alert('Errore', message);
-  }
-  }, [newCategoryNameInput, addCategory]);
+  }, [newCategoryNameInput, addCategory, setHasManuallySelectedCategory]);
 
   const handleCategoryChange = useCallback((itemValue: string) => {
     if (itemValue === ADD_NEW_CATEGORY_ID) {
@@ -563,282 +478,23 @@ export default function ManualEntryScreen() {
       setSelectedCategory(itemValue);
       setHasManuallySelectedCategory(true);
     }
-  }, []);
-
-  useEffect(() => {
-    if (!loading && categories.length > 0 && !selectedCategory) {
-      const isValidCurrentSelection = categories.some(cat => cat.id === selectedCategory);
-      if (!isValidCurrentSelection) {
-        setSelectedCategory(categories[0].id);
-      }
-    }
-  }, [categories, loading, selectedCategory]);
-
-  useEffect(() => {
-    const loadProductForEdit = async (id: string) => {
-      const productToEdit = await StorageService.getProductById(id);
-    if (productToEdit) {
-      setName(productToEdit.name);
-      setBrand(productToEdit.brand || '');
-      setSelectedCategory(productToEdit.category);
-      setQuantity(productToEdit.quantity.toString());
-      setUnit(productToEdit.unit);
-      setPurchaseDate(productToEdit.purchaseDate);
-      setExpirationDate(productToEdit.expirationDate);
-      setNotes(productToEdit.notes || '');
-      setBarcode(productToEdit.barcode || '');
-      setImageUrl(productToEdit.imageUrl || null);
-      setOriginalProductId(productToEdit.id);
-      setIsEditMode(true);
-      setHasManuallySelectedCategory(true);
-    } else {
-      LoggingService.info('ManualEntry', `Product with ID ${id} not found for editing.`);
-    }
-    };
-    let productId = params.productId;
-    if (Array.isArray(productId)) {
-      productId = productId[0];
-    }
-    if (productId && typeof productId === 'string') {
-      loadProductForEdit(productId);
-    }
-  }, [params.productId]);
-
-  useEffect(() => {
-    if (!params.productId) {
-      // Funzione helper per gestire parametri che potrebbero essere array
-      const getStringParam = (param: string | string[] | undefined): string => {
-        if (Array.isArray(param)) {
-          return param[0] || '';
-        }
-        return param || '';
-      };
-
-      // Ripristina tutti i dati del form dai parametri
-      const barcodeParam = getStringParam(params.barcode);
-      if (barcodeParam) setBarcode(barcodeParam);
-
-      const productNameParam = getStringParam(params.productName || params.name);
-      if (productNameParam) setName(productNameParam);
-
-      const brandParam = getStringParam(params.brand);
-      if (brandParam) setBrand(brandParam);
-
-      const imageUrlParam = getStringParam(params.imageUrl);
-      if (imageUrlParam) {
-        setImageUrl(imageUrlParam);
-      }
-
-      const categoryParam = getStringParam(params.category || params.selectedCategory);
-      if (categoryParam) {
-        setSelectedCategory(categoryParam);
-        setHasManuallySelectedCategory(true);
-      }
-
-      // Ripristina quantità e unità se presenti
-      const quantityParam = getStringParam(params.quantity);
-      if (quantityParam) setQuantity(quantityParam);
-
-      const unitParam = getStringParam(params.unit);
-      if (unitParam) setUnit(unitParam);
-
-      // Ripristina le date se presenti
-      const purchaseDateParam = getStringParam(params.purchaseDate);
-      if (purchaseDateParam) setPurchaseDate(purchaseDateParam);
-
-      const expirationDateParam = getStringParam(params.expirationDate);
-      if (expirationDateParam) setExpirationDate(expirationDateParam);
-
-      // Ripristina le note se presenti
-      const notesParam = getStringParam(params.notes);
-      if (notesParam) setNotes(notesParam);
-
-      // Log per debug
-      if (params.fromPhotoCapture === 'true') {
-        formStateLogger.logNavigation('RETURN_FROM_PHOTO_CAPTURE', 'photo-capture', 'manual-entry', {
-          name: productNameParam,
-          brand: brandParam,
-          selectedCategory: categoryParam,
-          quantity: quantityParam,
-          unit: unitParam,
-          purchaseDate: purchaseDateParam,
-          expirationDate: expirationDateParam,
-          notes: notesParam,
-          barcode: barcodeParam,
-          imageUrl: imageUrlParam
-        });
-        
-        LoggingService.info('ManualEntry', 'Restoring form data from photo capture:', {
-          name: productNameParam,
-          brand: brandParam,
-          selectedCategory: categoryParam,
-          quantity: quantityParam,
-          unit: unitParam,
-          purchaseDate: purchaseDateParam,
-          expirationDate: expirationDateParam,
-          notes: notesParam,
-          barcode: barcodeParam,
-          imageUrl: imageUrlParam
-        });
-      }
-    }
-  }, [params]);
-
-  useEffect(() => {
-    let extractedExpirationDateParam = params.extractedExpirationDate;
-    if (Array.isArray(extractedExpirationDateParam)) {
-      extractedExpirationDateParam = extractedExpirationDateParam[0];
-    }
-    if (extractedExpirationDateParam && typeof extractedExpirationDateParam === 'string') {
-      setExpirationDate(extractedExpirationDateParam);
-    }
-  }, [params.extractedExpirationDate]);
+  }, [setHasManuallySelectedCategory]);
 
   const onChangePurchaseDate = useCallback((event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowPurchaseDatePicker(false);
     if (event.type === 'set' && selectedDate) {
       setPurchaseDate(selectedDate.toISOString().split('T')[0]);
     }
-  }, []);
+  }, [setPurchaseDate]);
 
   const onChangeExpirationDate = useCallback((event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowExpirationDatePicker(false);
     if (event.type === 'set' && selectedDate) {
       setExpirationDate(selectedDate.toISOString().split('T')[0]);
     }
-    setShowExpirationDatePicker(false);
-  }, []);
+  }, [setExpirationDate]);
 
-  // Funzione per salvare lo stato completo del form
-  const saveCurrentFormState = useCallback(() => {
-    const currentState = {
-      name,
-      brand,
-      selectedCategory,
-      quantity,
-      unit,
-      purchaseDate,
-      expirationDate,
-      notes,
-      barcode,
-      imageUrl,
-      hasManuallySelectedCategory,
-      isEditMode,
-      originalProductId,
-      formInstanceId: formInstanceId // Usa direttamente la stringa formInstanceId
-    };
-    formStateLogger.saveFormState(formInstanceId, currentState);
-    LoggingService.info('ManualEntry', 'Current form state saved:', currentState);
-  }, [
-    name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes,
-    barcode, imageUrl, hasManuallySelectedCategory, isEditMode, originalProductId, formInstanceId
-  ]);
-
-  // Funzione per ripristinare lo stato del form
-  const restoreFormState = useCallback(() => {
-    const savedState = formStateLogger.getFormState(formInstanceId);
-    if (savedState) {
-      LoggingService.info('ManualEntry', 'Restoring form state:', savedState);
-      setName(savedState.name || '');
-      setBrand(savedState.brand || '');
-      setSelectedCategory(savedState.selectedCategory || '');
-      setQuantity(savedState.quantity || '1');
-      setUnit(savedState.unit || 'pz');
-      setPurchaseDate(savedState.purchaseDate || new Date().toISOString().split('T')[0]);
-      setExpirationDate(savedState.expirationDate || '');
-      setNotes(savedState.notes || '');
-      setBarcode(savedState.barcode || '');
-      setImageUrl(savedState.imageUrl || null);
-      setHasManuallySelectedCategory(savedState.hasManuallySelectedCategory || false);
-      setIsEditMode(savedState.isEditMode || false);
-      setOriginalProductId(savedState.originalProductId || null);
-      return true; // Stato ripristinato con successo
-    }
-    LoggingService.warning('ManualEntry', 'No saved form state found to restore.');
-    return false; // Nessuno stato da ripristinare
-  }, [formInstanceId]);
-
-  // Log per debug della persistenza dei dati e ripristino stato
-  useEffect(() => {
-    if (params.fromPhotoCapture === 'true') {
-      LoggingService.info('ManualEntry', 'Form data after photo capture:', {
-        name,
-        brand,
-        selectedCategory,
-        quantity,
-        unit,
-        purchaseDate,
-        expirationDate,
-        notes,
-        barcode,
-        imageUrl: params.imageUrl, // Usa params.imageUrl qui
-        hasManuallySelectedCategory
-      });
-      
-      // Prova a ripristinare lo stato del form
-      const restorationSuccessful = restoreFormState();
-      if (restorationSuccessful) {
-        LoggingService.info('ManualEntry', 'Form state restored successfully after photo capture.');
-      } else {
-        LoggingService.warning('ManualEntry', 'Form state restoration failed after photo capture.');
-      }
-      
-      // Confronta con lo stato salvato prima della navigazione (per log aggiuntivi)
-      const previousState = formStateLogger.getFormState(formInstanceId);
-      if (previousState) {
-        const comparison = formStateLogger.compareStates(previousState, {
-          name,
-          brand,
-          selectedCategory,
-          quantity,
-          unit,
-          purchaseDate,
-          expirationDate,
-          notes,
-          barcode,
-          imageUrl: params.imageUrl, // Usa params.imageUrl qui
-          hasManuallySelectedCategory
-        });
-        
-        if (comparison.hasDifferences) {
-          LoggingService.warning('ManualEntry', 'Differences detected in form state after photo capture (after restoration attempt):', comparison.differences);
-        } else {
-          LoggingService.info('ManualEntry', 'No differences detected in form state after photo capture (after restoration attempt).');
-        }
-      }
-    }
-  }, [
-    formInstanceId,
-    params.fromPhotoCapture,
-    params.imageUrl, // Aggiungi params.imageUrl alle dipendenze
-    name,
-    brand,
-    selectedCategory,
-    quantity,
-    unit,
-    purchaseDate,
-    expirationDate,
-    notes,
-    barcode,
-    hasManuallySelectedCategory,
-    restoreFormState
-  ]);
-
-  // Effetto speciale per aggiornare imageUrl quando arriva da photo-capture
-  useEffect(() => {
-    if (params.fromPhotoCapture === 'true' && params.imageUrl) {
-      const imageUrlParam = Array.isArray(params.imageUrl) ? params.imageUrl[0] : params.imageUrl;
-      setImageUrl(imageUrlParam);
-    }
-  }, [params.fromPhotoCapture, params.imageUrl]);
-
-  // Effetto speciale per aggiornare expirationDate quando arriva da photo-capture (modalità data di scadenza)
-  useEffect(() => {
-    if (params.fromPhotoCapture === 'true' && params.expirationDate) {
-      const expirationDateParam = Array.isArray(params.expirationDate) ? params.expirationDate[0] : params.expirationDate;
-      LoggingService.info('ManualEntry', 'Setting expirationDate from params:', expirationDateParam);
-      setExpirationDate(expirationDateParam);
-    }
-  }, [params.fromPhotoCapture, params.expirationDate]);
+  
 
   const handleSaveProduct = useCallback(async () => {
     if (!name || !selectedCategory || !quantity || !unit || !purchaseDate || !expirationDate) {
@@ -850,7 +506,7 @@ export default function ManualEntryScreen() {
       name,
       brand: brand || '',
       category: selectedCategory,
-      quantity: parseInt(quantity, 10),
+      quantity: Number(quantity),
       unit,
       purchaseDate,
       expirationDate,

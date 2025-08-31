@@ -23,9 +23,9 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const migrateIconPaths = useCallback(async (categories: ProductCategory[]) => {
+  const migrateIconPaths = useCallback(async (categoriesToMigrate: ProductCategory[]) => {
     try {
-      const categoriesToUpdate = categories.filter(cat =>
+      const categoriesToUpdate = categoriesToMigrate.filter(cat =>
         cat.icon && cat.icon.startsWith('icon_products/') && !cat.icon.startsWith('assets/icon_products/')
       );
       
@@ -53,15 +53,20 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   const loadCategories = useCallback(async () => {
     setLoading(true);
     try {
-      const customCategories = await StorageService.getCustomCategories();
-      
-      // Migrare i percorsi delle icone se necessario
-      await migrateIconPaths(customCategories);
-      
-      // Ricaricare le categorie dopo la migrazione
-      const updatedCategories = await StorageService.getCustomCategories();
-      const mergedCategories = [...PRODUCT_CATEGORIES, ...updatedCategories];
-      setCategories(mergedCategories);
+      const dbCategories = await StorageService.getAllCategories();
+
+      const finalCategories = [
+        ...dbCategories,
+        ...PRODUCT_CATEGORIES.filter(hardcodedCat => 
+          !dbCategories.some(dbCat => dbCat.id === hardcodedCat.id)
+        )
+      ];
+
+      finalCategories.sort((a, b) => a.name.localeCompare(b.name));
+
+      await migrateIconPaths(finalCategories);
+
+      setCategories(finalCategories);
     } catch (error) {
       LoggingService.error('CategoryContext', `Errore durante il caricamento delle categorie: ${error}`);
       setCategories(PRODUCT_CATEGORIES);
@@ -74,7 +79,8 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       loadCategories();
     } else {
-      setCategories(PRODUCT_CATEGORIES);
+      const sortedDefaultCategories = [...PRODUCT_CATEGORIES].sort((a, b) => a.name.localeCompare(b.name));
+      setCategories(sortedDefaultCategories);
       setLoading(false);
     }
   }, [user, loadCategories]);
@@ -96,7 +102,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
 
     const newCategoryData = {
       name: trimmedName,
-      icon: '', // Inizialmente vuoto, verrà aggiornato dopo
+      icon: '',
       color: '#808080',
       user_id: user.id,
       is_default: false,
@@ -106,17 +112,15 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     const savedCategory = await StorageService.addCategory(newCategoryData);
 
     if (savedCategory) {
-      setCategories(prev => [...prev, savedCategory]);
+      setCategories(prev => [...prev, savedCategory].sort((a, b) => a.name.localeCompare(b.name)));
 
       const fetchedIcon = await IconService.fetchIconForCategory(trimmedName);
       LoggingService.info('CategoryContext', `Fetched icon for ${trimmedName}:`, fetchedIcon);
       
       if (fetchedIcon) {
-        // Converti l'icona nel formato locale per il rendering corretto
         const localIcon = IconService.convertToLocalIcon(fetchedIcon);
         LoggingService.info('CategoryContext', `Converted icon to local format:`, localIcon);
         
-        // Aggiorna sia il campo icon che il campo localIcon
         const finalCategory = {
           ...savedCategory,
           icon: typeof fetchedIcon === 'string' ? fetchedIcon : '',
@@ -125,24 +129,21 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
         
         LoggingService.info('CategoryContext', 'Updating category with icon data:', finalCategory);
         
-        // Aggiorna la categoria nel database con entrambi i campi
         await StorageService.updateCategory({
           id: finalCategory.id,
           icon: finalCategory.icon,
           localIcon: finalCategory.localIcon
         });
         
-        // Aggiorna lo stato locale
         setCategories(prev => prev.map(cat =>
           cat.id === finalCategory.id ? finalCategory : cat
-        ));
+        ).sort((a, b) => a.name.localeCompare(b.name)));
         
         LoggingService.info('CategoryContext', `Category ${finalCategory.id} created successfully with icon`);
         return finalCategory;
       } else {
         LoggingService.warning('CategoryContext', `No icon found for category: ${trimmedName}. It will be displayed without one.`);
         
-        // Mostra l'alert con un piccolo ritardo per assicurarsi che sia visibile
         setTimeout(() => {
           Alert.alert(
             'Icona non trovata', 
@@ -151,7 +152,6 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
           );
         }, 100);
         
-        // Aggiorna lo stato locale con la categoria senza icona
         const categoryWithoutIcon = {
           ...savedCategory,
           iconNotFound: true
@@ -159,7 +159,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
         
         setCategories(prev => prev.map(cat =>
           cat.id === categoryWithoutIcon.id ? categoryWithoutIcon : cat
-        ));
+        ).sort((a, b) => a.name.localeCompare(b.name)));
         
         return categoryWithoutIcon;
       }
@@ -171,14 +171,15 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   }, [categories, user]);
 
   const deleteCategory = useCallback(async (id: string) => {
+    const originalCategories = categories;
     setCategories(prev => prev.filter(cat => cat.id !== id));
     try {
       await StorageService.deleteCategory(id);
     } catch (error) {
       LoggingService.error('CategoryContext', `Errore durante l'eliminazione della categoria, ripristino: ${error}`);
-      loadCategories();
+      setCategories(originalCategories);
     }
-  }, [loadCategories]);
+  }, [categories]);
 
   const updateCategory = useCallback(async (id: string, name: string) => {
     if (!user) {
@@ -190,31 +191,26 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       throw new Error('Il nome della categoria non può essere vuoto.');
     }
     
-    // Verifica se esiste già una categoria con lo stesso nome
     if (categories.some(cat => cat.id !== id && cat.name.toLowerCase() === trimmedName.toLowerCase())) {
       throw new Error('Una categoria con questo nome esiste già.');
     }
 
-    // Trova la categoria esistente
     const existingCategory = categories.find(cat => cat.id === id);
     if (!existingCategory) {
       throw new Error('Categoria non trovata.');
     }
 
-    // Aggiorna solo il nome, mantenendo gli altri campi invariati
     const updatedCategory = {
       ...existingCategory,
       name: trimmedName
     };
 
     try {
-      // Aggiorna la categoria nel database
       await StorageService.updateCategory(updatedCategory);
       
-      // Aggiorna lo stato locale
       setCategories(prev => prev.map(cat =>
         cat.id === id ? updatedCategory : cat
-      ));
+      ).sort((a, b) => a.name.localeCompare(b.name)));
       
       LoggingService.info('CategoryContext', `Categoria ${id} aggiornata con successo`);
     } catch (error) {
@@ -227,14 +223,14 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     return categories.find(cat => cat.id === id);
   }, [categories]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     categories,
     addCategory,
     deleteCategory,
     updateCategory,
     getCategoryById,
     loading,
-  };
+  }), [categories, addCategory, deleteCategory, updateCategory, getCategoryById, loading]);
 
   return (
     <CategoryContext.Provider value={value}>

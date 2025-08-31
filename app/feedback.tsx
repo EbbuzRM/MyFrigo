@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,44 +10,30 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Image,
+  ActionSheetIOS,
+  PermissionsAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useTheme } from '@/context/ThemeContext';
 import { Toast } from '@/components/Toast';
 import { supabase } from '@/services/supabaseClient';
+import { Linking } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
-
-// Funzione di utilità per implementare timeout per le promesse
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> => {
-  return new Promise<T>((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      reject(new Error(`Timeout (${timeoutMs}ms): ${errorMessage}`));
-    }, timeoutMs);
-
-    promise.then(
-      (result) => {
-        clearTimeout(timeoutId);
-        resolve(result);
-      },
-      (error) => {
-        clearTimeout(timeoutId);
-        reject(error);
-      }
-    );
-  });
-};
 
 const FeedbackScreen = () => {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
+  const router = useRouter();
   const [feedbackText, setFeedbackText] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
-  const feedbackRef = useRef<string>('');
+  const [screenshotUri, setScreenshotUri] = useState<string | null>(null);
+  const [screenshotLoading, setScreenshotLoading] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast(null);
@@ -57,87 +43,108 @@ const FeedbackScreen = () => {
     }, 100);
   };
 
+  const handleImageSelection = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], // Corretto
+        allowsEditing: false,
+        quality: 0.8,
+        base64: false, // Non abbiamo bisogno del base64 qui, lo leggeremo dopo
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setScreenshotUri(result.assets[0].uri);
+        showToast('Screenshot selezionato', 'success');
+      } else {
+        showToast('Selezione annullata', 'success');
+      }
+    } catch (error) {
+      LoggingService.error('FeedbackScreen', 'Errore durante la selezione dell\'immagine', error);
+      showToast('Errore durante la selezione dell\'immagine', 'error');
+    } finally {
+      setScreenshotLoading(false);
+    }
+  };
+
+  const handleChooseScreenshot = async () => {
+    setScreenshotLoading(true);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permesso Negato', 'Per aggiungere uno screenshot, è necessario concedere l\'accesso alla galleria.');
+      setScreenshotLoading(false);
+      return;
+    }
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Scegli dalla Galleria', 'Annulla'],
+          cancelButtonIndex: 1,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) handleImageSelection();
+          else setScreenshotLoading(false);
+        }
+      );
+    } else {
+      handleImageSelection();
+    }
+  };
+
+  const removeScreenshot = () => {
+    setScreenshotUri(null);
+    showToast('Screenshot rimosso', 'success');
+  };
+
   const handleSendFeedback = async () => {
     if (feedbackText.trim().length < 10) {
       showToast('Il tuo feedback è un po\' corto, prova a descrivere meglio.', 'error');
       return;
     }
-    
-    // Salva il feedback corrente nel ref per eventuali retry
-    feedbackRef.current = feedbackText;
-    
+
     setLoading(true);
-    LoggingService.info('FeedbackScreen', 'Invio feedback iniziato', { length: feedbackText.length });
-    
+    LoggingService.info('FeedbackScreen', 'Invio feedback iniziato', {
+      length: feedbackText.length,
+      hasScreenshot: !!screenshotUri,
+    });
+
+    let screenshotBase64 = null;
     try {
-      // Invoca la funzione Supabase con un timeout di 10 secondi
-      const result = await withTimeout(
-        supabase.functions.invoke('send-feedback', {
-          body: { feedbackText },
-        }),
-        10000, // 10 secondi di timeout
-        'L\'operazione di invio feedback ha impiegato troppo tempo'
-      );
-      
-      const { error } = result as { error?: any };
+      // Se c\'è uno screenshot, leggilo e convertilo in un data URI base64
+      if (screenshotUri) {
+        const base64Data = await FileSystem.readAsStringAsync(screenshotUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        // Assumiamo che l\'immagine sia jpeg. ImagePicker su Android/iOS converte spesso in jpeg.
+        screenshotBase64 = `data:image/jpeg;base64,${base64Data}`;
+      }
+
+      // Invoca la Edge Function
+      const { data, error } = await supabase.functions.invoke('send-feedback', {
+        body: {
+          feedbackText,
+          screenshot: screenshotBase64, // Invia il data URI o null
+        },
+      });
 
       if (error) {
-        throw error;
+        throw new Error(error.message);
       }
 
-      LoggingService.info('FeedbackScreen', 'Feedback inviato con successo');
+      LoggingService.info('FeedbackScreen', 'Feedback inviato con successo', data);
       showToast('Feedback inviato con successo. Grazie!', 'success');
-      setFeedbackText(''); // Pulisce il campo di testo
-      setRetryCount(0); // Resetta il contatore dei tentativi
+
+      // Pulisce i campi e torna indietro
+      setFeedbackText('');
+      setScreenshotUri(null);
+      router.back();
+
     } catch (error: any) {
       LoggingService.error('FeedbackScreen', 'Errore invio feedback', error);
-      
-      // Gestione dei tentativi di invio
-      if (retryCount < maxRetries && (error.message.includes('Timeout') || error.message.includes('network') || error.message.includes('connection'))) {
-        setRetryCount(prev => prev + 1);
-        
-        // Mostra un messaggio di errore con l'opzione di riprovare
-        Alert.alert(
-          'Errore di connessione',
-          `Impossibile inviare il feedback. Tentativo ${retryCount + 1}/${maxRetries + 1}. Vuoi riprovare?`,
-          [
-            {
-              text: 'Annulla',
-              style: 'cancel',
-              onPress: () => {
-                setLoading(false);
-                setRetryCount(0);
-              }
-            },
-            {
-              text: 'Riprova',
-              onPress: () => {
-                // Riprova dopo un breve ritardo
-                setTimeout(() => {
-                  // Ripristina il testo del feedback dal ref
-                  setFeedbackText(feedbackRef.current);
-                  handleSendFeedback();
-                }, 1000);
-              }
-            }
-          ]
-        );
-      } else {
-        // Mostra un messaggio di errore generico se abbiamo superato il numero massimo di tentativi
-        let errorMessage = `Errore nell'invio: ${error.message}`;
-        if (retryCount >= maxRetries) {
-          errorMessage = `Impossibile inviare il feedback dopo ${maxRetries + 1} tentativi. Riprova più tardi.`;
-        }
-        
-        showToast(errorMessage, 'error');
-        setRetryCount(0); // Resetta il contatore dei tentativi
-        setLoading(false);
-      }
+      const errorMessage = error.message || 'Errore sconosciuto';
+      showToast(`Errore nell\'invio: ${errorMessage}`, 'error');
     } finally {
-      // Imposta loading a false solo se non stiamo per riprovare
-      if (retryCount >= maxRetries) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -152,7 +159,7 @@ const FeedbackScreen = () => {
           <View style={styles.header}>
             <Text style={styles.title}>Aiutaci a Migliorare</Text>
             <Text style={styles.instructions}>
-              Per aiutarci a migliorare, descrivi il tuo feedback in modo chiaro. Se segnali un bug/errore, includi i passaggi per riprodurlo. Se hai un'idea, spiega cosa vorresti che accadesse.
+              Descrivi il tuo feedback o il bug che hai trovato. Se possibile, includi i passaggi per riprodurlo.
             </Text>
           </View>
           <TextInput
@@ -163,17 +170,57 @@ const FeedbackScreen = () => {
             value={feedbackText}
             onChangeText={setFeedbackText}
             autoFocus={true}
-            editable={!loading} // Disabilita l'input durante il caricamento
+            editable={!loading}
           />
-          <TouchableOpacity 
-            style={[styles.feedbackButton, loading && styles.feedbackButtonDisabled]} 
+          
+          <View style={styles.screenshotSection}>
+            <Text style={styles.screenshotLabel}>Screenshot (opzionale)</Text>
+            <View style={styles.screenshotButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.screenshotButton, screenshotLoading && styles.screenshotButtonDisabled]}
+                onPress={handleChooseScreenshot}
+                disabled={loading || screenshotLoading}
+              >
+                {screenshotLoading ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.screenshotButtonText}>Aggiungi Screenshot</Text>
+                )}
+              </TouchableOpacity>
+              
+              {screenshotUri && (
+                <TouchableOpacity
+                  style={styles.removeScreenshotButton}
+                  onPress={removeScreenshot}
+                  disabled={loading}
+                >
+                  <Text style={styles.removeScreenshotButtonText}>Rimuovi</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {screenshotUri && (
+              <View style={styles.screenshotPreview}>
+                <Image
+                  source={{ uri: screenshotUri }}
+                  style={styles.screenshotImage}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
+          </View>
+          
+          <TouchableOpacity
+            style={[styles.feedbackButton, loading && styles.feedbackButtonDisabled]}
             onPress={handleSendFeedback}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text style={styles.feedbackButtonText}>Invia Feedback</Text>
+              <Text style={styles.feedbackButtonText}>
+                Invia Feedback{!screenshotUri ? '' : ' con Screenshot'}
+              </Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -230,6 +277,61 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     minHeight: 150,
     textAlignVertical: 'top',
   },
+  screenshotSection: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  screenshotLabel: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    marginBottom: 12,
+  },
+  screenshotButtonsContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  screenshotButton: {
+    backgroundColor: '#10b981',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flex: 1,
+    alignItems: 'center',
+  },
+  screenshotButtonDisabled: {
+    backgroundColor: '#6b7280',
+  },
+  screenshotButtonText: {
+    color: 'white',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+  },
+  removeScreenshotButton: {
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  removeScreenshotButtonText: {
+    color: 'white',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+  },
+  screenshotPreview: {
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    borderRadius: 8,
+    padding: 8,
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+  },
+  screenshotImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 4,
+  },
   feedbackButton: {
     backgroundColor: '#4f46e5',
     borderRadius: 12,
@@ -238,7 +340,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginTop: 24,
   },
   feedbackButtonDisabled: {
-    backgroundColor: '#a5b4fc', // Un colore più chiaro per indicare che è disabilitato
+    backgroundColor: '#a5b4fc',
   },
   feedbackButtonText: {
     color: 'white',

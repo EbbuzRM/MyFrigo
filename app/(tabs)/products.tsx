@@ -28,11 +28,13 @@ const Products = () => {
 
   useFocusEffect(
     useCallback(() => {
+      LoggingService.info('ProductsScreen', 'Screen focused, refreshing products.');
       refreshProducts();
     }, [refreshProducts])
   );
 
   const onRefresh = useCallback(async () => {
+    LoggingService.info('ProductsScreen', 'User triggered pull-to-refresh.');
     setRefreshing(true);
     await refreshProducts();
     setRefreshing(false);
@@ -63,7 +65,7 @@ const Products = () => {
         expirationDate.setHours(0, 0, 0, 0);
         const diffDays = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         
-        const notificationDays = settings?.notificationDays || 4; // Default a 4 giorni se settings non è disponibile
+        const notificationDays = settings?.notificationDays || 4;
         
         switch (selectedStatus) {
           case 'fresh':
@@ -78,13 +80,13 @@ const Products = () => {
       });
     }
 
-    // Ordina i prodotti per data di scadenza (dal più prossimo al più lontano)
     filtered.sort((a, b) => {
       const dateA = new Date(a.expirationDate).getTime();
       const dateB = new Date(b.expirationDate).getTime();
       return dateA - dateB;
     });
 
+    LoggingService.info('ProductsScreen', `Filtering complete. ${filtered.length} products displayed.`);
     return filtered;
   }, [allProducts, selectedCategory, searchQuery, selectedStatus, settings?.notificationDays]);
 
@@ -103,6 +105,7 @@ const Products = () => {
   };
 
   const handleConsumeProduct = async (productId: string) => {
+    LoggingService.info('ProductsScreen', `User initiated consumption for product: ${productId}`);
     try {
       await StorageService.updateProductStatus(productId, 'consumed');
       await refreshProducts();
@@ -117,16 +120,14 @@ const Products = () => {
       if (expiredProducts.length > 0) {
         const productIds = expiredProducts.map(p => p.id!);
         await StorageService.moveProductsToHistory(productIds);
-        await refreshProducts(); // Ricarica i prodotti dopo lo spostamento
+        await refreshProducts();
         LoggingService.info('Products', `${expiredProducts.length} prodotti scaduti sono stati spostati nella cronologia.`);
       }
     } catch (error) {
       LoggingService.error('Products', 'Errore durante lo spostamento dei prodotti scaduti nella cronologia:', error);
-      // Non mostrare un alert all'utente per questo operazione di background, ma loggare l'errore.
     }
   }, [refreshProducts]);
 
-  // Esegui il controllo per i prodotti scaduti all'avvio e quando il guadagna il focus
   useFocusEffect(
     useCallback(() => {
       handleMoveExpiredToHistory();
@@ -160,7 +161,7 @@ const Products = () => {
 
       <View style={styles.filtersContainer}>
         <View style={styles.statusFilters}>
-          {[
+          {[ 
             { key: 'all', label: 'Tutti' },
             { key: 'fresh', label: 'Freschi' },
             { key: 'expiring', label: 'In Scadenza' },
@@ -168,13 +169,16 @@ const Products = () => {
           ].map((status) => (
             <TouchableOpacity
               key={status.key}
-              style={[
+              style={[ 
                 styles.statusFilter,
                 selectedStatus === status.key && styles.statusFilterActive
               ]}
-              onPress={() => setSelectedStatus(status.key as any)}
+              onPress={() => {
+                LoggingService.info('ProductsScreen', `Status filter changed to: ${status.key}`);
+                setSelectedStatus(status.key as any);
+              }}
             >
-              <Text style={[
+              <Text style={[ 
                 styles.statusFilterText,
                 selectedStatus === status.key && styles.statusFilterTextActive
               ]}>
@@ -187,12 +191,17 @@ const Products = () => {
 
       <CategoryFilter
         selectedCategory={selectedCategory || 'all'}
-        onCategoryChange={(category) => setSelectedCategory(category === 'all' ? null : category)}
+        onCategoryChange={(category) => {
+          const newCategory = category === 'all' ? null : category;
+          LoggingService.info('ProductsScreen', `Category filter changed to: ${newCategory}`);
+          setSelectedCategory(newCategory);
+        }}
         products={allProducts}
         categories={categories}
       />
 
       <FlatList
+        testID="products-list"
         data={filteredProducts}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
@@ -202,6 +211,7 @@ const Products = () => {
             onPress={() => router.push(`/manual-entry?productId=${item.id}`)}
             onConsume={() => handleConsumeProduct(item.id)}
             onDelete={async () => {
+              LoggingService.info('ProductsScreen', `User initiated deletion for product: ${item.id}`);
               try {
                 setIsDeleting(true);
                 await StorageService.deleteProduct(item.id!);

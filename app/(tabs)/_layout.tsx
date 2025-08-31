@@ -20,6 +20,7 @@ const TabLayout = () => {
         name="index"
         options={{
           title: 'Dashboard',
+          tabBarTestID: 'dashboard-tab',
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} />
           ),
@@ -30,6 +31,7 @@ const TabLayout = () => {
         name="products"
         options={{
           title: 'Prodotti',
+          tabBarTestID: 'products-tab',
           tabBarIcon: ({ color, size }) => (
             <Package size={size} color={color} />
           ),
@@ -39,6 +41,7 @@ const TabLayout = () => {
         name="add"
         options={{
           title: 'Aggiungi',
+          tabBarTestID: 'add-tab',
           tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} />
           ),
@@ -48,6 +51,7 @@ const TabLayout = () => {
         name="history"
         options={{
           title: 'Storico',
+          tabBarTestID: 'history-tab',
           tabBarIcon: ({ color, size }) => (
             <History size={size} color={color} />
           ),
@@ -57,6 +61,7 @@ const TabLayout = () => {
         name="settings"
         options={{
           title: 'Impostazioni',
+          tabBarTestID: 'settings-tab',
           tabBarIcon: ({ color, size }) => (
             <Settings size={size} color={color} />
           ),

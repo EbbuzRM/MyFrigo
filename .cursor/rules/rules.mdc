@@ -3,6 +3,7 @@ alwaysApply: true
 ---
 Speak in Italian.
 Scan the whole project to better understand structure.
+Spiegami sempre quello che fai,cosi da poter sapere cosa stai facendo e se non è quello che voglio io o sbagliato te lo posso dire.
 ## Convenzioni di Sviluppo
 - **Linguaggio**: TypeScript
 - **Framework**: React Native con Expo

@@ -18,6 +18,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ state, descriptors, nav
 
   return (
     <View
+      testID="tab-bar"
       style={[
         styles.tabBarContainer,
         {
@@ -33,7 +34,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ state, descriptors, nav
         const label = options.title !== undefined ? options.title : route.name;
         const isFocused = state.index === index;
 
-        const scale = useSharedValue(1);
+        const scale = useSharedValue(isFocused ? 1.1 : 1);
 
         const animatedStyle = useAnimatedStyle(() => {
           return {
@@ -42,14 +43,34 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ state, descriptors, nav
         });
 
         const onPress = () => {
+          LoggingService.info('AnimatedTabBar', `Tab pressed -> name: ${route.name}, index: ${index}`);
+          console.log(`[AnimatedTabBar] Tab pressed -> name: ${route.name}, index: ${index}`);
+    
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
             canPreventDefault: true,
           });
-
+    
           if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
+            try {
+              // Prefer jumpTo for tab navigators when available to ensure tab switch behavior
+              if (typeof navigation.jumpTo === 'function') {
+                navigation.jumpTo(route.name);
+                LoggingService.info('AnimatedTabBar', `navigation.jumpTo called for ${route.name}`);
+                console.log(`[AnimatedTabBar] navigation.jumpTo called for ${route.name}`);
+              } else {
+                navigation.navigate(route.name);
+                LoggingService.info('AnimatedTabBar', `navigation.navigate called for ${route.name}`);
+                console.log(`[AnimatedTabBar] navigation.navigate called for ${route.name}`);
+              }
+            } catch (navError) {
+              LoggingService.error('AnimatedTabBar', `Navigation error for ${route.name}`, navError);
+              console.error('[AnimatedTabBar] Navigation error for', route.name, navError);
+            }
+          } else {
+            LoggingService.info('AnimatedTabBar', `Tab press ignored (isFocused=${isFocused}, defaultPrevented=${event.defaultPrevented}) for ${route.name}`);
+            console.log(`[AnimatedTabBar] Tab press ignored (isFocused=${isFocused}, defaultPrevented=${event.defaultPrevented}) for ${route.name}`);
           }
         };
 
@@ -67,8 +88,9 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ state, descriptors, nav
             accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
             testID={options.tabBarTestID}
-            onPressIn={() => (scale.value = withSpring(1.2))}
-            onPressOut={() => (scale.value = withSpring(1))}
+            hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+            onPressIn={() => (scale.value = withSpring(1.1, { duration: 100, dampingRatio: 1 }))}
+            onPressOut={() => (scale.value = withSpring(isFocused ? 1.1 : 1, { duration: 100, dampingRatio: 1 }))}
             onPress={onPress}
             onLongPress={onLongPress}
             style={styles.tabItem}
