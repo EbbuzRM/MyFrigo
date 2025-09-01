@@ -3,7 +3,6 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
-import { isTestMode } from '@/services/test-env';
 
 // Definizione del tipo per il profilo utente
 interface UserProfile {
@@ -81,14 +80,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      // In modalità test, bypassiamo l'inizializzazione automatica della sessione
-      // per garantire un avvio pulito sulla schermata di login.
-      if (isTestMode) {
-        LoggingService.info('AuthProvider', 'Test mode detected, skipping session restore.');
-        setLoading(false);
-        return;
-      }
-
       setLoading(true);
       try {
         LoggingService.info('AuthProvider', 'Attempting to get session...');
@@ -117,7 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       LoggingService.info('AuthProvider', 'Auth state changed', { event });
-      
+
       setUser(currentSession?.user ?? null);
       setSession(currentSession);
 

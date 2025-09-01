@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 module.exports = {
   expo: {
     name: "MyFrigo",
@@ -25,6 +23,7 @@ module.exports = {
       bundleIdentifier: "com.myfrigo"
     },
     android: {
+      allowBackup: true, 
       adaptiveIcon: {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"

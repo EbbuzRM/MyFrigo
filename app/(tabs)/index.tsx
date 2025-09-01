@@ -117,7 +117,7 @@ function Dashboard() {
   const expiredCount = allProducts.filter(p => {
       const expirationDate = new Date(p.expirationDate);
       expirationDate.setHours(0, 0, 0, 0);
-      return expirationDate < today;
+      return p.status === 'active' && expirationDate < today;
   }).length;
   
   const styles = getStyles(isDarkMode);
