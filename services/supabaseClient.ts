@@ -20,20 +20,11 @@ try {
   // Validate URL format
   new URL(supabaseUrl);
   
-  // Definiamo uno storage in-memory per i test per garantire l'isolamento totale.
-  const inMemoryStorage = {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-  };
-
-  const { isTestMode } = require('../services/test-env');
-
   supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      storage: isTestMode ? inMemoryStorage : AsyncStorage,
-      autoRefreshToken: !isTestMode,
-      persistSession: !isTestMode,
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
       detectSessionInUrl: false,
     },
     realtime: {

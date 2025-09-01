@@ -22,7 +22,7 @@ interface LoggerConfig {
 class Logger {
   private static instance: Logger;
   private config: LoggerConfig;
-  private logFilePath: string;
+  private logFilePath: string = ''; // Inizializza a stringa vuota
   private isInitialized: boolean = false;
   private pendingLogs: string[] = [];
 
@@ -35,7 +35,7 @@ class Logger {
       maxLogFiles: 5
     };
 
-    this.logFilePath = FileSystem.documentDirectory + 'logs/app.log';
+    // this.logFilePath viene impostato in initialize()
   }
 
   public static getInstance(): Logger {
@@ -53,6 +53,9 @@ class Logger {
 
     try {
       if (this.config.enableFileLogging && Platform.OS !== 'web') {
+        // Imposta il percorso del file di log qui, in modo sicuro
+        this.logFilePath = FileSystem.documentDirectory + 'logs/app.log';
+
         // Assicurati che la directory dei log esista
         const logDir = FileSystem.documentDirectory + 'logs/';
         const dirInfo = await FileSystem.getInfoAsync(logDir);

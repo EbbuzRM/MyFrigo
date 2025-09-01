@@ -1,56 +1,29 @@
-// Importa il modulo di ambiente test per primo per assicurare che venga eseguito subito.
-import '../services/test-env';
-
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme } from 'react-native';
-import { ThemeProvider } from '@/context/ThemeContext';
 import { useFonts } from 'expo-font';
-import { LoggingService } from '@/services/LoggingService';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { SettingsProvider } from '@/context/SettingsContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProductProvider } from '@/context/ProductContext';
 import { CategoryProvider } from '@/context/CategoryContext';
 import { ManualEntryProvider } from '@/context/ManualEntryContext';
 
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [isReady, setIsReady] = useState(false);
-  
   const [fontsLoaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   useEffect(() => {
-    const prepareApp = async () => {
-      try {
-        // Inizializza il logging
-        LoggingService.info('RootLayout', 'App initialization started');
-        
-        // Attendi che i font siano caricati
-        if (fontsLoaded) {
-          LoggingService.info('RootLayout', 'Fonts loaded successfully');
-          setIsReady(true);
-          await SplashScreen.hideAsync();
-        }
-      } catch (error) {
-        LoggingService.error('RootLayout', 'Error during app initialization', error);
-        // Nascondi comunque lo splash screen in caso di errore
-        await SplashScreen.hideAsync();
-      }
-    };
-
-    prepareApp();
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
   }, [fontsLoaded]);
 
-  if (!isReady) {
-    // Lo splash screen rimane visibile finché non siamo pronti
+  if (!fontsLoaded) {
     return null;
   }
 
@@ -62,6 +35,7 @@ export default function RootLayout() {
             <CategoryProvider>
               <ManualEntryProvider>
                 <Stack>
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   <Stack.Screen name="login" options={{ headerShown: false }} />
                   <Stack.Screen name="signup" options={{ headerShown: false }} />

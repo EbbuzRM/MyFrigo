@@ -22,9 +22,6 @@ def reactNativeAndroidDir = new File(
 
 allprojects {
   repositories {
-    // Local Maven repo for Detox native artifacts (provided by the npm 'detox' package).
-    maven { url "$rootDir/../node_modules/detox/Detox-android" }
-
     maven {
       // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
       url(reactNativeAndroidDir)
@@ -34,70 +31,28 @@ allprojects {
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
-}
-
-configurations.all {
-  // Exclude JUnit 5 transitive artifacts globally to avoid duplicate META-INF files
-  // (e.g. LICENSE.md) during test APK assembly.
-  exclude group: 'org.junit.jupiter'
-}
-
-// Global packaging excludes for Detox-related META-INF duplicates
-ext.detoxPackagingExcludes = [
-  'META-INF/DEPENDENCIES',
-  'META-INF/LICENSE',
-  'META-INF/LICENSE.txt',
-  'META-INF/NOTICE',
-  'META-INF/NOTICE.txt',
-  'META-INF/LICENSE.md',
-  'META-INF/LICENSE-notice.md',
-  // Exclude all markdown files under META-INF to avoid duplicate LICENSE/NOTICE .md files
-  'META-INF/*.md'
-]
-// Prefer pickFirst for known license files (keeps one copy if needed)
-ext.detoxPackagingPickFirsts = [
-  'META-INF/LICENSE.md',
-  'META-INF/LICENSE-notice.md'
-]
-
-// Apply packaging options to all Android library & application modules early using plugins.withId.
-// This avoids "It is too late to modify excludes" errors by configuring modules when the Android
-// plugin is applied during configuration phase.
-subprojects { subproject ->
-  // Configure android libraries
-  subproject.plugins.withId('com.android.library') {
-    subproject.extensions.configure(com.android.build.gradle.LibraryExtension) { libExt ->
-      libExt.packaging {
-        resources {
-          excludes.addAll(rootProject.ext.detoxPackagingExcludes)
-          pickFirsts.addAll(rootProject.ext.detoxPackagingPickFirsts)
-        }
-      }
+  configurations.all {
+    resolutionStrategy {
+      force 'androidx.test:runner:1.5.2'
+      force 'androidx.test.espresso:espresso-core:3.5.1'
+      force 'androidx.test.espresso:espresso-contrib:3.5.1'
+      force 'androidx.test.espresso:espresso-idling-resource:3.5.1'
+      force 'androidx.test.espresso:espresso-intents:3.5.1'
     }
   }
-
-  // Configure android application modules (including :app)
-  subproject.plugins.withId('com.android.application') {
-    subproject.extensions.configure(com.android.build.gradle.AppExtension) { appExt ->
-      appExt.packaging {
-        resources {
-          excludes.addAll(rootProject.ext.detoxPackagingExcludes)
-          pickFirsts.addAll(rootProject.ext.detoxPackagingPickFirsts)
+  afterEvaluate { project ->
+    if (project.hasProperty('android')) {
+      android {
+        packagingOptions {
+          pickFirst 'META-INF/LICENSE.md'
+          pickFirst 'META-INF/LICENSE'
+          pickFirst 'META-INF/NOTICE'
+          pickFirst 'META-INF/LICENSE-notice.md'
         }
       }
     }
   }
 }
- 
+
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
- 
-/* Removed global subprojects packaging modifications.
-   Packaging exclusions and pickFirsts are applied at module level where possible
-   to avoid timing/configuration issues with the Android Gradle Plugin.
- */
- 
-/* Removed gradle.projectsEvaluated block that attempted to mutate packaging after evaluation.
-   Keeping packaging configuration in module build.gradle (android/app/build.gradle) and
-   removing late evaluation modifications to prevent "too late to modify excludes" errors.
- */

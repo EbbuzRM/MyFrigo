@@ -702,16 +702,16 @@ export class StorageService {
       }
       const userId = session.user.id;
 
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-      oneDayAgo.setHours(0, 0, 0, 0); // Inizio del giorno (00:00:00)
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      twoDaysAgo.setHours(0, 0, 0, 0); // Inizio del giorno (00:00:00)
 
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'active') // Solo prodotti ancora attivi
-        .lt('expiration_date', oneDayAgo.toISOString()) // Scaduti prima di un giorno fa
+        .lt('expiration_date', twoDaysAgo.toISOString()) // Scaduti prima di due giorni fa
         .order('expiration_date', { ascending: true }) // Ordina per data di scadenza
         .returns<Record<string, unknown>[]>();
         
@@ -742,17 +742,16 @@ export class StorageService {
       const { error: updateError } = await supabase
         .from('products')
         .update({ 
-          status: 'consumed',
-          consumed_date: new Date().toISOString() // Imposta la data di consumo
+          status: 'expired' // Imposta lo stato a 'scaduto'
         })
         .in('id', productIds);
 
       if (updateError) {
-        LoggingService.error('StorageService', 'Error updating products status to consumed', updateError);
+        LoggingService.error('StorageService', 'Error updating products status to expired', updateError);
         throw updateError;
       }
 
-      LoggingService.info('StorageService', `${productIds.length} products moved to history.`);
+      LoggingService.info('StorageService', `${productIds.length} products moved to history as expired.`);
     } catch (error: any) {
       LoggingService.error('StorageService', 'Error in moveProductsToHistory', error);
       throw error; // Propaga l'errore per permettere la gestione al chiamante
