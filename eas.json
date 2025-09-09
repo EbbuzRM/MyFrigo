@@ -7,9 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": {
-        "npmArgs": ["ci", "--verbose"]
-      }
+      "npmArgs": ["ci", "--verbose"]
     },
     "preview": {
       "distribution": "internal"
