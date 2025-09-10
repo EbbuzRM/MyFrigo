@@ -13,6 +13,7 @@ import {
   Image,
   ActionSheetIOS,
   PermissionsAndroid,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
@@ -24,6 +25,7 @@ import { Toast } from '@/components/Toast';
 import { supabase } from '@/services/supabaseClient';
 import { Linking } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
+import { ChevronLeft } from 'lucide-react-native';
 
 const FeedbackScreen = () => {
   const { isDarkMode } = useTheme();
@@ -46,10 +48,10 @@ const FeedbackScreen = () => {
   const handleImageSelection = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'], // Corretto
+        mediaTypes: ['images'],
         allowsEditing: false,
         quality: 0.8,
-        base64: false, // Non abbiamo bisogno del base64 qui, lo leggeremo dopo
+        base64: false,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -110,20 +112,17 @@ const FeedbackScreen = () => {
 
     let screenshotBase64 = null;
     try {
-      // Se c\'è uno screenshot, leggilo e convertilo in un data URI base64
       if (screenshotUri) {
         const base64Data = await FileSystem.readAsStringAsync(screenshotUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        // Assumiamo che l\'immagine sia jpeg. ImagePicker su Android/iOS converte spesso in jpeg.
         screenshotBase64 = `data:image/jpeg;base64,${base64Data}`;
       }
 
-      // Invoca la Edge Function
       const { data, error } = await supabase.functions.invoke('send-feedback', {
         body: {
           feedbackText,
-          screenshot: screenshotBase64, // Invia il data URI o null
+          screenshot: screenshotBase64,
         },
       });
 
@@ -134,10 +133,10 @@ const FeedbackScreen = () => {
       LoggingService.info('FeedbackScreen', 'Feedback inviato con successo', data);
       showToast('Feedback inviato con successo. Grazie!', 'success');
 
-      // Pulisce i campi e torna indietro
       setFeedbackText('');
       setScreenshotUri(null);
-      router.back();
+      Keyboard.dismiss();
+      setTimeout(() => router.back(), 50);
 
     } catch (error: any) {
       LoggingService.error('FeedbackScreen', 'Errore invio feedback', error);
@@ -154,14 +153,29 @@ const FeedbackScreen = () => {
       style={styles.keyboardAvoidingView}
     >
       <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ title: 'Invia Feedback', headerBackTitle: 'Impostazioni' }} />
+        <Stack.Screen options={{ headerShown: false }} />
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          <View style={styles.header}>
+          <View style={styles.headerContainer}>
+            <TouchableOpacity
+              testID="feedback-back-button"
+              accessibilityRole="button"
+              accessibilityLabel="Torna indietro"
+              onPress={() => {
+                LoggingService.info('FeedbackScreen', 'Back button pressed');
+                Keyboard.dismiss();
+                setTimeout(() => router.push('/(tabs)/settings'), 50);
+              }}
+              style={[styles.backButton, { padding: 16 }]}
+            >
+              <ChevronLeft size={28} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
+            </TouchableOpacity>
             <Text style={styles.title}>Aiutaci a Migliorare</Text>
-            <Text style={styles.instructions}>
-              Descrivi il tuo feedback o il bug che hai trovato. Se possibile, includi i passaggi per riprodurlo.
-            </Text>
           </View>
+
+          <Text style={styles.instructions}>
+            Descrivi il tuo feedback o il bug che hai trovato. Se possibile, includi i passaggi per riprodurlo.
+          </Text>
+          
           <TextInput
             style={styles.feedbackInput}
             placeholder="Scrivi qui il tuo messaggio..."
@@ -169,7 +183,6 @@ const FeedbackScreen = () => {
             multiline
             value={feedbackText}
             onChangeText={setFeedbackText}
-            autoFocus={true}
             editable={!loading}
           />
           
@@ -249,20 +262,27 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flexGrow: 1,
     padding: 20,
   },
-  header: {
-    marginBottom: 24,
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  backButton: {
+    marginRight: 10,
+    padding: 4,
   },
   title: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 12,
+    flex: 1,
   },
   instructions: {
     fontSize: 15,
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
     lineHeight: 22,
+    marginBottom: 24,
   },
   feedbackInput: {
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',

@@ -196,7 +196,7 @@ const Products = () => {
           LoggingService.info('ProductsScreen', `Category filter changed to: ${newCategory}`);
           setSelectedCategory(newCategory);
         }}
-        products={allProducts}
+        products={allProducts.filter(p => p.status === 'active')}
         categories={categories}
       />
 
