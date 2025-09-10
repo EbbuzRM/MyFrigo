@@ -16,6 +16,8 @@
       "android": {
         "buildType": "apk"
       },
+      "node": "24.5.0",
+      "npm": "11.5.2",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "***REMOVED***",
@@ -24,6 +26,8 @@
     },
     "production": {
       "autoIncrement": true,
+      "node": "24.5.0",
+      "npm": "11.5.2",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "***REMOVED***",
