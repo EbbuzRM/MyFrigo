@@ -149,6 +149,7 @@ const Settings = () => {
             title="Modalità Scura"
             control={
               <Switch
+                testID="dark-mode-switch"
                 value={isDarkMode}
                 onValueChange={(value) => setAppTheme(value ? 'dark' : 'light')}
                 trackColor={{ false: '#e5e7eb', true: '#818cf8' }}
@@ -279,6 +280,7 @@ const Settings = () => {
 
       {toast && (
         <Toast
+          testID="toast-message" // Aggiunto per Maestro
           message={toast.message}
           visible={!!toast}
           onDismiss={() => setToast(null)}

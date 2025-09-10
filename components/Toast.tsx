@@ -8,9 +8,10 @@ interface ToastProps {
   visible: boolean;
   onDismiss: () => void;
   type?: 'success' | 'error';
+  testID?: string; // Aggiunto per la testabilità
 }
 
-export function Toast({ message, visible, onDismiss, type = 'success' }: ToastProps) {
+export function Toast({ message, visible, onDismiss, type = 'success', testID }: ToastProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -39,6 +40,7 @@ export function Toast({ message, visible, onDismiss, type = 'success' }: ToastPr
 
   return (
     <Animated.View
+      testID={testID} // Applicato per Maestro
       style={[
         styles.container,
         type === 'success' ? styles.success : styles.error,

@@ -154,3 +154,12 @@ log.txt
 .kilocode/
 .npmrc
 memory-bank/
+
+# Maestro test files
+.maestro/
+
+# Debug logs
+debug_logs/
+
+# Agent markdown
+.agent.md
