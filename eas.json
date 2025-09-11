@@ -10,7 +10,8 @@
       "node": "20.19.4"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "node": "20.19.4"
     },
     "release-apk": {
       "distribution": "internal",
