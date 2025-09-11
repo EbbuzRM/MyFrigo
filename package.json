@@ -3,18 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "preinstall": "rm -f package-lock.json",
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "dev-client": "node scripts/start-dev-client.js",
-    "start:dev": "expo start --dev-client",
-    "test": "jest",
-    "clean": "node clean-cache.js",
-    "clean-start": "expo start --clear",
-    "reset-project": "rm -rf node_modules/.cache && rm -rf .expo && npm start --clear",
-    "typecheck": "tsc --noEmit"
+    "preinstall": "rm -f package-lock.json"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "~0.4.1",
