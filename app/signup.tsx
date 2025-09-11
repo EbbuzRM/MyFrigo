@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { LoggingService } from '@/services/LoggingService';
 import { validatePassword } from '../utils/authValidation';
-import { emailVerificationService } from '@/services/EmailVerificationService';
+
 
 interface ValidationCheckProps {
   isValid: boolean;
@@ -95,6 +95,20 @@ export default function SignupScreen() {
       if (!trimmedFirstName || !trimmedLastName) {
         LoggingService.warning('Signup', 'First name or last name is empty');
         Alert.alert('Dati Mancanti', 'Per favore, inserisci nome e cognome per completare la registrazione.');
+        return;
+      }
+
+      // Controlla se l'email esiste già
+      const { data: emailExists, error: rpcError } = await supabase.rpc('check_email_exists', { email_to_check: email });
+
+      if (rpcError) {
+        LoggingService.error('Signup', 'RPC call to check_email_exists failed', rpcError);
+        throw new Error("Errore durante la verifica dell'email. Riprova.");
+      }
+
+      if (emailExists) {
+        Alert.alert('Email già registrata', 'Questo indirizzo email è già in uso. Prova ad accedere.');
+        setLoading(false);
         return;
       }
 
