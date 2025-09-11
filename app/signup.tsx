@@ -169,14 +169,11 @@ export default function SignupScreen() {
             }]
           );
         } else {
-          // Email da confermare - vai alla pagina di attesa semplificata
-          LoggingService.info('Signup', 'Email needs confirmation, redirecting to email-sent', {
-            userId: data.user?.id,
-            email: data.user?.email
+          // Reindirizza alla nuova pagina di conferma OTP
+          router.replace({
+            pathname: '/confirm-email',
+            params: { email: data.user.email },
           });
-          
-          // Reindirizza alla pagina di attesa email semplificata
-          router.replace('/email-sent');
         }
       } else {
         LoggingService.error('Signup', 'No user created during signup');
