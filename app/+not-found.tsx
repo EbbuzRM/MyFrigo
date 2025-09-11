@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView, TouchableOpaci
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
-import { FontAwesome } from '@expo/vector-icons';
+
 
 export default function NotFoundScreen() {
   const router = useRouter();
@@ -122,7 +122,7 @@ export default function NotFoundScreen() {
         {/* Rimosso il rendering condizionale per isPasswordReset */}
         {isEmailConfirmation ? (
           <>
-            <FontAwesome name="envelope-open" size={80} color="#007bff" style={styles.icon} />
+            
             <Text style={styles.title}>Conferma Email in Corso</Text>
             <Text style={styles.message}>{message}</Text>
             {loading && <ActivityIndicator size="large" color="#007bff" style={styles.loader} />}
