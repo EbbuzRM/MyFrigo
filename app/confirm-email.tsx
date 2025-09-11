@@ -1,230 +1,127 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity } from 'react-native';
-import { useRouter, useLocalSearchParams, useSegments } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  SafeAreaView,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/services/supabaseClient';
-import { useAuth } from '@/context/AuthContext';
 import { LoggingService } from '@/services/LoggingService';
-import { emailVerificationService, VerificationProgress } from '@/services/EmailVerificationService';
-import { FontAwesome } from '@expo/vector-icons';
 
 export default function ConfirmEmailScreen() {
   const router = useRouter();
-  const { token_hash, type } = useLocalSearchParams<{ token_hash?: string; type?: string }>();
-  const { session: currentSession, user: currentUser, refreshUserProfile } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('Verifica del token...');
-  const [verificationProgress, setVerificationProgress] = useState<VerificationProgress | null>(null);
-  const [verificationComplete, setVerificationComplete] = useState(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
-  const segments = useSegments();
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Registra per aggiornamenti di progresso
-    const unsubscribe = emailVerificationService.onProgressUpdate((progress) => {
-      setVerificationProgress(progress);
-      setMessage(progress.message);
-      
-      if (progress.stage === 'completed') {
-        setVerificationComplete(true);
-        setLoading(false);
-      } else if (progress.stage === 'failed') {
-        setVerificationError(progress.details?.error || 'Verifica fallita');
-        setLoading(false);
-      }
-    });
+  const handleVerifyOtp = async () => {
+    if (!email || !otp) {
+      setError('Per favore, inserisci il codice di verifica.');
+      return;
+    }
 
-    const confirmEmail = async () => {
-      LoggingService.info('ConfirmEmail', 'STARTING comprehensive email confirmation process', {
-        type,
-        hasTokenHash: !!token_hash,
-        tokenHashLength: token_hash?.length,
-        currentSegments: segments,
-        currentSession: !!currentSession,
-        currentUser: !!currentUser
+    setLoading(true);
+    setError(null);
+    LoggingService.info('ConfirmEmailOTP', 'Attempting to verify OTP', { email });
+
+    try {
+      const { data, error: verificationError } = await supabase.auth.verifyOtp({
+        email: email,
+        token: otp,
+        type: 'signup',
       });
 
-      if (type !== 'signup' || !token_hash) {
-        LoggingService.error('ConfirmEmail', 'Invalid confirmation link', {
-          type,
-          hasTokenHash: !!token_hash
-        });
-        setMessage('Link di conferma non valido.');
-        setVerificationError('Link di conferma non valido o scaduto');
-        setLoading(false);
-        return;
+      if (verificationError) {
+        LoggingService.error('ConfirmEmailOTP', 'OTP verification failed', verificationError);
+        throw verificationError;
       }
 
-      try {
-        // STEP 1: Verifica token con il servizio
-        const verificationResult = await emailVerificationService.verifyEmailToken(token_hash, type);
-        
-        if (!verificationResult.success) {
-          throw new Error(verificationResult.error || 'Verifica token fallita');
-        }
+      LoggingService.info('ConfirmEmailOTP', 'OTP verification successful', { user: data.user });
+      Alert.alert(
+        'Registrazione Completata!',
+        'La tua email è stata verificata con successo. Sarai reindirizzato alla dashboard.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              router.replace('/');
+            },
+          },
+        ]
+      );
+    } catch (e: any) {
+      const errorMessage = e.message || 'Codice OTP non valido o scaduto.';
+      setError(errorMessage);
+      LoggingService.error('ConfirmEmailOTP', 'An exception occurred during OTP verification', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const { user, session } = verificationResult;
-        
-        if (!user || !user.email) {
-          throw new Error('Dati utente non disponibili dopo la verifica');
-        }
+  const handleResendOtp = async () => {
+    if (!email) {
+      Alert.alert('Errore', 'Indirizzo email non trovato. Torna alla registrazione.');
+      return;
+    }
 
-        // STEP 2: Crea profilo utente
-        const profileResult = await emailVerificationService.createUserProfile(user);
-        
-        if (!profileResult.success) {
-          LoggingService.warning('ConfirmEmail', 'Profile creation failed, but continuing', profileResult.error);
-        }
-
-        // STEP 3: Completa autenticazione
-        const authResult = await emailVerificationService.completeAuthentication();
-        
-        if (!authResult.success) {
-          throw new Error(authResult.error || 'Completamento autenticazione fallito');
-        }
-
-        // STEP 4: Reindirizzamento automatico
-        setTimeout(() => {
-          LoggingService.info('ConfirmEmail', 'Auto-redirecting to dashboard after successful verification');
-          router.replace('/');
-        }, 2000);
-
-      } catch (error: any) {
-        LoggingService.error('ConfirmEmail', 'COMPREHENSIVE VERIFICATION FAILED', {
-          error: error.message,
-          errorCode: error.code,
-          errorStatus: error.status,
-          fullError: error
-        });
-        
-        setVerificationError(error.message || 'Impossibile confermare l\'email');
-        setMessage(`Errore: ${error.message || 'Impossibile confermare l\'email.'}`);
-        
-        setTimeout(() => {
-          LoggingService.info('ConfirmEmail', 'Redirecting to login after comprehensive error');
-          router.replace('/login');
-        }, 5000);
-      }
-    };
-
-    confirmEmail();
-    
-    return unsubscribe;
-  }, [token_hash, type, currentSession, currentUser, refreshUserProfile, router, segments]);
-
-  const handleRetryVerification = () => {
     setLoading(true);
-    setVerificationError(null);
-    setVerificationComplete(false);
-    setVerificationProgress(null);
-    
-    // Riavvia il processo di verifica
-    LoggingService.info('ConfirmEmail', 'User requested verification retry');
-    
-    // Forza un nuovo tentativo navigando alla stessa pagina
-    router.replace(`/confirm-email?token_hash=${token_hash}&type=${type}`);
-  };
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+    setLoading(false);
 
-  const handleGoToDashboard = () => {
-    LoggingService.info('ConfirmEmail', 'User manually navigating to dashboard');
-    router.replace('/');
-  };
-
-  const handleBackToLogin = () => {
-    LoggingService.info('ConfirmEmail', 'User manually returning to login');
-    router.replace('/login');
+    if (resendError) {
+      Alert.alert('Errore', 'Impossibile inviare un nuovo codice. Riprova più tardi.');
+      LoggingService.error('ConfirmEmailOTP', 'Failed to resend OTP', resendError);
+    } else {
+      Alert.alert('Inviato!', 'Un nuovo codice di verifica è stato inviato alla tua email.');
+      LoggingService.info('ConfirmEmailOTP', 'Resent OTP successfully', { email });
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <FontAwesome
-          name={verificationComplete ? "check-circle" : verificationError ? "exclamation-triangle" : "cog"}
-          size={80}
-          color={verificationComplete ? "#28a745" : verificationError ? "#dc3545" : "#007bff"}
-          style={styles.icon}
+        <Text style={styles.title}>Verifica la tua Email</Text>
+        <Text style={styles.subtitle}>
+          Abbiamo inviato un codice di 6 cifre a <Text style={styles.emailText}>{email}</Text>.
+          Inseriscilo qui sotto per continuare.
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="123456"
+          value={otp}
+          onChangeText={setOtp}
+          keyboardType="number-pad"
+          maxLength={6}
+          editable={!loading}
         />
-        
-        <Text style={styles.title}>
-          {verificationComplete ? 'Verifica Completata!' : verificationError ? 'Errore di Verifica' : 'Conferma Email'}
-        </Text>
-        
-        {/* Indicatore di progresso in tempo reale */}
-        {verificationProgress && !verificationError && (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressHeader}>
-              <FontAwesome name="cog" size={16} color="#007bff" />
-              <Text style={styles.progressTitle}>Progresso Verifica</Text>
-            </View>
-            <Text style={styles.progressMessage}>{verificationProgress.message}</Text>
-            <View style={styles.progressBar}>
-              <View
-                style={[styles.progressFill, { width: `${verificationProgress.progress}%` }]}
-              />
-            </View>
-            <Text style={styles.progressPercent}>{verificationProgress.progress}%</Text>
-            
-            {/* Dettagli tecnici per debugging */}
-            {verificationProgress.details && (
-              <View style={styles.debugInfo}>
-                <Text style={styles.debugTitle}>Dettagli Tecnici:</Text>
-                <Text style={styles.debugText}>
-                  Stage: {verificationProgress.stage}{'\n'}
-                  Timestamp: {new Date(verificationProgress.timestamp).toLocaleTimeString()}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-        
-        {/* Messaggio principale */}
-        <Text style={[
-          styles.message,
-          verificationComplete && styles.successMessage,
-          verificationError && styles.errorMessage
-        ]}>
-          {message}
-        </Text>
-        
-        {/* Indicatore di caricamento */}
-        {loading && !verificationProgress && (
-          <ActivityIndicator size="large" color="#007bff" style={styles.loader} />
-        )}
-        
-        {/* Pulsanti di azione */}
-        <View style={styles.actionButtons}>
-          {verificationComplete && (
-            <TouchableOpacity style={styles.primaryButton} onPress={handleGoToDashboard}>
-              <FontAwesome name="home" size={16} color="#fff" />
-              <Text style={styles.primaryButtonText}>Vai alla Dashboard</Text>
-            </TouchableOpacity>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <TouchableOpacity
+          style={[styles.button, (loading || otp.length < 6) && styles.buttonDisabled]}
+          onPress={handleVerifyOtp}
+          disabled={loading || otp.length < 6}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Verifica e Accedi</Text>
           )}
-          
-          {verificationError && (
-            <>
-              <TouchableOpacity style={styles.retryButton} onPress={handleRetryVerification}>
-                <FontAwesome name="refresh" size={16} color="#fff" />
-                <Text style={styles.retryButtonText}>Riprova Verifica</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleBackToLogin}>
-                <FontAwesome name="sign-in" size={16} color="#007bff" />
-                <Text style={styles.secondaryButtonText}>Torna al Login</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-        
-        {/* Informazioni di supporto */}
-        {verificationError && (
-          <View style={styles.supportInfo}>
-            <Text style={styles.supportTitle}>Hai bisogno di aiuto?</Text>
-            <Text style={styles.supportText}>
-              • Verifica che il link non sia scaduto{'\n'}
-              • Controlla la connessione internet{'\n'}
-              • Prova a registrarti nuovamente se il problema persiste
-            </Text>
-          </View>
-        )}
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.resendButton} onPress={handleResendOtp} disabled={loading}>
+          <Text style={styles.resendButtonText}>Invia di nuovo il codice</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -233,187 +130,69 @@ export default function ConfirmEmailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
   },
   content: {
-    alignItems: 'center',
     padding: 20,
-    maxWidth: 400,
-    width: '100%',
-  },
-  icon: {
-    marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
     textAlign: 'center',
-  },
-  progressContainer: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 20,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  progressTitle: {
-    marginLeft: 8,
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginBottom: 10,
     color: '#333',
   },
-  progressMessage: {
+  subtitle: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 15,
     textAlign: 'center',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#e9ecef',
-    borderRadius: 4,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#007bff',
-    borderRadius: 4,
-  },
-  progressPercent: {
-    fontSize: 14,
+    marginBottom: 30,
     color: '#666',
-    textAlign: 'right',
-    fontWeight: '500',
-  },
-  debugInfo: {
-    marginTop: 15,
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: '#007bff',
-  },
-  debugTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#495057',
-    marginBottom: 5,
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#6c757d',
-    fontFamily: 'monospace',
-  },
-  message: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
     lineHeight: 24,
   },
-  successMessage: {
-    color: '#28a745',
-    fontWeight: '500',
+  emailText: {
+    fontWeight: 'bold',
+    color: '#007bff',
   },
-  errorMessage: {
-    color: '#dc3545',
-    fontWeight: '500',
-  },
-  loader: {
-    marginTop: 20,
+  input: {
+    backgroundColor: '#fff',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    fontSize: 20,
+    textAlign: 'center',
+    letterSpacing: 10,
+    borderWidth: 1,
+    borderColor: '#ced4da',
     marginBottom: 20,
   },
-  actionButtons: {
-    width: '100%',
+  button: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: '#007bff',
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  resendButton: {
     marginTop: 20,
-  },
-  primaryButton: {
-    backgroundColor: '#28a745',
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
   },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  retryButton: {
-    backgroundColor: '#ffc107',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#007bff',
-  },
-  secondaryButtonText: {
+  resendButtonText: {
     color: '#007bff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
+    fontSize: 15,
+    fontWeight: '500',
   },
-  supportInfo: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 8,
-    marginTop: 20,
-    width: '100%',
-    borderLeftWidth: 4,
-    borderLeftColor: '#17a2b8',
-  },
-  supportTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-  },
-  supportText: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
+  errorText: {
+    color: '#dc3545',
+    textAlign: 'center',
+    marginBottom: 15,
   },
 });
