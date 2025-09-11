@@ -7,7 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "node": "24.5.0"
+      "node": "20.11.1"
     },
     "preview": {
       "distribution": "internal"
@@ -17,7 +17,7 @@
       "android": {
         "buildType": "apk"
       },
-      "node": "24.5.0",
+      "node": "20.11.1",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "***REMOVED***",
@@ -26,7 +26,7 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "24.5.0",
+      "node": "20.11.1",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "***REMOVED***",
