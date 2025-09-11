@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
@@ -88,6 +88,7 @@ export default function ConfirmEmailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.content}>
         <Text style={styles.title}>Verifica la tua Email</Text>
         <Text style={styles.subtitle}>
@@ -131,10 +132,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
   },
   content: {
     padding: 20,
+    paddingTop: 120, // Aumentato per abbassare il contenuto
   },
   title: {
     fontSize: 28,
