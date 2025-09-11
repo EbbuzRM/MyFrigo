@@ -162,4 +162,5 @@ memory-bank/
 debug_logs/
 
 # Agent markdown
-.agent.md
+.agent.mdbuild.txt 
+package-lock.json 
