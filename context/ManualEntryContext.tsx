@@ -1,12 +1,20 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
+
+// Definisce la forma di una singola quantità
+export interface Quantity {
+  id: string;
+  quantity: string;
+  unit: string;
+}
 
 // Definisce la forma dello stato del form
 interface ManualEntryFormData {
   name: string;
   brand: string;
   selectedCategory: string;
-  quantity: string;
-  unit: string;
+  quantities: Quantity[]; // Modificato
   purchaseDate: string;
   expirationDate: string;
   notes: string;
@@ -23,8 +31,7 @@ interface ManualEntryContextType {
   name: string;
   brand: string;
   selectedCategory: string;
-  quantity: string;
-  unit: string;
+  quantities: Quantity[]; // Modificato
   purchaseDate: string;
   expirationDate: string;
   notes: string;
@@ -38,8 +45,10 @@ interface ManualEntryContextType {
   setName: (name: string) => void;
   setBrand: (brand: string) => void;
   setSelectedCategory: (category: string) => void;
-  setQuantity: (quantity: string) => void;
-  setUnit: (unit: string) => void;
+  setQuantities: (quantities: Quantity[]) => void; // Modificato
+  addQuantity: () => void; // Nuovo
+  removeQuantity: (id: string) => void; // Nuovo
+  updateQuantity: (id: string, field: 'quantity' | 'unit', value: string) => void; // Nuovo
   setPurchaseDate: (date: string) => void;
   setExpirationDate: (date: string) => void;
   setNotes: (notes: string) => void;
@@ -50,7 +59,7 @@ interface ManualEntryContextType {
   setOriginalProductId: (productId: string | null) => void;
 
   // Funzioni helper
-  initializeForm: (initialData?: Partial<ManualEntryFormData>) => void;
+  initializeForm: (initialData?: Partial<ManualEntryFormData & { product?: any }>) => void;
   clearForm: () => void;
 }
 
@@ -62,8 +71,7 @@ const getInitialState = (): ManualEntryFormData => ({
   name: '',
   brand: '',
   selectedCategory: '',
-  quantity: '1',
-  unit: 'pz',
+  quantities: [{ id: uuidv4(), quantity: '1', unit: 'pz' }], // Modificato
   purchaseDate: new Date().toISOString().split('T')[0],
   expirationDate: '',
   notes: '',
@@ -81,8 +89,31 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
   const setName = (name: string) => setFormData(prev => ({ ...prev, name }));
   const setBrand = (brand: string) => setFormData(prev => ({ ...prev, brand }));
   const setSelectedCategory = (category: string) => setFormData(prev => ({ ...prev, selectedCategory: category }));
-  const setQuantity = (quantity: string) => setFormData(prev => ({ ...prev, quantity }));
-  const setUnit = (unit: string) => setFormData(prev => ({ ...prev, unit }));
+  const setQuantities = (quantities: Quantity[]) => setFormData(prev => ({ ...prev, quantities }));
+  
+  const addQuantity = () => {
+    setFormData(prev => ({
+      ...prev,
+      quantities: [...prev.quantities, { id: uuidv4(), quantity: '1', unit: 'pz' }]
+    }));
+  };
+
+  const removeQuantity = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      quantities: prev.quantities.filter(q => q.id !== id)
+    }));
+  };
+
+  const updateQuantity = (id: string, field: 'quantity' | 'unit', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      quantities: prev.quantities.map(q =>
+        q.id === id ? { ...q, [field]: value } : q
+      )
+    }));
+  };
+
   const setPurchaseDate = (date: string) => setFormData(prev => ({ ...prev, purchaseDate: date }));
   const setExpirationDate = (date: string) => setFormData(prev => ({ ...prev, expirationDate: date }));
   const setNotes = (notes: string) => setFormData(prev => ({ ...prev, notes }));
@@ -92,13 +123,41 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
   const setIsEditMode = (editMode: boolean) => setFormData(prev => ({ ...prev, isEditMode: editMode }));
   const setOriginalProductId = (productId: string | null) => setFormData(prev => ({ ...prev, originalProductId: productId }));
 
-  const initializeForm = (initialData: Partial<ManualEntryFormData & { category?: string }> = {}) => {
-    // Mappa esplicitamente `category` (dal DB) a `selectedCategory` (nello stato del form)
-    if (initialData.category) {
-      initialData.selectedCategory = initialData.category;
-      delete initialData.category; // Rimuovi per evitare conflitti
+  const initializeForm = (initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string }> = {}) => {
+    let newState = { ...getInitialState(), ...initialData };
+
+    if (initialData.product) {
+        newState = { ...newState, ...initialData.product };
+
+        // Map the 'category' field from the product to 'selectedCategory' for the form state
+        if (initialData.product.category) {
+            newState.selectedCategory = initialData.product.category;
+        }
+
+        // Handle quantities
+        if (initialData.product.quantities && initialData.product.quantities.length > 0) {
+            newState.quantities = initialData.product.quantities.map((q: any) => ({ 
+                ...q, 
+                quantity: String(q.quantity),
+                id: uuidv4() 
+            }));
+        } else if (initialData.product.quantity) {
+            newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit }];
+        }
+        delete newState.product; 
     }
-    setFormData({ ...getInitialState(), ...initialData });
+
+    // This handles the case where 'category' is passed directly, not inside a product object
+    if (initialData.category) {
+      newState.selectedCategory = initialData.category;
+    }
+    
+    // Clean up legacy fields
+    delete newState.category;
+    delete newState.quantity;
+    delete newState.unit;
+
+    setFormData(newState);
   };
 
   const clearForm = () => {
@@ -110,8 +169,10 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setName,
     setBrand,
     setSelectedCategory,
-    setQuantity,
-    setUnit,
+    setQuantities,
+    addQuantity,
+    removeQuantity,
+    updateQuantity,
     setPurchaseDate,
     setExpirationDate,
     setNotes,

@@ -59,38 +59,24 @@ const History = () => {
     LoggingService.info('History', 'Starting data load');
     
     try {
-      // Carica i prodotti
-      const { data: products, error } = await StorageService.getProducts();
-      if (error) {
-        throw error;
-      }
+      // Carica tutte le categorie di prodotti dello storico
+      const [consumedProducts, activeExpiredProducts, trulyExpiredProducts] = await Promise.all([
+        StorageService.getHistory(), // status = 'consumed'
+        StorageService.getExpiredProducts(), // status = 'active' & expiration_date < now
+        StorageService.getTrulyExpiredProducts(), // status = 'expired'
+      ]);
       
-      if (products) {
-        LoggingService.info('History', `Loaded ${products.length} products`);
-        
-        // Ottimizza il filtro usando un solo ciclo
-        const now = new Date();
-        const history = [];
-        
-        // Usa un ciclo for tradizionale per migliori performance
-        for (let i = 0; i < products.length; i++) {
-          const p = products[i];
-          if (p.status === 'consumed' ||
-              p.status === 'expired' ||
-              (p.status === 'active' && new Date(p.expirationDate) < now)) {
-            history.push(p);
-          }
-        }
-        
-        setAllHistory(history);
-        LoggingService.info('History', `Filtered ${history.length} history items`);
-      } else {
-        setAllHistory([]);
-      }
-      
-      // Registra il tempo di caricamento
-      const endTime = performance.now();
-      LoggingService.info('History', `Data load completed in ${endTime - startTime}ms`);
+      const combinedHistory = [...consumedProducts, ...activeExpiredProducts, ...trulyExpiredProducts];
+
+      // Ordina per data di scadenza o consumo, la più recente prima
+      combinedHistory.sort((a, b) => {
+        const dateA = new Date(a.consumedDate || a.expirationDate).getTime();
+        const dateB = new Date(b.consumedDate || b.expirationDate).getTime();
+        return dateB - dateA;
+      });
+
+      setAllHistory(combinedHistory);
+      LoggingService.info('History', `Loaded ${combinedHistory.length} history items directly`);
       lastLoadTimeRef.current = now;
 
     } catch (error) {
