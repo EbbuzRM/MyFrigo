@@ -219,13 +219,15 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={styles.detailsSection}>
-          <View style={styles.detailRow}>
-            <Package size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
-            <Text style={styles.detailLabel}>Quantità:</Text>
-            <Text style={styles.detailValue}>
-              {typeof product.quantity === 'number' ? product.quantity : 0} {typeof product.unit === 'string' ? product.unit : ''}
-            </Text>
-          </View>
+          {product.quantities && product.quantities.map((q, index) => (
+            <View style={styles.detailRow} key={index}>
+              <Package size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
+              <Text style={styles.detailLabel}>Quantità {product.quantities.length > 1 ? index + 1 : ''}:</Text>
+              <Text style={styles.detailValue}>
+                {q.quantity} {q.unit}
+              </Text>
+            </View>
+          ))}
 
           <View style={styles.detailRow}>
             <Calendar size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
@@ -251,8 +253,6 @@ export default function ProductDetailScreen() {
                       name: product.name || '',
                       brand: product.brand || '',
                       selectedCategory: product.category || '',
-                      quantity: (product.quantity || 0).toString(),
-                      unit: product.unit || '',
                       purchaseDate: product.purchaseDate || '',
                       expirationDate: product.expirationDate || '',
                       notes: product.notes || '',

@@ -53,6 +53,7 @@ const translationDict: Record<string, string> = {
   'dolci': 'sweets',
   'torta': 'cake',
   'salame': 'salami',
+  'salumi': 'salami',
   'castagne': 'chestnuts',
   'pancetta': 'bacon',
   'cibo animali': 'pet food',
@@ -90,6 +91,8 @@ const fallbackIcons: Record<string, string> = {
   'snack': '🍫',
   'uova': '🥚',
   'dolci': '🍰',
+  'olive': '🫒',
+  'cibo animali': '🐈',
 };
 
 // Chiave per la cache delle icone
@@ -103,6 +106,7 @@ const localIconMap: Record<string, number> = {
   'pizza': require('../assets/icon_products/pizza.png'),
   'potato': require('../assets/icon_products/potato.png'),
   'salami': require('../assets/icon_products/salami.png'),
+  'salumi': require('../assets/icon_products/salami.png'),
 };
 
 export class IconService {
@@ -353,45 +357,50 @@ export class IconService {
       const englishName = this.translateToEnglish(categoryName);
       LoggingService.info('IconService', `Fetching icon for category: ${categoryName} (translated: ${englishName})`);
 
-      // 1. Controlla prima le icone locali personalizzate (più veloce e affidabile)
+      // 1. Controlla prima le icone locali personalizzate (immagini)
       const localProductIcon = this.getLocalProductIcon(categoryName);
       if (localProductIcon) {
         LoggingService.info('IconService', `Using local product icon for category: ${categoryName}`);
         return localProductIcon;
       }
 
-      LoggingService.info('IconService', `No local product icon found for: ${categoryName}, trying other sources`);
+      // 2. Controlla la mappa di fallback per emoji specifici (NUOVO E PRIORITARIO)
+      const fallbackIcon = this.getFallbackIcon(categoryName);
+      if (fallbackIcon) {
+        LoggingService.info('IconService', `Using specific fallback emoji for: ${categoryName}`);
+        return fallbackIcon;
+      }
 
-      // 2. Controlla la cache per icone trovate in precedenza
+      // 3. Controlla la cache per icone trovate in precedenza
       const cachedIcon = await this.getIconFromCache(englishName);
       if (cachedIcon) {
         LoggingService.info('IconService', `Using cached icon for category: ${categoryName}`);
         return cachedIcon;
       }
 
-      // 3. Cerca nei dati locali di OpenMoji (dal pacchetto npm)
+      // 4. Cerca nei dati locali di OpenMoji (come ultima risorsa per la ricerca online)
       const localIcons = this.searchInLocalData(englishName);
       if (localIcons.length > 0) {
-        const iconUrl = localIcons[0].svg; // L'URL SVG è ancora usato per la visualizzazione
+        const iconUrl = localIcons[0].svg;
         await this.addIconToCache(englishName, iconUrl);
         LoggingService.info('IconService', `Found and cached icon from local OpenMoji data for: ${categoryName}`);
         return iconUrl;
       }
 
-      // 4. Se tutto il resto fallisce, usa un'icona di fallback (emoji)
-      LoggingService.info('IconService', `No icon found for ${categoryName}, using emoji fallback.`);
-      return this.getFallbackIcon(categoryName);
+      // 5. Se tutto il resto fallisce, restituisce null
+      LoggingService.warning('IconService', `No icon found for ${categoryName}`);
+      return null;
 
     } catch (error) {
       LoggingService.error('IconService', 'Error fetching icon for category', error);
-
-      // In caso di errore imprevisto, prova comunque i fallback
-      const localProductIcon = this.getLocalProductIcon(categoryName);
-      if (localProductIcon) {
-        return localProductIcon;
-      }
+      // In caso di errore, prova comunque i fallback come ultima spiaggia
+      const fallbackAfterError = this.getFallbackIcon(categoryName);
+      if (fallbackAfterError) return fallbackAfterError;
       
-      return this.getFallbackIcon(categoryName);
+      const localProductIcon = this.getLocalProductIcon(categoryName);
+      if (localProductIcon) return localProductIcon;
+      
+      return null;
     }
   }
 }

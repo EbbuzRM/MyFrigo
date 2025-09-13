@@ -728,6 +728,37 @@ export class StorageService {
   }
 
   /**
+   * Recupera i prodotti il cui stato è impostato su 'scaduto'.
+   * @returns Promise con la lista dei prodotti scaduti.
+   */
+  static async getTrulyExpiredProducts(): Promise<Product[]> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        return [];
+      }
+      const userId = session.user.id;
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'expired')
+        .returns<Record<string, unknown>[]>();
+        
+      if (error) {
+        LoggingService.error('StorageService', 'Error getting truly expired products', error);
+        throw error;
+      }
+
+      return data ? convertProductsToCamelCase(data) : [];
+    } catch (error: any) {
+      LoggingService.error('StorageService', 'Error in getTrulyExpiredProducts', error);
+      return [];
+    }
+  }
+
+  /**
    * Sposta i prodotti specificati nella cronologia impostandone lo stato a 'consumed'.
    * @param productIds ID dei prodotti da spostare.
    * @returns Promise che si risolve quando i prodotti sono stati spostati.

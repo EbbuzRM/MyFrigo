@@ -100,13 +100,13 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
 
     LoggingService.info('CategoryContext', `Creating new category: ${trimmedName}`);
 
-    const newCategoryData = {
+    const newCategoryData: ProductCategory = {
+      id: randomUUID(),
       name: trimmedName,
       icon: '',
       color: '#808080',
-      user_id: user.id,
-      is_default: false,
-      id: randomUUID(),
+      userId: user.id,
+      isDefault: false,
     };
 
     const savedCategory = await StorageService.addCategory(newCategoryData);

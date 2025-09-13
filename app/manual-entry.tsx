@@ -7,13 +7,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Platform,
   Image,
   Modal,
   FlatList,
   ScrollView,
   ActivityIndicator,
-  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Product, ProductCategory } from '@/types/Product';
@@ -24,7 +22,7 @@ import { CustomDatePicker } from '@/components/CustomDatePicker';
 import { useTheme } from '@/context/ThemeContext';
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useCategories } from '@/context/CategoryContext';
-import { useManualEntry } from '@/context/ManualEntryContext';
+import { useManualEntry, Quantity } from '@/context/ManualEntryContext';
 import { LoggingService } from '@/services/LoggingService';
 import { formStateLogger } from '@/utils/FormStateLogger';
 
@@ -47,14 +45,12 @@ interface ProductFormHeaderProps {
   name: string;
   brand: string;
   selectedCategory: string;
-  quantity: string;
-  unit: string;
   purchaseDate: string;
   expirationDate: string;
   notes: string;
   setName: (value: string) => void;
   setBrand: (value: string) => void;
-  styles: any; // Migliora con tipi specifici se possibile
+  styles: any;
   navigatingToPhotoCapture: React.MutableRefObject<boolean>;
 }
 const ProductFormHeader = React.memo(({
@@ -64,8 +60,6 @@ const ProductFormHeader = React.memo(({
   name,
   brand,
   selectedCategory,
-  quantity,
-  unit,
   purchaseDate,
   expirationDate,
   notes,
@@ -81,33 +75,22 @@ const ProductFormHeader = React.memo(({
       <TouchableOpacity
         style={styles.takePhotoButton}
         onPress={() => {
-          // Salva lo stato corrente del form prima di navigare
           const currentFormData = {
             name: name,
             brand: brand,
             selectedCategory: selectedCategory,
-            quantity: quantity,
-            unit: unit,
             purchaseDate: purchaseDate,
             expirationDate: expirationDate,
             notes: notes,
             barcode: barcode,
             fromManualEntry: 'true'
           };
-          
-          // Registra la navigazione
           formStateLogger.logNavigation('TAKE_PHOTO', 'manual-entry', 'photo-capture', currentFormData);
-          
-          // Imposta il flag di navigazione
           navigatingToPhotoCapture.current = true;
-          
-          // Naviga alla schermata di cattura foto
           router.push({
             pathname: '/photo-capture',
             params: currentFormData
           });
-          
-          // Resetta il flag dopo un breve ritardo
           setTimeout(() => {
             navigatingToPhotoCapture.current = false;
           }, 500);
@@ -123,8 +106,6 @@ const ProductFormHeader = React.memo(({
             name: name,
             brand: brand,
             selectedCategory: selectedCategory,
-            quantity: quantity,
-            unit: unit,
             purchaseDate: purchaseDate,
             expirationDate: expirationDate,
             notes: notes,
@@ -172,14 +153,79 @@ const ProductFormHeader = React.memo(({
   );
 });
 
+interface QuantityInputRowProps {
+  item: Quantity;
+  updateQuantity: (id: string, field: 'quantity' | 'unit', value: string) => void;
+  removeQuantity: (id: string) => void;
+  isOnlyOne: boolean;
+  styles: any;
+}
+
+const QuantityInputRow = React.memo(({ item, updateQuantity, removeQuantity, isOnlyOne, styles }: QuantityInputRowProps) => {
+  return (
+    <View style={styles.row}>
+      <View style={styles.column}>
+        <Text style={styles.label}>Quantità*</Text>
+        <View style={styles.quantityContainer}>
+          <AnimatedPressable 
+            onPress={() => { 
+              const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0; 
+              const newValue = String(Math.max(0, currentVal - 1)); 
+              updateQuantity(item.id, 'quantity', newValue); 
+            }} 
+            style={styles.quantityButton}
+          >
+            <Text style={styles.quantityButtonText}>-</Text>
+          </AnimatedPressable>
+          <TextInput
+            style={styles.quantityInput}
+            value={item.quantity}
+            onChangeText={(text) => updateQuantity(item.id, 'quantity', text.replace(',', '.'))}
+            keyboardType="decimal-pad"
+            placeholderTextColor={styles.placeholder.color}
+          />
+          <AnimatedPressable 
+            onPress={() => { 
+              const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0; 
+              const newValue = String(currentVal + 1); 
+              updateQuantity(item.id, 'quantity', newValue); 
+            }} 
+            style={styles.quantityButton}
+          >
+            <Text style={styles.quantityButtonText}>+</Text>
+          </AnimatedPressable>
+        </View>
+      </View>
+      <View style={styles.column}>
+        <Text style={styles.label}>Unità*</Text>
+        <View style={styles.pickerContainer}>
+          <Picker 
+            selectedValue={item.unit} 
+            style={styles.picker} 
+            onValueChange={itemValue => updateQuantity(item.id, 'unit', itemValue)} 
+            dropdownIconColor={styles.picker.color}
+          >
+            {COMMON_UNITS.map(u => <Picker.Item key={u.id} label={u.name} value={u.id} />)}
+          </Picker>
+        </View>
+      </View>
+      {!isOnlyOne && (
+        <TouchableOpacity onPress={() => removeQuantity(item.id)} style={styles.removeButton}>
+          <Text style={styles.removeButtonText}>-</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+});
+
 interface ProductFormFooterProps {
-  quantity: string;
-  unit: string;
+  quantities: Quantity[];
   purchaseDate: string;
   expirationDate: string;
   notes: string;
-  setQuantity: (value: string) => void;
-  setUnit: (value: string) => void;
+  updateQuantity: (id: string, field: 'quantity' | 'unit', value: string) => void;
+  addQuantity: () => void;
+  removeQuantity: (id: string) => void;
   setShowPurchaseDatePicker: (value: boolean) => void;
   setShowExpirationDatePicker: (value: boolean) => void;
   setNotes: (value: string) => void;
@@ -199,13 +245,13 @@ interface ProductFormFooterProps {
   navigatingToPhotoCapture: React.MutableRefObject<boolean>;
 }
 const ProductFormFooter = React.memo(({
-  quantity,
-  unit,
+  quantities,
   purchaseDate,
   expirationDate,
   notes,
-  setQuantity,
-  setUnit,
+  updateQuantity,
+  addQuantity,
+  removeQuantity,
   setShowPurchaseDatePicker,
   setShowExpirationDatePicker,
   setNotes,
@@ -225,34 +271,20 @@ const ProductFormFooter = React.memo(({
   navigatingToPhotoCapture
 }: ProductFormFooterProps) => (
   <>
-    <View style={styles.row}>
-      <View style={styles.column}>
-        <Text style={styles.label}>Quantità*</Text>
-        <View style={styles.quantityContainer}>
-          <AnimatedPressable onPress={() => { const currentVal = parseFloat(quantity.replace(',', '.')) || 0; const newValue = String(Math.max(0, currentVal - 1)); setQuantity(newValue); }} style={styles.quantityButton}>
-            <Text style={styles.quantityButtonText}>-</Text>
-          </AnimatedPressable>
-          <TextInput
-            style={styles.quantityInput}
-            value={quantity}
-            onChangeText={(text) => setQuantity(text.replace(',', '.'))}
-            keyboardType="decimal-pad"
-            placeholderTextColor={styles.placeholder.color}
-          />
-          <AnimatedPressable onPress={() => { const currentVal = parseFloat(quantity.replace(',', '.')) || 0; const newValue = String(currentVal + 1); setQuantity(newValue); }} style={styles.quantityButton}>
-            <Text style={styles.quantityButtonText}>+</Text>
-          </AnimatedPressable>
-        </View>
-      </View>
-      <View style={styles.column}>
-        <Text style={styles.label}>Unità*</Text>
-        <View style={styles.pickerContainer}>
-          <Picker selectedValue={unit} style={styles.picker} onValueChange={itemValue => setUnit(itemValue)} dropdownIconColor={styles.picker.color}>
-            {COMMON_UNITS.map(u => <Picker.Item key={u.id} label={u.name} value={u.id} />)}
-          </Picker>
-        </View>
-      </View>
-    </View>
+    {quantities.map(item => (
+      <QuantityInputRow 
+        key={item.id}
+        item={item}
+        updateQuantity={updateQuantity}
+        removeQuantity={removeQuantity}
+        isOnlyOne={quantities.length === 1}
+        styles={styles}
+      />
+    ))}
+    <TouchableOpacity style={styles.addButton} onPress={addQuantity}>
+      <Text style={styles.addButtonText}>Aggiungi quantità</Text>
+    </TouchableOpacity>
+
     <Text style={styles.label}>Data di Acquisto*</Text>
     <TouchableOpacity onPress={() => setShowPurchaseDatePicker(true)} style={styles.dateInputTouchable}>
       <Text style={styles.dateTextValue}>{purchaseDate ? new Date(purchaseDate).toLocaleDateString('it-IT') : 'Seleziona Data'}</Text>
@@ -263,13 +295,10 @@ const ProductFormFooter = React.memo(({
       <TouchableOpacity
         style={styles.photoButton}
         onPress={() => {
-          // Salva lo stato corrente del form prima di navigare
           const currentFormData = {
             name: name,
             brand: brand,
             selectedCategory: selectedCategory,
-            quantity: quantity,
-            unit: unit,
             purchaseDate: purchaseDate,
             expirationDate: expirationDate,
             notes: notes,
@@ -277,20 +306,12 @@ const ProductFormFooter = React.memo(({
             imageUrl: imageUrl,
             captureMode: 'expirationDateOnly'
           };
-          
-          // Registra la navigazione
           formStateLogger.logNavigation('CAPTURE_EXPIRATION', 'manual-entry', 'photo-capture', currentFormData);
-          
-          // Imposta il flag di navigazione
           navigatingToPhotoCapture.current = true;
-          
-          // Naviga alla schermata di cattura foto
           router.push({
             pathname: '/photo-capture',
             params: currentFormData
           });
-          
-          // Resetta il flag dopo un breve ritardo
           setTimeout(() => {
             navigatingToPhotoCapture.current = false;
           }, 500);
@@ -319,10 +340,8 @@ const ProductFormFooter = React.memo(({
     </TouchableOpacity>
   </>
 ), (prevProps, nextProps) => {
-  // Confronto personalizzato per React.memo - assicura che il componente si ri-renderizzi quando unit cambia
   return (
-    prevProps.quantity === nextProps.quantity &&
-    prevProps.unit === nextProps.unit &&
+    prevProps.quantities === nextProps.quantities &&
     prevProps.purchaseDate === nextProps.purchaseDate &&
     prevProps.expirationDate === nextProps.expirationDate &&
     prevProps.notes === nextProps.notes &&
@@ -347,8 +366,7 @@ export default function ManualEntryScreen() {
     name, setName,
     brand, setBrand,
     selectedCategory, setSelectedCategory,
-    quantity, setQuantity,
-    unit, setUnit,
+    quantities, addQuantity, removeQuantity, updateQuantity, // Updated
     purchaseDate, setPurchaseDate,
     expirationDate, setExpirationDate,
     notes, setNotes,
@@ -361,32 +379,24 @@ export default function ManualEntryScreen() {
     clearForm
   } = useManualEntry();
 
-  // UI-specific state remains local
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
   const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(false);
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
   
-  // Identificatore unico per questa istanza del form
-  const formInstanceId = useRef(`manual-entry-${Date.now()}`).current;
-  
-  // Flag per tracciare se stiamo navigando verso la schermata di cattura foto
   const navigatingToPhotoCapture = useRef(false);
 
   const ADD_NEW_CATEGORY_ID = 'add_new_category_sentinel_value';
 
-  // 3. Logica di inizializzazione e pulizia centralizzata
   useEffect(() => {
     const loadProductForEdit = async (id: string) => {
       const productToEdit = await StorageService.getProductById(id);
       if (productToEdit) {
-        initializeForm({
-          ...productToEdit,
-          // Correzione: Gestisce il caso in cui la quantità sia null
-          quantity: productToEdit.quantity ? productToEdit.quantity.toString() : '1',
-          isEditMode: true,
-          originalProductId: productToEdit.id,
-          hasManuallySelectedCategory: true,
+        initializeForm({ 
+            product: productToEdit, 
+            isEditMode: true, 
+            originalProductId: productToEdit.id, 
+            hasManuallySelectedCategory: true 
         });
       }
     };
@@ -396,19 +406,14 @@ export default function ManualEntryScreen() {
     if (productId) {
       loadProductForEdit(productId);
     } else {
-      // Inizializza il form per un nuovo prodotto, usando i parametri se disponibili
-      // (es. da scanner barcode o dal vecchio flusso di cattura foto)
       initializeForm(params as any);
     }
 
-    // La funzione di cleanup di useEffect viene eseguita quando il componente viene smontato.
-    // Questo assicura che lo stato del form venga resettato quando l'utente lascia la schermata.
     return () => {
       clearForm();
     };
-  }, [params.productId]); // Esegui solo quando productId cambia
+  }, [params.productId]);
 
-  // Effetto per aggiornare l'immagine quando si torna dalla schermata della fotocamera
   useEffect(() => {
     if (params.fromPhotoCapture && params.imageUrl) {
       const url = Array.isArray(params.imageUrl) ? params.imageUrl[0] : params.imageUrl;
@@ -419,19 +424,20 @@ export default function ManualEntryScreen() {
   const guessCategory = useCallback((productName: string, productBrand: string, allCategories: ProductCategory[]): string | null => {
     const fullText = `${productName.toLowerCase()} ${productBrand.toLowerCase()}`;
     const keywordMap: { [key: string]: string[] } = {
-        'latticini': ['latte', 'formaggio', 'yogurt', 'mozzarella', 'ricotta', 'burro', 'panna', 'mascarpone'],
-        'carne': ['pollo', 'manzo', 'maiale', 'salsiccia', 'prosciutto', 'salame', 'tacchino', 'agnello', 'wurstel'],
-        'pesce': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola'],
-        'frutta': ['mela', 'banana', 'arancia', 'fragola', 'uva', 'pesca', 'albicocca', 'kiwi'],
-        'verdura': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci'],
-        'surgelati': ['gelato', 'pizz', 'basta', 'minestrone', 'patatine fritte'],
-        'bevande': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè'],
-        'dispensa': ['pasta', 'riso', 'pane', 'biscotti', 'farina', 'zucchero', 'sale', 'olio', 'aceto', 'conserve', 'pelati', 'legumi', 'fagioli', 'ceci', 'lenticchie'],
-        'snack': ['patatine', 'cioccolato', 'caramelle', 'merendine', 'cracker', 'taralli'],
-        'colazione': ['cereali', 'fette biscottate', 'marmellata', 'croissant'],
-        'condimenti': ['maionese', 'ketchup', 'senape', 'salsa'],
-        'uova': ['uova', 'uovo'],
-        'dolci': ['torta', 'crostata', 'budino', 'pasticcini'],
+        'milk': ['latte'],
+        'dairy': ['formaggio', 'yogurt', 'mozzarella', 'ricotta', 'burro', 'panna', 'mascarpone'],
+        'meat': ['pollo', 'manzo', 'maiale', 'salsiccia', 'prosciutto', 'salame', 'tacchino', 'agnello', 'wurstel'],
+        'fish': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola'],
+        'fruits': ['mela', 'banana', 'arancia', 'fragola', 'uva', 'pesca', 'albicocca', 'kiwi'],
+        'vegetables': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci'],
+        'frozen': ['gelato', 'pizz', 'basta', 'minestrone', 'patatine fritte'],
+        'beverages': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè'],
+        'canned': ['pasta', 'riso', 'pane', 'biscotti', 'farina', 'zucchero', 'sale', 'olio', 'aceto', 'conserve', 'pelati', 'legumi', 'fagioli', 'ceci', 'lenticchie'],
+        'snacks': ['patatine', 'cioccolato', 'caramelle', 'merendine', 'cracker', 'taralli'],
+        'grains': ['cereali', 'fette biscottate', 'marmellata', 'croissant'],
+        'condiments': ['maionese', 'ketchup', 'senape', 'salsa'],
+        'eggs': ['uova', 'uovo'],
+        'sweets': ['torta', 'crostata', 'budino', 'pasticcini'],
     };
 
     for (const categoryId in keywordMap) {
@@ -494,20 +500,19 @@ export default function ManualEntryScreen() {
     }
   }, [setExpirationDate]);
 
-  
-
   const handleSaveProduct = useCallback(async () => {
-    if (!name || !selectedCategory || !quantity || !unit || !purchaseDate || !expirationDate) {
-      Alert.alert('Errore', 'Per favore, compila tutti i campi obbligatori.');
+    const areQuantitiesValid = quantities.every(q => q.quantity.trim() !== '' && parseFloat(q.quantity.replace(',', '.')) > 0 && q.unit.trim() !== '');
+
+    if (!name || !selectedCategory || quantities.length === 0 || !areQuantitiesValid || !purchaseDate || !expirationDate) {
+      Alert.alert('Errore', 'Per favore, compila tutti i campi obbligatori, inclusa almeno una quantità valida.');
       return;
     }
 
-    const productData: Partial<Product> = {
+    const productData: Partial<Product> & { quantities: any[] } = {
       name,
       brand: brand || '',
       category: selectedCategory,
-      quantity: Number(quantity),
-      unit,
+      quantities: quantities.map(q => ({ quantity: Number(q.quantity.replace(',', '.')), unit: q.unit })),
       purchaseDate,
       expirationDate,
       notes: notes || '',
@@ -525,30 +530,46 @@ export default function ManualEntryScreen() {
 
     try {
       await StorageService.saveProduct(productData);
+      const savedProductName = name; // Save name for the alert
       
-      // Pulisci lo stato del form per evitare problemi di navigazione
-      formStateLogger.clearFormStates();
-      
-      // Mostra un toast o un alert temporaneo
+      if (isEditMode) {
+        Alert.alert('Prodotto Aggiornato', `${savedProductName} è stato aggiornato con successo.`);
+        router.replace('/(tabs)/products');
+        return;
+      }
+
       Alert.alert(
         'Prodotto Salvato',
-        `${name} è stato aggiunto e salvato nella tua dispensa.`
+        `${savedProductName} è stato aggiunto. Cosa vuoi fare ora?`,
+        [
+          {
+            text: 'Aggiungi Manualmente',
+            onPress: () => {
+              clearForm();
+            },
+          },
+          {
+            text: 'Scansiona Codice',
+            onPress: () => {
+              clearForm();
+              router.replace('/scanner');
+            },
+          },
+          {
+            text: 'Finito',
+            onPress: () => {
+              router.replace('/(tabs)/products');
+            },
+            style: 'cancel',
+          },
+        ],
+        { cancelable: false }
       );
-      
-      // Log dell'operazione completata
-      LoggingService.info('ManualEntry', 'Prodotto salvato con successo, navigazione alla schermata prodotti');
-      
-      // Naviga alla schermata prodotti per evitare problemi di stato
-      // Questo risolve il problema del ritorno alla finestra pre-cattura
-      setTimeout(() => {
-        // Forza la navigazione alla schermata prodotti
-        router.replace('/(tabs)/products');
-      }, 1500); // Ritardo di 1.5 secondi per permettere all'utente di vedere il messaggio
     } catch (error: unknown) {
       LoggingService.error('ManualEntry', 'Errore durante il salvataggio del prodotto:', error);
       Alert.alert('Errore', 'Si è verificato un errore durante il salvataggio del prodotto.');
     }
-  }, [name, brand, selectedCategory, quantity, unit, purchaseDate, expirationDate, notes, barcode, imageUrl, isEditMode, originalProductId, params.addedMethod, formInstanceId]);
+  }, [name, brand, selectedCategory, quantities, purchaseDate, expirationDate, notes, barcode, imageUrl, isEditMode, originalProductId, params.addedMethod, clearForm]);
 
   const styles = getStyles(isDarkMode);
 
@@ -624,8 +645,6 @@ export default function ManualEntryScreen() {
           name={name}
           brand={brand}
           selectedCategory={selectedCategory}
-          quantity={quantity}
-          unit={unit}
           purchaseDate={purchaseDate}
           expirationDate={expirationDate}
           notes={notes}
@@ -643,13 +662,13 @@ export default function ManualEntryScreen() {
           scrollEnabled={false}
         />
         <ProductFormFooter
-          quantity={quantity}
-          unit={unit}
+          quantities={quantities}
           purchaseDate={purchaseDate}
           expirationDate={expirationDate}
           notes={notes}
-          setQuantity={setQuantity}
-          setUnit={setUnit}
+          addQuantity={addQuantity}
+          removeQuantity={removeQuantity}
+          updateQuantity={updateQuantity}
           setShowPurchaseDatePicker={setShowPurchaseDatePicker}
           setShowExpirationDatePicker={setShowExpirationDatePicker}
           setNotes={setNotes}
@@ -753,10 +772,10 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontWeight: '500',
   },
   categoryNameNoIcon: {
-    fontSize: 14, // Più grande
+    fontSize: 14,
     textAlign: 'center',
     fontWeight: 'bold',
-    position: 'absolute', // Per centrare perfettamente
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
@@ -833,6 +852,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center', // Allinea verticalmente gli elementi
     marginBottom: 16,
   },
   column: {
@@ -968,5 +988,33 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   placeholder: {
     color: isDarkMode ? '#8b949e' : '#64748b',
+  },
+  addButton: {
+    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: isDarkMode ? '#58a6ff' : '#3b82f6',
+    fontWeight: '500',
+  },
+  removeButton: {
+    backgroundColor: isDarkMode ? '#440c0c' : '#fee2e2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginLeft: 8,
+    alignSelf: 'center',
+  },
+  removeButtonText: {
+    color: isDarkMode ? '#ff7b72' : '#ef4444',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });

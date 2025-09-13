@@ -25,6 +25,14 @@ export interface NutritionalInfo {
 }
 
 /**
+ * Rappresenta una singola quantità di un prodotto
+ */
+export interface Quantity {
+  quantity: number;
+  unit: string;
+}
+
+/**
  * Rappresenta un prodotto nel sistema
  */
 export interface Product {
@@ -36,10 +44,8 @@ export interface Product {
   brand?: string;
   /** ID della categoria del prodotto */
   category: string;
-  /** Quantità del prodotto */
-  quantity: number;
-  /** Unità di misura della quantità */
-  unit: string;
+  /** Elenco delle quantità del prodotto */
+  quantities: Quantity[];
   /** Data di acquisto in formato ISO 8601 */
   purchaseDate: ISODateString;
   /** Data di scadenza in formato ISO 8601 */

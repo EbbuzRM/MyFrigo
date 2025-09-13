@@ -95,8 +95,7 @@ export default function PhotoCaptureScreen() {
       const allText = result.blocks.map((block: TextBlock) => block.text).join(' ').replace(/\n/g, ' ');
       LoggingService.debug(TAG, 'Testo grezzo rilevato:', allText);
 
-      // Regex più restrittiva: cerca date che sono "parole" a sé stanti, separate solo da ., / o -
-      const dateRegex = /\b(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-](\d{4}|\d{2}))\b/g;
+      const dateRegex = /\b(\d{1,2}[\.\/\- ]\d{1,2}[\.\/\- ](\d{4}|\d{2}))\b/g;
       const matches = allText.match(dateRegex);
 
       if (!matches) {
@@ -108,10 +107,10 @@ export default function PhotoCaptureScreen() {
 
       const candidateDates: Date[] = [];
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Imposta a mezzanotte per un confronto corretto
+      today.setHours(0, 0, 0, 0);
 
       for (const match of matches) {
-        let cleanedMatch = match.replace(/[\.\-]/g, '/'); // Ora non include lo spazio
+        let cleanedMatch = match.replace(/[\.\- ]/g, '/');
         const parts = cleanedMatch.split('/');
 
         if (parts.length === 3) {
@@ -162,7 +161,6 @@ export default function PhotoCaptureScreen() {
 
     const originalParams = params;
 
-    // New mode for updating just the product photo
     if (params.captureMode === 'updateProductPhoto' && typeof params.productId === 'string') {
       try {
         await StorageService.updateProductImage(params.productId, capturedImage);
@@ -196,7 +194,6 @@ export default function PhotoCaptureScreen() {
         );
       }
     } else {
-      // Original logic for setting image for a new product
       setImageUrl(capturedImage);
       router.back();
     }
@@ -225,7 +222,19 @@ export default function PhotoCaptureScreen() {
     <SafeAreaView style={styles.container}>
       {isFocused && (
         <>
-          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+          <CameraView 
+            ref={cameraRef} 
+            style={styles.camera} 
+            facing="back"
+            {...(params.captureMode === 'expirationDateOnly' && {
+                zoom: 0.1, // A slight zoom might help focus
+                autoFocus: 'on',
+            })}
+          > 
+            {params.captureMode === 'expirationDateOnly' && (
+                <View style={styles.macroFocusFrame} />
+            )}
+          </CameraView>
           <View style={styles.cameraControlsContainer}>
             <TouchableOpacity style={styles.controlButton} onPress={pickImage}>
               <ImageIcon size={24} color="#fff" />
@@ -265,6 +274,16 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   camera: {
     flex: 1,
+  },
+  macroFocusFrame: {
+    position: 'absolute',
+    top: '30%',
+    left: '10%',
+    right: '10%',
+    bottom: '30%',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 10,
   },
   cameraControlsContainer: {
     position: 'absolute',

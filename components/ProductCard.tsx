@@ -153,7 +153,7 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
             <View style={styles.detailRow}>
               <View style={styles.detailItem}>
                 <Package size={16} color={colors.textSecondary} />
-                <Text style={styles.detailText}>{product.quantity} {product.unit}</Text>
+                <Text style={styles.detailText}>{product.quantities.map(q => `${q.quantity} ${q.unit}`).join(' / ')}</Text>
               </View>
               <View style={styles.detailItem}>
                 <Calendar size={16} color={colors.textSecondary} />
