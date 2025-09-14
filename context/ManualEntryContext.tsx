@@ -135,14 +135,15 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Handle quantities
-        if (initialData.product.quantities && initialData.product.quantities.length > 0) {
-            newState.quantities = initialData.product.quantities.map((q: any) => ({ 
-                ...q, 
-                quantity: String(q.quantity),
-                id: uuidv4() 
+        if (Array.isArray(initialData.product.quantities) && initialData.product.quantities.length > 0) {
+            newState.quantities = initialData.product.quantities.map((q: any) => ({
+                ...q,
+                quantity: q.quantity !== undefined && q.quantity !== null ? String(q.quantity) : '1',
+                unit: q.unit || 'pz',
+                id: uuidv4()
             }));
-        } else if (initialData.product.quantity) {
-            newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit }];
+        } else if (initialData.product.quantity !== undefined && initialData.product.quantity !== null) {
+            newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit || 'pz' }];
         }
         delete newState.product; 
     }

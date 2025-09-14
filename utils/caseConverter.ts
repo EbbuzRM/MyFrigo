@@ -48,7 +48,28 @@ export function convertProductToCamelCase(product: Record<string, unknown>): Pro
     LoggingService.warning('caseConverter', 'Attempted to convert null or undefined product to camelCase');
     return {} as Product;
   }
-  return convertObjectKeys<Product, Record<string, unknown>>(product, toCamelCase);
+
+  // Converti le chiavi da snake_case a camelCase
+  const convertedProduct = convertObjectKeys<Product, Record<string, unknown>>(product, toCamelCase);
+
+  // Gestisci la conversione del campo quantities da JSON string a array
+  if (convertedProduct.quantities === null || convertedProduct.quantities === undefined) {
+    // Se è null/undefined dal database, imposta array vuoto per l'applicazione
+    convertedProduct.quantities = [];
+  } else if (typeof convertedProduct.quantities === 'string') {
+    try {
+      const parsed = JSON.parse(convertedProduct.quantities);
+      convertedProduct.quantities = Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      LoggingService.error('caseConverter', 'Failed to parse quantities JSON', error);
+      convertedProduct.quantities = [];
+    }
+  } else if (!Array.isArray(convertedProduct.quantities)) {
+    // Se non è un array, imposta array vuoto
+    convertedProduct.quantities = [];
+  }
+
+  return convertedProduct;
 }
 
 /**

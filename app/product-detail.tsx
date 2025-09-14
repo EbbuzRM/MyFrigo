@@ -9,6 +9,8 @@ import { StorageService } from '@/services/StorageService';
 import { Product } from '@/types/Product';
 import { ArrowLeft, Calendar, Package, Trash2, CheckCircle, Camera, Edit } from 'lucide-react-native';
 import { LoggingService } from '@/services/LoggingService';
+import { ConsumeQuantityModal } from '@/components/ConsumeQuantityModal';
+import { Toast } from '@/components/Toast';
 
 export default function ProductDetailScreen() {
   const { isDarkMode } = useTheme();
@@ -17,8 +19,12 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
-  const expirationInfo = product ? useExpirationStatus(product.expirationDate) : null;
+  const expirationInfo = useExpirationStatus(product?.expirationDate);
   const categoryInfo = product && product.category ? getCategoryById(product.category) : null;
 
   useEffect(() => {
@@ -27,45 +33,108 @@ export default function ProductDetailScreen() {
     }
   }, [id]);
 
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
+  const hideToast = () => {
+    setToastVisible(false);
+  };
+
   const loadProduct = async () => {
     try {
       setLoading(true);
-      const productData = await StorageService.getProductById(id!);
+      const productData = await StorageService.getProductById(id!); 
       setProduct(productData);
     } catch (error) {
       LoggingService.error('ProductDetail', 'Error loading product:', error);
-      Alert.alert('Errore', 'Impossibile caricare i dettagli del prodotto.');
+      showToast('Impossibile caricare i dettagli del prodotto.', 'error');
       router.back();
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConsume = async () => {
+  const handleConsume = () => {
     if (!product) return;
+    // Se c'è una sola quantità e il valore è 1, consuma direttamente.
+    // Altrimenti, apri il modale per scegliere la quantità.
+    if (!Array.isArray(product.quantities) || product.quantities.length === 0) {
+      LoggingService.error('ProductDetail', 'Product quantities is not an array or empty');
+      showToast('Errore: quantità del prodotto non disponibile.', 'error');
+      return;
+    }
 
-    Alert.alert(
-      'Conferma Consumo',
-      `Sei sicuro di voler segnare "${product.name}" come consumato?`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Conferma',
-          style: 'default',
-          onPress: async () => {
-            try {
-              await StorageService.updateProductStatus(product.id, 'consumed');
-              Alert.alert('Prodotto Consumato', 'Il prodotto è stato spostato nello storico.', [
-                { text: 'OK', onPress: () => router.back() }
-              ]);
-            } catch (error) {
-              LoggingService.error('ProductDetail', 'Error consuming product:', error);
-              Alert.alert('Errore', 'Si è verificato un errore durante l\'operazione.');
-            }
-          }
+    // A questo punto siamo sicuri che product.quantities esiste
+    const quantities = product.quantities;
+    const totalQuantity = quantities.reduce((sum, q) => sum + q.quantity, 0);
+    if (quantities.length === 1 && totalQuantity === 1) {
+      handleModalConfirm(1);
+    } else {
+      setIsModalVisible(true);
+    }
+  };
+
+  const handleModalConfirm = async (consumedQuantity: number) => {
+    if (!product) return;
+    try {
+      // Verifica che le quantità esistano
+      if (!Array.isArray(product.quantities) || product.quantities.length === 0) {
+        LoggingService.error('ProductDetail', 'Product quantities is not an array or empty');
+        showToast('Errore: quantità del prodotto non disponibile.', 'error');
+        return;
+      }
+
+      LoggingService.info('ProductDetail', `Consuming ${consumedQuantity} from product ${product.id}`);
+
+      // Crea una copia delle quantità per aggiornare
+      const updatedQuantities = product.quantities.map(q => ({ ...q }));
+      let remainingToConsume = consumedQuantity;
+
+      // Riduci le quantità in ordine
+      for (let i = 0; i < updatedQuantities.length && remainingToConsume > 0; i++) {
+        const quantity = updatedQuantities[i];
+        if (quantity.quantity > 0) {
+          const consumeFromThis = Math.min(remainingToConsume, quantity.quantity);
+          quantity.quantity -= consumeFromThis;
+          remainingToConsume -= consumeFromThis;
+          LoggingService.info('ProductDetail', `Reduced quantity ${i} by ${consumeFromThis}, remaining: ${quantity.quantity}`);
         }
-      ]
-    );
+      }
+
+      // Calcola il totale rimanente
+      const totalRemaining = updatedQuantities.reduce((sum, q) => sum + q.quantity, 0);
+      LoggingService.info('ProductDetail', `Total remaining quantity: ${totalRemaining}`);
+
+      // Aggiorna il prodotto
+      const updatedProduct = { ...product, quantities: updatedQuantities };
+
+      if (totalRemaining <= 0) {
+        // Se completamente consumato, sposta nello storico
+        updatedProduct.status = 'consumed';
+        updatedProduct.consumedDate = new Date().toISOString();
+        LoggingService.info('ProductDetail', `Product ${product.id} fully consumed, moving to history`);
+        showToast('Prodotto consumato e spostato nello storico.', 'success');
+      } else {
+        // Parzialmente consumato, rimane attivo
+        LoggingService.info('ProductDetail', `Product ${product.id} partially consumed, remaining: ${totalRemaining}`);
+        showToast('Quantità del prodotto aggiornata.', 'success');
+      }
+
+      await StorageService.saveProduct(updatedProduct);
+      router.back();
+    } catch (error) {
+      LoggingService.error('ProductDetail', 'Error during partial consumption:', error);
+      showToast('Si è verificato un errore durante l\'operazione.', 'error');
+    } finally {
+      setIsModalVisible(false);
+    }
+  };
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
   };
 
   const handleDelete = async () => {
@@ -82,12 +151,11 @@ export default function ProductDetailScreen() {
           onPress: async () => {
             try {
               await StorageService.deleteProduct(product.id);
-              Alert.alert('Prodotto Eliminato', 'Il prodotto è stato eliminato definitivamente.', [
-                { text: 'OK', onPress: () => router.back() }
-              ]);
+              showToast('Prodotto eliminato definitivamente.', 'success');
+              router.back();
             } catch (error) {
               LoggingService.error('ProductDetail', 'Error deleting product:', error);
-              Alert.alert('Errore', 'Si è verificato un errore durante l\'eliminazione.');
+              showToast('Si è verificato un errore durante l\'eliminazione.', 'error');
             }
           }
         }
@@ -104,7 +172,7 @@ export default function ProductDetailScreen() {
       "Vuoi scattare una nuova foto per questo prodotto?",
       [
         { text: "Annulla", style: "cancel" },
-        { 
+        {
           text: "Scatta nuova foto", 
           onPress: () => {
             router.push({
@@ -123,12 +191,10 @@ export default function ProductDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Caricamento...</Text>
-        </View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Caricamento...</Text>
       </SafeAreaView>
     );
   }
@@ -136,12 +202,10 @@ export default function ProductDetailScreen() {
   if (!product) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Prodotto non trovato</Text>
-        </View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Prodotto non trovato</Text>
       </SafeAreaView>
     );
   }
@@ -149,41 +213,29 @@ export default function ProductDetailScreen() {
   if (!categoryInfo) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Categoria non trovata</Text>
-        </View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Categoria non trovata</Text>
       </SafeAreaView>
     );
   }
 
   if (!expirationInfo) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Errore data scadenza</Text>
-        </View>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Errore data scadenza</Text>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container} testID="product-detail-screen">
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Dettagli Prodotto</Text>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 50 }} showsVerticalScrollIndicator={false}>
         <View style={styles.productCard}>
-          <Text style={{color: isDarkMode ? 'white' : 'black', marginBottom: 10}}>DEBUG - Image URL: {product.imageUrl || 'NESSUN URL'}</Text>
           <View style={styles.productHeader}>
             <View style={[styles.categoryIcon, { backgroundColor: categoryInfo ? categoryInfo.color + '20' : '#808080' }]}>
               {categoryInfo && categoryInfo.localIcon ? (
@@ -219,7 +271,7 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={styles.detailsSection}>
-          {product.quantities && product.quantities.map((q, index) => (
+          {product.quantities && product.quantities.length > 0 && product.quantities.map((q, index) => (
             <View style={styles.detailRow} key={index}>
               <Package size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
               <Text style={styles.detailLabel}>Quantità {product.quantities.length > 1 ? index + 1 : ''}:</Text>
@@ -232,41 +284,15 @@ export default function ProductDetailScreen() {
           <View style={styles.detailRow}>
             <Calendar size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
             <Text style={styles.detailLabel}>Scadenza:</Text>
-            <View style={styles.detailValueContainer}>
-              <Text style={styles.detailValue}>
-                {typeof product.expirationDate === 'string' && product.expirationDate.length > 0
-                  ? new Date(product.expirationDate).toLocaleDateString('it-IT', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    })
-                  : 'Data non disponibile'}
-              </Text>
-              <TouchableOpacity
-                style={styles.captureButton}
-                onPress={() => {
-                  router.push({
-                    pathname: '/photo-capture',
-                    params: {
-                      captureMode: 'expirationDateOnly',
-                      id: product.id,
-                      name: product.name || '',
-                      brand: product.brand || '',
-                      selectedCategory: product.category || '',
-                      purchaseDate: product.purchaseDate || '',
-                      expirationDate: product.expirationDate || '',
-                      notes: product.notes || '',
-                      barcode: product.barcode || '',
-                      imageUrl: product.imageUrl || '',
-                      addedMethod: product.addedMethod || 'manual'
-                    }
-                  });
-                }}
-              >
-                <Camera size={16} color="#ffffff" />
-                <Text style={styles.captureButtonText}>Riscatta foto</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.detailValue} numberOfLines={1}>
+              {typeof product.expirationDate === 'string' && product.expirationDate.length > 0
+                ? new Date(product.expirationDate).toLocaleDateString('it-IT', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  })
+                : 'Data non disponibile'}
+            </Text>
           </View>
 
           <View style={styles.detailRow}>
@@ -292,7 +318,7 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={styles.actionsSection}>
-          {product.status === 'active' && (
+          {product.status === 'active' && product.quantities && product.quantities.length > 0 && (
             <>
               <TouchableOpacity
                 style={styles.editButton}
@@ -308,7 +334,7 @@ export default function ProductDetailScreen() {
                 <Edit size={20} color="#ffffff" />
                 <Text style={styles.editButtonText}>Modifica Prodotto</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity style={styles.consumeButton} onPress={handleConsume}>
                 <CheckCircle size={20} color="#ffffff" />
                 <Text style={styles.consumeButtonText}>Segna come Consumato</Text>
@@ -322,6 +348,22 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {product && (
+        <ConsumeQuantityModal
+          visible={isModalVisible}
+          product={product}
+          onConfirm={handleModalConfirm}
+          onCancel={handleModalCancel}
+        />
+      )}
+
+      <Toast
+        message={toastMessage}
+        visible={toastVisible}
+        onDismiss={hideToast}
+        type={toastType}
+      />
     </SafeAreaView>
   );
 }
@@ -330,33 +372,27 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: isDarkMode ? '#0d1117' : '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: isDarkMode ? '#30363d' : '#e2e8f0',
+    paddingBottom: 8,
   },
   backButton: {
     padding: 8,
     marginRight: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'Inter-Bold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 8,
+    paddingBottom: 15,
   },
   productCard: {
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
@@ -364,7 +400,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
     resizeMode: 'cover',
   },
   productHeader: {
@@ -426,8 +462,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   detailsSection: {
     backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    padding: 16,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
@@ -452,6 +488,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    flex: 1,
   },
   captureButton: {
     flexDirection: 'row',
@@ -486,14 +523,15 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     lineHeight: 24,
   },
   actionsSection: {
-    gap: 12,
+    gap: 8,
+    marginTop: 10,
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#3b82f6',
-    paddingVertical: 16,
+    paddingVertical: 8,
     borderRadius: 12,
     gap: 8,
   },
@@ -507,7 +545,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#16a34a',
-    paddingVertical: 16,
+    paddingVertical: 8,
     borderRadius: 12,
     gap: 8,
   },
@@ -521,7 +559,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#dc2626',
-    paddingVertical: 16,
+    paddingVertical: 8,
     borderRadius: 12,
     gap: 8,
   },
