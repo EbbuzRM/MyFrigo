@@ -26,6 +26,7 @@ const Products = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+
   useFocusEffect(
     useCallback(() => {
       LoggingService.info('ProductsScreen', 'Screen focused, refreshing products.');
@@ -39,6 +40,7 @@ const Products = () => {
     await refreshProducts();
     setRefreshing(false);
   }, [refreshProducts]);
+
 
   const filteredProducts = useMemo(() => {
     let filtered = allProducts.filter(p => p.status === 'active');
@@ -104,15 +106,7 @@ const Products = () => {
     return categories.find(cat => cat.id === categoryId);
   };
 
-  const handleConsumeProduct = async (productId: string) => {
-    LoggingService.info('ProductsScreen', `User initiated consumption for product: ${productId}`);
-    try {
-      await StorageService.updateProductStatus(productId, 'consumed');
-      await refreshProducts();
-    } catch (error) {
-      LoggingService.error('Products', 'Errore durante il consumo del prodotto:', error);
-    }
-  };
+  
 
   const handleMoveExpiredToHistory = useCallback(async () => {
     try {
@@ -121,10 +115,11 @@ const Products = () => {
         const productIds = expiredProducts.map(p => p.id!);
         await StorageService.moveProductsToHistory(productIds);
         await refreshProducts();
-        LoggingService.info('Products', `${expiredProducts.length} prodotti scaduti sono stati spostati nella cronologia.`);
+        Alert.alert('Successo', `${expiredProducts.length} prodotti scaduti sono stati spostati nella cronologia.`);
       }
     } catch (error) {
       LoggingService.error('Products', 'Errore durante lo spostamento dei prodotti scaduti nella cronologia:', error);
+      Alert.alert('Errore', 'Errore durante lo spostamento dei prodotti scaduti.');
     }
   }, [refreshProducts]);
 
@@ -208,8 +203,7 @@ const Products = () => {
           <ProductCard
             product={item}
             categoryInfo={getCategoryInfo(item.category)}
-            onPress={() => router.push(`/manual-entry?productId=${item.id}`)}
-            onConsume={() => handleConsumeProduct(item.id)}
+            onPress={() => router.push(`/product-detail?id=${item.id}`)}
             onDelete={async () => {
               LoggingService.info('ProductsScreen', `User initiated deletion for product: ${item.id}`);
               try {
@@ -236,6 +230,7 @@ const Products = () => {
           />
         }
       />
+
     </SafeAreaView>
   );
 };

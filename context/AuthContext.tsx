@@ -7,8 +7,8 @@ import { useRouter } from 'expo-router';
 // Definizione del tipo per il profilo utente
 interface UserProfile {
   id: string;
-  first_name?: string;
-  last_name?: string;
+  first_name?: string | null;
+  last_name?: string | null;
   // Aggiungi altri campi del profilo se necessario
 }
 
@@ -19,6 +19,7 @@ type AuthContextType = {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  updateProfile: (firstName: string, lastName: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   refreshUserProfile: async () => {},
+  updateProfile: async () => {},
 });
 
 export const useAuth = () => {
@@ -76,6 +78,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshUserProfile = async () => {
     await fetchUserProfile(user);
+  };
+
+  const updateProfile = async (firstName: string, lastName: string) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        LoggingService.error('AuthProvider', 'Error updating user profile', error);
+        throw error;
+      }
+
+      // Refresh the profile in state
+      await refreshUserProfile();
+      LoggingService.info('AuthProvider', 'User profile updated successfully');
+    } catch (error) {
+      LoggingService.error('AuthProvider', 'Unexpected error updating profile', error);
+      throw error;
+    }
   };
 
   useEffect(() => {
@@ -148,7 +179,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     profile,
     loading,
     signOut,
-    refreshUserProfile
+    refreshUserProfile,
+    updateProfile
   }), [session, user, profile, loading]);
 
   return (

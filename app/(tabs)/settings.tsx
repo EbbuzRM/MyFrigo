@@ -46,7 +46,7 @@ const Settings = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showDiagnosticPanel, setShowDiagnosticPanel] = useState(false);
-  const longPressTimerRef = useRef<number | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [longPressProgress, setLongPressProgress] = useState(0);
 
   useEffect(() => {

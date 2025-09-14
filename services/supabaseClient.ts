@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { LoggingService } from './LoggingService';
+import { Database } from '@/types/supabase';
 
 // Get environment variables directly from process.env
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -14,13 +15,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase URL and Anon Key must be provided.");
 }
 
-let supabase: ReturnType<typeof createClient>;
+let supabase: ReturnType<typeof createClient<Database>>;
 
 try {
   // Validate URL format
   new URL(supabaseUrl);
   
-  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       storage: AsyncStorage,
       autoRefreshToken: true,

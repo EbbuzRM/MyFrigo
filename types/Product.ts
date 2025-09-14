@@ -67,6 +67,26 @@ export interface Product {
 }
 
 /**
+ * Rappresenta un prodotto con chiavi in snake_case per il database.
+ */
+export interface ProductSnakeCase {
+  id: string;
+  name: string;
+  brand?: string;
+  category: string;
+  quantities: Quantity[];
+  purchase_date: ISODateString;
+  expiration_date: ISODateString;
+  barcode?: string;
+  image_url?: string;
+  notes?: string;
+  status: ProductStatus;
+  consumed_date?: ISODateString;
+  added_method: AddMethod;
+  nutritional_info?: NutritionalInfo;
+}
+
+/**
  * Tipo di icona locale per una categoria
  */
 export type LocalIcon = {
@@ -93,6 +113,40 @@ export interface ProductCategory {
   isDefault?: boolean;
   /** Indica se l'icona non è stata trovata */
   iconNotFound?: boolean;
+}
+
+/**
+ * Rappresenta una categoria di prodotti con chiavi in snake_case per il database.
+ */
+export interface ProductCategorySnakeCase {
+  id: string;
+  name: string;
+  icon?: string;
+  color: string;
+  local_icon?: LocalIcon;
+  user_id?: string;
+  is_default?: boolean;
+  icon_not_found?: boolean;
+}
+
+/**
+ * Rappresenta un prodotto convertito per Supabase con quantities serializzato come JSON string.
+ */
+export interface ProductForSupabase {
+  id: string;
+  name: string;
+  brand?: string;
+  category: string;
+  quantities: string | null;
+  purchase_date: ISODateString;
+  expiration_date: ISODateString;
+  barcode?: string;
+  image_url?: string;
+  notes?: string;
+  status: ProductStatus;
+  consumed_date?: ISODateString;
+  added_method: AddMethod;
+  nutritional_info?: NutritionalInfo;
 }
 
 export const PRODUCT_CATEGORIES: ProductCategory[] = [

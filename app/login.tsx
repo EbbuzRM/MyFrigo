@@ -142,7 +142,7 @@ export default function LoginScreen() {
         const retryResult = await GoogleAuthRetryManager.analyzeRetryNeed(
           user.id,
           user.email || '',
-          profile
+          { first_name: profile?.first_name || null, last_name: profile?.last_name || null }
         );
 
         LoggingService.info('Login', 'Risultato analisi retry', retryResult);
@@ -339,14 +339,14 @@ export default function LoginScreen() {
           appOwnership: Constants.appOwnership
         });
         
-        const result = await GoogleSignin.signIn();
+        const result = await GoogleSignin.signIn() as unknown as { idToken: string; user: { email: string } };
         LoggingService.info('Login', 'Google Sign-In result', {
           hasResult: !!result,
           hasIdToken: !!result.idToken,
           hasUser: !!result.user,
           userEmail: result.user?.email
         });
-        
+
         idToken = result.idToken;
         authLogger.endStep('GOOGLE_SIGNIN');
       } catch (error) {
@@ -451,7 +451,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container} testID="login-screen">
       <Text style={styles.header}>MyFrigo</Text>
-      <Text style={styles.subtitle}>Accedi o inserisci i tuoi dati per registrarti.</Text>
+      <Text style={styles.subtitle}>Accedi o clicca su Registrati.</Text>
 
       {/* Messaggio di successo per verifica email */}
       {showVerificationSuccess && (
@@ -536,19 +536,26 @@ export default function LoginScreen() {
       <View style={styles.divider} />
 
       <TouchableOpacity
-        style={[styles.button, styles.socialButton]}
-        onPress={handleGoogleLogin}
-        disabled={loading}
+        style={[styles.button, styles.socialButton, styles.buttonDisabled]}
+        disabled={true}
       >
         <FontAwesome name="google" size={20} color="#fff" style={styles.socialIcon} />
         <Text style={styles.buttonText}>Accedi con Google</Text>
       </TouchableOpacity>
+      <Text style={styles.comingSoonText}>Disponibile nei prossimi aggiornamenti</Text>
     </View>
   );
 }
 
 /* ------------- Styles ------------- */
 const styles = StyleSheet.create({
+  comingSoonText: {
+    fontSize: 14,
+    color: '#6c757d',
+    textAlign: 'center',
+    marginTop: -5,
+    marginBottom: 10,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -643,10 +650,6 @@ const styles = StyleSheet.create({
   },
   socialIcon: {
     marginRight: 10
-  },
-  testButton: {
-    backgroundColor: '#6c757d', // Colore diverso per il pulsante di test
-    marginTop: 10,
   },
   forgotPasswordText: {
     color: '#007bff',

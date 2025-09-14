@@ -138,8 +138,9 @@ htmlcov/
 .tox/
 .nox/
 
-# Gemini - Ignoriamo la cartella con i file di memoria e configurazione
+# Gemini - 
 .gemini/
+.cursor/
 
 #Cline
 .clinerules
@@ -164,3 +165,6 @@ debug_logs/
 # Agent markdown
 .agent.mdbuild.txt 
 package-lock.json 
+
+# Backups
+/unused_code_backup/ 

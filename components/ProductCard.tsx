@@ -5,6 +5,7 @@ import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
+import { StorageService } from '@/services/StorageService';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import { LoggingService } from '@/services/LoggingService';
 import { COLORS } from '@/constants/colors';
@@ -19,19 +20,20 @@ interface ProductCardProps {
   product: Product;
   categoryInfo: ProductCategory | undefined;
   onDelete: () => void;
-  onConsume?: () => void;
   onPress?: () => void;
   index: number;
 }
 
-export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onConsume, onPress, index }: ProductCardProps) => {
+export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onPress, index }: ProductCardProps) => {
   // Verifica subito che product e categoryInfo siano definiti
   if (!product || !categoryInfo) {
     LoggingService.warning('ProductCard', 'Rendering skipped due to missing product or category data');
     return null;
   }
 
+
   const { isDarkMode, colors } = useTheme();
+
   
   // Gestione sicura della data di scadenza
   const safeExpirationDate = React.useMemo(() => {
@@ -84,6 +86,8 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
     );
   };
 
+  
+
   return (
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
@@ -130,44 +134,48 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
               </View>
             </View>
             <View style={styles.actionsContainer}>
-              {onConsume && product.status === 'active' && (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onConsume}
-                  {...getActionButtonAccessibilityProps("Segna come consumato", product.name || "prodotto")}
-                >
-                  <Text style={styles.consumeText}>Consumato</Text>
-                </TouchableOpacity>
-              )}
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={handleDeletePress}
-                testID="delete-button"
                 {...getDeleteButtonAccessibilityProps(product.name || "prodotto")}
               >
                 <Trash2 size={20} color={colors.error} />
               </TouchableOpacity>
             </View>
           </View>
+
           <View style={styles.details}>
             <View style={styles.detailRow}>
               <View style={styles.detailItem}>
-                <Package size={16} color={colors.textSecondary} />
-                <Text style={styles.detailText}>{product.quantities.map(q => `${q.quantity} ${q.unit}`).join(' / ')}</Text>
-              </View>
-              <View style={styles.detailItem}>
                 <Calendar size={16} color={colors.textSecondary} />
+                <Text style={styles.detailText}>Scadenza</Text>
+              </View>
+              <Text style={styles.dateText}>
+                {safeExpirationDate ? safeExpirationDate.toLocaleDateString('it-IT') : 'N/A'}
+              </Text>
+            </View>
+
+            {Array.isArray(product.quantities) && product.quantities.length > 0 && (
+              <View style={styles.detailRow}>
+                <View style={styles.detailItem}>
+                  <Package size={16} color={colors.textSecondary} />
+                  <Text style={styles.detailText}>Quantità</Text>
+                </View>
                 <Text style={styles.dateText}>
-                  {safeExpirationDate
-                    ? safeExpirationDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                    : 'Data non valida'}
+                  {product.quantities[0].quantity} {product.quantities[0].unit || 'pz'}
                 </Text>
               </View>
-            </View>
-            {product.notes && <Text style={styles.notes} numberOfLines={2}>{product.notes}</Text>}
+            )}
+
+            {product.notes && (
+              <Text style={styles.notes} numberOfLines={2}>
+                {product.notes}
+              </Text>
+            )}
           </View>
         </View>
       </TouchableOpacity>
+
     </Animated.View>
   );
 });
@@ -181,7 +189,7 @@ const getStyles = (isDarkMode: boolean, colors: {
   cardBackground: string;
   background: string;
 }) => StyleSheet.create({
-    card: {
+  card: {
     borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
@@ -256,18 +264,6 @@ const getStyles = (isDarkMode: boolean, colors: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 0,
-  },
-  actionButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    backgroundColor: colors.cardBackground,
-    marginRight: 8,
-  },
-  consumeText: {
-    fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
-    color: colors.primary,
   },
   deleteButton: {
     padding: 8,
