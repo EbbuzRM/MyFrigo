@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageService } from '@/services/StorageService';
 import { HistoryStats } from '@/components/HistoryStats';
 import { SuggestionCard } from '@/components/SuggestionCard';
+import StatisticsSection from '@/components/StatisticsSection';
+import { StatisticsService } from '@/services/StatisticsService';
 import { useFocusEffect } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
@@ -22,10 +24,29 @@ const History = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statisticsData, setStatisticsData] = useState<any>(null);
+  const [loadingStatistics, setLoadingStatistics] = useState(false);
   
   // Riferimenti per il timeout e la memorizzazione
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
+
+  const loadStatisticsData = useCallback(async () => {
+    if (loadingStatistics) return; // Evita caricamenti multipli
+
+    setLoadingStatistics(true);
+    try {
+      LoggingService.info('History', 'Loading advanced statistics');
+      const stats = await StatisticsService.getAllStatistics();
+      setStatisticsData(stats);
+      LoggingService.info('History', 'Advanced statistics loaded successfully');
+    } catch (error) {
+      LoggingService.error('History', 'Failed to load advanced statistics:', error);
+      setStatisticsData(null);
+    } finally {
+      setLoadingStatistics(false);
+    }
+  }, [loadingStatistics]);
 
   const loadData = useCallback(async (forceRefresh = false) => {
     // Evita caricamenti frequenti (throttling)
@@ -35,16 +56,16 @@ const History = () => {
       setRefreshing(false);
       return;
     }
-    
+
     // Imposta lo stato di caricamento
     setLoading(true);
     setError(null);
-    
+
     // Imposta un timeout per il caricamento
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     timeoutRef.current = setTimeout(() => {
       if (loading) {
         LoggingService.error('History', 'Loading timeout reached');
@@ -53,11 +74,11 @@ const History = () => {
         setRefreshing(false);
       }
     }, LOADING_TIMEOUT);
-    
+
     // Registra l'inizio del caricamento
     const startTime = performance.now();
     LoggingService.info('History', 'Starting data load');
-    
+
     try {
       // Carica tutte le categorie di prodotti dello storico
       const [consumedProducts, activeExpiredProducts, trulyExpiredProducts] = await Promise.all([
@@ -65,7 +86,7 @@ const History = () => {
         StorageService.getExpiredProducts(), // status = 'active' & expiration_date < now
         StorageService.getTrulyExpiredProducts(), // status = 'expired'
       ]);
-      
+
       const combinedHistory = [...consumedProducts, ...activeExpiredProducts, ...trulyExpiredProducts];
 
       // Ordina per data di scadenza o consumo, la più recente prima
@@ -96,7 +117,8 @@ const History = () => {
   useFocusEffect(
     useCallback(() => {
       loadData(false);
-      
+      loadStatisticsData(); // Carica anche le statistiche avanzate
+
       return () => {
         // Pulizia quando il componente perde il focus
         if (timeoutRef.current) {
@@ -104,12 +126,13 @@ const History = () => {
           timeoutRef.current = null;
         }
       };
-    }, [loadData])
+    }, [loadData, loadStatisticsData])
   );
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData(true); // Forza il refresh
+    loadStatisticsData(); // Ricarica anche le statistiche avanzate
   };
 
   // Ottimizzazione: calcola i conteggi una sola volta durante il filtraggio
@@ -219,6 +242,17 @@ const History = () => {
             <SuggestionCard key={index} {...suggestion} />
           ))}
         </View>
+
+        {/* Sezione Statistiche Avanzate */}
+        {statisticsData && (
+          <StatisticsSection
+            mostConsumed={statisticsData.mostConsumed || []}
+            mostWasted={statisticsData.mostWasted || []}
+            savings={statisticsData.savings || { total: 0, currency: '€' }}
+            chartData={statisticsData.chartData || { labels: [], datasets: [] }}
+            gamification={statisticsData.gamification || { badges: [], points: 0 }}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
