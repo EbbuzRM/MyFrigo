@@ -1,13 +1,9 @@
 import { Tabs, useLocalSearchParams } from 'expo-router';
 import { Home, Plus, Package, Settings, History } from 'lucide-react-native';
-import { useTheme } from '@/context/ThemeContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AnimatedTabBar from '@/components/AnimatedTabBar';
 
 // Esportazione predefinita del componente di layout delle tab
 const TabLayout = () => {
-  const { isDarkMode } = useTheme();
-  const insets = useSafeAreaInsets();
   const { user } = useLocalSearchParams(); // Ottieni l'oggetto utente dai parametri
 
   return (

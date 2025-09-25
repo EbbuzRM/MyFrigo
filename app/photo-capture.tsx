@@ -74,7 +74,7 @@ export default function PhotoCaptureScreen() {
   };
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
@@ -95,7 +95,7 @@ export default function PhotoCaptureScreen() {
       const allText = result.blocks.map((block: TextBlock) => block.text).join(' ').replace(/\n/g, ' ');
       LoggingService.debug(TAG, 'Testo grezzo rilevato:', allText);
 
-      const dateRegex = /\b(\d{1,2}[\.\/\- ]\d{1,2}[\.\/\- ](\d{4}|\d{2}))\b/g;
+      const dateRegex = /\b(\d{1,2}[./ -]\d{1,2}[./ -](\d{4}|\d{2}))\b/g;
       const matches = allText.match(dateRegex);
 
       if (!matches) {
@@ -110,7 +110,7 @@ export default function PhotoCaptureScreen() {
       today.setHours(0, 0, 0, 0);
 
       for (const match of matches) {
-        let cleanedMatch = match.replace(/[\.\- ]/g, '/');
+        const cleanedMatch = match.replace(/[\.\- ]/g, '/');
         const parts = cleanedMatch.split('/');
 
         if (parts.length === 3) {

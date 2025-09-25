@@ -7,7 +7,8 @@ import { ArrowLeft, RefreshCw } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageService } from '@/services/StorageService';
 import { useCategories } from '@/context/CategoryContext';
-import { ProductCategory } from '@/types/Product';
+import { ProductCategory, Product } from '@/types/Product';
+import { ProductTemplate } from '@/services/StorageService';
 import { LoggingService } from '@/services/LoggingService';
 
 // Timeout per le richieste API (in millisecondi)
@@ -58,12 +59,11 @@ export default function BarcodeScannerScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<string>('Inizializzazione...');
-  const [currentBarcode, setCurrentBarcode] = useState<string | null>(null);
   const isFocused = useIsFocused();
   const { categories: appCategories } = useCategories();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [currentBarcode, setCurrentBarcode] = useState<string | null>(null);
 
-  // Funzione per pulire il timeout
   const clearApiTimeout = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -71,25 +71,19 @@ export default function BarcodeScannerScreen() {
     }
   }, []);
 
-  // Funzione per impostare un nuovo timeout
-  const setApiTimeout = useCallback((callback: () => void) => {
-    clearApiTimeout();
-    timeoutRef.current = setTimeout(callback, API_TIMEOUT);
-  }, [clearApiTimeout]);
-
   // Funzione per recuperare i dati del prodotto da Supabase
-  const fetchProductFromSupabase = useCallback(async (barcode: string): Promise<any> => {
+  const fetchProductFromSupabase = useCallback(async (barcode: string): Promise<Partial<Product> | null> => {
     setLoadingProgress('Cercando prodotto nel database locale...');
     const template = await StorageService.getProductTemplate(barcode);
     return template;
   }, []);
 
   // Funzione per recuperare i dati del prodotto da Open Food Facts
-  const fetchProductFromOpenFoodFacts = useCallback(async (barcode: string): Promise<any> => {
+  const fetchProductFromOpenFoodFacts = useCallback((barcode: string): Promise<any> => {
     setLoadingProgress('Cercando prodotto online...');
     
     // Crea una promessa che si risolve con il risultato della fetch o viene rifiutata dopo il timeout
-    const fetchPromise = new Promise(async (resolve, reject) => {
+    const fetchPromise = new Promise((resolve, reject) => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
@@ -97,24 +91,24 @@ export default function BarcodeScannerScreen() {
           reject(new Error('Timeout della richiesta API'));
         }, API_TIMEOUT);
 
-        const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}`, {
+        fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}`, {
           signal: controller.signal
+        }).then(response => {
+          clearTimeout(timeoutId);
+          if (!response.ok) {
+            reject(new Error(`Errore HTTP: ${response.status}`));
+            return;
+          }
+          return response.json();
+        }).then(jsonResponse => {
+          if (jsonResponse.status !== 1 || !jsonResponse.product) {
+            reject(new Error('Prodotto non trovato nel database online'));
+            return;
+          }
+          resolve(jsonResponse.product);
+        }).catch(error => {
+          reject(error);
         });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          reject(new Error(`Errore HTTP: ${response.status}`));
-          return;
-        }
-        
-        const jsonResponse = await response.json();
-        if (jsonResponse.status !== 1 || !jsonResponse.product) {
-          reject(new Error('Prodotto non trovato nel database online'));
-          return;
-        }
-        
-        resolve(jsonResponse.product);
       } catch (error) {
         reject(error);
       }
@@ -131,7 +125,7 @@ export default function BarcodeScannerScreen() {
     setCurrentBarcode(data);
     setLoadingProgress('Inizializzazione scansione...');
 
-    let paramsForManualEntry: any = { barcode: data, barcodeType: type, addedMethod: 'barcode' };
+    let paramsForManualEntry: Partial<Product> & { barcodeType?: string; addedMethod?: string } = { barcode: data, barcodeType: type, addedMethod: 'barcode' };
 
     try {
       // 1. Prima controlla se esiste un template salvato
@@ -142,7 +136,7 @@ export default function BarcodeScannerScreen() {
         Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${template.name}`, [
           {
             text: 'Continua',
-            onPress: () => router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, ...template } })
+            onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
           },
           {
             text: 'Scansiona di Nuovo',
@@ -168,7 +162,7 @@ export default function BarcodeScannerScreen() {
         Alert.alert('Prodotto Trovato!', `Trovato online: ${productInfo.product_name || data}`, [
           {
             text: 'Continua',
-            onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry })
+            onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
           },
           {
             text: 'Scansiona di Nuovo',
@@ -189,7 +183,7 @@ export default function BarcodeScannerScreen() {
           [
             {
               text: 'Sì, Aggiungi',
-              onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry })
+              onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
             },
             {
               text: 'Scansiona di Nuovo',

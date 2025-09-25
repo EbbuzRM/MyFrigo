@@ -81,12 +81,12 @@ export const DARK = {
   
   // Colori di sfondo
   BACKGROUND: '#0d1117',
-  CARD_BACKGROUND: '#161b22',
+  CARD_BACKGROUND: '#2d333b',
   INPUT_BACKGROUND: '#21262d',
   
   // Colori di bordo
   BORDER: '#30363d',
-  BORDER_LIGHT: '#21262d',
+  BORDER_LIGHT: '#30363d',
   BORDER_DARK: '#484f58',
 };
 

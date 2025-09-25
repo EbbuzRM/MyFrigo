@@ -149,6 +149,8 @@ export interface ProductForSupabase {
   nutritional_info?: NutritionalInfo;
 }
 
+import flourIcon from '../assets/images/flour-icon.png';
+
 export const PRODUCT_CATEGORIES: ProductCategory[] = [
   { id: 'beverages', name: 'Bevande', icon: '🥤', color: '#8B5CF6' },
   { id: 'biscuits', name: 'Biscotti', icon: '🍪', color: '#A16207' },
@@ -157,7 +159,7 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
   { id: 'condiments', name: 'Condimenti', icon: '🧂', color: '#64748B' },
   { id: 'canned', name: 'Conserve', icon: '🥫', color: '#A16207' },
   { id: 'sweets', name: 'Dolci', icon: '🍰', color: '#EC4899' },
-  { id: 'flour', name: 'Farine', localIcon: require('../assets/images/flour-icon.png'), color: '#A16207' },
+  { id: 'flour', name: 'Farine', localIcon: flourIcon, color: '#A16207' },
   { id: 'cheese', name: 'Formaggi', icon: '🧀', color: '#FACC15' },
   { id: 'fruits', name: 'Frutta', icon: '🍎', color: '#F59E0B' },
   { id: 'ice_cream', name: 'Gelati', icon: '🍦', color: '#A78BFA' },

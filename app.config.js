@@ -128,13 +128,5 @@ module.exports = {
       "expo-web-browser",
       "expo-background-task"
     ],
-    extra: {
-      googleWebClientId: "849503699357-sauspamk0vl73ofrscs1jnuvsrje9pko.apps.googleusercontent.com",
-      router: {},
-      eas: {
-        "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"
-      },
-      oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || "0be59062-4413-49d5-b301-7038c3a0de1e"
-    }
   }
 };

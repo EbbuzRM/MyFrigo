@@ -1,42 +1,69 @@
-const globals = require("globals");
-const tseslint = require("typescript-eslint");
-const react = require("eslint-plugin-react");
+import globals from "globals";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import react from "eslint-plugin-react";
 
-module.exports = [
+export default tseslint.config(
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    ignores: [
+      "node_modules/**",
+      "android/**",
+      "ios/**",
+      "build/**",
+      "dist/**",
+      "*.min.js",
+      "EXDevMenuApp.android.js"
+    ]
+  },
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
     languageOptions: {
-      parser: tseslint.parser,
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-        ecmaVersion: "latest",
-        sourceType: "module",
-      },
+      ecmaVersion: "latest",
+      sourceType: "module",
       globals: {
         ...globals.browser,
-        ...globals.node,
+        ...globals.node
       },
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaFeatures: { jsx: true }
+      }
     },
     plugins: {
-      react: react,
-      "@typescript-eslint": tseslint.plugin,
+      react
     },
     rules: {
-      "no-unused-vars": "off", // Disable base rule
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^(_|e)", ignoreRestSiblings: true }],
-      "no-undef": "off", // Handled by TypeScript
-      "react/react-in-jsx-scope": "off", // Not needed for React 17+
-      "react/prop-types": "off", // Not needed with TypeScript
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^(_|e)", ignoreRestSiblings: true }
+      ],
+      "no-undef": "off",
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
+      "@typescript-eslint/no-require-imports": "error",
+      "@typescript-eslint/no-explicit-any": "error",
+      "no-empty-pattern": "error",
+      "no-async-promise-executor": "error",
+      "no-useless-escape": "error",
+      "prefer-const": "error",
+      "no-empty": "error",
+      "no-func-assign": "error",
+      "no-prototype-builtins": "error",
+      "no-control-regex": "error",
+      "require-yield": "error",
+      "no-dupe-keys": "error",
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        { "ts-ignore": true, "ts-nocheck": true }
+      ]
     },
     settings: {
       react: {
-        version: "detect",
-      },
-    },
-  },
-  {
-    ignores: ["android/app/build/**", "node_modules/**"],
-  },
-];
+        version: "detect"
+      }
+    }
+  }
+);

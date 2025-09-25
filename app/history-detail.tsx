@@ -114,15 +114,6 @@ export default function HistoryDetailScreen() {
                 }
                 setLoading(false);
               });
-              
-              const styles = StyleSheet.create({
-                // Existing styles
-                errorText: {
-                  color: 'red',
-                  textAlign: 'center',
-                  marginTop: 20,
-                },
-              });
             }}
           >
             <Text style={styles.retryButtonText}>Riprova</Text>

@@ -7,7 +7,7 @@ import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
 import { StorageService } from '@/services/StorageService';
 import { Product } from '@/types/Product';
-import { ArrowLeft, Calendar, Package, Trash2, CheckCircle, Camera, Edit } from 'lucide-react-native';
+import { ArrowLeft, Calendar, Package, Trash2, CheckCircle, Edit } from 'lucide-react-native';
 import { LoggingService } from '@/services/LoggingService';
 import { ConsumeQuantityModal } from '@/components/ConsumeQuantityModal';
 import { Toast } from '@/components/Toast';
@@ -163,30 +163,6 @@ export default function ProductDetailScreen() {
     );
   };
 
-  const handleChangePhoto = () => {
-    LoggingService.info('ProductDetail', 'handleChangePhoto called');
-    if (!product) return;
-
-    Alert.alert(
-      "Modifica Foto",
-      "Vuoi scattare una nuova foto per questo prodotto?",
-      [
-        { text: "Annulla", style: "cancel" },
-        {
-          text: "Scatta nuova foto", 
-          onPress: () => {
-            router.push({
-              pathname: '/photo-capture',
-              params: { 
-                productId: product.id,
-                captureMode: 'updateProductPhoto' 
-              } 
-            });
-          } 
-        }
-      ]
-    );
-  };
 
   if (loading) {
     return (

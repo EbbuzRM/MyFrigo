@@ -1,57 +1,38 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageService } from '@/services/StorageService';
 import { HistoryStats } from '@/components/HistoryStats';
 import { SuggestionCard } from '@/components/SuggestionCard';
-import StatisticsSection from '@/components/StatisticsSection';
-import { StatisticsService } from '@/services/StatisticsService';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
-import { useCategories } from '@/context/CategoryContext';
-import { Product } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
+import { BarChart3 } from 'lucide-react-native';
+import { Product } from '@/types/Product';
 
 // Costanti per il timeout e la memorizzazione
-const LOADING_TIMEOUT = 5000; // 5 secondi di timeout
+const LOADING_TIMEOUT = 15000; // 15 secondi di timeout invece di 5
+const THROTTLE_TIME = 5000; // 5 secondi di throttling
 
 // Componente per la visualizzazione della cronologia
 const History = () => {
   const { isDarkMode } = useTheme();
+  const router = useRouter();
   const styles = getStyles(isDarkMode);
-  const { getCategoryById } = useCategories();
-  const [allHistory, setAllHistory] = useState<any[]>([]);
+  const [allHistory, setAllHistory] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statisticsData, setStatisticsData] = useState<any>(null);
-  const [loadingStatistics, setLoadingStatistics] = useState(false);
-  
+
   // Riferimenti per il timeout e la memorizzazione
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
-
-  const loadStatisticsData = useCallback(async () => {
-    if (loadingStatistics) return; // Evita caricamenti multipli
-
-    setLoadingStatistics(true);
-    try {
-      LoggingService.info('History', 'Loading advanced statistics');
-      const stats = await StatisticsService.getAllStatistics();
-      setStatisticsData(stats);
-      LoggingService.info('History', 'Advanced statistics loaded successfully');
-    } catch (error) {
-      LoggingService.error('History', 'Failed to load advanced statistics:', error);
-      setStatisticsData(null);
-    } finally {
-      setLoadingStatistics(false);
-    }
-  }, [loadingStatistics]);
+  const dataLoadedRef = useRef<boolean>(false);
 
   const loadData = useCallback(async (forceRefresh = false) => {
     // Evita caricamenti frequenti (throttling)
     const now = Date.now();
-    if (!forceRefresh && now - lastLoadTimeRef.current < 2000) {
+    if (!forceRefresh && now - lastLoadTimeRef.current < THROTTLE_TIME) {
       LoggingService.info('History', 'Throttling data load - skipped');
       setRefreshing(false);
       return;
@@ -76,7 +57,6 @@ const History = () => {
     }, LOADING_TIMEOUT);
 
     // Registra l'inizio del caricamento
-    const startTime = performance.now();
     LoggingService.info('History', 'Starting data load');
 
     try {
@@ -116,8 +96,18 @@ const History = () => {
 
   useFocusEffect(
     useCallback(() => {
-      loadData(false);
-      loadStatisticsData(); // Carica anche le statistiche avanzate
+      // Carica i dati solo se non sono già stati caricati o se è passato abbastanza tempo
+      const now = Date.now();
+      const shouldLoadData = !dataLoadedRef.current ||
+                            (now - lastLoadTimeRef.current) > THROTTLE_TIME;
+
+      if (shouldLoadData) {
+        LoggingService.info('History', 'Loading data on focus');
+        loadData(false);
+        dataLoadedRef.current = true;
+      } else {
+        LoggingService.info('History', 'Data already loaded, skipping focus load');
+      }
 
       return () => {
         // Pulizia quando il componente perde il focus
@@ -126,21 +116,23 @@ const History = () => {
           timeoutRef.current = null;
         }
       };
-    }, [loadData, loadStatisticsData])
+    }, [loadData])
   );
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData(true); // Forza il refresh
-    loadStatisticsData(); // Ricarica anche le statistiche avanzate
+  };
+
+  const navigateToAdvancedStats = () => {
+    router.push('/advanced-stats');
   };
 
   // Ottimizzazione: calcola i conteggi una sola volta durante il filtraggio
   const { consumedCount, expiredCount, suggestions } = useMemo(() => {
-    // Misura il tempo di esecuzione
-    const startTime = performance.now();
     LoggingService.debug('History', 'Starting stats calculation');
-    
+    const startTime = performance.now();
+
     let consumedCount = 0;
     let expiredCount = 0;
     
@@ -197,8 +189,11 @@ const History = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>Caricamento statistiche...</Text>
+          <Text style={styles.loadingSubtext}>
+            Analisi dei tuoi prodotti e abitudini in corso
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -243,16 +238,22 @@ const History = () => {
           ))}
         </View>
 
-        {/* Sezione Statistiche Avanzate */}
-        {statisticsData && (
-          <StatisticsSection
-            mostConsumed={statisticsData.mostConsumed || []}
-            mostWasted={statisticsData.mostWasted || []}
-            savings={statisticsData.savings || { total: 0, currency: '€' }}
-            chartData={statisticsData.chartData || { labels: [], datasets: [] }}
-            gamification={statisticsData.gamification || { badges: [], points: 0 }}
-          />
-        )}
+        {/* Pulsante per Statistiche Avanzate */}
+        <View style={styles.advancedStatsContainer}>
+          <TouchableOpacity
+            style={styles.advancedStatsButton}
+            onPress={navigateToAdvancedStats}
+            activeOpacity={0.8}
+          >
+            <BarChart3 size={20} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
+            <View style={styles.advancedStatsTextContainer}>
+              <Text style={styles.advancedStatsTitle}>📈 Statistiche Avanzate</Text>
+              <Text style={styles.advancedStatsSubtitle}>
+                Scopri di più sui tuoi consumi
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -279,6 +280,13 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: isDarkMode ? '#8b949e' : '#64748B',
     marginTop: 10,
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: isDarkMode ? '#8b949e' : '#64748B',
+    marginTop: 8,
+    textAlign: 'center',
   },
   errorContainer: {
     flex: 1,
@@ -322,6 +330,40 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   suggestionsContainer: {
     paddingHorizontal: 20,
-    marginTop: 4,
+    marginTop: 20,
+  },
+  advancedStatsContainer: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  advancedStatsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
+  },
+  advancedStatsTextContainer: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  advancedStatsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    marginBottom: 4,
+  },
+  advancedStatsSubtitle: {
+    fontSize: 14,
+    color: isDarkMode ? '#8b949e' : '#64748B',
+    lineHeight: 20,
   }
 });

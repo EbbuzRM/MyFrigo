@@ -94,14 +94,18 @@ export default function ResetPassword() {
           if (!sessionEstablished) {
             LoggingService.warning('ResetPassword', 'Sessione non rilevata dopo verifyOtp; procedo comunque alla schermata di reset');
           }
-        } catch (pollErr) {
+        } catch (pollErr: unknown) {
           LoggingService.warning('ResetPassword', 'Errore inatteso nel polling della sessione', pollErr);
         }
 
         router.replace('/password-reset-form');
-      } catch (err: any) {
+      } catch (err: unknown) {
         LoggingService.error('ResetPassword', 'Errore verifica token', err);
-        setError(err.message || 'Il link di reset potrebbe essere scaduto o non valido.');
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An unknown error occurred');
+        }
         // Non reindirizzare subito, lasciare all'utente la possibilità di tornare indietro
       }
     };

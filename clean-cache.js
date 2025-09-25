@@ -2,13 +2,21 @@
 
 /**
  * Script per pulire la cache di Metro e Expo
- * Questo dovrebbe risolvere il problema della route "registration-confirmation"
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import { rmSync } from 'fs';
+import * as fs from 'fs';
+import { join } from 'path';
+import { fileURLToPath } from 'url';
 
+// Before:
+// import { join } from 'path';
+// …
+import { join, dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = import.meta.dirname || dirname(__filename);
 console.log('🧹 Pulizia cache in corso...');
 
 try {
@@ -18,17 +26,17 @@ try {
   
   // Pulisci node_modules/.cache
   console.log('🗑️  Pulizia cache node_modules...');
-  const cachePath = path.join(__dirname, 'node_modules', '.cache');
+  const cachePath = join(__dirname, 'node_modules', '.cache');
   if (fs.existsSync(cachePath)) {
-    fs.rmSync(cachePath, { recursive: true, force: true });
+    rmSync(cachePath, { recursive: true, force: true });
     console.log('✅ Cache node_modules pulita');
   }
   
   // Pulisci .expo
   console.log('🗂️  Pulizia cache .expo...');
-  const expoCachePath = path.join(__dirname, '.expo');
+  const expoCachePath = join(__dirname, '.expo');
   if (fs.existsSync(expoCachePath)) {
-    fs.rmSync(expoCachePath, { recursive: true, force: true });
+    rmSync(expoCachePath, { recursive: true, force: true });
     console.log('✅ Cache .expo pulita');
   }
   

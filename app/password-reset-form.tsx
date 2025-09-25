@@ -117,9 +117,9 @@ export default function PasswordResetForm() {
         'Password reimpostata con successo! Verrai reindirizzato alla dashboard.',
         [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('PasswordResetForm', 'Unexpected error during password update', error);
-      Alert.alert('Errore', error.message || 'Errore durante l\'aggiornamento della password');
+      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante l\'aggiornamento della password'));
     } finally {
       setLoading(false);
     }
