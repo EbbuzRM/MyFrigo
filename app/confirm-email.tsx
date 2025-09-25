@@ -55,8 +55,8 @@ export default function ConfirmEmailScreen() {
           },
         ]
       );
-    } catch (e: any) {
-      const errorMessage = e.message || 'Codice OTP non valido o scaduto.';
+    } catch (e: unknown) {
+      const errorMessage = (e instanceof Error) ? e.message : 'Codice OTP non valido o scaduto.';
       setError(errorMessage);
       LoggingService.error('ConfirmEmailOTP', 'An exception occurred during OTP verification', e);
     } finally {

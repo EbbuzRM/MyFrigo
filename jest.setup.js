@@ -62,17 +62,6 @@ jest.mock('react-native', () => {
   };
   const KeyboardAvoidingView = (props) => React.createElement('KeyboardAvoidingView', props);
   
-  const Platform = {
-    OS: 'ios',
-    select: jest.fn((obj) => obj.ios),
-  };
-  
-  // Rendi Platform scrivibile per i test che devono modificarlo
-  Object.defineProperty(Platform, 'OS', {
-    writable: true,
-    value: 'ios',
-  });
-  
   // Mock per Modal che non dipende da Platform
   const Modal = (props) => {
     return React.createElement(View, props);
@@ -101,10 +90,7 @@ jest.mock('react-native', () => {
     BackHandler,
     Keyboard,
     KeyboardAvoidingView,
-    Platform: Platform,
-    Dimensions: {
-      get: jest.fn(() => ({ width: 375, height: 667 })),
-    },
+    Platform,
     Animated: {
       ...Animated,
       View: Animated.createAnimatedComponent(View),
@@ -353,11 +339,8 @@ jest.mock('react-native-gesture-handler', () => {
     PanGestureHandler: View,
     PinchGestureHandler: View,
     RotationGestureHandler: View,
-    State: {},
     Directions: {},
     gestureHandlerRootHOC: jest.fn((component) => component),
-    Swipeable: View,
-    DrawerLayout: View,
     TouchableHighlight: TouchableOpacity,
     TouchableNativeFeedback: TouchableOpacity,
     TouchableOpacity: TouchableOpacity,

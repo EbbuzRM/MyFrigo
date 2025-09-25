@@ -10,7 +10,7 @@ export interface Quantity {
 }
 
 // Definisce la forma dello stato del form
-interface ManualEntryFormData {
+export interface ManualEntryFormData {
   name: string;
   brand: string;
   selectedCategory: string;

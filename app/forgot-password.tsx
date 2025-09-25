@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
@@ -23,7 +23,7 @@ export default function ForgotPassword() {
     LoggingService.info('ForgotPassword', 'Starting password reset with OTP', { email });
 
     try {
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         // Non specifichiamo redirectTo per ricevere un OTP invece di un link
       });
 
@@ -47,9 +47,9 @@ export default function ForgotPassword() {
       LoggingService.info('ForgotPassword', 'Password reset email sent successfully');
       Alert.alert('Successo', 'Email di reset della password inviata. Si prega di controllare la posta in arrivo.');
       setShowOtpInput(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ForgotPassword', 'Unexpected error during OTP reset', error);
-      Alert.alert('Errore', error.message || 'Errore durante l\'invio del codice OTP');
+      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante l\'invio del codice OTP'));
     } finally {
       setLoading(false);
     }
@@ -104,9 +104,9 @@ export default function ForgotPassword() {
       LoggingService.info('ForgotPassword', 'User metadata updated successfully', { userId: data.user?.id });
       // Reindirizza alla pagina di reimpostazione password
       router.replace('/password-reset-form');
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ForgotPassword', 'Unexpected error during OTP verification', error);
-      Alert.alert('Errore', error.message || 'Errore durante la verifica del codice');
+      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante la verifica del codice'));
     }
  finally {
       setLoading(false);

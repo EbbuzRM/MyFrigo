@@ -217,7 +217,7 @@ export default function LoginScreen() {
       const startTime = Date.now();
       
       // Login diretto con Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -253,12 +253,12 @@ export default function LoginScreen() {
       authLogger.endStep('SUPABASE_LOGIN', { duration });
       LoggingService.info('Login', 'Login successful', {
         duration,
-        userId: data.user?.id,
-        email: data.user?.email,
-        emailConfirmed: data.user?.email_confirmed_at,
-        emailVerified: data.user?.email_confirmed_at ? true : false,
-        userMetadata: data.user?.user_metadata,
-        session: data.session ? 'exists' : 'null'
+        userId: user?.id,
+        email: user?.email,
+        emailConfirmed: user?.email_confirmed_at,
+        emailVerified: user?.email_confirmed_at ? true : false,
+        userMetadata: user?.user_metadata,
+        session: session ? 'exists' : 'null'
       });
       
       // Aggiungiamo un listener per il pulsante indietro per evitare che l'utente
@@ -435,15 +435,6 @@ export default function LoginScreen() {
       if (!isRetry) {
         setLoading(false);
       }
-    }
-  };
-
-  // Gestisce il login con Google
-  const handleGoogleLogin = async () => {
-    try {
-      await performGoogleSignIn(false);
-    } catch (error) {
-      // L'errore è già gestito in performGoogleSignIn
     }
   };
 

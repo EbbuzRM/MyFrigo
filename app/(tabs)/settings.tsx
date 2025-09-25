@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  Bell,
   Trash2,
   Info,
   Sun,
@@ -22,7 +21,6 @@ import {
   Calendar,
   User,
   MessageSquareQuote,
-  Wrench,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';

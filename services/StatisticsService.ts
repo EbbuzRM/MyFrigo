@@ -14,10 +14,6 @@ export interface MostWastedProduct {
   quantity: number;
 }
 
-export interface EconomicSavings {
-  total: number;
-  currency: string;
-}
 
 export interface ChartData {
   labels: string[];
@@ -27,10 +23,6 @@ export interface ChartData {
   }[];
 }
 
-export interface GamificationData {
-  badges: string[];
-  points: number;
-}
 
 export class StatisticsService {
   /**
@@ -117,56 +109,6 @@ export class StatisticsService {
     }
   }
 
-  /**
-   * Calcola il risparmio economico basato sui prodotti non sprecati
-   */
-  static async calculateEconomicSavings(): Promise<EconomicSavings> {
-    try {
-      LoggingService.info('StatisticsService', 'Calculating economic savings');
-
-      // Per ora restituiamo un valore di esempio
-      // In futuro potremmo calcolare basato sui prezzi dei prodotti
-      const savings: EconomicSavings = {
-        total: 0,
-        currency: '€'
-      };
-
-      // Calcola il risparmio basato sui prodotti consumati vs sprecati
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('status, quantity')
-        .in('status', ['consumed', 'expired']);
-
-      if (error) {
-        LoggingService.error('StatisticsService', 'Error calculating savings:', error);
-        return savings;
-      }
-
-      let totalConsumed = 0;
-      let totalWasted = 0;
-
-      products?.forEach(product => {
-        const quantity = product.quantity || 0;
-        if (product.status === 'consumed') {
-          totalConsumed += quantity;
-        } else if (product.status === 'expired') {
-          totalWasted += quantity;
-        }
-      });
-
-      // Stima del risparmio: assumiamo un costo medio di €2 per prodotto
-      const averageCostPerProduct = 2;
-      const savedProducts = totalConsumed - totalWasted;
-      savings.total = Math.max(0, savedProducts * averageCostPerProduct);
-
-      LoggingService.info('StatisticsService', `Economic savings calculated: €${savings.total}`);
-      return savings;
-
-    } catch (error) {
-      LoggingService.error('StatisticsService', 'Failed to calculate economic savings:', error);
-      return { total: 0, currency: '€' };
-    }
-  }
 
   /**
    * Genera dati per i grafici delle statistiche
@@ -248,64 +190,6 @@ export class StatisticsService {
     }
   }
 
-  /**
-   * Calcola i dati per la gamification
-   */
-  static async getGamificationData(): Promise<GamificationData> {
-    try {
-      LoggingService.info('StatisticsService', 'Calculating gamification data');
-
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('status, consumed_date, expiration_date');
-
-      if (error) {
-        LoggingService.error('StatisticsService', 'Error fetching gamification data:', error);
-        return { badges: [], points: 0 };
-      }
-
-      let points = 0;
-      const badges: string[] = [];
-
-      // Calcola punti e badge basati sui prodotti
-      let consumedCount = 0;
-      let expiredCount = 0;
-      let activeCount = 0;
-
-      products?.forEach(product => {
-        if (product.status === 'consumed') {
-          consumedCount++;
-          points += 10; // 10 punti per prodotto consumato
-        } else if (product.status === 'expired') {
-          expiredCount++;
-          points -= 5; // -5 punti per prodotto sprecato
-        } else if (product.status === 'active') {
-          activeCount++;
-        }
-      });
-
-      // Assegna badge basati sui risultati
-      if (consumedCount >= 10) {
-        badges.push('Consumatore Pro');
-      }
-      if (expiredCount === 0 && consumedCount > 0) {
-        badges.push('Zero Sprechi');
-      }
-      if (activeCount >= 20) {
-        badges.push('Magazziniere');
-      }
-      if (points >= 100) {
-        badges.push('Campione del Risparmio');
-      }
-
-      LoggingService.info('StatisticsService', `Gamification: ${points} points, ${badges.length} badges`);
-      return { badges, points };
-
-    } catch (error) {
-      LoggingService.error('StatisticsService', 'Failed to calculate gamification data:', error);
-      return { badges: [], points: 0 };
-    }
-  }
 
   /**
    * Restituisce dati vuoti per il grafico in caso di errore
@@ -327,20 +211,16 @@ export class StatisticsService {
     try {
       LoggingService.info('StatisticsService', 'Fetching all statistics');
 
-      const [mostConsumed, mostWasted, savings, chartData, gamification] = await Promise.all([
+      const [mostConsumed, mostWasted, chartData] = await Promise.all([
         this.getMostConsumedProducts(),
         this.getMostWastedProducts(),
-        this.calculateEconomicSavings(),
-        this.getChartData(),
-        this.getGamificationData()
+        this.getChartData()
       ]);
 
       return {
         mostConsumed,
         mostWasted,
-        savings,
-        chartData,
-        gamification
+        chartData
       };
 
     } catch (error) {
@@ -348,9 +228,7 @@ export class StatisticsService {
       return {
         mostConsumed: [],
         mostWasted: [],
-        savings: { total: 0, currency: '€' },
-        chartData: this.getEmptyChartData(),
-        gamification: { badges: [], points: 0 }
+        chartData: this.getEmptyChartData()
       };
     }
   }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, Image } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PRODUCT_CATEGORIES } from '@/types/Product';
 import { router } from 'expo-router';
@@ -42,8 +42,8 @@ export default function ManageCategoriesScreen() {
       }
       setCreateCategoryName('');
       setCreateModalVisible(false);
-    } catch (error: any) {
-      Alert.alert('Errore', error.message);
+    } catch (error: unknown) {
+      Alert.alert('Errore', 'Si è verificato un errore durante la creazione della categoria.');
     }
   };
 
@@ -74,12 +74,13 @@ export default function ManageCategoriesScreen() {
       await updateCategory(selectedCategoryId, editCategoryNameInput);
       setEditModalVisible(false);
       LoggingService.info('ManageCategories', `Categoria ${selectedCategoryId} rinominata in "${editCategoryNameInput}"`);
-    } catch (error: any) {
-      Alert.alert('Errore', error.message || 'Si è verificato un errore durante l\'aggiornamento della categoria.');
+    } catch (error: unknown) {
+      LoggingService.error('ManageCategories', 'Failed to update category', error);
+      Alert.alert('Errore', 'Si è verificato un errore durante l\'aggiornamento della categoria.');
     }
   };
 
-  const renderItem = ({ item }: { item: any }) => (
+  const renderItem = ({ item }: { item: { id: string; name: string } }) => (
     <View style={styles.itemContainer}>
       <Text style={styles.categoryName}>{item.name}</Text>
       <View style={styles.buttonsContainer}>
@@ -337,16 +338,3 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
 });
 
-// Aggiungiamo gli stili di caricamento al getStyles
-const additionalStyles = {
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
-  },
-};

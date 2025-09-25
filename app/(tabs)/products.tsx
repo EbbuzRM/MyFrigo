@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProductCard } from '@/components/ProductCard';
@@ -10,14 +10,13 @@ import { useCategories } from '@/context/CategoryContext';
 import { useSettings } from '@/context/SettingsContext';
 import { router } from 'expo-router';
 import { Plus, Search } from 'lucide-react-native';
-import { Product } from '@/types/Product';
 import { StorageService } from '@/services/StorageService';
 import { LoggingService } from '@/services/LoggingService';
 
 const Products = () => {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const { products: allProducts, loading, refreshProducts } = useProducts();
+  const { products: allProducts, refreshProducts } = useProducts();
   const { categories } = useCategories();
   const { settings } = useSettings();
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,7 +24,6 @@ const Products = () => {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'fresh' | 'expiring' | 'expired'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
 
   useFocusEffect(
     useCallback(() => {
@@ -170,7 +168,7 @@ const Products = () => {
               ]}
               onPress={() => {
                 LoggingService.info('ProductsScreen', `Status filter changed to: ${status.key}`);
-                setSelectedStatus(status.key as any);
+                setSelectedStatus(status.key as 'all' | 'fresh' | 'expiring' | 'expired');
               }}
             >
               <Text style={[ 
@@ -212,7 +210,7 @@ const Products = () => {
                 await refreshProducts();
                 LoggingService.info('Products', `Prodotto ${item.name} eliminato con successo`);
               } catch (error) {
-                LoggingService.error('Products', 'Errore durante l\'eliminazione del prodotto:', error);
+                LoggingService.error('Products', `Errore durante l'eliminazione del prodotto: ${error}`);
               } finally {
                 setIsDeleting(false);
               }

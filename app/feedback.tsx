@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Image,
   ActionSheetIOS,
-  PermissionsAndroid,
   Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,7 +22,6 @@ import * as FileSystem from 'expo-file-system';
 import { useTheme } from '@/context/ThemeContext';
 import { Toast } from '@/components/Toast';
 import { supabase } from '@/services/supabaseClient';
-import { Linking } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
 import { ChevronLeft } from 'lucide-react-native';
 
@@ -138,10 +136,10 @@ const FeedbackScreen = () => {
       Keyboard.dismiss();
       setTimeout(() => router.back(), 50);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('FeedbackScreen', 'Errore invio feedback', error);
-      const errorMessage = error.message || 'Errore sconosciuto';
-      showToast(`Errore nell\'invio: ${errorMessage}`, 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+      showToast(`Errore nell'invio: ${errorMessage}`, 'error');
     } finally {
       setLoading(false);
     }

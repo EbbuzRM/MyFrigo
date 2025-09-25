@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Resend } from 'https://esm.sh/resend@3.2.0'
+import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
 import { decode } from "https://deno.land/std@0.208.0/encoding/base64.ts";
 
 // Inizializza il client di Resend con la chiave API sicura
@@ -43,7 +43,7 @@ serve(async (req) => {
       )
 
       // Estrai il tipo di contenuto e i dati base64
-      const match = screenshot.match(/^data:(.+);base64,(.+)$/');
+      const match = screenshot.match(/^data:(.+);base64,(.+)$/);
       if (!match) {
         throw new Error('Formato screenshot non valido. Atteso un data URI base64.');
       }

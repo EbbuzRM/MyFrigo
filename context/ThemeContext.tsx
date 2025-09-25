@@ -58,7 +58,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         // Error handling with fallback to system theme
-        LoggingService.error('ThemeContext', 'Error loading theme preferences', error);
+        LoggingService.error('ThemeContext', `Error loading theme preferences: ${error}`);
         const fallbackTheme = getSystemTheme();
         LoggingService.info('ThemeContext', `Using fallback system theme: ${fallbackTheme}`);
         setTheme(fallbackTheme);

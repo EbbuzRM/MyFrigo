@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 
 export default function CompleteProfileScreen() {
-  const { updateProfile, refreshUserProfile } = useAuth(); // Usa refreshUserProfile
+  const { updateProfile } = useAuth(); // Usa refreshUserProfile
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -27,8 +27,9 @@ export default function CompleteProfileScreen() {
       // La navigazione verrà gestita automaticamente dal layout principale
       // non appena rileverà che il profilo è stato completato.
 
-    } catch (error: any) {
-      Alert.alert('Errore', 'Impossibile salvare il profilo: ' + error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+      Alert.alert('Errore', 'Impossibile salvare il profilo: ' + errorMessage);
     } finally {
       setSaving(false);
     }
