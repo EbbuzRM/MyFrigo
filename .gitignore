@@ -145,6 +145,9 @@ htmlcov/
 #Cline
 .clinerules
 
+#Cursor
+.cursor
+
 # Project specific
 ROADMAP.MD
 testsprite_tests/
