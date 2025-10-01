@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StorageService } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { HistoryStats } from '@/components/HistoryStats';
 import { SuggestionCard } from '@/components/SuggestionCard';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -30,7 +30,6 @@ const History = () => {
   const dataLoadedRef = useRef<boolean>(false);
 
   const loadData = useCallback(async (forceRefresh = false) => {
-    // Evita caricamenti frequenti (throttling)
     const now = Date.now();
     if (!forceRefresh && now - lastLoadTimeRef.current < THROTTLE_TIME) {
       LoggingService.info('History', 'Throttling data load - skipped');
@@ -38,11 +37,9 @@ const History = () => {
       return;
     }
 
-    // Imposta lo stato di caricamento
     setLoading(true);
     setError(null);
 
-    // Imposta un timeout per il caricamento
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -56,20 +53,17 @@ const History = () => {
       }
     }, LOADING_TIMEOUT);
 
-    // Registra l'inizio del caricamento
     LoggingService.info('History', 'Starting data load');
 
     try {
-      // Carica tutte le categorie di prodotti dello storico
       const [consumedProducts, activeExpiredProducts, trulyExpiredProducts] = await Promise.all([
-        StorageService.getHistory(), // status = 'consumed'
-        StorageService.getExpiredProducts(), // status = 'active' & expiration_date < now
-        StorageService.getTrulyExpiredProducts(), // status = 'expired'
+        ProductStorage.getHistory(),
+        ProductStorage.getExpiredProducts(),
+        ProductStorage.getTrulyExpiredProducts(),
       ]);
 
       const combinedHistory = [...consumedProducts, ...activeExpiredProducts, ...trulyExpiredProducts];
 
-      // Ordina per data di scadenza o consumo, la più recente prima
       combinedHistory.sort((a, b) => {
         const dateA = new Date(a.consumedDate || a.expirationDate).getTime();
         const dateB = new Date(b.consumedDate || b.expirationDate).getTime();
@@ -82,7 +76,7 @@ const History = () => {
 
     } catch (error) {
       LoggingService.error('History', "Failed to load history stats:", error);
-      setAllHistory([]); // Assicura che lo stato sia pulito in caso di errore
+      setAllHistory([]);
       setError('Errore durante il caricamento dei dati');
     } finally {
       if (timeoutRef.current) {
@@ -96,7 +90,6 @@ const History = () => {
 
   useFocusEffect(
     useCallback(() => {
-      // Carica i dati solo se non sono già stati caricati o se è passato abbastanza tempo
       const now = Date.now();
       const shouldLoadData = !dataLoadedRef.current ||
                             (now - lastLoadTimeRef.current) > THROTTLE_TIME;
@@ -110,7 +103,6 @@ const History = () => {
       }
 
       return () => {
-        // Pulizia quando il componente perde il focus
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
@@ -121,14 +113,9 @@ const History = () => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadData(true); // Forza il refresh
+    loadData(true);
   };
 
-  const navigateToAdvancedStats = () => {
-    router.push('/advanced-stats');
-  };
-
-  // Ottimizzazione: calcola i conteggi una sola volta durante il filtraggio
   const { consumedCount, expiredCount, suggestions } = useMemo(() => {
     LoggingService.debug('History', 'Starting stats calculation');
     const startTime = performance.now();
@@ -136,7 +123,6 @@ const History = () => {
     let consumedCount = 0;
     let expiredCount = 0;
     
-    // Calcola i conteggi in un solo passaggio
     for (let i = 0; i < allHistory.length; i++) {
       if (allHistory[i].status === 'consumed') {
         consumedCount++;
@@ -158,7 +144,6 @@ const History = () => {
       text: "Clicca sul riquadro 'Consumati' per visualizzare la lista e ripristinare i prodotti."
     }];
 
-    // Aggiungi suggerimenti solo se ci sono abbastanza dati
     if (totalCount > 0) {
       if (wastePercentage > 30) {
         newSuggestions.push({
@@ -238,22 +223,6 @@ const History = () => {
           ))}
         </View>
 
-        {/* Pulsante per Statistiche Avanzate */}
-        <View style={styles.advancedStatsContainer}>
-          <TouchableOpacity
-            style={styles.advancedStatsButton}
-            onPress={navigateToAdvancedStats}
-            activeOpacity={0.8}
-          >
-            <BarChart3 size={20} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-            <View style={styles.advancedStatsTextContainer}>
-              <Text style={styles.advancedStatsTitle}>📈 Statistiche Avanzate</Text>
-              <Text style={styles.advancedStatsSubtitle}>
-                Scopri di più sui tuoi consumi
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

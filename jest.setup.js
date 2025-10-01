@@ -90,8 +90,7 @@ jest.mock('react-native', () => {
     BackHandler,
     Keyboard,
     KeyboardAvoidingView,
-    Platform,
-    Animated: {
+    Platform: require('react-native/Libraries/Utilities/Platform'),    Animated: {
       ...Animated,
       View: Animated.createAnimatedComponent(View),
       Text: Animated.createAnimatedComponent(Text),

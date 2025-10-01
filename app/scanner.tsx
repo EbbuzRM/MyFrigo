@@ -5,10 +5,10 @@ import { router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { ArrowLeft, RefreshCw } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StorageService } from '@/services/StorageService';
+import { TemplateService } from '@/services/TemplateService';
 import { useCategories } from '@/context/CategoryContext';
 import { ProductCategory, Product } from '@/types/Product';
-import { ProductTemplate } from '@/services/StorageService';
+import { ProductTemplate } from '@/services/TemplateService';
 import { LoggingService } from '@/services/LoggingService';
 
 // Timeout per le richieste API (in millisecondi)
@@ -74,7 +74,7 @@ export default function BarcodeScannerScreen() {
   // Funzione per recuperare i dati del prodotto da Supabase
   const fetchProductFromSupabase = useCallback(async (barcode: string): Promise<Partial<Product> | null> => {
     setLoadingProgress('Cercando prodotto nel database locale...');
-    const template = await StorageService.getProductTemplate(barcode);
+    const template = await TemplateService.getProductTemplate(barcode);
     return template;
   }, []);
 

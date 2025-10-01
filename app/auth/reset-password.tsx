@@ -4,12 +4,14 @@ import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity } from 'rea
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
-console.log("TEST DIAGNOSTICO - ResetPassword component MOUNTED");
-console.log("Parametri RAW:", JSON.stringify(useLocalSearchParams()));
-
 export default function ResetPassword() {
   const router = useRouter();
   const params = useLocalSearchParams();
+
+  // Log di diagnostica spostati e convertiti
+  LoggingService.debug('ResetPassword', 'Component MOUNTED');
+  LoggingService.debug('ResetPassword', 'Raw params', params);
+
   const token_hash = params.token_hash || params.token; // Gestione ibrida
   const [diagnosticToken, setDiagnosticToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

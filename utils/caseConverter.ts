@@ -1,5 +1,6 @@
 import { Product, ProductCategory } from '@/types/Product';
-import { AppSettings, ProductTemplate } from '@/services/StorageService';
+import { AppSettings } from '@/services/SettingsService';
+import { ProductTemplate } from '@/services/TemplateService';
 import { LoggingService } from '@/services/LoggingService';
 
 // Helper functions for key conversion

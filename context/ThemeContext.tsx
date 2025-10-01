@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Appearance } from 'react-native';
-import { StorageService } from '@/services/StorageService';
+import { SettingsService } from '@/services/SettingsService';
 import { LoggingService } from '@/services/LoggingService';
 import { COLORS, getThemeColors } from '@/constants/colors';
 
@@ -16,6 +16,7 @@ interface ThemeColors {
   textSecondary: string;  // Colore secondario del testo (per informazioni meno importanti)
   primary: string;        // Colore primario dell'app (per pulsanti, link, ecc.)
   error: string;          // Colore per messaggi di errore
+  success: string;        // Colore per azioni di successo
   cardBackground: string; // Sfondo delle card
   background: string;     // Sfondo generale dell'app
 }
@@ -44,7 +45,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       try {
         LoggingService.info('ThemeContext', 'Loading theme preferences');
-        const settings = await StorageService.getSettings();
+        const settings = await SettingsService.getSettings();
         const savedTheme = settings.theme;
         
         if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
@@ -95,6 +96,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     textSecondary: themeColors.textSecondary,
     primary: themeColors.PRIMARY,
     error: themeColors.ERROR,
+    success: themeColors.SUCCESS,
     cardBackground: themeColors.CARD_BACKGROUND,
     background: themeColors.BACKGROUND,
   };
@@ -102,7 +104,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const setAppTheme = async (newTheme: Theme) => {
     setTheme(newTheme);
     try {
-      await StorageService.updateSettings({ theme: newTheme });
+      await SettingsService.updateSettings({ theme: newTheme });
       LoggingService.info('ThemeContext', `Theme updated to: ${newTheme}`);
     } catch (error) {
       LoggingService.error('ThemeContext', `Failed to save theme preference: ${newTheme}`, error);

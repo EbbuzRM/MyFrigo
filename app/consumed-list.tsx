@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StorageService } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { HistoryCard } from '@/components/HistoryCard';
 import { useFocusEffect, router } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -20,8 +20,8 @@ export default function ConsumedListScreen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const history = await StorageService.getHistory();
-      const consumed = history.filter(p => p.status === 'consumed');
+      const history = await ProductStorage.getHistory();
+      const consumed = history.filter((p: Product) => p.status === 'consumed');
       setConsumedProducts(consumed);
     } catch (error) {
       LoggingService.error('ConsumedList', 'Failed to load consumed products:', error);
@@ -44,7 +44,7 @@ export default function ConsumedListScreen() {
 
   const handleRestoreProduct = useCallback(async (productId: string) => {
     try {
-      await StorageService.restoreConsumedProduct(productId);
+      await ProductStorage.restoreConsumedProduct(productId);
       Alert.alert('Prodotto Ripristinato', 'Il prodotto è stato spostato nuovamente nella tua dispensa.');
       loadData(); // Ricarica la lista per riflettere il cambiamento
     } catch (error) {

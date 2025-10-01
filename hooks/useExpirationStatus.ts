@@ -12,8 +12,7 @@ import { COLORS } from '@/constants/colors';
  * @param {string|undefined} expirationDate - La data di scadenza del prodotto in formato stringa ISO o undefined.
  * @returns {{text: string, color: string, backgroundColor: string}} Lo stato di scadenza calcolato.
  */
-export function useExpirationStatus(expirationDate: string | undefined) {
-  const { isDarkMode } = useTheme();
+export function useExpirationStatus(expirationDate: string | undefined, isDarkMode: boolean) {
 
   const status = useMemo(() => {
     // Utilizziamo i colori centralizzati

@@ -1,6 +1,6 @@
 import { convertSettingsToCamelCase } from '../utils/caseConverter';
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
-import { StorageService, AppSettings } from '@/services/StorageService';
+import { SettingsService, AppSettings } from '@/services/SettingsService';
 import { useAuth } from './AuthContext';
 import { eventEmitter } from '@/services/NotificationService';
 import { NotificationService } from '@/services/NotificationService'; // Importa il servizio
@@ -53,7 +53,7 @@ const fetchSettings = useCallback(async () => {
   LoggingService.info('SettingsContext', 'Starting fetchSettings...');
   setLoading(true);
   try {
-    const initialSettings = await StorageService.getSettings();
+    const initialSettings = await SettingsService.getSettings();
     if (initialSettings) {
       LoggingService.info('SettingsContext', 'Successfully fetched settings:', initialSettings);
       setSettings(initialSettings);
@@ -80,7 +80,7 @@ const fetchSettings = useCallback(async () => {
   useEffect(() => {
     if (user) {
       fetchSettings();
-      const unsubscribe = StorageService.listenToSettings((newSettings) => {
+      const unsubscribe = SettingsService.listenToSettings((newSettings) => {
         setSettings(convertSettingsToCamelCase(newSettings as unknown as Record<string, unknown>));
       });
       return () => unsubscribe();
@@ -98,8 +98,8 @@ const updateSettings = async (newSettings: Partial<AppSettings>) => {
   LoggingService.info('SettingsContext', 'Attempting optimistic update with:', newSettings);
   setSettings(current => ({ ...current!, ...newSettings }));
   try {
-    const updatedSettings = await StorageService.updateSettings(newSettings);
-    LoggingService.info('SettingsContext', 'Update call to StorageService successful.');
+    const updatedSettings = await SettingsService.updateSettings(newSettings);
+    LoggingService.info('SettingsContext', 'Update call to SettingsService successful.');
     if (updatedSettings) {
       eventEmitter.emit('settingsChanged', updatedSettings);
     }

@@ -29,7 +29,7 @@ import { SettingsCard } from '@/components/SettingsCard';
 import { Toast } from '@/components/Toast';
 import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
-import { StorageService } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
 import { DiagnosticPanel } from '@/components/DiagnosticPanel';
 
@@ -91,7 +91,9 @@ const Settings = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await StorageService.clearAllData();
+              // TODO: Implementare clearAllData in ProductStorage
+              // await ProductStorage.clearAllData();
+              Alert.alert('Funzionalità temporaneamente non disponibile', 'La cancellazione di tutti i dati sarà disponibile nei prossimi aggiornamenti.');
               showToast('Tutti i dati sono stati eliminati.');
             } catch {
               showToast('Impossibile eliminare i dati.', 'error');
@@ -115,7 +117,7 @@ const Settings = () => {
 
   return (
     <SafeAreaView style={styles.container} testID="settings-screen">
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={styles.header}>
           <Text style={styles.title}>Impostazioni</Text>
           <Text style={styles.subtitle}>Personalizza l'app secondo le tue preferenze</Text>
@@ -171,7 +173,7 @@ const Settings = () => {
           />
         </View>
 
-        <View style={[styles.section, { marginBottom: 40 }]}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informazioni e Supporto</Text>
           <SettingsCard
             icon={<Info size={24} color={isDarkMode ? '#9ca3af' : '#6b7280'} />}

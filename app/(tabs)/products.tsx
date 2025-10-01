@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Tex
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { ConsumeQuantityModal } from '@/components/ConsumeQuantityModal';
 import { useFocusEffect } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useProducts } from '@/context/ProductContext';
@@ -10,8 +11,9 @@ import { useCategories } from '@/context/CategoryContext';
 import { useSettings } from '@/context/SettingsContext';
 import { router } from 'expo-router';
 import { Plus, Search } from 'lucide-react-native';
-import { StorageService } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
+import { Product } from '@/types/Product';
 
 const Products = () => {
   const { isDarkMode } = useTheme();
@@ -24,6 +26,8 @@ const Products = () => {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'fresh' | 'expiring' | 'expired'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConsumeModalVisible, setIsConsumeModalVisible] = useState(false);
+  const [productToConsume, setProductToConsume] = useState<Product | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -104,16 +108,43 @@ const Products = () => {
     return categories.find(cat => cat.id === categoryId);
   };
 
-  
+  const handleConsumeConfirm = async (consumedQuantity: number) => {
+    if (!productToConsume) return;
+
+    const currentQuantity = productToConsume.quantities[0]?.quantity || 0;
+    const remainingQuantity = currentQuantity - consumedQuantity;
+
+    try {
+            if (remainingQuantity > 0) {
+                const newQuantities = [{ ...productToConsume.quantities[0], quantity: remainingQuantity }];
+                await ProductStorage.saveProduct({ ...productToConsume, quantities: newQuantities });
+                LoggingService.info('ProductsScreen', `Updated quantity for ${productToConsume.name}. Remaining: ${remainingQuantity}`);
+            } else {
+            await ProductStorage.updateProductStatus(productToConsume.id!, 'consumed');
+            LoggingService.info('ProductsScreen', `Product ${productToConsume.name} marked as consumed.`);
+        }
+        await refreshProducts();
+    } catch (error) {
+        LoggingService.error('ProductsScreen', 'Error consuming product', error);
+        Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
+    } finally {
+        setIsConsumeModalVisible(false);
+        setProductToConsume(null);
+    }
+  };
 
   const handleMoveExpiredToHistory = useCallback(async () => {
     try {
-      const expiredProducts = await StorageService.getExpiredProducts();
+      const expiredProducts = await ProductStorage.getExpiredProducts();
       if (expiredProducts.length > 0) {
         const productIds = expiredProducts.map(p => p.id!);
-        await StorageService.moveProductsToHistory(productIds);
+        await ProductStorage.moveProductsToHistory(productIds);
         await refreshProducts();
-        Alert.alert('Successo', `${expiredProducts.length} prodotti scaduti sono stati spostati nella cronologia.`);
+        const count = expiredProducts.length;
+        const message = count === 1
+          ? '1 prodotto scaduto è stato spostato nella cronologia.'
+          : `${count} prodotti scaduti sono stati spostati nella cronologia.`;
+        Alert.alert('Successo', message);
       }
     } catch (error) {
       LoggingService.error('Products', 'Errore durante lo spostamento dei prodotti scaduti nella cronologia:', error);
@@ -201,12 +232,16 @@ const Products = () => {
           <ProductCard
             product={item}
             categoryInfo={getCategoryInfo(item.category)}
-            onPress={() => router.push(`/product-detail?id=${item.id}`)}
+            onPress={() => router.push({ pathname: '/manual-entry', params: { productId: item.id } })}
+            onConsume={() => {
+                setProductToConsume(item);
+                setIsConsumeModalVisible(true);
+            }}
             onDelete={async () => {
               LoggingService.info('ProductsScreen', `User initiated deletion for product: ${item.id}`);
               try {
                 setIsDeleting(true);
-                await StorageService.deleteProduct(item.id!);
+                await ProductStorage.deleteProduct(item.id!);
                 await refreshProducts();
                 LoggingService.info('Products', `Prodotto ${item.name} eliminato con successo`);
               } catch (error) {
@@ -228,6 +263,18 @@ const Products = () => {
           />
         }
       />
+
+    {productToConsume && (
+        <ConsumeQuantityModal
+            visible={isConsumeModalVisible}
+            product={productToConsume}
+            onConfirm={handleConsumeConfirm}
+            onCancel={() => {
+                setIsConsumeModalVisible(false);
+                setProductToConsume(null);
+            }}
+        />
+    )}
 
     </SafeAreaView>
   );

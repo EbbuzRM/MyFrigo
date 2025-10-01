@@ -44,7 +44,6 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ state, descriptors, nav
 
         const onPress = () => {
           LoggingService.info('AnimatedTabBar', `Tab pressed -> name: ${route.name}, index: ${index}`);
-          console.log(`[AnimatedTabBar] Tab pressed -> name: ${route.name}, index: ${index}`);
     
           const event = navigation.emit({
             type: 'tabPress',
@@ -58,19 +57,15 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ state, descriptors, nav
               if (typeof navigation.jumpTo === 'function') {
                 navigation.jumpTo(route.name);
                 LoggingService.info('AnimatedTabBar', `navigation.jumpTo called for ${route.name}`);
-                console.log(`[AnimatedTabBar] navigation.jumpTo called for ${route.name}`);
               } else {
                 navigation.navigate(route.name);
                 LoggingService.info('AnimatedTabBar', `navigation.navigate called for ${route.name}`);
-                console.log(`[AnimatedTabBar] navigation.navigate called for ${route.name}`);
               }
             } catch (navError) {
               LoggingService.error('AnimatedTabBar', `Navigation error for ${route.name}`, navError);
-              console.error('[AnimatedTabBar] Navigation error for', route.name, navError);
             }
           } else {
             LoggingService.info('AnimatedTabBar', `Tab press ignored (isFocused=${isFocused}, defaultPrevented=${event.defaultPrevented}) for ${route.name}`);
-            console.log(`[AnimatedTabBar] Tab press ignored (isFocused=${isFocused}, defaultPrevented=${event.defaultPrevented}) for ${route.name}`);
           }
         };
 

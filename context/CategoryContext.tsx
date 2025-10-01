@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, ReactNode } from 'react';
 import { Alert } from 'react-native';
 import { ProductCategory, PRODUCT_CATEGORIES } from '@/types/Product';
-import { StorageService } from '@/services/StorageService';
+import { CategoryService } from '@/services/CategoryService';
 import { IconService } from '@/services/IconService';
 import { useAuth } from './AuthContext';
 import { randomUUID } from 'expo-crypto';
@@ -34,9 +34,9 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
         
         for (const category of categoriesToUpdate) {
           const newIconPath = category.icon!.replace('icon_products/', 'assets/icon_products/');
-          const newLocalIcon = IconService.convertToLocalIcon(newIconPath);
+          const newLocalIcon = newIconPath ? { uri: newIconPath } : undefined; // Converted to LocalIcon if string
           
-          await StorageService.updateCategory({
+          await CategoryService.updateCategory({
             id: category.id,
             icon: newIconPath,
             localIcon: newLocalIcon !== undefined ? newLocalIcon : undefined
@@ -53,7 +53,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   const loadCategories = useCallback(async () => {
     setLoading(true);
     try {
-      const dbCategories = await StorageService.getAllCategories();
+      const dbCategories = await CategoryService.getAllCategories();
 
       const finalCategories = [
         ...dbCategories,
@@ -109,7 +109,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       isDefault: false,
     };
 
-    const savedCategory = await StorageService.addCategory(newCategoryData);
+    const savedCategory = await CategoryService.addCategory(newCategoryData);
 
     if (savedCategory) {
       setCategories(prev => [...prev, savedCategory].sort((a, b) => a.name.localeCompare(b.name)));
@@ -118,7 +118,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       LoggingService.info('CategoryContext', `Fetched icon for ${trimmedName}:`, fetchedIcon);
       
       if (fetchedIcon) {
-        const localIcon = IconService.convertToLocalIcon(fetchedIcon);
+        const localIcon = typeof fetchedIcon === 'string' ? IconService.convertToLocalIcon(fetchedIcon!) : fetchedIcon;
         LoggingService.info('CategoryContext', `Converted icon to local format:`, localIcon);
         
         const finalCategory = {
@@ -129,7 +129,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
         
         LoggingService.info('CategoryContext', 'Updating category with icon data:', finalCategory);
         
-        await StorageService.updateCategory({
+        await CategoryService.updateCategory({
           id: finalCategory.id,
           icon: finalCategory.icon,
           localIcon: finalCategory.localIcon
@@ -174,7 +174,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     const originalCategories = categories;
     setCategories(prev => prev.filter(cat => cat.id !== id));
     try {
-      await StorageService.deleteCategory(id);
+      await CategoryService.deleteCategory(id);
     } catch (error) {
       LoggingService.error('CategoryContext', `Errore durante l'eliminazione della categoria, ripristino: ${error}`);
       setCategories(originalCategories);
@@ -206,7 +206,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     };
 
     try {
-      await StorageService.updateCategory(updatedCategory);
+      await CategoryService.updateCategory(updatedCategory);
       
       setCategories(prev => prev.map(cat =>
         cat.id === id ? updatedCategory : cat

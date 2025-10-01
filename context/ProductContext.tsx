@@ -1,11 +1,12 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { StorageService, AppSettings } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { NotificationService, eventEmitter } from '@/services/NotificationService';
 import * as Notifications from 'expo-notifications';
 import { Product } from '@/types/Product';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
 import { LoggingService } from '@/services/LoggingService';
+import { AppSettings } from '@/services/SettingsService';
 
 interface ProductContextType {
   products: Product[];
@@ -44,7 +45,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setLoading(true);
     try {
       // Tipizzazione più specifica per i risultati delle operazioni
-      const { data, error } = await StorageService.getProducts() as {
+      const { data, error } = await ProductStorage.getProducts() as {
         data: Product[] | null;
         error: { message: string } | null;
       };
@@ -127,7 +128,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Imposta il listener per i prodotti
       try {
-        productsUnsubscribe = StorageService.listenToProducts(() => {
+        productsUnsubscribe = ProductStorage.listenToProducts(() => {
           if (isMounted) {
             fetchProducts().catch(error => {
               LoggingService.error("ProductContext", "Error fetching products from listener", error);

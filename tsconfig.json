@@ -25,7 +25,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["jest"]
+    "types": [
+      "jest"
+    ]
   },
   "exclude": [
     "node_modules",
@@ -33,5 +35,6 @@
     "metro.config.js",
     "jest.config.js",
     "supabase/**"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

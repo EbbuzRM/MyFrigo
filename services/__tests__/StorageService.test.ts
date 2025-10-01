@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { StorageService } from '../StorageService';
+import { ProductStorage } from '../ProductStorage';
 import { supabase } from '../supabaseClient';
 import { Product } from '@/types/Product';
 import { randomUUID } from 'expo-crypto';
@@ -55,7 +55,7 @@ jest.mock('expo-crypto', () => ({
 }));
 
 // --- Test Suite ---
-describe('StorageService', () => {
+describe('ProductStorage', () => {
   // Pulisce tutti i mock dopo ogni test per garantire l'isolamento
   afterEach(() => {
     jest.clearAllMocks();
@@ -73,14 +73,13 @@ describe('StorageService', () => {
       const mockProducts = [{ id: '1', name: 'Latte', user_id: 'test-user-id' }];
       const mockQueryBuilder = supabase.from('products');
       (mockQueryBuilder.select as jest.Mock).mockReturnValue(mockQueryBuilder);
-      (mockQueryBuilder.eq as jest.Mock).mockReturnValue(mockQueryBuilder);
-      (mockQueryBuilder.returns as jest.Mock).mockResolvedValue({
+      (mockQueryBuilder.eq as jest.Mock).mockResolvedValue({
         data: mockProducts,
         error: null,
       });
 
       // Azione: Chiama la funzione da testare
-      const { data, error } = await StorageService.getProducts();
+       const { data, error } = await ProductStorage.getProducts();
 
       // Asserzioni: Verifica che le funzioni corrette siano state chiamate
       expect(supabase.from).toHaveBeenCalledWith('products');
@@ -89,7 +88,7 @@ describe('StorageService', () => {
       
       // Asserzioni: Verifica che i dati restituiti siano corretti
       expect(error).toBeNull();
-      expect(data).toEqual([{ id: '1', name: 'Latte', userId: 'test-user-id' }]); // Nota la conversione a camelCase
+      expect(data).toEqual([{ id: '1', name: 'Latte', userId: 'test-user-id', quantities: [] }]); // Nota la conversione a camelCase
     });
 
     it('should return an empty array if no user is authenticated', async () => {
@@ -99,7 +98,7 @@ describe('StorageService', () => {
       });
 
       // Azione
-      const { data, error } = await StorageService.getProducts();
+       const { data, error } = await ProductStorage.getProducts();
 
       // Asserzioni
       expect(error).toBeNull();
@@ -121,7 +120,7 @@ describe('StorageService', () => {
       const newProduct: Partial<Product> = { name: 'Pane', quantity: 1, unit: 'kg' };
 
       // Azione
-      await StorageService.saveProduct(newProduct);
+       await ProductStorage.saveProduct(newProduct);
 
       // Asserzioni
       expect(supabase.from).toHaveBeenCalledWith('products');
@@ -150,7 +149,7 @@ describe('StorageService', () => {
       const productId = 'product-to-delete';
 
       // Azione
-      await StorageService.deleteProduct(productId);
+       await ProductStorage.deleteProduct(productId);
 
       // Asserzioni
       expect(supabase.from).toHaveBeenCalledWith('products');
@@ -170,7 +169,7 @@ describe('StorageService', () => {
       const productId = 'product-to-consume';
 
       // Azione
-      await StorageService.updateProductStatus(productId, 'consumed');
+       await ProductStorage.updateProductStatus(productId, 'consumed');
 
       // Asserzioni
       expect(supabase.from).toHaveBeenCalledWith('products');

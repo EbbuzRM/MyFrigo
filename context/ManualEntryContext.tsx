@@ -1,6 +1,7 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { LoggingService } from '@/services/LoggingService';
 
 // Definisce la forma di una singola quantità
 export interface Quantity {
@@ -86,44 +87,52 @@ const getInitialState = (): ManualEntryFormData => ({
 export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
   const [formData, setFormData] = useState<ManualEntryFormData>(getInitialState());
 
-  const setName = (name: string) => setFormData(prev => ({ ...prev, name }));
-  const setBrand = (brand: string) => setFormData(prev => ({ ...prev, brand }));
-  const setSelectedCategory = (category: string) => setFormData(prev => ({ ...prev, selectedCategory: category }));
-  const setQuantities = (quantities: Quantity[]) => setFormData(prev => ({ ...prev, quantities }));
+  const setName = useCallback((name: string) => setFormData(prev => ({ ...prev, name })), []);
+  const setBrand = useCallback((brand: string) => setFormData(prev => ({ ...prev, brand })), []);
+  const setSelectedCategory = useCallback((category: string) => setFormData(prev => ({ ...prev, selectedCategory: category })), []);
+  const setQuantities = useCallback((quantities: Quantity[]) => setFormData(prev => ({ ...prev, quantities })), []);
   
-  const addQuantity = () => {
+  const addQuantity = useCallback(() => {
     setFormData(prev => ({
       ...prev,
       quantities: [...prev.quantities, { id: uuidv4(), quantity: '1', unit: 'pz' }]
     }));
-  };
+  }, []);
 
-  const removeQuantity = (id: string) => {
+  const removeQuantity = useCallback((id: string) => {
     setFormData(prev => ({
       ...prev,
       quantities: prev.quantities.filter(q => q.id !== id)
     }));
-  };
+  }, []);
 
-  const updateQuantity = (id: string, field: 'quantity' | 'unit', value: string) => {
+  const updateQuantity = useCallback((id: string, field: 'quantity' | 'unit', value: string) => {
     setFormData(prev => ({
       ...prev,
       quantities: prev.quantities.map(q =>
         q.id === id ? { ...q, [field]: value } : q
       )
     }));
-  };
+  }, []);
 
-  const setPurchaseDate = (date: string) => setFormData(prev => ({ ...prev, purchaseDate: date }));
-  const setExpirationDate = (date: string) => setFormData(prev => ({ ...prev, expirationDate: date }));
-  const setNotes = (notes: string) => setFormData(prev => ({ ...prev, notes }));
-  const setBarcode = (barcode: string) => setFormData(prev => ({ ...prev, barcode }));
-  const setImageUrl = (url: string | null) => setFormData(prev => ({ ...prev, imageUrl: url }));
-  const setHasManuallySelectedCategory = (manual: boolean) => setFormData(prev => ({ ...prev, hasManuallySelectedCategory: manual }));
-  const setIsEditMode = (editMode: boolean) => setFormData(prev => ({ ...prev, isEditMode: editMode }));
-  const setOriginalProductId = (productId: string | null) => setFormData(prev => ({ ...prev, originalProductId: productId }));
+  const setPurchaseDate = useCallback((date: string) => {
+    LoggingService.info('ManualEntryContext', `Setting purchaseDate TO: ${date}`);
+    setFormData(prev => ({ ...prev, purchaseDate: date }));
+  }, []); // Dipendenza vuota perché formData è usato solo per il log
 
-  const initializeForm = (initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string }> = {}) => {
+  const setExpirationDate = useCallback((date: string) => {
+    LoggingService.info('ManualEntryContext', `Setting expirationDate TO: ${date}`);
+    setFormData(prev => ({ ...prev, expirationDate: date }));
+  }, []); // Dipendenza vuota perché formData è usato solo per il log
+  const setNotes = useCallback((notes: string) => setFormData(prev => ({ ...prev, notes })), []);
+  const setBarcode = useCallback((barcode: string) => setFormData(prev => ({ ...prev, barcode })), []);
+  const setImageUrl = useCallback((url: string | null) => setFormData(prev => ({ ...prev, imageUrl: url })), []);
+  const setHasManuallySelectedCategory = useCallback((manual: boolean) => setFormData(prev => ({ ...prev, hasManuallySelectedCategory: manual })), []);
+  const setIsEditMode = useCallback((editMode: boolean) => setFormData(prev => ({ ...prev, isEditMode: editMode })), []);
+  const setOriginalProductId = useCallback((productId: string | null) => setFormData(prev => ({ ...prev, originalProductId: productId })), []);
+
+  const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string }> = {}) => {
+    LoggingService.info('ManualEntryContext', `Initializing form with: ${JSON.stringify(initialData, null, 2)}`);
     let newState = { ...getInitialState(), ...initialData };
 
     if (initialData.product) {
@@ -159,13 +168,14 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     delete newState.unit;
 
     setFormData(newState);
-  };
+  }, []);
 
-  const clearForm = () => {
+  const clearForm = useCallback(() => {
+    LoggingService.info('ManualEntryContext', 'Clearing form');
     setFormData(getInitialState());
-  };
+  }, []);
 
-  const value: ManualEntryContextType = {
+  const value = useMemo(() => ({
     ...formData,
     setName,
     setBrand,
@@ -184,7 +194,7 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setOriginalProductId,
     initializeForm,
     clearForm,
-  };
+  }), [formData, setName, setBrand, setSelectedCategory, setQuantities, addQuantity, removeQuantity, updateQuantity, setPurchaseDate, setExpirationDate, setNotes, setBarcode, setImageUrl, setHasManuallySelectedCategory, setIsEditMode, setOriginalProductId, initializeForm, clearForm]);
 
   return (
     <ManualEntryContext.Provider value={value}>

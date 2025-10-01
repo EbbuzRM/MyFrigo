@@ -1,256 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Image, BackHandler } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Image, BackHandler, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera as CameraIcon, Check, Image as ImageIcon } from 'lucide-react-native';
-import TextRecognition, { TextBlock } from '@react-native-ml-kit/text-recognition';
+import { Camera as CameraIcon, Check, Image as ImageIcon, RefreshCw, AlertTriangle } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
-import { StorageService } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { useManualEntry } from '@/context/ManualEntryContext';
-
-export default function PhotoCaptureScreen() {
-  const { isDarkMode } = useTheme();
-  const { setImageUrl, setExpirationDate } = useManualEntry();
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [galleryPermission, requestGalleryPermission] = ImagePicker.useMediaLibraryPermissions();
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const cameraRef = useRef<CameraView>(null);
-  const params = useLocalSearchParams();
-  const isFocused = useIsFocused();
-  const styles = getStyles(isDarkMode);
-
-  useEffect(() => {
-    const backAction = () => {
-      if (capturedImage) {
-        setCapturedImage(null);
-        return true;
-      }
-      router.back();
-      return true;
-    };
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-    return () => backHandler.remove();
-  }, [capturedImage]);
-
-  useEffect(() => {
-    if (cameraPermission && !cameraPermission.granted && cameraPermission.canAskAgain) {
-      requestCameraPermission();
-    }
-    if (galleryPermission && !galleryPermission.granted && galleryPermission.canAskAgain) {
-      requestGalleryPermission();
-    }
-  }, [cameraPermission, galleryPermission]);
-
-  if (!cameraPermission || !galleryPermission) {
-    return <View />; // Loading
-  }
-
-  if (!cameraPermission.granted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Abbiamo bisogno del permesso per usare la fotocamera.</Text>
-          <Button onPress={requestCameraPermission} title="Concedi Permesso" />
-          <Button onPress={() => router.back()} title="Indietro" color="gray" />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-        if (photo && photo.uri) setCapturedImage(photo.uri);
-      } catch (error) {
-        LoggingService.error("Errore scattando la foto:", "Error occurred", error);
-        Alert.alert("Errore", `Si è verificato un problema: ${(error as Error).message}`);
-      }
-    }
-  };
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setCapturedImage(result.assets[0].uri);
-    }
-  };
-
-  const extractExpirationDateFromImage = async (imageUri: string): Promise<string | null> => {
-    const TAG = 'PhotoCapture-OCR';
-    try {
-      const result = await TextRecognition.recognize(imageUri);
-      if (!result || result.blocks.length === 0) {
-        LoggingService.debug(TAG, 'Nessun blocco di testo trovato.');
-        return null;
-      }
-
-      const allText = result.blocks.map((block: TextBlock) => block.text).join(' ').replace(/\n/g, ' ');
-      LoggingService.debug(TAG, 'Testo grezzo rilevato:', allText);
-
-      const dateRegex = /\b(\d{1,2}[./ -]\d{1,2}[./ -](\d{4}|\d{2}))\b/g;
-      const matches = allText.match(dateRegex);
-
-      if (!matches) {
-        LoggingService.debug(TAG, 'Nessuna data trovata con la nuova regex.');
-        return null;
-      }
-
-      LoggingService.debug(TAG, 'Trovate possibili date:', matches);
-
-      const candidateDates: Date[] = [];
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      for (const match of matches) {
-        const cleanedMatch = match.replace(/[\.\- ]/g, '/');
-        const parts = cleanedMatch.split('/');
-
-        if (parts.length === 3) {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10);
-          if (day > 31 || month > 12) continue;
-
-          if (parts[2].length === 2) {
-            parts[2] = `20${parts[2]}`;
-          }
-          
-          const isoDateString = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-          const parsedDate = new Date(isoDateString);
-
-          LoggingService.debug(TAG, `Analizzo match: "${match}" -> Parsato come: ${parsedDate.toISOString()}`);
-
-          if (!isNaN(parsedDate.getTime())) {
-            const year = parsedDate.getFullYear();
-            if (year >= 2000 && year < 2100 && parsedDate >= today) {
-              candidateDates.push(parsedDate);
-              LoggingService.debug(TAG, `---> Aggiunta data candidata valida: ${parsedDate.toISOString()}`);
-            }
-          }
-        }
-      }
-
-      if (candidateDates.length === 0) {
-        LoggingService.debug(TAG, 'Nessuna data candidata valida e futura trovata.');
-        return null;
-      }
-
-      candidateDates.sort((a, b) => a.getTime() - b.getTime());
-
-      const bestDate = candidateDates[0];
-      const finalDate = bestDate.toISOString().split('T')[0];
-
-      LoggingService.debug(TAG, `Data migliore selezionata: ${finalDate}`);
-      return finalDate;
-
-    } catch (error) {
-      LoggingService.error(TAG, "Errore durante l'OCR:", error);
-      return null;
-    }
-  };
-
-  const confirmPhoto = async () => {
-    if (!capturedImage) return;
-
-    const originalParams = params;
-
-    if (params.captureMode === 'updateProductPhoto' && typeof params.productId === 'string') {
-      try {
-        await StorageService.updateProductImage(params.productId, capturedImage);
-        Alert.alert("Foto Aggiornata", "L'immagine del prodotto è stata aggiornata.", [
-          { text: 'OK', onPress: () => router.back() }
-        ]);
-      } catch (error) {
-        LoggingService.error('PhotoCapture', 'Error updating product image', error);
-        Alert.alert("Errore", "Si è verificato un errore durante l'aggiornamento della foto.");
-      }
-    } else if (params.captureMode === 'expirationDateOnly') {
-      const extractedDate = await extractExpirationDateFromImage(capturedImage);
-      if (extractedDate) {
-        setExpirationDate(extractedDate);
-        const returnParams = { ...originalParams, expirationDate: extractedDate, fromPhotoCapture: 'true' };
-        Alert.alert("Data Rilevata", `Data di scadenza: ${extractedDate}. Premi OK per tornare al modulo.`, [
-          { text: 'OK', onPress: () => router.replace({ pathname: '/manual-entry', params: returnParams }) }
-        ]);
-      } else {
-        Alert.alert(
-          "Data Non Rilevata",
-          "Non è stato possibile trovare una data. Puoi riprovare o inserirla manualmente.",
-          [
-            { 
-              text: 'Inserisci a mano', 
-              onPress: () => router.replace({ pathname: '/manual-entry', params: originalParams }),
-              style: 'cancel' 
-            },
-            { text: 'Riprova', onPress: () => setCapturedImage(null) }
-          ]
-        );
-      }
-    } else {
-      setImageUrl(capturedImage);
-      router.back();
-    }
-  };
-
-  const retakePhoto = () => setCapturedImage(null);
-
-  if (capturedImage) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Image source={{ uri: capturedImage }} style={styles.previewImage} />
-        <View style={styles.previewControls}>
-          <TouchableOpacity style={styles.controlButton} onPress={retakePhoto}>
-            <Text style={styles.controlButtonText}>Riprova</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.controlButton, styles.confirmButton]} onPress={confirmPhoto}>
-            <Check size={24} color="#fff" />
-            <Text style={styles.controlButtonText}>Conferma</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      {isFocused && (
-        <>
-          <CameraView 
-            ref={cameraRef} 
-            style={styles.camera} 
-            facing="back"
-            {...(params.captureMode === 'expirationDateOnly' && {
-                zoom: 0.1, // A slight zoom might help focus
-                autoFocus: 'on',
-            })}
-          > 
-            {params.captureMode === 'expirationDateOnly' && (
-                <View style={styles.macroFocusFrame} />
-            )}
-          </CameraView>
-          <View style={styles.cameraControlsContainer}>
-            <TouchableOpacity style={styles.controlButton} onPress={pickImage}>
-              <ImageIcon size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-              <CameraIcon size={32} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.controlButton} onPress={() => router.back()}>
-              <Text style={styles.controlButtonText}>Indietro</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-    </SafeAreaView>
-  );
-}
+import { usePhotoOCR, OCRProgress } from '@/hooks/usePhotoOCR';
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
@@ -284,6 +44,18 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  focusFrameText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
   },
   cameraControlsContainer: {
     position: 'absolute',
@@ -333,5 +105,344 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: '#28A745',
-  }
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  ocrOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ocrProgressContainer: {
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    minWidth: 250,
+  },
+  ocrProgressText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  ocrProgressStep: {
+    color: '#58a6ff',
+    fontSize: 14,
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  progressBar: {
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+    marginTop: 15,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#28A745',
+    borderRadius: 2,
+  },
 });
+
+const PhotoCaptureScreen: React.FC = memo(() => {
+  const { isDarkMode } = useTheme();
+  const { setImageUrl, setExpirationDate } = useManualEntry();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [galleryPermission, requestGalleryPermission] = ImagePicker.useMediaLibraryPermissions();
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const cameraRef = useRef<CameraView>(null);
+  const params = useLocalSearchParams();
+  const isFocused = useIsFocused();
+
+  const { extractExpirationDate, ocrProgress, resetProgress } = usePhotoOCR();
+
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
+
+  const captureMode = useMemo(() => params.captureMode as string, [params.captureMode]);
+  const productId = useMemo(() => params.productId as string, [params.productId]);
+
+  useEffect(() => {
+    const backAction = () => {
+      if (capturedImage) {
+        setCapturedImage(null);
+        return true;
+      }
+      router.back();
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [capturedImage]);
+
+  useEffect(() => {
+    if (cameraPermission && !cameraPermission.granted && cameraPermission.canAskAgain) {
+      requestCameraPermission();
+    }
+    if (galleryPermission && !galleryPermission.granted && galleryPermission.canAskAgain) {
+      requestGalleryPermission();
+    }
+  }, [cameraPermission, galleryPermission]);
+
+  if (!cameraPermission || !galleryPermission) {
+    return <View />; // Loading
+  }
+
+  if (!cameraPermission.granted) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>Abbiamo bisogno del permesso per usare la fotocamera.</Text>
+          <Button onPress={requestCameraPermission} title="Concedi Permesso" />
+          <Button onPress={() => router.back()} title="Indietro" color="gray" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const takePicture = useCallback(async () => {
+    if (cameraRef.current) {
+      try {
+        setIsProcessingImage(true);
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.7,
+          exif: false
+        });
+        if (photo && photo.uri) {
+          setCapturedImage(photo.uri);
+          LoggingService.info('PhotoCapture', 'Foto scattata con successo');
+        }
+      } catch (error) {
+        LoggingService.error('PhotoCapture', 'Errore durante lo scatto della foto', error);
+        Alert.alert(
+          "Errore Fotocamera",
+          `Si è verificato un problema durante lo scatto: ${(error as Error).message}`,
+          [
+            { text: 'Riprova', style: 'default' },
+            { text: 'Annulla', style: 'cancel' }
+          ]
+        );
+      } finally {
+        setIsProcessingImage(false);
+      }
+    }
+  }, []);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+    if (!result.canceled) {
+      setCapturedImage(result.assets[0].uri);
+    }
+  };
+
+
+  const confirmPhoto = useCallback(async () => {
+    if (!capturedImage) return;
+
+    setIsProcessingImage(true);
+
+    try {
+      if (captureMode === 'updateProductPhoto' && productId) {
+        await ProductStorage.updateProductImage(productId, capturedImage);
+        Alert.alert(
+          "Foto Aggiornata",
+          "L'immagine del prodotto è stata aggiornata con successo.",
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      } else if (captureMode === 'expirationDateOnly') {
+        const ocrResult = await extractExpirationDate(capturedImage);
+
+        if (ocrResult.success && ocrResult.extractedDate) {
+          setExpirationDate(ocrResult.extractedDate);
+          const returnParams = {
+            ...params,
+            expirationDate: ocrResult.extractedDate,
+            fromPhotoCapture: 'true'
+          };
+
+          Alert.alert(
+            "Data Rilevata",
+            `Data di scadenza rilevata: ${ocrResult.extractedDate}\n\nAccuratezza: ${Math.round(ocrResult.confidence * 100)}%`,
+            [{ text: 'OK', onPress: () => router.replace({ pathname: '/manual-entry', params: returnParams }) }]
+          );
+        } else {
+          Alert.alert(
+            "Data Non Rilevata",
+            ocrResult.error || "Non è stato possibile trovare una data di scadenza nell'immagine.",
+            [
+              {
+                text: 'Inserisci manualmente',
+                onPress: () => router.replace({ pathname: '/manual-entry', params }),
+                style: 'cancel'
+              },
+              {
+                text: 'Riprova',
+                onPress: () => {
+                  setCapturedImage(null);
+                  resetProgress();
+                }
+              }
+            ]
+          );
+        }
+      } else {
+        setImageUrl(capturedImage);
+        router.back();
+      }
+    } catch (error) {
+      LoggingService.error('PhotoCapture', 'Error in confirmPhoto', error);
+      Alert.alert(
+        "Errore",
+        "Si è verificato un errore durante l'elaborazione dell'immagine.",
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }, [capturedImage, captureMode, productId, extractExpirationDate, setExpirationDate, setImageUrl, params, resetProgress]);
+
+  const retakePhoto = () => setCapturedImage(null);
+
+  if (capturedImage) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Image
+          source={{ uri: capturedImage }}
+          style={styles.previewImage}
+          accessibilityLabel="Immagine scattata del prodotto"
+          accessibilityHint="Tocca conferma per procedere o riprova per scattare una nuova foto"
+        />
+
+        {/* OCR Progress Overlay */}
+        {ocrProgress.isProcessing && (
+          <View style={styles.ocrOverlay}>
+            <View style={styles.ocrProgressContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.ocrProgressText}>
+                Analisi immagine in corso...
+              </Text>
+              <Text style={styles.ocrProgressStep}>
+                {ocrProgress.currentStep}
+              </Text>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${ocrProgress.progress}%` }
+                  ]}
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.previewControls}>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={retakePhoto}
+            accessibilityLabel="Scatta una nuova foto"
+            accessibilityRole="button"
+            disabled={isProcessingImage}
+          >
+            <RefreshCw size={20} color="#fff" />
+            <Text style={styles.controlButtonText}>Riprova</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.controlButton,
+              styles.confirmButton,
+              isProcessingImage && styles.buttonDisabled
+            ]}
+            onPress={confirmPhoto}
+            accessibilityLabel="Conferma e procedi"
+            accessibilityRole="button"
+            disabled={isProcessingImage}
+          >
+            {isProcessingImage ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Check size={24} color="#fff" />
+            )}
+            <Text style={styles.controlButtonText}>
+              {isProcessingImage ? 'Elaborazione...' : 'Conferma'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {isFocused && (
+        <>
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing="back"
+            accessibilityLabel="Vista fotocamera"
+            accessibilityHint="Inquadra il prodotto e tocca il pulsante centrale per scattare la foto"
+            {...(captureMode === 'expirationDateOnly' && {
+                zoom: 0.1,
+                autoFocus: 'on',
+            })}
+          >
+            {captureMode === 'expirationDateOnly' && (
+                <View style={styles.macroFocusFrame}>
+                  <Text style={styles.focusFrameText}>
+                    Inquadra la data di scadenza
+                  </Text>
+                </View>
+            )}
+          </CameraView>
+
+          <View style={styles.cameraControlsContainer}>
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={pickImage}
+              accessibilityLabel="Seleziona dalla galleria"
+              accessibilityRole="button"
+            >
+              <ImageIcon size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.captureButton}
+              onPress={takePicture}
+              accessibilityLabel="Scatta foto"
+              accessibilityRole="button"
+            >
+              <CameraIcon size={32} color="#fff" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={() => router.back()}
+              accessibilityLabel="Torna indietro"
+              accessibilityRole="button"
+            >
+              <Text style={styles.controlButtonText}>Indietro</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </SafeAreaView>
+  );
+});
+
+export default PhotoCaptureScreen;
