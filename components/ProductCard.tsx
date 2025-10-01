@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
-import { Calendar, Package, Trash2 } from 'lucide-react-native';
+import { Calendar, Package, Trash2, Check, ShoppingCart } from 'lucide-react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
-import { StorageService } from '@/services/StorageService';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import { LoggingService } from '@/services/LoggingService';
 import { COLORS } from '@/constants/colors';
@@ -20,11 +19,12 @@ interface ProductCardProps {
   product: Product;
   categoryInfo: ProductCategory | undefined;
   onDelete: () => void;
+  onConsume: () => void;
   onPress?: () => void;
   index: number;
 }
 
-export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onPress, index }: ProductCardProps) => {
+export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onConsume, onPress, index }: ProductCardProps) => {
   // Verifica subito che product e categoryInfo siano definiti
   if (!product || !categoryInfo) {
     LoggingService.warning('ProductCard', 'Rendering skipped due to missing product or category data');
@@ -54,7 +54,7 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onPres
   }, [product.expirationDate]);
   
   // Passa la data sicura al hook
-  const expirationInfo = useExpirationStatus(safeExpirationDate ? safeExpirationDate.toISOString() : undefined);
+  const expirationInfo = useExpirationStatus(safeExpirationDate ? safeExpirationDate.toISOString() : undefined, isDarkMode);
   
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
@@ -119,21 +119,18 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onPres
                 )}
               </View>
               <View style={styles.textContainer}>
-                <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
-                {product.brand && <Text style={styles.brandName} numberOfLines={1}>{product.brand}</Text>}
-                <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '33' }]}>
-                  <Text
-                    style={[
-                      styles.categoryName,
-                      { color: isDarkMode ? COLORS.DARK.textPrimary : categoryInfo.color }
-                    ]}
-                  >
-                    {categoryInfo.name}
-                  </Text>
-                </View>
+                <Text style={styles.productName}>{product.name}</Text>
+                {product.brand && <Text style={styles.brandName}>{product.brand}</Text>}
               </View>
             </View>
             <View style={styles.actionsContainer}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={onConsume}
+                {...getActionButtonAccessibilityProps('consumato', product.name || "prodotto")}
+              >
+                <Check size={22} color={colors.success} />
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={handleDeletePress}
@@ -145,6 +142,15 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onPres
           </View>
 
           <View style={styles.details}>
+            <View style={styles.detailRow}>
+                <View style={styles.detailItem}>
+                    <ShoppingCart size={16} color={colors.textSecondary} />
+                    <Text style={styles.detailText}>Acquisto</Text>
+                </View>
+                <Text style={styles.dateText}>
+                    {product.purchaseDate ? new Date(product.purchaseDate).toLocaleDateString('it-IT') : 'N/A'}
+                </Text>
+            </View>
             <View style={styles.detailRow}>
               <View style={styles.detailItem}>
                 <Calendar size={16} color={colors.textSecondary} />
@@ -186,6 +192,7 @@ const getStyles = (isDarkMode: boolean, colors: {
   textSecondary: string;
   primary: string;
   error: string;
+  success: string;
   cardBackground: string;
   background: string;
 }) => StyleSheet.create({
@@ -264,6 +271,9 @@ const getStyles = (isDarkMode: boolean, colors: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 0,
+  },
+  actionButton: {
+    padding: 8,
   },
   deleteButton: {
     padding: 8,

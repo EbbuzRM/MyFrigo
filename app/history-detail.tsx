@@ -6,7 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { HistoryCard } from '@/components/HistoryCard';
 import { Product } from '@/types/Product';
 import { ArrowLeft } from 'lucide-react-native';
-import { StorageService } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
 
 export default function HistoryDetailScreen() {
@@ -23,7 +23,7 @@ export default function HistoryDetailScreen() {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        const { data: products, error } = await StorageService.getProducts();
+        const { data: products, error } = await ProductStorage.getProducts();
         
         if (error) {
           throw error;
@@ -73,7 +73,7 @@ export default function HistoryDetailScreen() {
 
   const handleRestoreProduct = useCallback(async (productId: string) => {
     try {
-      await StorageService.restoreConsumedProduct(productId);
+      await ProductStorage.restoreConsumedProduct(productId);
       // Rimuovi il prodotto dalla lista corrente invece di ricaricare tutto
       setProductList(currentProducts => currentProducts.filter(p => p.id !== productId));
       Alert.alert('Prodotto Ripristinato', 'Il prodotto è stato spostato nuovamente nella tua dispensa.');
@@ -106,7 +106,7 @@ export default function HistoryDetailScreen() {
               setError(null);
               setLoading(true);
               // Ricarica i dati
-              StorageService.getProducts().then(({data, error}) => {
+              ProductStorage.getProducts().then(({data, error}) => {
                 if (error) {
                   setError("Si è verificato un errore durante il caricamento dei prodotti.");
                 } else if (data) {

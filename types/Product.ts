@@ -116,6 +116,45 @@ export interface ProductCategory {
 }
 
 /**
+ * Stato per il form di prodotto (usato in useProductForm)
+ */
+export interface ProductFormState {
+  name: string;
+  expirationDate: ISODateString | null;
+  categoryId?: string;
+  iconUrl?: string;
+  brand?: string;
+  notes?: string;
+  errors: Partial<Record<keyof Product, string>>;
+  isValid: boolean;
+}
+
+/**
+ * Stato per i dettagli del prodotto (usato in useProductDetail)
+ */
+export interface ProductDetailState {
+  product: Product | null;
+  isLoading: boolean;
+  error?: string;
+  relatedIcons?: Array<{
+    id: string;
+    url: string;
+    categoryId?: string;
+    isValid: boolean;
+  }>;
+}
+
+/**
+ * Dati per icone (per integrazione con IconService)
+ */
+export interface IconData {
+  id: string;
+  url: string;
+  categoryId?: string;
+  isValid: boolean;
+}
+
+/**
  * Rappresenta una categoria di prodotti con chiavi in snake_case per il database.
  */
 export interface ProductCategorySnakeCase {

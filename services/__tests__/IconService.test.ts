@@ -1939,7 +1939,7 @@ describe('IconService', () => {
       
       const icon = await IconService.fetchIconForCategory('NonExistentCategory');
       expect(icon).toBeNull();
-      expect(LoggingService.info).toHaveBeenCalledWith('IconService', 'No icon found for NonExistentCategory, using emoji fallback.');
+      expect(LoggingService.warning).toHaveBeenCalledWith('IconService', 'No icon found for NonExistentCategory');
 
       // Restore original searchInLocalData
       (IconService as any).searchInLocalData = originalSearchInLocalData;

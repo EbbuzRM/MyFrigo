@@ -2,7 +2,7 @@ import React from 'react';
 import { render, act, waitFor } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 import { ProductProvider, useProducts } from '../ProductContext';
-import { StorageService } from '@/services/StorageService';
+import { ProductStorage } from '@/services/ProductStorage';
 import { useAuth } from '../AuthContext';
 import { useSettings } from '../SettingsContext';
 import { Product } from '@/types/Product';
@@ -19,8 +19,8 @@ jest.mock('@/services/LoggingService', () => ({
 }));
 
 // Mock del servizio di storage
-jest.mock('@/services/StorageService', () => ({
-  StorageService: {
+jest.mock('@/services/ProductStorage', () => ({
+  ProductStorage: {
     getProducts: jest.fn(),
     listenToProducts: jest.fn(() => jest.fn()), // Ritorna una funzione di unsubscribe fittizia
   },
@@ -58,7 +58,7 @@ jest.mock('../SettingsContext', () => ({
 }));
 
 // Type assertion per i mock
-const mockedGetProducts = StorageService.getProducts as jest.Mock;
+const mockedGetProducts = ProductStorage.getProducts as jest.Mock;
 const mockedUseAuth = useAuth as jest.Mock;
 const mockedUseSettings = useSettings as jest.Mock;
 

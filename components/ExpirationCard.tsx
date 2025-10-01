@@ -17,7 +17,7 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const { getCategoryById } = useCategories();
-  const expirationInfo = useExpirationStatus(product.expirationDate);
+  const expirationInfo = useExpirationStatus(product.expirationDate, isDarkMode);
   
   const categoryInfo = getCategoryById(product.category);
 

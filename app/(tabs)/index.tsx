@@ -108,7 +108,7 @@ function Dashboard() {
       const expirationParts = p.expirationDate.split('-').map(Number);
       const startOfExpirationUTC = Date.UTC(expirationParts[0], expirationParts[1] - 1, expirationParts[2]);
       const diffDays = (startOfExpirationUTC - startOfTodayUTC) / (1000 * 60 * 60 * 24);
-      return diffDays >= 0 && diffDays <= settings.notificationDays && !p.consumed_at;
+      return diffDays >= 0 && diffDays <= settings.notificationDays && !p.consumedDate;
     })
     .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 

@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import { Product } from '@/types/Product';
 import * as Notifications from 'expo-notifications';
 import { SchedulableTriggerInputTypes } from 'expo-notifications';
-import { AppSettings } from './StorageService';
+import { AppSettings } from './SettingsService';
 import { LoggingService } from './LoggingService';
 
 // --- Event Emitter Migliorato ---

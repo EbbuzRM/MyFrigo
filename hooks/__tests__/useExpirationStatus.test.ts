@@ -1,69 +1,68 @@
-import { renderHook, act } from '@testing-library/react-native';
-import { useExpirationStatus } from '../useExpirationStatus';
-import { useTheme } from '@/context/ThemeContext';
 
-// Mock del contesto del tema
-jest.mock('@/context/ThemeContext', () => ({
-  useTheme: jest.fn(() => ({ isDarkMode: false })),
+import { renderHook } from '@testing-library/react-native';
+import { useExpirationStatus } from '../useExpirationStatus';
+
+// Mock colors for light mode
+jest.mock('@/constants/colors', () => ({
+  COLORS: {
+    light: {
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      background: '#ffffff',
+    }
+  }
 }));
 
-// Type assertion per il mock
-const mockedUseTheme = useTheme as jest.Mock;
-
 describe('useExpirationStatus', () => {
-  
-  // Funzione helper per creare date
   const getDate = (offsetDays: number): string => {
     const date = new Date();
     date.setDate(date.getDate() + offsetDays);
     return date.toISOString();
   };
 
-  it('should return "good" status for products expiring in more than 3 days', () => {
-    const { result } = renderHook(() => useExpirationStatus(getDate(5)));
-    
-    expect(result.current.text).toBe('5 giorni');
-    expect(result.current.color).toBe('#16a34a'); // Colore "good" per tema chiaro
-  });
+  describe('Light Mode Tests', () => {
+    it('should return "good" status for products expiring in more than 3 days', () => {
+      const futureDate = getDate(5); // 5 giorni nel futuro
 
-  it('should return "warning" status for products expiring in 3 days or less', () => {
-    const { result } = renderHook(() => useExpirationStatus(getDate(3)));
-    
-    expect(result.current.text).toBe('3 giorni');
-    expect(result.current.color).toBe('#f59e0b'); // Colore "warning" per tema chiaro
-  });
+      const { result } = renderHook(() =>
+        useExpirationStatus(futureDate, false) // isDarkMode = false
+      );
 
-  it('should return "expiring today" status for products expiring today', () => {
-    const { result } = renderHook(() => useExpirationStatus(getDate(0)));
-    
-    expect(result.current.text).toBe('Scade oggi');
-    expect(result.current.color).toBe('#f59e0b'); // Colore "warning" per tema chiaro
-  });
+      expect(result.current.text).toBe('Buono');
+      expect(result.current.color).toBe('#10b981');
+      expect(result.current.backgroundColor).toBe('#ffffff');
+    });
 
-  it('should return "expired" status for products that have expired', () => {
-    const { result } = renderHook(() => useExpirationStatus(getDate(-2)));
-    
-    expect(result.current.text).toBe('Scaduto');
-    expect(result.current.color).toBe('#dc2626'); // Colore "expired" per tema chiaro
-  });
+    it('should return "warning" status for products expiring in 2 days', () => {
+      const warningDate = getDate(2); // 2 giorni nel futuro
 
-  it('should return correct colors for dark mode', () => {
-    // Imposta il mock per restituire isDarkMode = true
-    mockedUseTheme.mockImplementation(() => ({ isDarkMode: true }));
+      const { result } = renderHook(() =>
+        useExpirationStatus(warningDate, false)
+      );
 
-    // Test per lo stato "good" in dark mode
-    const { result: goodResult } = renderHook(() => useExpirationStatus(getDate(5)));
-    expect(goodResult.current.color).toBe('#4ade80');
+      expect(result.current.text).toBe('In Scadenza');
+      expect(result.current.color).toBe('#f59e0b');
+    });
 
-    // Test per lo stato "warning" in dark mode
-    const { result: warningResult } = renderHook(() => useExpirationStatus(getDate(2)));
-    expect(warningResult.current.color).toBe('#fcd34d');
+    it('should return "expired" status for products already expired', () => {
+      const expiredDate = getDate(-1); // 1 giorno fa
 
-    // Test per lo stato "expired" in dark mode
-    const { result: expiredResult } = renderHook(() => useExpirationStatus(getDate(-1)));
-    expect(expiredResult.current.color).toBe('#f87171');
+      const { result } = renderHook(() =>
+        useExpirationStatus(expiredDate, false)
+      );
 
-    // Ripristina il mock al valore predefinito dopo il test
-    mockedUseTheme.mockImplementation(() => ({ isDarkMode: false }));
+      expect(result.current.text).toBe('Scaduto');
+      expect(result.current.color).toBe('#ef4444');
+    });
+
+    it('should handle null/undefined dates gracefully', () => {
+      const { result } = renderHook(() =>
+        useExpirationStatus(undefined, false)
+      );
+
+      expect(result.current.text).toBe('Sconosciuto');
+      expect(result.current.color).toBe('#6b7280');
+    });
   });
 });

@@ -150,7 +150,6 @@ htmlcov/
 
 # Project specific
 ROADMAP.MD
-testsprite_tests/
 prd.txt
 log.txt
 
