@@ -25,9 +25,12 @@ export const useProductForm = () => {
     isEditMode,
     originalProductId,
     hasManuallySelectedCategory, setHasManuallySelectedCategory,
+    isInitialized, setIsInitialized, // Get from context
     initializeForm,
     clearForm
   } = useManualEntry();
+
+  LoggingService.info('useProductForm_RENDER', `Hook rendering. isEditMode from context: ${isEditMode}`);
 
   const [isLoading, setIsLoading] = useState(true);
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
@@ -44,6 +47,14 @@ export const useProductForm = () => {
   );
 
   useEffect(() => {
+    // Previene la reinizializzazione al ritorno dalla navigazione (es. photo-capture)
+    if (isInitialized && !productId) {
+      return;
+    }
+
+    LoggingService.info('useProductForm_EFFECT', `Effect is running. productId: ${productId}`);
+    LoggingService.info('useProductForm_EFFECT', `Params are: ${JSON.stringify(params)}`);
+
     const loadData = async () => {
       setIsLoading(true);
       try {
@@ -64,6 +75,7 @@ export const useProductForm = () => {
           delete initialData.productId;
           initializeForm(initialData as Partial<ManualEntryFormData>);
         }
+        setIsInitialized(true); // Imposta il flag dopo la prima inizializzazione
       } finally {
         setIsLoading(false);
       }
@@ -73,14 +85,14 @@ export const useProductForm = () => {
 
   }, [productId, initializeForm]);
 
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        LoggingService.info('useProductForm', 'Screen unfocused, clearing form.');
-        clearForm();
-      };
-    }, [clearForm])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     return () => {
+  //       LoggingService.info('useProductForm', 'Screen unfocused, clearing form.');
+  //       clearForm();
+  //     };
+  //   }, [clearForm])
+  // );
 
   useEffect(() => {
     if (params.fromPhotoCapture && params.imageUrl) {
@@ -199,7 +211,9 @@ export const useProductForm = () => {
     try {
       await ProductStorage.saveProduct(productData);
       const savedProductName = name;
-      
+
+      LoggingService.info('useProductForm', `handleSaveProduct check: isEditMode=${isEditMode}`);
+
       if (isEditMode) {
         Alert.alert('Prodotto Aggiornato', `${savedProductName} è stato aggiornato con successo.`);
         router.replace('/(tabs)/products');
@@ -212,13 +226,28 @@ export const useProductForm = () => {
         [
           { text: 'Aggiungi Manualmente', onPress: () => clearForm() },
           { text: 'Scansiona Codice', onPress: () => { clearForm(); router.replace('/scanner'); } },
-          { text: 'Finito', onPress: () => router.replace('/(tabs)/products'), style: 'cancel' },
+          { text: 'Finito', onPress: () => { clearForm(); router.replace('/(tabs)/products'); }, style: 'cancel' },
         ],
         { cancelable: false }
       );
+
     } catch (error: unknown) {
       LoggingService.error('ManualEntry', 'Errore durante il salvataggio del prodotto:', error);
-      Alert.alert('Errore', 'Si è verificato un errore durante il salvataggio del prodotto.');
+      // Gestisci meglio gli errori specifici
+      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+
+      if (errorMessage.includes('Timeout')) {
+        Alert.alert(
+          'Timeout',
+          'Il salvataggio ha impiegato troppo tempo. Assicurati di avere una connessione stabile.',
+          [
+            { text: 'OK', style: 'cancel' },
+            { text: 'Riprova', onPress: () => handleSaveProduct() }
+          ]
+        );
+      } else {
+        Alert.alert('Errore', `${errorMessage}. Riprova o contatta il supporto.`);
+      }
     }
   }, [name, brand, selectedCategory, quantities, purchaseDate, expirationDate, notes, barcode, imageUrl, isEditMode, originalProductId, params.addedMethod, clearForm]);
 

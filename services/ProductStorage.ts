@@ -81,39 +81,70 @@ export class ProductStorage {
 
   static async saveProduct(product: Partial<Product>): Promise<void> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('User not authenticated to save product.');
-      }
-      const userId = session.user.id;
+      LoggingService.info('ProductStorage', 'Starting product save process');
 
-      const productToUpsert: Partial<Product> = { ...product };
-      
-      if (!productToUpsert.id) {
-        productToUpsert.id = randomUUID();
-        if (!productToUpsert.status) {
-          productToUpsert.status = 'active';
-        }
-      }
+      // Ridotto timeout da 15s a 10s per velocità
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout during product save')), 10000);
+      });
 
-      const productWithUser: Partial<Product> & { userId: string } = {
-        ...productToUpsert,
-        userId: userId,
-      };
+      const savePromise = this.performSave(product);
 
-      const { error } = await supabase
-        .from('products')
-        .upsert(convertProductToSnakeCase(productWithUser) as any);
-        
-      if (error) throw error;
+      await Promise.race([savePromise, timeoutPromise]);
 
-      if (productWithUser.barcode) {
-        await TemplateService.saveProductTemplate(productWithUser as Product);
-      }
     } catch (error: any) {
       LoggingService.error('ProductStorage', 'Error saving product to Supabase', error);
       throw error;
     }
+  }
+  
+  private static async performSave(product: Partial<Product>): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      throw new Error('User not authenticated to save product.');
+    }
+    const userId = session.user.id;
+    LoggingService.info('ProductStorage', 'User authenticated, proceeding with save');
+
+    const productToUpsert: Partial<Product> = { ...product };
+    
+    if (!productToUpsert.id) {
+      productToUpsert.id = randomUUID();
+      if (!productToUpsert.status) {
+        productToUpsert.status = 'active';
+      }
+    }
+
+    const productWithUser: Partial<Product> & { userId: string } = {
+      ...productToUpsert,
+      userId: userId,
+    };
+
+    LoggingService.info('ProductStorage', 'Attempting to upsert product to Supabase');
+    const { error } = await supabase
+      .from('products')
+      .upsert(convertProductToSnakeCase(productWithUser) as any);
+      
+    if (error) {
+      LoggingService.error('ProductStorage', 'Supabase upsert error:', error);
+      throw error;
+    }
+    
+    LoggingService.info('ProductStorage', 'Product successfully saved to Supabase');
+
+    // Salva il template se c'è un barcode, ma non bloccare il salvataggio principale
+    if (productWithUser.barcode) {
+      try {
+        LoggingService.info('ProductStorage', 'Saving product template');
+        await TemplateService.saveProductTemplate(productWithUser as Product);
+        LoggingService.info('ProductStorage', 'Product template saved successfully');
+      } catch (templateError) {
+        LoggingService.error('ProductStorage', 'Error saving template (non-blocking):', templateError);
+        // Non propaghiamo l'errore del template per non bloccare il salvataggio principale
+      }
+    }
+    
+    LoggingService.info('ProductStorage', 'Product save process completed successfully');
   }
 
   static async deleteProduct(productId: string): Promise<void> {

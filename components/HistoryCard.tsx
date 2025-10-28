@@ -211,7 +211,12 @@ export function HistoryCard({ product, type, onRestore, index = 0 }: HistoryCard
               <View style={styles.detailItem}>
                 <Package size={16} color={isDarkMode ? '#8b949e' : '#64748B'} />
                 <Text style={styles.detailText}>
-                  {Array.isArray(product.quantities) && product.quantities.length > 0 ? `${product.quantities[0].quantity} ${product.quantities[0].unit || 'pz'}` : 'N/A'}
+                  {Array.isArray(product.quantities) && product.quantities.length > 0
+                    ? product.quantities.length > 1
+                      ? `${product.quantities.map(q => `${q.quantity} ${q.unit || 'pz'}`).join(', ')}`
+                      : `${product.quantities[0].quantity} ${product.quantities[0].unit || 'pz'}`
+                    : 'N/A'
+                  }
                 </Text>
               </View>
               <View style={styles.detailItem}>

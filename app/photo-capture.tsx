@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from '
 import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Image, BackHandler, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,15 +38,16 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   macroFocusFrame: {
     position: 'absolute',
-    top: '30%',
-    left: '10%',
-    right: '10%',
-    bottom: '30%',
+    top: '25%',
+    left: '5%',
+    right: '5%',
+    bottom: '55%',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 10,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    paddingTop: 10,
   },
   focusFrameText: {
     color: 'white',
@@ -152,6 +154,21 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     backgroundColor: '#28A745',
     borderRadius: 2,
   },
+  resetOcrButton: {
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  resetOcrButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+  },
 });
 
 const PhotoCaptureScreen: React.FC = memo(() => {
@@ -195,49 +212,65 @@ const PhotoCaptureScreen: React.FC = memo(() => {
     }
   }, [cameraPermission, galleryPermission]);
 
-  if (!cameraPermission || !galleryPermission) {
-    return <View />; // Loading
-  }
-
-  if (!cameraPermission.granted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Abbiamo bisogno del permesso per usare la fotocamera.</Text>
-          <Button onPress={requestCameraPermission} title="Concedi Permesso" />
-          <Button onPress={() => router.back()} title="Indietro" color="gray" />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const takePicture = useCallback(async () => {
-    if (cameraRef.current) {
-      try {
-        setIsProcessingImage(true);
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.7,
-          exif: false
-        });
-        if (photo && photo.uri) {
-          setCapturedImage(photo.uri);
-          LoggingService.info('PhotoCapture', 'Foto scattata con successo');
-        }
-      } catch (error) {
-        LoggingService.error('PhotoCapture', 'Errore durante lo scatto della foto', error);
-        Alert.alert(
-          "Errore Fotocamera",
-          `Si è verificato un problema durante lo scatto: ${(error as Error).message}`,
+    if (!cameraRef.current) return;
+
+    try {
+      setIsProcessingImage(true);
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8, exif: false });
+      if (!photo || !photo.uri) return;
+
+      // Solo per expirationDateOnly si fa il ritaglio e OCR
+      if (captureMode === 'expirationDateOnly') {
+        // Crop the image to the focus frame - area più ampia per catturare meglio la data
+        const cropRect = {
+          originX: photo.width * 0.05,
+          originY: photo.height * 0.20, // Iniziare più in alto per catturare meglio la data
+          width: photo.width * 0.90,
+          height: photo.height * 0.40, // Area più alta per includere più contesto
+        };
+
+        // Prima controlla le dimensioni per determinare l'orientamento
+        const isLandscape = photo.width > photo.height;
+
+        const croppedImage = await ImageManipulator.manipulateAsync(
+          photo.uri,
           [
-            { text: 'Riprova', style: 'default' },
-            { text: 'Annulla', style: 'cancel' }
-          ]
+            { crop: cropRect },
+            ...(isLandscape ? [{ rotate: 0 }] : []), // Mantieni l'orientamento se è landscape
+            { resize: { width: 800 } } // Ridimensiona per migliorare l'OCR
+          ],
+          {
+            compress: 0.8,
+            format: ImageManipulator.SaveFormat.JPEG,
+            base64: false
+          }
         );
-      } finally {
-        setIsProcessingImage(false);
+
+        if (croppedImage && croppedImage.uri) {
+          setCapturedImage(croppedImage.uri);
+          LoggingService.info('PhotoCapture', 'Foto scattata e ritagliata con successo per OCR');
+        }
+      } else {
+        // Per le foto prodotto, usa l'immagine originale senza ritagli
+        setCapturedImage(photo.uri);
+        LoggingService.info('PhotoCapture', 'Foto scattata - immagine originale mantenuta');
       }
+
+    } catch (error) {
+      LoggingService.error('PhotoCapture', 'Errore durante lo scatto della foto', error);
+      Alert.alert(
+        "Errore Fotocamera",
+        `Si è verificato un problema: ${(error as Error).message}`,
+        [
+          { text: 'Riprova', style: 'default', onPress: () => setIsProcessingImage(false) },
+          { text: 'Annulla', style: 'cancel', onPress: () => router.back() }
+        ]
+      );
+    } finally {
+      setIsProcessingImage(false);
     }
-  }, []);
+  }, [captureMode]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -257,6 +290,7 @@ const PhotoCaptureScreen: React.FC = memo(() => {
 
     try {
       if (captureMode === 'updateProductPhoto' && productId) {
+        // Per la foto del prodotto, consgna direttamente senza ritagli/OCR
         await ProductStorage.updateProductImage(productId, capturedImage);
         Alert.alert(
           "Foto Aggiornata",
@@ -271,12 +305,14 @@ const PhotoCaptureScreen: React.FC = memo(() => {
           const returnParams = {
             ...params,
             expirationDate: ocrResult.extractedDate,
-            fromPhotoCapture: 'true'
+            fromPhotoCapture: 'true',
+            // Forza modalità modifica se proveniamo da un prodotto esistente
+            isEditMode: productId ? 'true' : (params.isEditMode || 'false')
           };
 
           Alert.alert(
             "Data Rilevata",
-            `Data di scadenza rilevata: ${ocrResult.extractedDate}\n\nAccuratezza: ${Math.round(ocrResult.confidence * 100)}%`,
+            `Data di scadenza rilevata: ${ocrResult.extractedDate}`,
             [{ text: 'OK', onPress: () => router.replace({ pathname: '/manual-entry', params: returnParams }) }]
           );
         } else {
@@ -300,7 +336,10 @@ const PhotoCaptureScreen: React.FC = memo(() => {
           );
         }
       } else {
+        // Per la foto del prodotto, salva nel context e torna a manual-entry
+        LoggingService.info('PhotoCapture', `Setting product image URL: ${capturedImage}`);
         setImageUrl(capturedImage);
+        // Torna alla schermata precedente (manual-entry) che preserverà il suo stato
         router.back();
       }
     } catch (error) {
@@ -314,6 +353,22 @@ const PhotoCaptureScreen: React.FC = memo(() => {
       setIsProcessingImage(false);
     }
   }, [capturedImage, captureMode, productId, extractExpirationDate, setExpirationDate, setImageUrl, params, resetProgress]);
+
+  if (!cameraPermission || !galleryPermission) {
+    return <View />; // Loading
+  }
+
+  if (!cameraPermission.granted) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>Abbiamo bisogno del permesso per usare la fotocamera.</Text>
+          <Button onPress={requestCameraPermission} title="Concedi Permesso" />
+          <Button onPress={() => router.back()} title="Indietro" color="gray" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const retakePhoto = () => setCapturedImage(null);
 
@@ -346,6 +401,15 @@ const PhotoCaptureScreen: React.FC = memo(() => {
                   ]}
                 />
               </View>
+              <TouchableOpacity
+                style={styles.resetOcrButton}
+                onPress={() => {
+                  resetProgress();
+                  setCapturedImage(null);
+                }}
+              >
+                <Text style={styles.resetOcrButtonText}>Annulla</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -389,58 +453,55 @@ const PhotoCaptureScreen: React.FC = memo(() => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {isFocused && (
-        <>
-          <CameraView
-            ref={cameraRef}
-            style={styles.camera}
-            facing="back"
-            accessibilityLabel="Vista fotocamera"
-            accessibilityHint="Inquadra il prodotto e tocca il pulsante centrale per scattare la foto"
-            {...(captureMode === 'expirationDateOnly' && {
-                zoom: 0.1,
-                autoFocus: 'on',
-            })}
-          >
-            {captureMode === 'expirationDateOnly' && (
-                <View style={styles.macroFocusFrame}>
-                  <Text style={styles.focusFrameText}>
-                    Inquadra la data di scadenza
-                  </Text>
-                </View>
-            )}
-          </CameraView>
-
-          <View style={styles.cameraControlsContainer}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={pickImage}
-              accessibilityLabel="Seleziona dalla galleria"
-              accessibilityRole="button"
-            >
-              <ImageIcon size={24} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.captureButton}
-              onPress={takePicture}
-              accessibilityLabel="Scatta foto"
-              accessibilityRole="button"
-            >
-              <CameraIcon size={32} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={() => router.back()}
-              accessibilityLabel="Torna indietro"
-              accessibilityRole="button"
-            >
-              <Text style={styles.controlButtonText}>Indietro</Text>
-            </TouchableOpacity>
-          </View>
-        </>
+      <CameraView
+        ref={cameraRef}
+        style={styles.camera}
+        facing="back"
+        accessibilityLabel="Vista fotocamera"
+        accessibilityHint="Inquadra il prodotto e tocca il pulsante centrale per scattare la foto"
+        {...(captureMode === 'expirationDateOnly' && {
+            zoom: 0.1,
+            autoFocus: 'on',
+        })}
+      />
+      
+      {/* Focus frame posizionato assolutamente sopra la camera */}
+      {captureMode === 'expirationDateOnly' && (
+        <View style={styles.macroFocusFrame}>
+          <Text style={styles.focusFrameText}>
+            Fotografa la scadenza
+          </Text>
+        </View>
       )}
+
+      <View style={styles.cameraControlsContainer}>
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={pickImage}
+          accessibilityLabel="Seleziona dalla galleria"
+          accessibilityRole="button"
+        >
+          <ImageIcon size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.captureButton}
+          onPress={takePicture}
+          accessibilityLabel="Scatta foto"
+          accessibilityRole="button"
+        >
+          <CameraIcon size={32} color="#fff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={() => router.back()}
+          accessibilityLabel="Torna indietro"
+          accessibilityRole="button"
+        >
+          <Text style={styles.controlButtonText}>Indietro</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 });

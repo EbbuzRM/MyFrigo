@@ -34,74 +34,81 @@ const QuantityInputRow = React.memo(({
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
-  return (
-    <View style={styles.row}>
-      <View style={styles.column}>
-        <Text style={styles.label}>Quantità*</Text>
-        <View style={styles.quantityContainer}>
-          <AnimatedPressable
-            onPress={() => {
-              const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0;
-              const newValue = String(Math.max(0, currentVal - 1));
-              updateQuantity(item.id, 'quantity', newValue);
-            }}
-            style={styles.quantityButton}
-          >
-            <Text style={styles.quantityButtonText}>-</Text>
-          </AnimatedPressable>
-          <TextInput
-            style={styles.quantityInput}
-            value={item.quantity}
-            onChangeText={(text) => updateQuantity(item.id, 'quantity', text.replace(',', '.'))}
-            keyboardType="decimal-pad"
-            placeholderTextColor={styles.placeholder.color}
-          />
-          <AnimatedPressable
-            onPress={() => {
-              const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0;
-              const newValue = String(currentVal + 1);
-              updateQuantity(item.id, 'quantity', newValue);
-            }}
-            style={styles.quantityButton}
-          >
-            <Text style={styles.quantityButtonText}>+</Text>
-          </AnimatedPressable>
+    return (
+    <View style={styles.container}>
+      <View style={styles.mainRow}>
+        <View style={[styles.column, !isOnlyOne && styles.columnWithRemove]}>
+          <Text style={styles.label}>Quantità*</Text>
+          <View style={styles.quantityContainer}>
+            <AnimatedPressable
+              onPress={() => {
+                const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0;
+                const newValue = String(Math.max(0, currentVal - 1));
+                updateQuantity(item.id, 'quantity', newValue);
+              }}
+              style={styles.quantityButton}
+            >
+              <Text style={styles.quantityButtonText}>-</Text>
+            </AnimatedPressable>
+            <TextInput
+              style={styles.quantityInput}
+              value={item.quantity}
+              onChangeText={(text) => updateQuantity(item.id, 'quantity', text.replace(',', '.'))}
+              keyboardType="decimal-pad"
+              placeholderTextColor={styles.placeholder.color}
+            />
+            <AnimatedPressable
+              onPress={() => {
+                const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0;
+                const newValue = String(currentVal + 1);
+                updateQuantity(item.id, 'quantity', newValue);
+              }}
+              style={styles.quantityButton}
+            >
+              <Text style={styles.quantityButtonText}>+</Text>
+            </AnimatedPressable>
+          </View>
         </View>
-      </View>
-      <View style={styles.column}>
-        <Text style={styles.label}>Unità*</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={item.unit}
-            style={styles.picker}
-            onValueChange={(itemValue) => updateQuantity(item.id, 'unit', itemValue)}
-            dropdownIconColor={styles.picker.color}
-          >
-            {COMMON_UNITS.map((u) => (
-              <Picker.Item key={u.id} label={u.name} value={u.id} />
-            ))}
-          </Picker>
+        <View style={[styles.column, !isOnlyOne && styles.columnWithRemove]}>
+          <Text style={styles.label}>Unità*</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={item.unit}
+              style={styles.picker}
+              onValueChange={(itemValue) => updateQuantity(item.id, 'unit', itemValue)}
+              dropdownIconColor={styles.picker.color}
+            >
+              {COMMON_UNITS.map((u) => (
+                <Picker.Item key={u.id} label={u.name} value={u.id} />
+              ))}
+            </Picker>
+          </View>
         </View>
+        {!isOnlyOne && (
+          <TouchableOpacity onPress={() => removeQuantity(item.id)} style={styles.removeButton}>
+            <Text style={styles.removeButtonText}>-</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      {!isOnlyOne && (
-        <TouchableOpacity onPress={() => removeQuantity(item.id)} style={styles.removeButton}>
-          <Text style={styles.removeButtonText}>-</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 });
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    container: {
         marginBottom: 16,
+    },
+    mainRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     column: {
         flex: 1,
         marginHorizontal: 4,
+    },
+    columnWithRemove: {
+        flex: 1,
+        marginHorizontal: 2,
     },
     label: {
         fontSize: 16,
@@ -153,11 +160,31 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
         height: 44,
         borderRadius: 22,
         marginLeft: 8,
-        alignSelf: 'center',
+        marginTop: 26,
     },
     removeButtonText: {
         color: isDarkMode ? '#ff7b72' : '#ef4444',
         fontSize: 20,
+        fontWeight: 'bold',
+    },
+    quantityIndicator: {
+        backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0',
+        padding: 8,
+        borderRadius: 6,
+        marginLeft: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 60,
+    },
+    controlsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: 8,
+    },
+    quantityIndicatorText: {
+        color: isDarkMode ? '#c9d1d9' : '#1e293b',
+        fontSize: 14,
         fontWeight: 'bold',
     },
     placeholder: {

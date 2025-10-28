@@ -63,6 +63,12 @@ export default function BarcodeScannerScreen() {
   const { categories: appCategories } = useCategories();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentBarcode, setCurrentBarcode] = useState<string | null>(null);
+  const [frameLayout, setFrameLayout] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
+
+  const handleFrameLayout = (event: any) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
+    setFrameLayout({ x, y, width, height });
+  };
 
   const clearApiTimeout = useCallback(() => {
     if (timeoutRef.current) {
@@ -74,8 +80,21 @@ export default function BarcodeScannerScreen() {
   // Funzione per recuperare i dati del prodotto da Supabase
   const fetchProductFromSupabase = useCallback(async (barcode: string): Promise<Partial<Product> | null> => {
     setLoadingProgress('Cercando prodotto nel database locale...');
-    const template = await TemplateService.getProductTemplate(barcode);
-    return template;
+
+    try {
+      // Ridotto timeout da 5000 a 2000ms per velocità
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout database locale')), 2000);
+      });
+
+      const templatePromise = TemplateService.getProductTemplate(barcode);
+
+      const template = await Promise.race([templatePromise, timeoutPromise]);
+      return template;
+    } catch (error) {
+      LoggingService.error('Scanner', 'Errore nel database locale:', error);
+      return null;
+    }
   }, []);
 
   // Funzione per recuperare i dati del prodotto da Open Food Facts
@@ -117,8 +136,58 @@ export default function BarcodeScannerScreen() {
     return fetchPromise;
   }, []);
 
-  // Funzione per gestire la scansione del codice a barre
-  const handleBarCodeScanned = useCallback(async ({ type, data }: { type: string; data: string }) => {
+
+  // Modifica handleBarCodeScanned per velocizzare l'esperienza
+  const useBarcodeCache = useRef<Map<string, { timestamp: number, result: any }>>(new Map());
+
+  const handleBarCodeScanned = useCallback(async ({ type, data, bounds }: { type: string; data: string; bounds: { origin: { x: number, y: number }, size: { width: number, height: number } } }) => {
+    if (!frameLayout) return;
+
+    // Controlla cache per evitare ricerche ripetute (valida per 30 minuti)
+    const now = Date.now();
+    const cacheEntry = useBarcodeCache.current.get(data);
+    if (cacheEntry && (now - cacheEntry.timestamp) < 30 * 60 * 1000) {
+      // Usa cache per risposta veloce
+      if (cacheEntry.result.type === 'template') {
+        Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${cacheEntry.result.data.name}`, [
+          {
+            text: 'Continua',
+            onPress: () => router.replace({ pathname: '/manual-entry', params: cacheEntry.result.params } as any)
+          },
+          {
+            text: 'Scansiona di Nuovo',
+            onPress: () => setScanned(false),
+            style: 'cancel',
+          },
+        ]);
+        return;
+      }
+    }
+
+    // Controllo rilassato: se almeno una parte del codice è visibile nel quadro
+    // invece di richiedere che il centro sia dentro
+    const barcodeLeft = bounds.origin.x;
+    const barcodeRight = bounds.origin.x + bounds.size.width;
+    const barcodeTop = bounds.origin.y;
+    const barcodeBottom = bounds.origin.y + bounds.size.height;
+
+    const frameLeft = frameLayout.x;
+    const frameRight = frameLayout.x + frameLayout.width;
+    const frameTop = frameLayout.y;
+    const frameBottom = frameLayout.y + frameLayout.height;
+
+    // Controllo se c'è almeno una intersezione significativa tra barcode e frame
+    const overlapX = Math.max(0, Math.min(barcodeRight, frameRight) - Math.max(barcodeLeft, frameLeft));
+    const overlapY = Math.max(0, Math.min(barcodeBottom, frameBottom) - Math.max(barcodeTop, frameTop));
+
+    const barcodeArea = bounds.size.width * bounds.size.height;
+    const overlapArea = overlapX * overlapY;
+
+    // Richiede almeno il 30% del barcode visibile nel frame
+    if (overlapArea < barcodeArea * 0.3) {
+      return;
+    }
+
     setScanned(true);
     setIsLoading(true);
     setLoadingError(null);
@@ -128,12 +197,18 @@ export default function BarcodeScannerScreen() {
     let paramsForManualEntry: Partial<Product> & { barcodeType?: string; addedMethod?: string } = { barcode: data, barcodeType: type, addedMethod: 'barcode' };
 
     try {
-      // 1. Prima controlla se esiste un template salvato
-      setLoadingProgress('Cercando prodotto nel database locale...');
-      const template = await fetchProductFromSupabase(data);
-      
-      if (template) {
-        Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${template.name}`, [
+      // Ricerca parallela ultra veloce
+      setLoadingProgress('Ricerca velocissima in corso...');
+
+      const [supabaseResult, offResult] = await Promise.allSettled([
+        fetchProductFromSupabase(data),
+        fetchProductFromOpenFoodFacts(data)
+      ]);
+
+      // 1. Controlla se abbiamo trovato un template locale (preferito)
+      if (supabaseResult.status === 'fulfilled' && supabaseResult.value) {
+        useBarcodeCache.current.set(data, { timestamp: now, result: { type: 'template', data: supabaseResult.value, params: paramsForManualEntry } });
+        Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${supabaseResult.value.name}`, [
           {
             text: 'Continua',
             onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
@@ -144,11 +219,12 @@ export default function BarcodeScannerScreen() {
             style: 'cancel',
           },
         ]);
-      } else {
-        // 2. Se non c'è un template, prova con Open Food Facts
-        setLoadingProgress('Cercando prodotto online...');
-        const productInfo = await fetchProductFromOpenFoodFacts(data);
-        
+        return;
+      }
+
+      // 2. Controlla se abbiamo trovato dati online
+      if (offResult.status === 'fulfilled') {
+        const productInfo = offResult.value;
         const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
 
         paramsForManualEntry = {
@@ -158,6 +234,9 @@ export default function BarcodeScannerScreen() {
           imageUrl: productInfo.image_url || '',
           category: suggestedCategoryId || '',
         };
+
+        // Salva in cache
+        useBarcodeCache.current.set(data, { timestamp: now, result: { type: 'online', data: productInfo, params: paramsForManualEntry } });
 
         Alert.alert('Prodotto Trovato!', `Trovato online: ${productInfo.product_name || data}`, [
           {
@@ -170,28 +249,47 @@ export default function BarcodeScannerScreen() {
             style: 'cancel',
           },
         ]);
+        return;
       }
+
+      // Se entrambe le ricerche hanno fallito, mostra errore
+      const supabaseError = supabaseResult.status === 'rejected' ? supabaseResult.reason?.message : null;
+      const offError = offResult.status === 'rejected' ? 'Prodotto non trovato online' : null;
+
+      // Non mostrare errore se è solo timeout locale - passa direttamente alla ricerca online
+      if (supabaseError?.includes('Timeout database locale') && !offError) {
+        throw new Error(offError || 'Entrambe le ricerche hanno fallito');
+      }
+
+      const errorMessage = supabaseError && offError
+        ? `Database locale: ${supabaseError}. ${offError}`
+        : supabaseError || offError || 'Entrambe le ricerche hanno fallito';
+
+      throw new Error(errorMessage);
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
       LoggingService.error('Scanner', "Errore durante la ricerca del prodotto:", errorMessage);
 
       // Se l'errore è che il prodotto non è stato trovato (o è un 404), lo gestiamo come un caso normale
       if (errorMessage.includes('Prodotto non trovato') || errorMessage.includes('Errore HTTP: 404')) {
+        // Salva in cache anche il mancato ritrovamento per evitare ricerche ripetute
+        useBarcodeCache.current.set(data, { timestamp: now, result: { type: 'not_found', params: paramsForManualEntry } });
+
         Alert.alert(
           'Prodotto Non Trovato',
-          `Il prodotto con codice ${data} non è nel nostro database. Vuoi aggiungerlo manualmente?`,
+          `Vuoi aggiungere manualmente il prodotto con codice ${data}?`,
           [
             {
               text: 'Sì, Aggiungi',
               onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
-            },
-            {
-              text: 'Scansiona di Nuovo',
-              onPress: () => setScanned(false),
-              style: 'cancel',
-            },
-          ]
-        );
+            }, // Aggiunta parentesi graffa di chiusura e virgola mancanti
+          {
+            text: 'Scansiona di Nuovo',
+            onPress: () => setScanned(false),
+            style: 'cancel',
+          },
+        ]);
       } else {
         // Per tutti gli altri errori (rete, timeout, etc.), mostriamo un errore bloccante
         setLoadingError(`Errore: ${errorMessage}. Riprova o inserisci manualmente.`);
@@ -200,7 +298,7 @@ export default function BarcodeScannerScreen() {
       setIsLoading(false);
       clearApiTimeout();
     }
-  }, [appCategories, clearApiTimeout, fetchProductFromSupabase, fetchProductFromOpenFoodFacts]);
+  }, [appCategories, clearApiTimeout, fetchProductFromSupabase, fetchProductFromOpenFoodFacts, frameLayout]);
 
   // Funzione per riprovare la scansione
   const handleRetry = useCallback(() => {
@@ -245,15 +343,31 @@ export default function BarcodeScannerScreen() {
       <SafeAreaView style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color="#fff" style={styles.loadingIndicator} />
         <Text style={styles.loadingText}>{loadingProgress}</Text>
+        {loadingProgress.includes('velocemente') && (
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={() => {
+              setIsLoading(false);
+              setScanned(false);
+            }}
+          >
+            <Text style={styles.skipButtonText}>Salta ricerca e aggiungi manualmente</Text>
+          </TouchableOpacity>
+        )}
       </SafeAreaView>
     );
-  } else if (loadingError) {
+      } else if (loadingError) {
     content = (
       <SafeAreaView style={[styles.container, styles.errorContainer]}>
         <Text style={styles.errorText}>{loadingError}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
           <RefreshCw size={20} color="#fff" />
           <Text style={styles.retryButtonText}>Riprova</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.manualButton} onPress={() => {
+          router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true' } })
+        }}>
+          <Text style={styles.manualButtonText}>Inserisci Manualmente</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Torna Indietro</Text>
@@ -272,6 +386,10 @@ export default function BarcodeScannerScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         )}
+        <View style={styles.scanFrameContainer} pointerEvents="none">
+            <View style={styles.scanFrame} onLayout={handleFrameLayout} />
+            <Text style={styles.scanFrameText}>Inquadra il codice a barre</Text>
+        </View>
         {scanned && !isLoading && (
           <TouchableOpacity style={styles.rescanButtonContainer} onPress={() => { setScanned(false); setIsLoading(false); }}>
             <Text style={styles.rescanButtonText}>Tocca per Scansionare di Nuovo</Text>
@@ -383,5 +501,57 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     padding: 8,
     zIndex: 10,
+  },
+  scanFrameContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanFrame: {
+    width: '90%',
+    height: '30%',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+  },
+  scanFrameText: {
+    position: 'absolute',
+    top: '32%',
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  skipButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  skipButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+  },
+  manualButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  manualButtonText: {
+    color: '#58a6ff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
   }
 });

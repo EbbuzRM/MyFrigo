@@ -168,7 +168,10 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
                   <Text style={styles.detailText}>Quantità</Text>
                 </View>
                 <Text style={styles.dateText}>
-                  {product.quantities[0].quantity} {product.quantities[0].unit || 'pz'}
+                  {product.quantities.length > 1
+                    ? `${product.quantities.map(q => `${q.quantity} ${q.unit || 'pz'}`).join(', ')}`
+                    : `${product.quantities[0].quantity} ${product.quantities[0].unit || 'pz'}`
+                  }
                 </Text>
               </View>
             )}

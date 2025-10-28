@@ -28,12 +28,60 @@ const Products = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConsumeModalVisible, setIsConsumeModalVisible] = useState(false);
   const [productToConsume, setProductToConsume] = useState<Product | null>(null);
+  const [lastRefreshTimestamp, setLastRefreshTimestamp] = useState(Date.now());
+  const [lastBackgroundTimestamp, setLastBackgroundTimestamp] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       LoggingService.info('ProductsScreen', 'Screen focused, refreshing products.');
       refreshProducts();
     }, [refreshProducts])
+  );
+
+  // Funzione per determinare se fare auto-refresh intelligente
+  const shouldAutoRefresh = useCallback(() => {
+    const now = Date.now();
+    const lastRefresh = lastRefreshTimestamp;
+
+    // Refresh automatico dopo 2 minuti dall'ultimo refresh
+    const shouldRefreshTime = (now - lastRefresh) > 120000; // 2 minuti
+
+    // Refresh se siamo andati in altre schede e tornati (possibile modifica)
+    const hasNavigatedAway = lastBackgroundTimestamp > 0 && lastBackgroundTimestamp > lastRefresh;
+
+    return shouldRefreshTime || hasNavigatedAway;
+  }, [lastRefreshTimestamp, lastBackgroundTimestamp]);
+
+  // Forza refresh dopo azioni di modifica
+  const forceRefreshProducts = useCallback(async () => {
+    LoggingService.info('ProductsScreen', 'Forcing refresh after product modification');
+    await refreshProducts();
+    setLastRefreshTimestamp(Date.now());
+  }, [refreshProducts]);
+
+  // Usa un approccio più semplice - refresh intelligente basato su focus
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  // Semplifica la logica: refresh al primo caricamento, poi solo quando necessario
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstLoad) {
+        LoggingService.info('ProductsScreen', 'First load - refreshing products');
+        refreshProducts().then(() => {
+          setLastRefreshTimestamp(Date.now());
+          setIsFirstLoad(false);
+        });
+      } else {
+        // Dopo il primo carico, usa refresh intelligente
+        const shouldRefresh = shouldAutoRefresh();
+        if (shouldRefresh) {
+          LoggingService.info('ProductsScreen', 'Auto-refresh triggered');
+          refreshProducts().then(() => {
+            setLastRefreshTimestamp(Date.now());
+          });
+        }
+      }
+    }, [refreshProducts, shouldAutoRefresh, isFirstLoad])
   );
 
   const onRefresh = useCallback(async () => {
@@ -111,25 +159,45 @@ const Products = () => {
   const handleConsumeConfirm = async (consumedQuantity: number) => {
     if (!productToConsume) return;
 
-    const currentQuantity = productToConsume.quantities[0]?.quantity || 0;
-    const remainingQuantity = currentQuantity - consumedQuantity;
-
     try {
-            if (remainingQuantity > 0) {
-                const newQuantities = [{ ...productToConsume.quantities[0], quantity: remainingQuantity }];
-                await ProductStorage.saveProduct({ ...productToConsume, quantities: newQuantities });
-                LoggingService.info('ProductsScreen', `Updated quantity for ${productToConsume.name}. Remaining: ${remainingQuantity}`);
-            } else {
-            await ProductStorage.updateProductStatus(productToConsume.id!, 'consumed');
-            LoggingService.info('ProductsScreen', `Product ${productToConsume.name} marked as consumed.`);
+      // Calcola la quantità totale attuale
+      const currentTotalQuantity = productToConsume.quantities.reduce((sum, q) => sum + q.quantity, 0);
+      const remainingQuantity = currentTotalQuantity - consumedQuantity;
+
+      if (remainingQuantity > 0) {
+        // Gestisce il consumo da quantità multiple
+        const newQuantities = [...productToConsume.quantities];
+        let remainingToDeduct = consumedQuantity;
+
+        // Itera sulle quantità dal più grande al più piccolo
+        newQuantities.sort((a, b) => b.quantity - a.quantity);
+
+        for (let i = 0; i < newQuantities.length && remainingToDeduct > 0; i++) {
+          if (newQuantities[i].quantity >= remainingToDeduct) {
+            newQuantities[i].quantity -= remainingToDeduct;
+            remainingToDeduct = 0;
+          } else {
+            remainingToDeduct -= newQuantities[i].quantity;
+            newQuantities[i].quantity = 0;
+          }
         }
-        await refreshProducts();
+
+        // Rimuovi le quantità con valore 0
+        const filteredQuantities = newQuantities.filter(q => q.quantity > 0);
+
+        await ProductStorage.saveProduct({ ...productToConsume, quantities: filteredQuantities });
+        LoggingService.info('ProductsScreen', `Updated quantity for ${productToConsume.name}. Remaining: ${remainingQuantity}`);
+      } else {
+        await ProductStorage.updateProductStatus(productToConsume.id!, 'consumed');
+        LoggingService.info('ProductsScreen', `Product ${productToConsume.name} marked as consumed.`);
+      }
+      await refreshProducts();
     } catch (error) {
-        LoggingService.error('ProductsScreen', 'Error consuming product', error);
-        Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
+      LoggingService.error('ProductsScreen', 'Error consuming product', error);
+      Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
     } finally {
-        setIsConsumeModalVisible(false);
-        setProductToConsume(null);
+      setIsConsumeModalVisible(false);
+      setProductToConsume(null);
     }
   };
 
@@ -233,9 +301,54 @@ const Products = () => {
             product={item}
             categoryInfo={getCategoryInfo(item.category)}
             onPress={() => router.push({ pathname: '/manual-entry', params: { productId: item.id } })}
-            onConsume={() => {
-                setProductToConsume(item);
-                setIsConsumeModalVisible(true);
+            onConsume={async () => {
+              const unit = item.quantities && item.quantities.length > 0 ? item.quantities[0].unit : 'pezzi';
+              const totalQuantity = item.quantities.reduce((sum, q) => sum + q.quantity, 0);
+
+              // Lista delle unità considerate "contabili"
+              const countableUnits = ['pezzi', 'confezioni'];
+
+              if (!countableUnits.includes(unit)) {
+                // Logica per unità non contabili (g, kg, ml, l, etc.)
+                Alert.alert(
+                  "Conferma Consumo",
+                  "Vuoi contrassegnare l'intero prodotto come consumato?",
+                  [
+                    {
+                      text: "Annulla",
+                      style: "cancel"
+                    },
+                    {
+                      text: "Conferma",
+                      onPress: async () => {
+                        try {
+                          await ProductStorage.updateProductStatus(item.id!, 'consumed');
+                          await refreshProducts();
+                          LoggingService.info('ProductsScreen', `Product ${item.name} marked as consumed entirely.`);
+                        } catch (error) {
+                          LoggingService.error('ProductsScreen', 'Error consuming non-piece product', error);
+                          Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
+                        }
+                      }
+                    }
+                  ]
+                );
+              } else {
+                // Comportamento per i prodotti contabili (pezzi, confezioni)
+                if (totalQuantity === 1) {
+                  try {
+                    await ProductStorage.updateProductStatus(item.id!, 'consumed');
+                    await refreshProducts();
+                    LoggingService.info('ProductsScreen', `Product ${item.name} marked as consumed directly.`);
+                  } catch (error) {
+                    LoggingService.error('ProductsScreen', 'Error consuming single piece product', error);
+                    Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
+                  }
+                } else {
+                  setProductToConsume(item);
+                  setIsConsumeModalVisible(true);
+                }
+              }
             }}
             onDelete={async () => {
               LoggingService.info('ProductsScreen', `User initiated deletion for product: ${item.id}`);
