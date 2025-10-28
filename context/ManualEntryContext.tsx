@@ -24,6 +24,7 @@ export interface ManualEntryFormData {
   isEditMode: boolean;
   originalProductId: string | null;
   hasManuallySelectedCategory: boolean;
+  isInitialized: boolean; // Flag to track initialization
 }
 
 // Definisce il contesto completo con stato e funzioni
@@ -41,6 +42,7 @@ interface ManualEntryContextType {
   isEditMode: boolean;
   originalProductId: string | null;
   hasManuallySelectedCategory: boolean;
+  isInitialized: boolean; // Flag to track initialization
   
   // Funzioni per aggiornare lo stato
   setName: (name: string) => void;
@@ -58,6 +60,7 @@ interface ManualEntryContextType {
   setHasManuallySelectedCategory: (manual: boolean) => void;
   setIsEditMode: (editMode: boolean) => void;
   setOriginalProductId: (productId: string | null) => void;
+  setIsInitialized: (initialized: boolean) => void; // Setter for the flag
 
   // Funzioni helper
   initializeForm: (initialData?: Partial<ManualEntryFormData & { product?: any }>) => void;
@@ -81,6 +84,7 @@ const getInitialState = (): ManualEntryFormData => ({
   isEditMode: false,
   originalProductId: null,
   hasManuallySelectedCategory: false,
+  isInitialized: false, // Initial value for the flag
 });
 
 // Crea il Provider
@@ -130,44 +134,50 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
   const setHasManuallySelectedCategory = useCallback((manual: boolean) => setFormData(prev => ({ ...prev, hasManuallySelectedCategory: manual })), []);
   const setIsEditMode = useCallback((editMode: boolean) => setFormData(prev => ({ ...prev, isEditMode: editMode })), []);
   const setOriginalProductId = useCallback((productId: string | null) => setFormData(prev => ({ ...prev, originalProductId: productId })), []);
+  const setIsInitialized = useCallback((initialized: boolean) => setFormData(prev => ({ ...prev, isInitialized: initialized })), []);
 
   const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string }> = {}) => {
     LoggingService.info('ManualEntryContext', `Initializing form with: ${JSON.stringify(initialData, null, 2)}`);
-    let newState = { ...getInitialState(), ...initialData };
-
-    if (initialData.product) {
-        newState = { ...newState, ...initialData.product };
-
-        // Map the 'category' field from the product to 'selectedCategory' for the form state
-        if (initialData.product.category) {
-            newState.selectedCategory = initialData.product.category;
-        }
-
-        // Handle quantities
-        if (Array.isArray(initialData.product.quantities) && initialData.product.quantities.length > 0) {
-            newState.quantities = initialData.product.quantities.map((q: any) => ({
-                ...q,
-                quantity: q.quantity !== undefined && q.quantity !== null ? String(q.quantity) : '1',
-                unit: q.unit || 'pz',
-                id: uuidv4()
-            }));
-        } else if (initialData.product.quantity !== undefined && initialData.product.quantity !== null) {
-            newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit || 'pz' }];
-        }
-        delete newState.product; 
-    }
-
-    // This handles the case where 'category' is passed directly, not inside a product object
-    if (initialData.category) {
-      newState.selectedCategory = initialData.category;
-    }
     
-    // Clean up legacy fields
-    delete newState.category;
-    delete newState.quantity;
-    delete newState.unit;
+    setFormData(prevState => {
+      // Merge the initial data with the previous state instead of resetting completely.
+      let newState = { ...prevState, ...initialData };
 
-    setFormData(newState);
+      if (initialData.product) {
+          // When loading a full product, start from a clean slate to avoid merging old data.
+          newState = { ...getInitialState(), ...initialData.product };
+
+          // Map the 'category' field from the product to 'selectedCategory' for the form state
+          if (initialData.product.category) {
+              newState.selectedCategory = initialData.product.category;
+          }
+
+          // Handle quantities
+          if (Array.isArray(initialData.product.quantities) && initialData.product.quantities.length > 0) {
+              newState.quantities = initialData.product.quantities.map((q: any) => ({
+                  ...q,
+                  quantity: q.quantity !== undefined && q.quantity !== null ? String(q.quantity) : '1',
+                  unit: q.unit || 'pz',
+                  id: uuidv4()
+              }));
+          } else if (initialData.product.quantity !== undefined && initialData.product.quantity !== null) {
+              newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit || 'pz' }];
+          }
+          delete newState.product; 
+      }
+
+      // This handles the case where 'category' is passed directly, not inside a product object
+      if (initialData.category) {
+        newState.selectedCategory = initialData.category;
+      }
+      
+      // Clean up legacy fields
+      delete newState.category;
+      delete newState.quantity;
+      delete newState.unit;
+
+      return newState;
+    });
   }, []);
 
   const clearForm = useCallback(() => {

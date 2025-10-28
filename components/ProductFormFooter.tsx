@@ -84,6 +84,15 @@ const ProductFormFooter = React.memo(({
           isOnlyOne={quantities.length === 1}
         />
       ))}
+      
+      {quantities.length > 1 && (
+        <View style={styles.quantitiesSummary}>
+          <Text style={styles.quantitiesSummaryText}>
+            Quantità totali: {quantities.map(q => `${q.quantity} ${q.unit}`).join(', ')}
+          </Text>
+        </View>
+      )}
+      
       <TouchableOpacity style={styles.addButton} onPress={addQuantity}>
         <Text style={styles.addButtonText}>Aggiungi quantità</Text>
       </TouchableOpacity>
@@ -232,6 +241,20 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     addButtonText: {
         color: isDarkMode ? '#58a6ff' : '#3b82f6',
         fontWeight: '500',
+    },
+    quantitiesSummary: {
+        backgroundColor: isDarkMode ? '#21262d' : '#f1f5f9',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    },
+    quantitiesSummaryText: {
+        fontSize: 14,
+        color: isDarkMode ? '#8b949e' : '#475569',
+        textAlign: 'center',
+        fontStyle: 'italic',
     },
 });
 

@@ -42,7 +42,6 @@ export default function RootLayout() {
                   <Stack.Screen name="signup" options={{ headerShown: false }} />
                   <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
                   <Stack.Screen name="password-reset-form" options={{ headerShown: false }} />
-                  <Stack.Screen name="product-detail" options={{ headerShown: false }} />
                   <Stack.Screen name="scanner" options={{ headerShown: false }} />
                   <Stack.Screen name="photo-capture" options={{ headerShown: false }} />
                   <Stack.Screen name="manual-entry" options={{ headerShown: false }} />
@@ -50,7 +49,6 @@ export default function RootLayout() {
                   <Stack.Screen name="profile" options={{ headerShown: false }} />
                   <Stack.Screen name="manage-categories" options={{ headerShown: false }} />
                   <Stack.Screen name="feedback" options={{ headerShown: false }} />
-                  <Stack.Screen name="email-sent" options={{ headerShown: false }} />
                   <Stack.Screen name="+not-found" />
                 </Stack>
                 <StatusBar style="auto" />

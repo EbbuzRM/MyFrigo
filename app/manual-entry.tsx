@@ -169,6 +169,7 @@ export default function ManualEntryScreen() {
     barcode,
     imageUrl,
     isEditMode,
+    originalProductId,
     showPurchaseDatePicker, setShowPurchaseDatePicker,
     showExpirationDatePicker, setShowExpirationDatePicker,
     isCategoryModalVisible, setIsCategoryModalVisible,
@@ -247,6 +248,7 @@ export default function ManualEntryScreen() {
           setName={setName}
           setBrand={setBrand}
           navigatingToPhotoCapture={navigatingToPhotoCapture}
+          productId={originalProductId}
         />
         <FlatList
           data={categoryData}

@@ -18,6 +18,7 @@ interface ProductFormHeaderProps {
   setName: (value: string) => void;
   setBrand: (value: string) => void;
   navigatingToPhotoCapture: React.MutableRefObject<boolean>;
+  productId?: string | null;
 }
 
 const ProductFormHeader = React.memo(({
@@ -56,10 +57,13 @@ const ProductFormHeader = React.memo(({
             };
             formStateLogger.logNavigation('TAKE_PHOTO', 'manual-entry', 'photo-capture', currentFormData);
             navigatingToPhotoCapture.current = true;
-            router.push({
-              pathname: '/photo-capture',
-              params: currentFormData
-            });
+        router.push({
+          pathname: '/photo-capture',
+          params: {
+            captureMode: 'updateProductPhoto',
+            ...currentFormData
+          }
+        });
             setTimeout(() => {
               navigatingToPhotoCapture.current = false;
             }, 500);
@@ -84,7 +88,10 @@ const ProductFormHeader = React.memo(({
             navigatingToPhotoCapture.current = true;
             router.push({
               pathname: '/photo-capture',
-              params: currentFormData
+              params: {
+                captureMode: 'updateProductPhoto',
+                ...currentFormData
+              }
             });
             setTimeout(() => {
               navigatingToPhotoCapture.current = false;

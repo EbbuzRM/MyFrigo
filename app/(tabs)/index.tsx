@@ -152,10 +152,12 @@ function Dashboard() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.titleContainer} onPress={handleBellPress} disabled={permissionStatus !== 'denied'}>
           <Text style={styles.title}>La Tua Dispensa</Text>
-          {permissionStatus === 'granted' 
-            ? <Bell size={18} color={isDarkMode ? '#4ade80' : '#16a34a'} style={styles.notificationIcon} />
-            : <BellOff size={18} color={isDarkMode ? '#f87171' : '#dc2626'} style={styles.notificationIcon} />
-          }
+          <View style={styles.notificationIconContainer}>
+            {permissionStatus === 'granted' 
+              ? <Bell size={18} color={isDarkMode ? '#4ade80' : '#16a34a'} style={styles.notificationIcon} />
+              : <BellOff size={18} color={isDarkMode ? '#f87171' : '#dc2626'} style={styles.notificationIcon} />
+            }
+          </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.profileButton} onPress={() => setMenuVisible(true)} testID="profile-button">
           {displayInitials ? (
@@ -331,8 +333,11 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  notificationIcon: {
+  notificationIconContainer: {
     marginTop: 4, // Allinea l'icona verticalmente con il titolo
+  },
+  notificationIcon: {
+    // Stile per l'icona stessa
   },
   subtitle: {
     fontSize: 16,

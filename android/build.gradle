@@ -31,27 +31,6 @@ allprojects {
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
-  configurations.all {
-    resolutionStrategy {
-      force 'androidx.test:runner:1.5.2'
-      force 'androidx.test.espresso:espresso-core:3.5.1'
-      force 'androidx.test.espresso:espresso-contrib:3.5.1'
-      force 'androidx.test.espresso:espresso-idling-resource:3.5.1'
-      force 'androidx.test.espresso:espresso-intents:3.5.1'
-    }
-  }
-  afterEvaluate { project ->
-    if (project.hasProperty('android')) {
-      android {
-        packagingOptions {
-          pickFirst 'META-INF/LICENSE.md'
-          pickFirst 'META-INF/LICENSE'
-          pickFirst 'META-INF/NOTICE'
-          pickFirst 'META-INF/LICENSE-notice.md'
-        }
-      }
-    }
-  }
 }
 
 apply plugin: "expo-root-project"

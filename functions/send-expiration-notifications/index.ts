@@ -53,91 +53,71 @@ serve(async () => {
   try {
     LoggingService.info('Functions', 'Function execution started.');
 
-    // 1. Recupera tutti gli utenti con le loro impostazioni di notifica
-    const { data: users, error: usersError } = await supabase
-      .from('app_settings')
-      .select(`
-        user_id,
-        notifications_enabled,
-        notification_days,
-        users ( oneSignalPlayerId )
-      `);
+    // ✅ SINGOLA QUERY: Recupera tutti i prodotti in scadenza tramite RPC
+    // Questo risolve il problema N+1: da 2N+1 query a 1 query sola
+    const { data: expiringProducts, error: rpcError } = await supabase
+      .rpc('get_expiring_products');
 
-    if (usersError) throw usersError;
+    if (rpcError) {
+      throw new Error(`RPC Error: ${rpcError.message}`);
+    }
 
-    LoggingService.info('Functions', `Found ${users.length} users with settings.`);
+    LoggingService.info('Functions', `Found ${expiringProducts?.length || 0} products requiring notifications.`);
 
-    // Use local date instead of UTC to match user's timezone
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayISO = today.toISOString().split('T')[0];
-    LoggingService.info('Functions', `Today (local): ${todayISO}`);
-
-    // 2. Itera su ogni utente
-    for (const settings of users) {
-      const { user_id, notifications_enabled, notification_days, users: user } = settings;
-      const oneSignalPlayerId = user?.oneSignalPlayerId;
-
-      if (!notifications_enabled || !oneSignalPlayerId) {
-        LoggingService.info('Functions', `Skipping user ${user_id}: notifications disabled or no player ID.`);
-        continue;
+    // Raggruppa per utente per evitare notifiche duplicate
+    const notificationsByUser = new Map();
+    
+    for (const product of expiringProducts || []) {
+      const key = product.user_id;
+      if (!notificationsByUser.has(key)) {
+        notificationsByUser.set(key, {
+          oneSignalPlayerId: product.onesignal_player_id,
+          expired: [],
+          preWarning: [],
+        });
       }
-
-      LoggingService.info('Functions', `Processing user ${user_id} with pre-warning days: ${notification_days}`);
-
-      // --- LOGICA PER PRODOTTI SCADUTI OGGI ---
-      const { data: expiredProducts, error: expiredError } = await supabase
-        .from('products')
-        .select('id, name')
-        .eq('user_id', user_id)
-        .eq('expiration_date', todayISO);
-
-      if (expiredError) {
-        LoggingService.error('Functions', `Error fetching expired products for user ${user_id}: ${expiredError}`);
-      } else if (expiredProducts && expiredProducts.length > 0) {
-        LoggingService.info('Functions', `Found ${expiredProducts.length} expired products for user ${user_id}.`);
-        for (const product of expiredProducts) {
-          await sendPushNotification(
-            oneSignalPlayerId,
-            'Prodotto Scaduto!',
-            `Il prodotto "${product.name}" è scaduto oggi. Controlla il tuo frigo!`,
-            { productId: product.id }
-          );
-        }
-      }
-
-      // --- LOGICA PER NOTIFICHE DI PREAVVISO ---
-      if (notification_days > 0) {
-        // Use local date instead of UTC to match user's timezone
-        const preWarningDate = new Date();
-        preWarningDate.setDate(today.getDate() + notification_days);
-        preWarningDate.setHours(0, 0, 0, 0);
-        const preWarningDateISO = preWarningDate.toISOString().split('T')[0];
-        LoggingService.info('Functions', `Pre-warning date (${notification_days} days): ${preWarningDateISO}`);
-
-        const { data: preWarningProducts, error: preWarningError } = await supabase
-          .from('products')
-          .select('id, name')
-          .eq('user_id', user_id)
-          .eq('expiration_date', preWarningDateISO);
-
-        if (preWarningError) {
-          LoggingService.error('Functions', `Error fetching pre-warning products for user ${user_id}: ${preWarningError}`);
-        } else if (preWarningProducts && preWarningProducts.length > 0) {
-          LoggingService.info('Functions', `Found ${preWarningProducts.length} pre-warning products for user ${user_id}.`);
-          for (const product of preWarningProducts) {
-            await sendPushNotification(
-              oneSignalPlayerId,
-              'Prodotto in Scadenza!',
-              `Il prodotto "${product.name}" scadrà tra ${notification_days} giorni.`,
-              { productId: product.id }
-            );
-          }
-        }
+      
+      const userNotifications = notificationsByUser.get(key);
+      if (product.notification_type === 'expired') {
+        userNotifications.expired.push(product);
+      } else {
+        userNotifications.preWarning.push(product);
       }
     }
 
-    return new Response(JSON.stringify({ message: 'Notification checks completed.' }), {
+    // Invia notifiche raggruppate
+    for (const [userId, notifications] of notificationsByUser) {
+      const { oneSignalPlayerId, expired, preWarning } = notifications;
+
+      // Notifiche per prodotti scaduti
+      if (expired.length > 0) {
+        const productNames = expired.map(p => `"${p.product_name}"`).join(', ');
+        await sendPushNotification(
+          oneSignalPlayerId,
+          'Prodotti Scaduti!',
+          `${expired.length} prodotto(i) scaduto(i): ${productNames}`,
+          { productIds: expired.map(p => p.product_id) }
+        );
+      }
+
+      // Notifiche di preavviso
+      if (preWarning.length > 0) {
+        const productNames = preWarning.map(p => `"${p.product_name}"`).join(', ');
+        const days = preWarning[0].notification_days;
+        await sendPushNotification(
+          oneSignalPlayerId,
+          'Prodotti in Scadenza!',
+          `${preWarning.length} prodotto(i) scadrà(nno) tra ${days} giorni: ${productNames}`,
+          { productIds: preWarning.map(p => p.product_id) }
+        );
+      }
+    }
+
+    return new Response(JSON.stringify({
+      message: 'Notification checks completed.',
+      productsProcessed: expiringProducts?.length || 0,
+      usersNotified: notificationsByUser.size
+    }), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,
     });
