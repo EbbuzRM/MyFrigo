@@ -202,9 +202,10 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setHasManuallySelectedCategory,
     setIsEditMode,
     setOriginalProductId,
+    setIsInitialized,
     initializeForm,
     clearForm,
-  }), [formData, setName, setBrand, setSelectedCategory, setQuantities, addQuantity, removeQuantity, updateQuantity, setPurchaseDate, setExpirationDate, setNotes, setBarcode, setImageUrl, setHasManuallySelectedCategory, setIsEditMode, setOriginalProductId, initializeForm, clearForm]);
+  }), [formData, setName, setBrand, setSelectedCategory, setQuantities, addQuantity, removeQuantity, updateQuantity, setPurchaseDate, setExpirationDate, setNotes, setBarcode, setImageUrl, setHasManuallySelectedCategory, setIsEditMode, setOriginalProductId, setIsInitialized, initializeForm, clearForm]);
 
   return (
     <ManualEntryContext.Provider value={value}>
