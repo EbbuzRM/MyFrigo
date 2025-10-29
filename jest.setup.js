@@ -90,12 +90,7 @@ jest.mock('react-native', () => {
     BackHandler,
     Keyboard,
     KeyboardAvoidingView,
-    Platform: require('react-native/Libraries/Utilities/Platform'),    Animated: {
-      ...Animated,
-      View: Animated.createAnimatedComponent(View),
-      Text: Animated.createAnimatedComponent(Text),
-      TouchableOpacity: Animated.createAnimatedComponent(TouchableOpacity),
-    },
+    Platform: require('react-native/Libraries/Utilities/Platform'),
   };
 });
 
@@ -137,12 +132,12 @@ jest.mock('expo', () => ({
 
 // Mock __ExpoImportMetaRegistry
 Object.defineProperty(globalThis, '__ExpoImportMetaRegistry', {
-value: {
-  url: 'http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false&modulesOnly=false&runModule=true&app=com.myfrigo',
-},
-writable: true,
-enumerable: false,
-configurable: true,
+  value: {
+    url: 'http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false&modulesOnly=false&runModule=true&app=com.myfrigo',
+  },
+  writable: true,
+  enumerable: false,
+  configurable: true,
 });
 
 // Mock expo-router
@@ -303,12 +298,6 @@ jest.mock('react-native-reanimated', () => {
       CLAMP: 'clamp',
       IDENTITY: 'identity',
     },
-    View: View,
-    Text: Text,
-    Image: View,
-    ScrollView: View,
-    FlatList: View,
-    createAnimatedComponent: (component) => component,
   };
 });
 
@@ -603,4 +592,83 @@ jest.mock('@/hooks/useExpirationStatus', () => ({
     isExpiringSoon: false,
     isExpired: false,
   })),
+}));
+
+// Mock react-native-url-polyfill
+jest.mock('react-native-url-polyfill/auto', () => ({}));
+
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    auth: {
+      getSession: jest.fn(() => Promise.resolve({ data: { session: null } })),
+      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockReturnThis(),
+      data: [],
+      error: null,
+    })),
+    rpc: jest.fn(() => Promise.resolve({ data: [], error: null })),
+  })),
+}));
+
+// Mock ProductStorage - Updated to include all methods used in tests
+jest.mock('@/services/ProductStorage', () => {
+  // Create a more sophisticated mock that can be configured per test
+  const mockProductStorage = {
+    getProducts: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    getProductById: jest.fn(() => Promise.resolve(null)),
+    saveProduct: jest.fn(() => Promise.resolve()),
+    deleteProduct: jest.fn(() => Promise.resolve()),
+    updateProductStatus: jest.fn(() => Promise.resolve()),
+    getExpiredProducts: jest.fn(() => Promise.resolve([])),
+    getTrulyExpiredProducts: jest.fn(() => Promise.resolve([])),
+    moveProductsToHistory: jest.fn(() => Promise.resolve()),
+    getHistory: jest.fn(() => Promise.resolve([])),
+    restoreConsumedProduct: jest.fn(() => Promise.resolve()),
+    listenToProducts: jest.fn(() => jest.fn()),
+  };
+  
+  return {
+    ProductStorage: mockProductStorage,
+  };
+});
+
+// Mock ManualEntryContext
+jest.mock('@/context/ManualEntryContext', () => ({
+  useManualEntry: () => ({
+    name: '',
+    setName: jest.fn(),
+    brand: '',
+    setBrand: jest.fn(),
+    selectedCategory: '',
+    setSelectedCategory: jest.fn(),
+    quantities: [],
+    addQuantity: jest.fn(),
+    removeQuantity: jest.fn(),
+    updateQuantity: jest.fn(),
+    purchaseDate: '',
+    setPurchaseDate: jest.fn(),
+    expirationDate: '',
+    setExpirationDate: jest.fn(),
+    notes: '',
+    setNotes: jest.fn(),
+    barcode: '',
+    imageUrl: '',
+    setImageUrl: jest.fn(),
+    isEditMode: false,
+    originalProductId: null,
+    hasManuallySelectedCategory: false,
+    setHasManuallySelectedCategory: jest.fn(),
+    isInitialized: false,
+    setIsInitialized: jest.fn(),
+    initializeForm: jest.fn(),
+    clearForm: jest.fn(),
+  }),
 }));
