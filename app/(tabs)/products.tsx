@@ -25,18 +25,9 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'fresh' | 'expiring' | 'expired'>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isConsumeModalVisible, setIsConsumeModalVisible] = useState(false);
   const [productToConsume, setProductToConsume] = useState<Product | null>(null);
   const [lastRefreshTimestamp, setLastRefreshTimestamp] = useState(Date.now());
-  const [lastBackgroundTimestamp, setLastBackgroundTimestamp] = useState(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      LoggingService.info('ProductsScreen', 'Screen focused, refreshing products.');
-      refreshProducts();
-    }, [refreshProducts])
-  );
 
   // Funzione per determinare se fare auto-refresh intelligente
   const shouldAutoRefresh = useCallback(() => {
@@ -44,44 +35,57 @@ const Products = () => {
     const lastRefresh = lastRefreshTimestamp;
 
     // Refresh automatico dopo 2 minuti dall'ultimo refresh
-    const shouldRefreshTime = (now - lastRefresh) > 120000; // 2 minuti
+    return (now - lastRefresh) > 120000; // 2 minuti
+  }, [lastRefreshTimestamp]);
 
-    // Refresh se siamo andati in altre schede e tornati (possibile modifica)
-    const hasNavigatedAway = lastBackgroundTimestamp > 0 && lastBackgroundTimestamp > lastRefresh;
-
-    return shouldRefreshTime || hasNavigatedAway;
-  }, [lastRefreshTimestamp, lastBackgroundTimestamp]);
-
-  // Forza refresh dopo azioni di modifica
-  const forceRefreshProducts = useCallback(async () => {
-    LoggingService.info('ProductsScreen', 'Forcing refresh after product modification');
-    await refreshProducts();
-    setLastRefreshTimestamp(Date.now());
-  }, [refreshProducts]);
+  // Funzione per spostare i prodotti scaduti nella cronologia
+  const moveExpiredToHistory = useCallback(async () => {
+    try {
+      const expiredProducts = await ProductStorage.getExpiredProducts();
+      if (expiredProducts.length > 0) {
+        const productIds = expiredProducts.map(p => p.id!);
+        await ProductStorage.moveProductsToHistory(productIds);
+        const count = expiredProducts.length;
+        LoggingService.info('ProductsScreen', `Moved ${count} expired products to history`);
+      }
+    } catch (error) {
+      LoggingService.error('Products', 'Error moving expired products to history:', error);
+    }
+  }, []);
 
   // Usa un approccio più semplice - refresh intelligente basato su focus
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  // Semplifica la logica: refresh al primo caricamento, poi solo quando necessario
+  // CONSOLIDAMENTO: unico useFocusEffect per gestire tutte le operazioni al focus
   useFocusEffect(
     useCallback(() => {
-      if (isFirstLoad) {
-        LoggingService.info('ProductsScreen', 'First load - refreshing products');
-        refreshProducts().then(() => {
+      const handleScreenFocus = async () => {
+        LoggingService.info('ProductsScreen', 'Screen focused');
+        
+        if (isFirstLoad) {
+          LoggingService.info('ProductsScreen', 'First load - performing full setup');
+          
+          // 1. Sposta i prodotti scaduti nella cronologia
+          await moveExpiredToHistory();
+          
+          // 2. Aggiorna i prodotti
+          await refreshProducts();
+          
           setLastRefreshTimestamp(Date.now());
           setIsFirstLoad(false);
-        });
-      } else {
-        // Dopo il primo carico, usa refresh intelligente
-        const shouldRefresh = shouldAutoRefresh();
-        if (shouldRefresh) {
-          LoggingService.info('ProductsScreen', 'Auto-refresh triggered');
-          refreshProducts().then(() => {
+        } else {
+          // Dopo il primo carico, usa refresh intelligente
+          const shouldRefresh = shouldAutoRefresh();
+          if (shouldRefresh) {
+            LoggingService.info('ProductsScreen', 'Auto-refresh triggered');
+            await refreshProducts();
             setLastRefreshTimestamp(Date.now());
-          });
+          }
         }
-      }
-    }, [refreshProducts, shouldAutoRefresh, isFirstLoad])
+      };
+
+      handleScreenFocus();
+    }, [refreshProducts, shouldAutoRefresh, isFirstLoad, moveExpiredToHistory])
   );
 
   const onRefresh = useCallback(async () => {
@@ -145,8 +149,8 @@ const Products = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateText}>
-        {searchQuery || selectedCategory 
-          ? 'Nessun prodotto trovato' 
+        {searchQuery || selectedCategory
+          ? 'Nessun prodotto trovato'
           : 'Nessun prodotto ancora aggiunto'}
       </Text>
     </View>
@@ -200,31 +204,6 @@ const Products = () => {
       setProductToConsume(null);
     }
   };
-
-  const handleMoveExpiredToHistory = useCallback(async () => {
-    try {
-      const expiredProducts = await ProductStorage.getExpiredProducts();
-      if (expiredProducts.length > 0) {
-        const productIds = expiredProducts.map(p => p.id!);
-        await ProductStorage.moveProductsToHistory(productIds);
-        await refreshProducts();
-        const count = expiredProducts.length;
-        const message = count === 1
-          ? '1 prodotto scaduto è stato spostato nella cronologia.'
-          : `${count} prodotti scaduti sono stati spostati nella cronologia.`;
-        Alert.alert('Successo', message);
-      }
-    } catch (error) {
-      LoggingService.error('Products', 'Errore durante lo spostamento dei prodotti scaduti nella cronologia:', error);
-      Alert.alert('Errore', 'Errore durante lo spostamento dei prodotti scaduti.');
-    }
-  }, [refreshProducts]);
-
-  useFocusEffect(
-    useCallback(() => {
-      handleMoveExpiredToHistory();
-    }, [handleMoveExpiredToHistory])
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -305,62 +284,30 @@ const Products = () => {
               const unit = item.quantities && item.quantities.length > 0 ? item.quantities[0].unit : 'pezzi';
               const totalQuantity = item.quantities.reduce((sum, q) => sum + q.quantity, 0);
 
-              // Lista delle unità considerate "contabili"
-              const countableUnits = ['pezzi', 'confezioni'];
-
-              if (!countableUnits.includes(unit)) {
-                // Logica per unità non contabili (g, kg, ml, l, etc.)
-                Alert.alert(
-                  "Conferma Consumo",
-                  "Vuoi contrassegnare l'intero prodotto come consumato?",
-                  [
-                    {
-                      text: "Annulla",
-                      style: "cancel"
-                    },
-                    {
-                      text: "Conferma",
-                      onPress: async () => {
-                        try {
-                          await ProductStorage.updateProductStatus(item.id!, 'consumed');
-                          await refreshProducts();
-                          LoggingService.info('ProductsScreen', `Product ${item.name} marked as consumed entirely.`);
-                        } catch (error) {
-                          LoggingService.error('ProductsScreen', 'Error consuming non-piece product', error);
-                          Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
-                        }
-                      }
-                    }
-                  ]
-                );
+              // Always show modal when quantity > 1 to allow user to choose how much to consume
+              if (totalQuantity > 1) {
+                setProductToConsume(item);
+                setIsConsumeModalVisible(true);
               } else {
-                // Comportamento per i prodotti contabili (pezzi, confezioni)
-                if (totalQuantity === 1) {
-                  try {
-                    await ProductStorage.updateProductStatus(item.id!, 'consumed');
-                    await refreshProducts();
-                    LoggingService.info('ProductsScreen', `Product ${item.name} marked as consumed directly.`);
-                  } catch (error) {
-                    LoggingService.error('ProductsScreen', 'Error consuming single piece product', error);
-                    Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
-                  }
-                } else {
-                  setProductToConsume(item);
-                  setIsConsumeModalVisible(true);
+                // For single quantity items, consume directly
+                try {
+                  await ProductStorage.updateProductStatus(item.id!, 'consumed');
+                  await refreshProducts();
+                  LoggingService.info('ProductsScreen', `Product ${item.name} marked as consumed directly.`);
+                } catch (error) {
+                  LoggingService.error('ProductsScreen', 'Error consuming product', error);
+                  Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
                 }
               }
             }}
             onDelete={async () => {
               LoggingService.info('ProductsScreen', `User initiated deletion for product: ${item.id}`);
               try {
-                setIsDeleting(true);
                 await ProductStorage.deleteProduct(item.id!);
                 await refreshProducts();
                 LoggingService.info('Products', `Prodotto ${item.name} eliminato con successo`);
               } catch (error) {
                 LoggingService.error('Products', `Errore durante l'eliminazione del prodotto: ${error}`);
-              } finally {
-                setIsDeleting(false);
               }
             }}
             index={index}

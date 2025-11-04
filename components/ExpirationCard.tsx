@@ -7,6 +7,7 @@ import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
 import { LoggingService } from '@/services/LoggingService';
 import { getExpirationCardAccessibilityProps, getImageAccessibilityProps } from '@/utils/accessibility';
+import { scaleFont } from '@/utils/scaleFont';
 
 interface ExpirationCardProps {
   product: Product;
@@ -136,20 +137,20 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 4,
   },
   categoryEmoji: {
-    fontSize: 20,
+    fontSize: scaleFont(20),
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   textContainer: {
     flex: 1,
   },
   productName: {
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
     marginBottom: 2,
   },
   brandName: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
   },
@@ -159,7 +160,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 6,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: scaleFont(12),
     fontFamily: 'Inter-Medium',
   },
   details: {
@@ -171,7 +172,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   detailText: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
     marginLeft: 6,

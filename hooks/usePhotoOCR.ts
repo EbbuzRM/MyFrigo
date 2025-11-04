@@ -93,7 +93,8 @@ export const usePhotoOCR = () => {
     const currentYear = new Date().getFullYear();
     const maxAllowedYear = currentYear + 20;
 
-    if (year > maxAllowedYear || year < currentYear - 2) {
+    // Permetti date dal 2020 fino a 20 anni nel futuro per essere più permissivi
+    if (year > maxAllowedYear || year < 2020) {
       return null;
     }
 
@@ -102,11 +103,16 @@ export const usePhotoOCR = () => {
         return null;
     }
 
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setHours(0, 0, 0, 0);
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    // Rilassa il filtro delle date - solo se è più di 1 anno fa la consideriamo sospetta
+    const oneYearAgo = new Date();
+    oneYearAgo.setHours(0, 0, 0, 0);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-    if (parsedDate < twoDaysAgo) return null;
+    if (parsedDate < oneYearAgo) {
+      // Log della data scartata per debugging
+      LoggingService.debug('normalizeDate', `Scartata data troppo vecchia: ${match} -> ${toLocalISOString(parsedDate)}`);
+      return null;
+    }
 
     return toLocalISOString(parsedDate);
   }, []);
@@ -178,12 +184,20 @@ export const usePhotoOCR = () => {
       setOcrProgress(prev => ({ ...prev, progress: 75, currentStep: 'Validazione date trovate...' }));
 
       const validDates: string[] = [];
+      const rejectedDates: string[] = [];
+      
       for (const match of allMatches) {
         const normalized = normalizeDate(match.value, match.isSequence, match.isMonthYear);
         if (normalized) {
           validDates.push(normalized);
+          LoggingService.debug(TAG, `Data valida trovata: ${match.value} -> ${normalized}`);
+        } else {
+          rejectedDates.push(match.value);
+          LoggingService.debug(TAG, `Data scartata: ${match.value}`);
         }
       }
+
+      LoggingService.info(TAG, `Trovate ${validDates.length} date valide, scartate ${rejectedDates.length} date non valide`);
 
       if (validDates.length === 0) {
         return { success: false, extractedDate: null, confidence: 0, rawText, error: 'Nessuna data valida trovata' };
@@ -201,29 +215,18 @@ export const usePhotoOCR = () => {
         return { success: false, extractedDate: null, confidence: 0, rawText, error: 'Nessuna data futura trovata' };
       }
 
-      const bestDate = futureDates[0];
-      LoggingService.debug(TAG, `futureDates disponibili: ${futureDates.map(d => toLocalISOString(d)).join(', ')}`);
-
-      // TROVA LA DATA PIÙ PRESTO TRA QUELLE VALIDE (non la prima futura)
-      const targetDate = new Date('2025-10-27'); // Data che cerchiamo: 27/10/2025
-
-      // Filtro date che potrebbero essere interpretate male
+      // Filtro date che potrebbero essere interpretate male (solo date chiaramente errate)
       const filteredDates = futureDates.filter(date => {
-        // Evita 31/10/2025 che è un errore comune di interpretazione
-        if (date.getDate() === 31 && date.getMonth() === 9 && date.getFullYear() === 2025) {
+        // Evita date con giorno 31 per mesi che non lo hanno (es. 31 Febbraio)
+        if (date.getDate() === 31 && (date.getMonth() === 1 || date.getMonth() === 3 || date.getMonth() === 5 || date.getMonth() === 8 || date.getMonth() === 10)) {
+          LoggingService.debug(TAG, `Filtrata data impossibile: ${toLocalISOString(date)}`);
           return false;
         }
         return true;
       });
 
-      // Se la data target è nelle future, prendila
-      const targetInFuture = filteredDates.find(date =>
-        date.getDate() === targetDate.getDate() &&
-        date.getMonth() === targetDate.getMonth() &&
-        date.getFullYear() === targetDate.getFullYear()
-      );
-
-      const chosenDate = targetInFuture || filteredDates[0];
+      // Usa la prima data valida (la più prossima)
+      const chosenDate = filteredDates.length > 0 ? filteredDates[0] : futureDates[0];
       const finalDate = toLocalISOString(chosenDate);
 
       setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'Completato!' }));

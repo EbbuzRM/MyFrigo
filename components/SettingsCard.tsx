@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
 import { getSettingsCardAccessibilityProps } from '@/utils/accessibility';
+import { scaleFont } from '@/utils/scaleFont';
 
 interface SettingsCardProps {
   icon: React.ReactNode;
@@ -104,12 +105,12 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   description: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
     marginTop: 2,

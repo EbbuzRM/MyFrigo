@@ -46,47 +46,70 @@ export const useProductForm = () => {
     [params.productId]
   );
 
-  useEffect(() => {
-    // Previene la reinizializzazione al ritorno dalla navigazione (es. photo-capture)
-    if (isInitialized && !productId) {
+  // Create a stable key for tracking when scanner data changes
+  const scannerDataKey = useMemo(() => {
+    return `${params.barcode || ''}-${params.fromPhotoCapture ? 'photo' : 'none'}`;
+  }, [params.barcode, params.fromPhotoCapture]);
+
+  // Sostituisce useEffect con un approccio più diretto basato su useCallback
+  const loadData = useCallback(async () => {
+    // Capture current params at this moment
+    const currentParams = { ...params };
+    
+    LoggingService.info('useProductForm_LOAD', `Loading data. productId: ${productId}`);
+    LoggingService.info('useProductForm_LOAD', `Params: ${JSON.stringify(currentParams)}`);
+    LoggingService.info('useProductForm_LOAD', `isInitialized: ${isInitialized}, categoriesLoading: ${categoriesLoading}, scannerKey: ${scannerDataKey}`);
+
+    // Check if we need to skip initialization
+    // Skip only if already initialized AND not in edit mode AND no new scanner data
+    const hasScannerData = currentParams.barcode || currentParams.fromPhotoCapture;
+    if (isInitialized && !productId && !hasScannerData) {
+      LoggingService.info('useProductForm_LOAD', 'Skipping loadData - already initialized and not in edit mode');
       return;
     }
 
-    LoggingService.info('useProductForm_EFFECT', `Effect is running. productId: ${productId}`);
-    LoggingService.info('useProductForm_EFFECT', `Params are: ${JSON.stringify(params)}`);
-
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        if (productId) {
-          LoggingService.info('useProductForm', `Loading product for edit with ID: ${productId}`);
-          const productToEdit = await ProductStorage.getProductById(productId);
-          if (productToEdit) {
-            initializeForm({
-              product: productToEdit,
-              isEditMode: true,
-              originalProductId: productToEdit.id,
-              hasManuallySelectedCategory: true,
-            });
-          }
+    setIsLoading(true);
+    try {
+      if (productId) {
+        LoggingService.info('useProductForm', `Loading product for edit with ID: ${productId}`);
+        const productToEdit = await ProductStorage.getProductById(productId);
+        if (productToEdit) {
+          LoggingService.info('useProductForm', `Product loaded successfully: ${productToEdit.name}`);
+          initializeForm({
+            product: productToEdit,
+            isEditMode: true,
+            originalProductId: productToEdit.id,
+            hasManuallySelectedCategory: true,
+          });
         } else {
-          LoggingService.info('useProductForm', 'Initializing form for new product or from params.');
-          const initialData = { ...params };
-          delete initialData.productId;
-          initializeForm(initialData as Partial<ManualEntryFormData>);
+          LoggingService.error('useProductForm', `Product with ID ${productId} not found`);
         }
-        setIsInitialized(true); // Imposta il flag dopo la prima inizializzazione
-      } finally {
-        setIsLoading(false);
+      } else {
+        LoggingService.info('useProductForm', 'Initializing form for new product or from params.');
+        const initialData = { ...currentParams };
+        delete initialData.productId;
+        LoggingService.info('useProductForm', `Initializing form with data: ${JSON.stringify(initialData)}`);
+        initializeForm(initialData as Partial<ManualEntryFormData>);
       }
-    };
+      setIsInitialized(true);
+      LoggingService.info('useProductForm_LOAD', 'Data loading completed successfully');
+    } catch (error) {
+      LoggingService.error('useProductForm_LOAD', 'Error during data loading:', error);
+    } finally {
+      setIsLoading(false);
+      LoggingService.info('useProductForm_LOAD', 'Setting isLoading to false');
+    }
+  }, [productId, initializeForm, isInitialized, categoriesLoading, scannerDataKey]);
 
+  // Effect più semplice che gestisce solo la chiamata a loadData
+  useEffect(() => {
+    LoggingService.info('useProductForm', 'useEffect triggered for loadData');
     loadData();
-
-  }, [productId, initializeForm]);
+  }, [loadData]);
 
   // useFocusEffect(
   //   useCallback(() => {
+  //     LoggingService.info('useProductForm', 'Screen focused');
   //     return () => {
   //       LoggingService.info('useProductForm', 'Screen unfocused, clearing form.');
   //       clearForm();
@@ -97,6 +120,7 @@ export const useProductForm = () => {
   useEffect(() => {
     if (params.fromPhotoCapture && params.imageUrl) {
       const url = Array.isArray(params.imageUrl) ? params.imageUrl[0] : params.imageUrl;
+      LoggingService.info('useProductForm', `Setting imageUrl from photo capture: ${url}`);
       if (url) setImageUrl(url);
     }
   }, [params.fromPhotoCapture, params.imageUrl]);
@@ -132,12 +156,14 @@ export const useProductForm = () => {
     if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
         const guessedCategoryId = guessCategory(name, brand, categories);
         if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
+            LoggingService.info('useProductForm', `Guessed category: ${guessedCategoryId} for name: ${name}, brand: ${brand}`);
             setSelectedCategory(guessedCategoryId);
         }
     }
   }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory, selectedCategory]);
 
   const handleAddNewCategory = useCallback(async () => {
+    LoggingService.info('useProductForm', `handleAddNewCategory called with name: ${newCategoryNameInput}`);
     if (!newCategoryNameInput.trim()) {
       Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
       return;
@@ -145,6 +171,7 @@ export const useProductForm = () => {
     try {
       const newCategory = await addCategory(newCategoryNameInput);
       if (newCategory) {
+        LoggingService.info('useProductForm', `New category created: ${newCategory.id} - ${newCategory.name}`);
         setSelectedCategory(newCategory.id);
         setHasManuallySelectedCategory(true);
       }
@@ -152,38 +179,51 @@ export const useProductForm = () => {
       setNewCategoryNameInput('');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Si è verificato un errore sconosciuto.';
+      LoggingService.error('useProductForm', `Error creating category: ${message}`);
       Alert.alert('Errore', message);
     }
   }, [newCategoryNameInput, addCategory, setHasManuallySelectedCategory]);
 
   const handleCategoryChange = useCallback((itemValue: string) => {
+    LoggingService.info('useProductForm', `handleCategoryChange called with: ${itemValue}`);
     if (itemValue === ADD_NEW_CATEGORY_ID) {
+      LoggingService.info('useProductForm', 'Opening add new category modal');
       setNewCategoryNameInput('');
       setIsCategoryModalVisible(true);
     } else {
+      LoggingService.info('useProductForm', `Setting selected category to: ${itemValue}`);
       setSelectedCategory(itemValue);
       setHasManuallySelectedCategory(true);
     }
   }, [setHasManuallySelectedCategory]);
 
   const onChangePurchaseDate = useCallback((event: DateTimePickerEvent, selectedDate?: Date) => {
+    LoggingService.info('useProductForm', `onChangePurchaseDate called with event.type: ${event.type}`);
     setShowPurchaseDatePicker(false);
     if (event.type === 'set' && selectedDate) {
-      setPurchaseDate(selectedDate.toISOString().split('T')[0]);
+      const dateString = selectedDate.toISOString().split('T')[0];
+      LoggingService.info('useProductForm', `Setting purchase date to: ${dateString}`);
+      setPurchaseDate(dateString);
     }
   }, [setPurchaseDate]);
 
   const onChangeExpirationDate = useCallback((event: DateTimePickerEvent, selectedDate?: Date) => {
+    LoggingService.info('useProductForm', `onChangeExpirationDate called with event.type: ${event.type}`);
     setShowExpirationDatePicker(false);
     if (event.type === 'set' && selectedDate) {
       const newDate = selectedDate.toISOString().split('T')[0];
+      LoggingService.info('useProductForm', `Setting expiration date to: ${newDate}`);
       setExpirationDate(newDate);
     }
   }, [setExpirationDate]);
   const handleSaveProduct = useCallback(async () => {
+    LoggingService.info('useProductForm', `handleSaveProduct called. Form state: name=${name}, selectedCategory=${selectedCategory}, quantities=${JSON.stringify(quantities)}, purchaseDate=${purchaseDate}, expirationDate=${expirationDate}`);
+
     const areQuantitiesValid = quantities.every(q => q.quantity.trim() !== '' && parseFloat(q.quantity.replace(',', '.')) > 0 && q.unit.trim() !== '');
+    LoggingService.info('useProductForm', `Quantities validation: ${areQuantitiesValid}, quantities: ${JSON.stringify(quantities)}`);
 
     if (!name || !selectedCategory || quantities.length === 0 || !areQuantitiesValid || !purchaseDate || !expirationDate) {
+      LoggingService.error('useProductForm', 'Validation failed - missing required fields');
       Alert.alert('Errore', 'Per favore, compila tutti i campi obbligatori, inclusa almeno una quantità valida.');
       return;
     }
@@ -209,8 +249,10 @@ export const useProductForm = () => {
     LoggingService.info('ManualEntry', "Attempting to save product with data:", JSON.stringify({ ...productData, expirationDate }, null, 2));
 
     try {
+      LoggingService.info('useProductForm', 'Calling ProductStorage.saveProduct...');
       await ProductStorage.saveProduct(productData);
       const savedProductName = name;
+      LoggingService.info('useProductForm', `Product saved successfully: ${savedProductName}`);
 
       LoggingService.info('useProductForm', `handleSaveProduct check: isEditMode=${isEditMode}`);
 
@@ -220,13 +262,14 @@ export const useProductForm = () => {
         return;
       }
 
+      LoggingService.info('useProductForm', 'Showing success alert for new product');
       Alert.alert(
         'Prodotto Salvato',
         `${savedProductName} è stato aggiunto. Cosa vuoi fare ora?`,
         [
-          { text: 'Aggiungi Manualmente', onPress: () => clearForm() },
-          { text: 'Scansiona Codice', onPress: () => { clearForm(); router.replace('/scanner'); } },
-          { text: 'Finito', onPress: () => { clearForm(); router.replace('/(tabs)/products'); }, style: 'cancel' },
+          { text: 'Aggiungi Manualmente', onPress: () => { LoggingService.info('useProductForm', 'User chose to add manually'); clearForm(); } },
+          { text: 'Scansiona Codice', onPress: () => { LoggingService.info('useProductForm', 'User chose to scan barcode'); clearForm(); router.replace('/scanner'); } },
+          { text: 'Finito', onPress: () => { LoggingService.info('useProductForm', 'User chose to finish'); clearForm(); router.replace('/(tabs)/products'); }, style: 'cancel' },
         ],
         { cancelable: false }
       );
@@ -235,6 +278,7 @@ export const useProductForm = () => {
       LoggingService.error('ManualEntry', 'Errore durante il salvataggio del prodotto:', error);
       // Gestisci meglio gli errori specifici
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+      LoggingService.error('useProductForm', `Save failed with error: ${errorMessage}`);
 
       if (errorMessage.includes('Timeout')) {
         Alert.alert(

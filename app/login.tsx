@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, Text, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -20,11 +20,6 @@ export default function LoginScreen() {
   const handleLoginError = (error: string) => {
     LoggingService.error('LoginScreen', 'Login failed', { error });
     Alert.alert('Errore nel Login', error);
-  };
-
-  const handleGoogleLoginError = (error: string) => {
-    LoggingService.error('LoginScreen', 'Google login failed', { error });
-    Alert.alert('Errore di Autenticazione', error);
   };
 
   const handleSignUpRedirect = () => {

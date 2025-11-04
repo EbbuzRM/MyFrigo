@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Lightbulb, TrendingDown, Zap } from 'lucide-react-native';
 import { LoggingService } from '@/services/LoggingService';
+import { scaleFont } from '@/utils/scaleFont';
 
 LoggingService.info('SuggestionCard', '[DEBUG] Rendering components/SuggestionCard.tsx');
 
@@ -82,15 +83,15 @@ const getStyles = (isDarkMode: boolean, themeStyles: { background: string; borde
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontFamily: 'Inter-SemiBold',
     color: themeStyles.titleColor,
     marginBottom: 4,
   },
   text: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: themeStyles.textColor,
-    lineHeight: 20,
+    lineHeight: scaleFont(20),
   },
 });

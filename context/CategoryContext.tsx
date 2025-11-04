@@ -109,10 +109,15 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       isDefault: false,
     };
 
-    const savedCategory = await CategoryService.addCategory(newCategoryData);
+    try {
+      const savedCategory = await CategoryService.addCategory(newCategoryData);
+      if (!savedCategory) {
+        LoggingService.error('CategoryContext', `Failed to save category: ${trimmedName}`);
+        return null;
+      }
 
-    if (savedCategory) {
-      setCategories(prev => [...prev, savedCategory].sort((a, b) => a.name.localeCompare(b.name)));
+      // Consolida tutti gli aggiornamenti di stato in un unico batch
+      let finalCategory = savedCategory;
 
       const fetchedIcon = await IconService.fetchIconForCategory(trimmedName);
       LoggingService.info('CategoryContext', `Fetched icon for ${trimmedName}:`, fetchedIcon);
@@ -121,7 +126,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
         const localIcon = typeof fetchedIcon === 'string' ? IconService.convertToLocalIcon(fetchedIcon!) : fetchedIcon;
         LoggingService.info('CategoryContext', `Converted icon to local format:`, localIcon);
         
-        const finalCategory = {
+        finalCategory = {
           ...savedCategory,
           icon: typeof fetchedIcon === 'string' ? fetchedIcon : '',
           localIcon: localIcon
@@ -134,40 +139,38 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
           icon: finalCategory.icon,
           localIcon: finalCategory.localIcon
         });
-        
-        setCategories(prev => prev.map(cat =>
-          cat.id === finalCategory.id ? finalCategory : cat
-        ).sort((a, b) => a.name.localeCompare(b.name)));
-        
-        LoggingService.info('CategoryContext', `Category ${finalCategory.id} created successfully with icon`);
-        return finalCategory;
       } else {
         LoggingService.warning('CategoryContext', `No icon found for category: ${trimmedName}. It will be displayed without one.`);
         
         setTimeout(() => {
           Alert.alert(
-            'Icona non trovata', 
+            'Icona non trovata',
             `Non è stata trovata un'icona per la categoria "${trimmedName}". La categoria verrà visualizzata senza icona.`,
             [{ text: 'OK', style: 'default' }]
           );
         }, 100);
         
-        const categoryWithoutIcon = {
+        finalCategory = {
           ...savedCategory,
           iconNotFound: true
         };
-        
-        setCategories(prev => prev.map(cat =>
-          cat.id === categoryWithoutIcon.id ? categoryWithoutIcon : cat
-        ).sort((a, b) => a.name.localeCompare(b.name)));
-        
-        return categoryWithoutIcon;
       }
-    } else {
-      LoggingService.error('CategoryContext', `Failed to save category: ${trimmedName}`);
+
+      // Aggiornamento consolidato dello stato
+      setCategories(prev => {
+        const existing = prev.some(cat => cat.id === finalCategory.id);
+        const updated = existing
+          ? prev.map(cat => cat.id === finalCategory.id ? finalCategory : cat)
+          : [...prev, finalCategory];
+        return updated.sort((a, b) => a.name.localeCompare(b.name));
+      });
+      
+      LoggingService.info('CategoryContext', `Category ${finalCategory.id} created successfully`);
+      return finalCategory;
+    } catch (error) {
+      LoggingService.error('CategoryContext', `Error creating category: ${error}`);
+      throw error;
     }
-    
-    return null;
   }, [categories, user]);
 
   const deleteCategory = useCallback(async (id: string) => {

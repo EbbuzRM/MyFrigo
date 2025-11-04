@@ -20,7 +20,7 @@ export function AnimatedPressable({
 }: AnimatedPressableProps) {
   const animatedValue = new Animated.Value(1);
 
-  const handlePressIn = (event: any) => {
+  const handlePressIn = (_event: any) => {
     Animated.timing(animatedValue, {
       toValue: 0.96,
       duration: 100, // Molto più veloce
@@ -28,7 +28,7 @@ export function AnimatedPressable({
     }).start();
   };
 
-  const handlePressOut = (event: any) => {
+  const handlePressOut = (_event: any) => {
     Animated.timing(animatedValue, {
       toValue: 1,
       duration: 100, // Molto più veloce

@@ -68,9 +68,10 @@ export default function ProfileScreen() {
         router.back();
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error("[PROFILE_UPDATE] Errore nel blocco catch:", 'Error in catch block', error);
-      Alert.alert('Errore', `Impossibile aggiornare il profilo: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+      Alert.alert('Errore', `Impossibile aggiornare il profilo: ${errorMessage}`);
     } finally {
       LoggingService.info('[PROFILE_UPDATE] Eseguo blocco finally. Imposto saving a false.', 'Finally block executed');
       setSaving(false);

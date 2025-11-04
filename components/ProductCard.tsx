@@ -7,6 +7,7 @@ import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import { LoggingService } from '@/services/LoggingService';
+import { scaleFont } from '@/utils/scaleFont';
 import { COLORS } from '@/constants/colors';
 import {
   getProductCardAccessibilityProps,
@@ -239,7 +240,7 @@ const getStyles = (isDarkMode: boolean, colors: {
     marginRight: 12,
   },
   categoryEmoji: {
-    fontSize: 24,
+    fontSize: scaleFont(24),
   },
   categoryImage: {
     width: 32,
@@ -251,12 +252,12 @@ const getStyles = (isDarkMode: boolean, colors: {
     gap: 4,
   },
   productName: {
-    fontSize: 17,
+    fontSize: scaleFont(17),
     fontFamily: 'Inter-SemiBold',
     color: colors.textPrimary,
   },
   brandName: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: colors.textSecondary,
   },
@@ -267,7 +268,7 @@ const getStyles = (isDarkMode: boolean, colors: {
     borderRadius: 6,
   },
   categoryName: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Medium',
   },
   actionsContainer: {
@@ -295,17 +296,17 @@ const getStyles = (isDarkMode: boolean, colors: {
     gap: 8,
   },
   detailText: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: colors.textSecondary,
   },
   dateText: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Medium',
     color: colors.textPrimary,
   },
   notes: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: colors.textSecondary,
     fontStyle: 'italic',

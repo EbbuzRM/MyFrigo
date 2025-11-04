@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
-import { BackHandler } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
 import { AuthService, AuthResult } from '@/services/AuthService';
 
 /**
  * Hook per la gestione dell'autenticazione email
+ * La navigazione è gestita esclusivamente dall'AuthContext tramite expo-router
  */
 export const useEmailAuth = () => {
   const [email, setEmail] = useState('');
@@ -19,17 +19,7 @@ export const useEmailAuth = () => {
       const result = await AuthService.signInWithEmail(email, password);
 
       if (result.success) {
-        // Aggiungiamo un listener per il pulsante indietro per evitare che l'utente
-        // torni alla schermata di login dopo aver effettuato l'accesso
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-          return true; // Impedisce il comportamento predefinito
-        });
-
-        // Rimuoviamo il listener dopo 3 secondi (quando l'utente dovrebbe essere già reindirizzato)
-        setTimeout(() => {
-          backHandler.remove();
-        }, 3000);
-
+        // La navigazione è gestita dall'AuthContext, non è necessario il BackHandler
         LoggingService.info('useEmailAuth', 'Email login successful');
       } else {
         setError(result.error || 'Errore durante il login');
