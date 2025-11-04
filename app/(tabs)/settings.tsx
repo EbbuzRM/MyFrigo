@@ -29,7 +29,6 @@ import { SettingsCard } from '@/components/SettingsCard';
 import { Toast } from '@/components/Toast';
 import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
-import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
 import { DiagnosticPanel } from '@/components/DiagnosticPanel';
 

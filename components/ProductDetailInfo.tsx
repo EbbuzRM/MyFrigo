@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Product } from '@/types/Product';
 import { Calendar, Package } from 'lucide-react-native';
+import { scaleFont } from '@/utils/scaleFont';
 
 interface ProductDetailInfoProps {
   product: Product;
@@ -102,14 +103,15 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 16,
   },
   detailLabel: {
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontFamily: 'Inter-Medium',
     color: isDarkMode ? '#8b949e' : '#64748B',
     marginLeft: 12,
     flex: 1,
+    flexWrap: 'wrap',
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
     flex: 1,
@@ -122,15 +124,15 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderTopColor: isDarkMode ? '#30363d' : '#e2e8f0',
   },
   notesLabel: {
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontFamily: 'Inter-Medium',
     color: isDarkMode ? '#8b949e' : '#64748B',
     marginBottom: 8,
   },
   notesText: {
-    fontSize: 16,
+    fontSize: scaleFont(16),
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    lineHeight: 24,
+    lineHeight: scaleFont(24),
   },
 });

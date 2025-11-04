@@ -65,7 +65,7 @@ export default function BarcodeScannerScreen() {
   const [currentBarcode, setCurrentBarcode] = useState<string | null>(null);
   const [frameLayout, setFrameLayout] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
 
-  const handleFrameLayout = (event: any) => {
+  const handleFrameLayout = (event: { nativeEvent: { layout: { x: number, y: number, width: number, height: number } } }) => {
     const { x, y, width, height } = event.nativeEvent.layout;
     setFrameLayout({ x, y, width, height });
   };
@@ -98,11 +98,11 @@ export default function BarcodeScannerScreen() {
   }, []);
 
   // Funzione per recuperare i dati del prodotto da Open Food Facts
-  const fetchProductFromOpenFoodFacts = useCallback((barcode: string): Promise<any> => {
+  const fetchProductFromOpenFoodFacts = useCallback((barcode: string): Promise<unknown> => {
     setLoadingProgress('Cercando prodotto online...');
     
     // Crea una promessa che si risolve con il risultato della fetch o viene rifiutata dopo il timeout
-    const fetchPromise = new Promise((resolve, reject) => {
+    const fetchPromise = new Promise<unknown>((resolve, reject) => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
@@ -138,7 +138,18 @@ export default function BarcodeScannerScreen() {
 
 
   // Modifica handleBarCodeScanned per velocizzare l'esperienza
-  const useBarcodeCache = useRef<Map<string, { timestamp: number, result: any }>>(new Map());
+interface CachedResult {
+  type: 'template' | 'online' | 'not_found';
+  data?: any;
+  params: Partial<Product> & { barcodeType?: string; addedMethod?: string };
+}
+
+interface CachedEntry {
+  timestamp: number;
+  result: CachedResult;
+}
+
+  const useBarcodeCache = useRef<Map<string, CachedEntry>>(new Map());
 
   const handleBarCodeScanned = useCallback(async ({ type, data, bounds }: { type: string; data: string; bounds: { origin: { x: number, y: number }, size: { width: number, height: number } } }) => {
     if (!frameLayout) return;
@@ -148,11 +159,15 @@ export default function BarcodeScannerScreen() {
     const cacheEntry = useBarcodeCache.current.get(data);
     if (cacheEntry && (now - cacheEntry.timestamp) < 30 * 60 * 1000) {
       // Usa cache per risposta veloce
-      if (cacheEntry.result.type === 'template') {
+      if (cacheEntry.result.type === 'template' && cacheEntry.result.data) {
+        LoggingService.info('Scanner', `Using cached template result for barcode: ${data}`);
         Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${cacheEntry.result.data.name}`, [
           {
             text: 'Continua',
-            onPress: () => router.replace({ pathname: '/manual-entry', params: cacheEntry.result.params } as any)
+            onPress: () => {
+              LoggingService.info('Scanner', `Navigating to manual-entry with cached params: ${JSON.stringify(cacheEntry.result.params)}`);
+              router.replace({ pathname: '/manual-entry', params: { ...cacheEntry.result.params, isEditMode: 'false' } as any });
+            }
           },
           {
             text: 'Scansiona di Nuovo',
@@ -207,49 +222,75 @@ export default function BarcodeScannerScreen() {
 
       // 1. Controlla se abbiamo trovato un template locale (preferito)
       if (supabaseResult.status === 'fulfilled' && supabaseResult.value) {
-        useBarcodeCache.current.set(data, { timestamp: now, result: { type: 'template', data: supabaseResult.value, params: paramsForManualEntry } });
-        Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${supabaseResult.value.name}`, [
-          {
-            text: 'Continua',
-            onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
-          },
-          {
-            text: 'Scansiona di Nuovo',
-            onPress: () => setScanned(false),
-            style: 'cancel',
-          },
-        ]);
-        return;
+        useBarcodeCache.current.set(data, {
+          timestamp: now,
+          result: {
+            type: 'template',
+            data: supabaseResult.value,
+            params: paramsForManualEntry
+          }
+        });
+        if (supabaseResult.value.name) {
+          LoggingService.info('Scanner', `Found template result for barcode: ${data}, navigating to manual-entry`);
+          Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${supabaseResult.value.name}`, [
+            {
+              text: 'Continua',
+              onPress: () => {
+                LoggingService.info('Scanner', `Navigating to manual-entry with params: ${JSON.stringify(paramsForManualEntry)}`);
+                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false' } as any });
+              }
+            },
+            {
+              text: 'Scansiona di Nuovo',
+              onPress: () => setScanned(false),
+              style: 'cancel',
+            },
+          ]);
+          return;
+        }
       }
 
       // 2. Controlla se abbiamo trovato dati online
       if (offResult.status === 'fulfilled') {
-        const productInfo = offResult.value;
-        const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
+        const productInfo = offResult.value as any; // API esterna, non possiamo definire il tipo esatto
+        if (productInfo && typeof productInfo === 'object') {
+          const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
 
-        paramsForManualEntry = {
-          ...paramsForManualEntry,
-          name: productInfo.product_name || '',
-          brand: productInfo.brands || '',
-          imageUrl: productInfo.image_url || '',
-          category: suggestedCategoryId || '',
-        };
+          paramsForManualEntry = {
+            ...paramsForManualEntry,
+            name: productInfo.product_name || '',
+            brand: productInfo.brands || '',
+            imageUrl: productInfo.image_url || '',
+            category: suggestedCategoryId || '',
+          };
 
-        // Salva in cache
-        useBarcodeCache.current.set(data, { timestamp: now, result: { type: 'online', data: productInfo, params: paramsForManualEntry } });
+          // Salva in cache
+          useBarcodeCache.current.set(data, {
+            timestamp: now,
+            result: {
+              type: 'online',
+              data: productInfo,
+              params: paramsForManualEntry
+            }
+          });
 
-        Alert.alert('Prodotto Trovato!', `Trovato online: ${productInfo.product_name || data}`, [
-          {
-            text: 'Continua',
-            onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
-          },
-          {
-            text: 'Scansiona di Nuovo',
-            onPress: () => setScanned(false),
-            style: 'cancel',
-          },
-        ]);
-        return;
+          LoggingService.info('Scanner', `Found online result for barcode: ${data}, navigating to manual-entry`);
+          Alert.alert('Prodotto Trovato!', `Trovato online: ${productInfo.product_name || data}`, [
+            {
+              text: 'Continua',
+              onPress: () => {
+                LoggingService.info('Scanner', `Navigating to manual-entry with online params: ${JSON.stringify(paramsForManualEntry)}`);
+                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false' } as any });
+              }
+            },
+            {
+              text: 'Scansiona di Nuovo',
+              onPress: () => setScanned(false),
+              style: 'cancel',
+            },
+          ]);
+          return;
+        }
       }
 
       // Se entrambe le ricerche hanno fallito, mostra errore
@@ -274,22 +315,33 @@ export default function BarcodeScannerScreen() {
       // Se l'errore è che il prodotto non è stato trovato (o è un 404), lo gestiamo come un caso normale
       if (errorMessage.includes('Prodotto non trovato') || errorMessage.includes('Errore HTTP: 404')) {
         // Salva in cache anche il mancato ritrovamento per evitare ricerche ripetute
-        useBarcodeCache.current.set(data, { timestamp: now, result: { type: 'not_found', params: paramsForManualEntry } });
+        useBarcodeCache.current.set(data, {
+          timestamp: now,
+          result: {
+            type: 'not_found',
+            params: paramsForManualEntry
+          }
+        });
 
+        LoggingService.info('Scanner', `Product not found for barcode: ${data}, offering manual entry`);
         Alert.alert(
           'Prodotto Non Trovato',
           `Vuoi aggiungere manualmente il prodotto con codice ${data}?`,
           [
             {
               text: 'Sì, Aggiungi',
-              onPress: () => router.replace({ pathname: '/manual-entry', params: paramsForManualEntry } as any)
-            }, // Aggiunta parentesi graffa di chiusura e virgola mancanti
-          {
-            text: 'Scansiona di Nuovo',
-            onPress: () => setScanned(false),
-            style: 'cancel',
-          },
-        ]);
+              onPress: () => {
+                LoggingService.info('Scanner', `Navigating to manual-entry for manual entry: ${JSON.stringify(paramsForManualEntry)}`);
+                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false' } as any });
+              }
+            },
+            {
+              text: 'Scansiona di Nuovo',
+              onPress: () => setScanned(false),
+              style: 'cancel',
+            },
+          ]
+        );
       } else {
         // Per tutti gli altri errori (rete, timeout, etc.), mostriamo un errore bloccante
         setLoadingError(`Errore: ${errorMessage}. Riprova o inserisci manualmente.`);
@@ -365,7 +417,8 @@ export default function BarcodeScannerScreen() {
           <Text style={styles.retryButtonText}>Riprova</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.manualButton} onPress={() => {
-          router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true' } })
+          LoggingService.info('Scanner', `Manual entry button pressed, navigating with barcode: ${currentBarcode}`);
+          router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true', isEditMode: 'false' } as any })
         }}>
           <Text style={styles.manualButtonText}>Inserisci Manualmente</Text>
         </TouchableOpacity>

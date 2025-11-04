@@ -17,6 +17,7 @@ import { useProductForm } from '@/hooks/useProductForm';
 import ProductFormHeader from '@/components/ProductFormHeader';
 import ProductFormFooter from '@/components/ProductFormFooter';
 import { ProductCategory } from '@/types/Product';
+import { LoggingService } from '@/services/LoggingService';
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
@@ -222,6 +223,7 @@ export default function ManualEntryScreen() {
   }, [selectedCategory, handleCategoryChange, styles]);
 
   if (isLoading || categoriesLoading) {
+    LoggingService.info('ManualEntryScreen', `Loading state - isLoading: ${isLoading}, categoriesLoading: ${categoriesLoading}`);
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>

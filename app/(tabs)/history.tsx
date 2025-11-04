@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProductStorage } from '@/services/ProductStorage';
 import { HistoryStats } from '@/components/HistoryStats';
 import { SuggestionCard } from '@/components/SuggestionCard';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
-import { BarChart3 } from 'lucide-react-native';
 import { Product } from '@/types/Product';
 
 // Costanti per il timeout e la memorizzazione
@@ -17,7 +16,6 @@ const THROTTLE_TIME = 5000; // 5 secondi di throttling
 // Componente per la visualizzazione della cronologia
 const History = () => {
   const { isDarkMode } = useTheme();
-  const router = useRouter();
   const styles = getStyles(isDarkMode);
   const [allHistory, setAllHistory] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);

@@ -52,7 +52,7 @@ export function AddMethodCard({
       )}
     >
       <View style={styles.iconContainer}>
-        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { style: { color: colors.icon } }) : icon}
+        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ style?: any }>, { style: { color: colors.icon } }) : icon}
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
@@ -65,7 +65,13 @@ export function AddMethodCard({
   );
 }
 
-const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
+interface Colors {
+  title: string;
+  desc: string;
+  icon: string;
+}
+
+const getStyles = (isDarkMode: boolean, colors: Colors) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',

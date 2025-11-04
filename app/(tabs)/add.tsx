@@ -49,7 +49,7 @@ const AddProduct = () => {
   };
 
   const handleManualEntry = () => {
-    router.push('/manual-entry');
+    router.push('/manual-entry?isEditMode=false');
   };
 
   const styles = getStyles(isDarkMode);

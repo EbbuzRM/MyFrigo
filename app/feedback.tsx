@@ -112,7 +112,7 @@ const FeedbackScreen = () => {
     try {
       if (screenshotUri) {
         const base64Data = await FileSystem.readAsStringAsync(screenshotUri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
         screenshotBase64 = `data:image/jpeg;base64,${base64Data}`;
       }

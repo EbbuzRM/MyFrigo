@@ -6,6 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay } from 'react-native-reanimated';
 import { LoggingService } from '@/services/LoggingService';
+import { scaleFont } from '@/utils/scaleFont';
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {
@@ -49,7 +50,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginRight: 12,
   },
   categoryEmoji: {
-    fontSize: 24,
+    fontSize: scaleFont(24),
   },
   categoryImage: {
     width: 32,
@@ -61,12 +62,12 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     gap: 4,
   },
   productName: {
-    fontSize: 17,
+    fontSize: scaleFont(17),
     fontFamily: 'Inter-SemiBold',
     color: isDarkMode ? '#c9d1d9' : '#1e293b',
   },
   brandName: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
   },
@@ -77,7 +78,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 6,
   },
   categoryName: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Medium',
   },
   statusContainer: {
@@ -101,12 +102,12 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     gap: 8,
   },
   detailText: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Regular',
     color: isDarkMode ? '#8b949e' : '#64748B',
   },
   dateText: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Medium',
     color: isDarkMode ? '#c9d1d9' : '#334155',
   },
@@ -234,7 +235,7 @@ export function HistoryCard({ product, type, onRestore, index = 0 }: HistoryCard
                 onPress={() => onRestore(product.id)}
               >
                 <RotateCcw size={20} color={isDarkMode ? '#4ade80' : '#16a34a'} />
-                <Text style={{ color: isDarkMode ? '#4ade80' : '#16a34a', fontFamily: 'Inter-Medium', fontSize: 14 }}>
+                <Text style={{ color: isDarkMode ? '#4ade80' : '#16a34a', fontFamily: 'Inter-Medium', fontSize: scaleFont(14) }}>
                   Ripristina
                 </Text>
               </TouchableOpacity>

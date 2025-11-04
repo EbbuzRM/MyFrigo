@@ -322,7 +322,7 @@ const PhotoCaptureScreen: React.FC = memo(() => {
             [
               {
                 text: 'Inserisci manualmente',
-                onPress: () => router.replace({ pathname: '/manual-entry', params }),
+                onPress: () => router.replace({ pathname: '/manual-entry', params: { ...params, isEditMode: 'false' } }),
                 style: 'cancel'
               },
               {

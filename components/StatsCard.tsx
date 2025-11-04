@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
 import { getStatsCardAccessibilityProps } from '@/utils/accessibility';
+import { scaleFont } from '@/utils/scaleFont';
 
 interface StatsCardProps {
   title: string;
@@ -58,13 +59,13 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'flex-start',
   },
   value: {
-    fontSize: 20,
+    fontSize: scaleFont(20),
     fontFamily: 'Inter-Bold',
     color: isDarkMode ? '#ffffff' : '#1e293b',
     marginBottom: 2,
   },
   title: {
-    fontSize: 14,
+    fontSize: scaleFont(14),
     fontFamily: 'Inter-Medium',
     color: isDarkMode ? '#d1d5db' : '#64748B',
   },

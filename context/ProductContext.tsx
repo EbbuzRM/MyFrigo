@@ -128,11 +128,14 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Imposta il listener per i prodotti
       try {
-                productsUnsubscribe = ProductStorage.listenToProducts(() => {
-                  // Do nothing to prevent aggressive refetching which interrupts UI flows.
-                  // The product list will be updated on screen focus or manual refresh.
-                  LoggingService.info("ProductContext", "Products listener triggered, but refetch is disabled to prevent UI interruption.");
-                });
+        productsUnsubscribe = ProductStorage.listenToProducts(() => {
+          // Re-enable real-time updates to keep data synchronized across devices
+          // The UI interruption issue should be handled at component level, not by disabling real-time
+          LoggingService.info("ProductContext", "Products listener triggered, fetching updated products");
+          fetchProducts().catch(error => {
+            LoggingService.error("ProductContext", "Error fetching products from listener", error);
+          });
+        });
         LoggingService.info("ProductContext", "Products listener registered successfully");
       } catch (error) {
         LoggingService.error("ProductContext", "Error setting up products listener", error);
