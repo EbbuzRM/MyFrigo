@@ -22,7 +22,7 @@ const Products = () => {
   const { categories } = useCategories();
   const { settings } = useSettings();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'fresh' | 'expiring' | 'expired'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [isConsumeModalVisible, setIsConsumeModalVisible] = useState(false);
@@ -61,16 +61,16 @@ const Products = () => {
     useCallback(() => {
       const handleScreenFocus = async () => {
         LoggingService.info('ProductsScreen', 'Screen focused');
-        
+
         if (isFirstLoad) {
           LoggingService.info('ProductsScreen', 'First load - performing full setup');
-          
+
           // 1. Sposta i prodotti scaduti nella cronologia
           await moveExpiredToHistory();
-          
+
           // 2. Aggiorna i prodotti
           await refreshProducts();
-          
+
           setLastRefreshTimestamp(Date.now());
           setIsFirstLoad(false);
         } else {
@@ -99,9 +99,10 @@ const Products = () => {
   const filteredProducts = useMemo(() => {
     let filtered = allProducts.filter(p => p.status === 'active');
 
-    if (selectedCategory) {
+    // Filtro per categorie multiple
+    if (!selectedCategories.includes('all')) {
       filtered = filtered.filter(product =>
-        product.category === selectedCategory
+        selectedCategories.includes(product.category)
       );
     }
 
@@ -115,14 +116,14 @@ const Products = () => {
     if (selectedStatus !== 'all') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       filtered = filtered.filter(product => {
         const expirationDate = new Date(product.expirationDate);
         expirationDate.setHours(0, 0, 0, 0);
         const diffDays = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         const notificationDays = settings?.notificationDays || 4;
-        
+
         switch (selectedStatus) {
           case 'fresh':
             return diffDays > notificationDays;
@@ -144,12 +145,12 @@ const Products = () => {
 
     LoggingService.info('ProductsScreen', `Filtering complete. ${filtered.length} products displayed.`);
     return filtered;
-  }, [allProducts, selectedCategory, searchQuery, selectedStatus, settings?.notificationDays]);
+  }, [allProducts, selectedCategories, searchQuery, selectedStatus, settings?.notificationDays]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateText}>
-        {searchQuery || selectedCategory
+        {searchQuery || !selectedCategories.includes('all')
           ? 'Nessun prodotto trovato'
           : 'Nessun prodotto ancora aggiunto'}
       </Text>
@@ -189,7 +190,7 @@ const Products = () => {
         // Rimuovi le quantità con valore 0
         const filteredQuantities = newQuantities.filter(q => q.quantity > 0);
 
-        await ProductStorage.saveProduct({ ...productToConsume, quantities: filteredQuantities });
+        await ProductStorage.saveProduct({ id: productToConsume.id, quantities: filteredQuantities });
         LoggingService.info('ProductsScreen', `Updated quantity for ${productToConsume.name}. Remaining: ${remainingQuantity}`);
       } else {
         await ProductStorage.updateProductStatus(productToConsume.id!, 'consumed');
@@ -209,7 +210,7 @@ const Products = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Prodotti</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.addButton}
           onPress={() => router.push('/(tabs)/add')}
         >
@@ -232,7 +233,7 @@ const Products = () => {
 
       <View style={styles.filtersContainer}>
         <View style={styles.statusFilters}>
-          {[ 
+          {[
             { key: 'all', label: 'Tutti' },
             { key: 'fresh', label: 'Freschi' },
             { key: 'expiring', label: 'In Scadenza' },
@@ -240,7 +241,7 @@ const Products = () => {
           ].map((status) => (
             <TouchableOpacity
               key={status.key}
-              style={[ 
+              style={[
                 styles.statusFilter,
                 selectedStatus === status.key && styles.statusFilterActive
               ]}
@@ -249,7 +250,7 @@ const Products = () => {
                 setSelectedStatus(status.key as 'all' | 'fresh' | 'expiring' | 'expired');
               }}
             >
-              <Text style={[ 
+              <Text style={[
                 styles.statusFilterText,
                 selectedStatus === status.key && styles.statusFilterTextActive
               ]}>
@@ -261,11 +262,34 @@ const Products = () => {
       </View>
 
       <CategoryFilter
-        selectedCategory={selectedCategory || 'all'}
+        selectedCategories={selectedCategories}
         onCategoryChange={(category) => {
-          const newCategory = category === 'all' ? null : category;
-          LoggingService.info('ProductsScreen', `Category filter changed to: ${newCategory}`);
-          setSelectedCategory(newCategory);
+          LoggingService.info('ProductsScreen', `Category filter toggled: ${category}`);
+
+          setSelectedCategories(prev => {
+            // Se si clicca "all", resetta tutto a ['all']
+            if (category === 'all') {
+              return ['all'];
+            }
+
+            // Se era selezionato solo "all", rimuovilo e inizia con la nuova categoria
+            let newSelection = prev.includes('all') ? [] : [...prev];
+
+            if (newSelection.includes(category)) {
+              // Se la categoria è già presente, rimuovila
+              newSelection = newSelection.filter(c => c !== category);
+            } else {
+              // Altrimenti aggiungila
+              newSelection.push(category);
+            }
+
+            // Se non rimane nessuna categoria selezionata, torna a "all"
+            if (newSelection.length === 0) {
+              return ['all'];
+            }
+
+            return newSelection;
+          });
         }}
         products={allProducts.filter(p => p.status === 'active')}
         categories={categories}
@@ -324,17 +348,17 @@ const Products = () => {
         }
       />
 
-    {productToConsume && (
+      {productToConsume && (
         <ConsumeQuantityModal
-            visible={isConsumeModalVisible}
-            product={productToConsume}
-            onConfirm={handleConsumeConfirm}
-            onCancel={() => {
-                setIsConsumeModalVisible(false);
-                setProductToConsume(null);
-            }}
+          visible={isConsumeModalVisible}
+          product={productToConsume}
+          onConfirm={handleConsumeConfirm}
+          onCancel={() => {
+            setIsConsumeModalVisible(false);
+            setProductToConsume(null);
+          }}
         />
-    )}
+      )}
 
     </SafeAreaView>
   );

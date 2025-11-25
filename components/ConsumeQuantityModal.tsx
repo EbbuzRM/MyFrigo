@@ -33,13 +33,22 @@ export const ConsumeQuantityModal: React.FC<ConsumeQuantityModalProps> = ({
   const [inputQuantity, setInputQuantity] = useState('');
   const [error, setError] = useState('');
 
-  // Verifica che le quantities esistano prima di accedervi
-  const totalQuantity = Array.isArray(product.quantities) && product.quantities.length > 0
-    ? product.quantities.reduce((sum, q) => sum + q.quantity, 0)
-    : 0;
-  const unit = Array.isArray(product.quantities) && product.quantities.length > 0
-    ? product.quantities[0]?.unit || 'unità'
-    : 'unità';
+  const quantities = Array.isArray(product.quantities) ? product.quantities : [];
+  const hasPz = quantities.some(q => q.unit === 'pz');
+  const hasConf = quantities.some(q => q.unit === 'conf');
+
+  let totalQuantity;
+  let unit;
+
+  if (hasPz && hasConf) {
+    totalQuantity = quantities
+      .filter(q => q.unit === 'pz')
+      .reduce((sum, q) => sum + q.quantity, 0);
+    unit = 'pz';
+  } else {
+    totalQuantity = quantities.reduce((sum, q) => sum + q.quantity, 0);
+    unit = quantities.length > 0 ? quantities[0]?.unit || 'unità' : 'unità';
+  }
 
   React.useEffect(() => {
     if (visible) {

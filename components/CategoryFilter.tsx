@@ -6,21 +6,22 @@ import { LoggingService } from '@/services/LoggingService';
 import { getCategoryFilterAccessibilityProps } from '@/utils/accessibility';
 
 interface CategoryFilterProps {
-  selectedCategory: string;
+  selectedCategories: string[];
   onCategoryChange: (category: string) => void;
   products: Product[];
   categories: ProductCategory[];
 }
 
-export function CategoryFilter({ selectedCategory, onCategoryChange, products, categories: customCategories }: CategoryFilterProps) {
+export function CategoryFilter({ selectedCategories, onCategoryChange, products, categories: customCategories }: CategoryFilterProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-const getCategoryCount = (categoryId: string) => {
-  if (categoryId === 'all') {
-    return products.length;
-  }
-  return products.filter(product => product.category === categoryId).length;
-};
+
+  const getCategoryCount = (categoryId: string) => {
+    if (categoryId === 'all') {
+      return products.length;
+    }
+    return products.filter(product => product.category === categoryId).length;
+  };
 
   const categories = [
     { id: 'all', name: 'Tutti', icon: '📦', color: '#64748B' },
@@ -33,8 +34,8 @@ const getCategoryCount = (categoryId: string) => {
         <View style={styles.categoriesContainer}>
           {categories.map((category) => {
             const count = getCategoryCount(category.id);
-            const isSelected = selectedCategory === category.id;
-            
+            const isSelected = selectedCategories.includes(category.id);
+
             if (count === 0 && category.id !== 'all') {
               return null; // Don't show categories with no products
             }
@@ -99,7 +100,7 @@ const getCategoryCount = (categoryId: string) => {
   );
 }
 
-  const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
     marginBottom: 16,
   },

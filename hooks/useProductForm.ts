@@ -41,8 +41,8 @@ export const useProductForm = () => {
 
   const ADD_NEW_CATEGORY_ID = 'add_new_category_sentinel_value';
 
-  const productId = useMemo(() => 
-    Array.isArray(params.productId) ? params.productId[0] : params.productId, 
+  const productId = useMemo(() =>
+    Array.isArray(params.productId) ? params.productId[0] : params.productId,
     [params.productId]
   );
 
@@ -55,18 +55,16 @@ export const useProductForm = () => {
   const loadData = useCallback(async () => {
     // Capture current params at this moment
     const currentParams = { ...params };
-    
+
     LoggingService.info('useProductForm_LOAD', `Loading data. productId: ${productId}`);
     LoggingService.info('useProductForm_LOAD', `Params: ${JSON.stringify(currentParams)}`);
     LoggingService.info('useProductForm_LOAD', `isInitialized: ${isInitialized}, categoriesLoading: ${categoriesLoading}, scannerKey: ${scannerDataKey}`);
 
     // Check if we need to skip initialization
-    // Skip only if already initialized AND not in edit mode AND no new scanner data
-    const hasScannerData = currentParams.barcode || currentParams.fromPhotoCapture;
-    if (isInitialized && !productId && !hasScannerData) {
-      LoggingService.info('useProductForm_LOAD', 'Skipping loadData - already initialized and not in edit mode');
-      return;
-    }
+    // REMOVED: Skip logic that prevented form reset after saving
+    // Previously, if (isInitialized && !productId && !hasScannerData) would prevent re-initialization
+    // This caused the form to retain previous product values when adding a new product manually
+
 
     setIsLoading(true);
     try {
@@ -128,37 +126,37 @@ export const useProductForm = () => {
   const guessCategory = useCallback((productName: string, productBrand: string, allCategories: ProductCategory[]): string | null => {
     const fullText = `${productName.toLowerCase()} ${productBrand.toLowerCase()}`;
     const keywordMap: { [key: string]: string[] } = {
-        'milk': ['latte'],
-        'dairy': ['formaggio', 'yogurt', 'mozzarella', 'ricotta', 'burro', 'panna', 'mascarpone'],
-        'meat': ['pollo', 'manzo', 'maiale', 'salsiccia', 'prosciutto', 'salame', 'tacchino', 'agnello', 'wurstel'],
-        'fish': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola'],
-        'fruits': ['mela', 'banana', 'arancia', 'fragola', 'uva', 'pesca', 'albicocca', 'kiwi'],
-        'vegetables': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci'],
-        'frozen': ['gelato', 'pizz', 'basta', 'minestrone', 'patatine fritte'],
-        'beverages': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè'],
-        'canned': ['pasta', 'riso', 'pane', 'biscotti', 'farina', 'zucchero', 'sale', 'olio', 'aceto', 'conserve', 'pelati', 'legumi', 'fagioli', 'ceci', 'lenticchie'],
-        'snacks': ['patatine', 'cioccolato', 'caramelle', 'merendine', 'cracker', 'taralli'],
-        'grains': ['cereali', 'fette biscottate', 'marmellata', 'croissant'],
-        'condiments': ['maionese', 'ketchup', 'senape', 'salsa'],
-        'eggs': ['uova', 'uovo'],
-        'sweets': ['torta', 'crostata', 'budino', 'pasticcini'],
+      'milk': ['latte'],
+      'dairy': ['formaggio', 'yogurt', 'mozzarella', 'ricotta', 'burro', 'panna', 'mascarpone'],
+      'meat': ['pollo', 'manzo', 'maiale', 'salsiccia', 'prosciutto', 'salame', 'tacchino', 'agnello', 'wurstel'],
+      'fish': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola'],
+      'fruits': ['mela', 'banana', 'arancia', 'fragola', 'uva', 'pesca', 'albicocca', 'kiwi'],
+      'vegetables': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci'],
+      'frozen': ['gelato', 'pizz', 'basta', 'minestrone', 'patatine fritte'],
+      'beverages': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè'],
+      'canned': ['pasta', 'riso', 'pane', 'biscotti', 'farina', 'zucchero', 'sale', 'olio', 'aceto', 'conserve', 'pelati', 'legumi', 'fagioli', 'ceci', 'lenticchie'],
+      'snacks': ['patatine', 'cioccolato', 'caramelle', 'merendine', 'cracker', 'taralli'],
+      'grains': ['cereali', 'fette biscottate', 'marmellata', 'croissant'],
+      'condiments': ['maionese', 'ketchup', 'senape', 'salsa'],
+      'eggs': ['uova', 'uovo'],
+      'sweets': ['torta', 'crostata', 'budino', 'pasticcini'],
     };
 
     for (const categoryId in keywordMap) {
-        if (keywordMap[categoryId].some(keyword => fullText.includes(keyword))) {
-            if (allCategories.some(cat => cat.id === categoryId)) return categoryId;
-        }
+      if (keywordMap[categoryId].some(keyword => fullText.includes(keyword))) {
+        if (allCategories.some(cat => cat.id === categoryId)) return categoryId;
+      }
     }
     return null;
   }, []);
 
   useEffect(() => {
     if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
-        const guessedCategoryId = guessCategory(name, brand, categories);
-        if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
-            LoggingService.info('useProductForm', `Guessed category: ${guessedCategoryId} for name: ${name}, brand: ${brand}`);
-            setSelectedCategory(guessedCategoryId);
-        }
+      const guessedCategoryId = guessCategory(name, brand, categories);
+      if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
+        LoggingService.info('useProductForm', `Guessed category: ${guessedCategoryId} for name: ${name}, brand: ${brand}`);
+        setSelectedCategory(guessedCategoryId);
+      }
     }
   }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory, selectedCategory]);
 
