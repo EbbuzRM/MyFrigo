@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "MyFrigo",
     slug: "myfrigoapp",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     scheme: "myfrigo",
     extra: {
@@ -28,7 +28,7 @@ module.exports = {
       bundleIdentifier: "com.myfrigo"
     },
     android: {
-      allowBackup: true, 
+      allowBackup: true,
       adaptiveIcon: {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"

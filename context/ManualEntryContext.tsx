@@ -43,7 +43,7 @@ interface ManualEntryContextType {
   originalProductId: string | null;
   hasManuallySelectedCategory: boolean;
   isInitialized: boolean; // Flag to track initialization
-  
+
   // Funzioni per aggiornare lo stato
   setName: (name: string) => void;
   setBrand: (brand: string) => void;
@@ -104,7 +104,7 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setFormData(prev => ({ ...prev, selectedCategory: category }));
   }, []);
   const setQuantities = useCallback((quantities: Quantity[]) => setFormData(prev => ({ ...prev, quantities })), []);
-  
+
   const addQuantity = useCallback(() => {
     LoggingService.info('ManualEntryContext', 'Adding new quantity');
     setFormData(prev => ({
@@ -175,41 +175,59 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setFormData(prev => ({ ...prev, isInitialized: initialized }));
   }, []);
 
-  const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string }> = {}) => {
+  const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string, productName?: string }> = {}) => {
     LoggingService.info('ManualEntryContext', `Initializing form with: ${JSON.stringify(initialData, null, 2)}`);
 
     setFormData(prevState => {
       LoggingService.info('ManualEntryContext', `Previous state: ${JSON.stringify(prevState, null, 2)}`);
 
-      // Merge the initial data with the previous state instead of resetting completely.
-      let newState = { ...prevState, ...initialData };
+      // Check if we have meaningful data to initialize with
+      const hasProductData = initialData.product;
+      const hasScannedData = initialData.barcode || initialData.name || initialData.productName;
+      const hasSignificantData = hasProductData || hasScannedData;
+
+      // If no significant data, start with a completely fresh state
+      let newState: ManualEntryFormData;
+      if (!hasSignificantData) {
+        LoggingService.info('ManualEntryContext', 'No significant data - starting with fresh state');
+        newState = getInitialState();
+      } else {
+        // Merge the initial data with the previous state only if we have significant data
+        newState = { ...prevState, ...initialData };
+      }
 
       if (initialData.product) {
-          LoggingService.info('ManualEntryContext', `Processing product data: ${JSON.stringify(initialData.product, null, 2)}`);
+        LoggingService.info('ManualEntryContext', `Processing product data: ${JSON.stringify(initialData.product, null, 2)}`);
 
-          // When loading a full product, start from a clean slate to avoid merging old data.
-          newState = { ...getInitialState(), ...initialData.product };
+        // When loading a full product, start from a clean slate to avoid merging old data.
+        // MA preserviamo i flag critici passati in initialData come isEditMode e originalProductId
+        newState = {
+          ...getInitialState(),
+          ...initialData.product,
+          isEditMode: initialData.isEditMode ?? false,
+          originalProductId: initialData.originalProductId ?? undefined
+        };
 
-          // Map the 'category' field from the product to 'selectedCategory' for the form state
-          if (initialData.product.category) {
-              newState.selectedCategory = initialData.product.category;
-              LoggingService.info('ManualEntryContext', `Set selectedCategory from product: ${initialData.product.category}`);
-          }
+        // Map the 'category' field from the product to 'selectedCategory' for the form state
+        if (initialData.product.category) {
+          newState.selectedCategory = initialData.product.category;
+          LoggingService.info('ManualEntryContext', `Set selectedCategory from product: ${initialData.product.category}`);
+        }
 
-          // Handle quantities
-          if (Array.isArray(initialData.product.quantities) && initialData.product.quantities.length > 0) {
-              newState.quantities = initialData.product.quantities.map((q: any) => ({
-                  ...q,
-                  quantity: q.quantity !== undefined && q.quantity !== null ? String(q.quantity) : '1',
-                  unit: q.unit || 'pz',
-                  id: uuidv4()
-              }));
-              LoggingService.info('ManualEntryContext', `Processed quantities array: ${JSON.stringify(newState.quantities)}`);
-          } else if (initialData.product.quantity !== undefined && initialData.product.quantity !== null) {
-              newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit || 'pz' }];
-              LoggingService.info('ManualEntryContext', `Processed single quantity: ${JSON.stringify(newState.quantities)}`);
-          }
-          delete newState.product;
+        // Handle quantities
+        if (Array.isArray(initialData.product.quantities) && initialData.product.quantities.length > 0) {
+          newState.quantities = initialData.product.quantities.map((q: any) => ({
+            ...q,
+            quantity: q.quantity !== undefined && q.quantity !== null ? String(q.quantity) : '1',
+            unit: q.unit || 'pz',
+            id: uuidv4()
+          }));
+          LoggingService.info('ManualEntryContext', `Processed quantities array: ${JSON.stringify(newState.quantities)}`);
+        } else if (initialData.product.quantity !== undefined && initialData.product.quantity !== null) {
+          newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit || 'pz' }];
+          LoggingService.info('ManualEntryContext', `Processed single quantity: ${JSON.stringify(newState.quantities)}`);
+        }
+        delete (newState as any).product;
       }
 
       // This handles the case where 'category' is passed directly, not inside a product object
@@ -219,9 +237,9 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Clean up legacy fields
-      delete newState.category;
-      delete newState.quantity;
-      delete newState.unit;
+      delete (newState as any).category;
+      delete (newState as any).quantity;
+      delete (newState as any).unit;
 
       LoggingService.info('ManualEntryContext', `Final new state: ${JSON.stringify(newState, null, 2)}`);
       return newState;
@@ -230,10 +248,11 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
 
   const clearForm = useCallback(() => {
     LoggingService.info('ManualEntryContext', 'Clearing form');
-    LoggingService.info('ManualEntryContext', `Previous form state: ${JSON.stringify(formData)}`);
-    setFormData(getInitialState());
+    const newInitialState = getInitialState();
+    LoggingService.info('ManualEntryContext', `Clearing form. New initial state: ${JSON.stringify(newInitialState)}`);
+    setFormData(newInitialState);
     LoggingService.info('ManualEntryContext', 'Form cleared to initial state');
-  }, [formData]);
+  }, []);
 
   const value = useMemo(() => ({
     ...formData,

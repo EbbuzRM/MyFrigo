@@ -24,11 +24,11 @@ export class ProductStorage {
         .from('products')
         .select('*')
         .eq('user_id', userId);
-        
+
       if (error) throw error;
 
       const products = data ? convertProductsToCamelCase(data) : [];
-      
+
       products.sort((a, b) => {
         const dateA = new Date(a.expirationDate);
         const dateB = new Date(b.expirationDate);
@@ -83,9 +83,9 @@ export class ProductStorage {
     try {
       LoggingService.info('ProductStorage', 'Starting product save process');
 
-      // Ridotto timeout da 15s a 10s per velocità
+      // Aumentato timeout a 30s per debug
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout during product save')), 10000);
+        setTimeout(() => reject(new Error('Timeout during product save')), 15000);
       });
 
       const savePromise = this.performSave(product);
@@ -97,17 +97,18 @@ export class ProductStorage {
       throw error;
     }
   }
-  
+
   private static async performSave(product: Partial<Product>): Promise<void> {
+    LoggingService.info('ProductStorage', 'performSave: Getting session...');
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
       throw new Error('User not authenticated to save product.');
     }
     const userId = session.user.id;
-    LoggingService.info('ProductStorage', 'User authenticated, proceeding with save');
+    LoggingService.info('ProductStorage', 'performSave: User authenticated, proceeding with save');
 
     const productToUpsert: Partial<Product> = { ...product };
-    
+
     if (!productToUpsert.id) {
       productToUpsert.id = randomUUID();
       if (!productToUpsert.status) {
@@ -120,16 +121,18 @@ export class ProductStorage {
       userId: userId,
     };
 
-    LoggingService.info('ProductStorage', 'Attempting to upsert product to Supabase');
+    const snakeCaseProduct = convertProductToSnakeCase(productWithUser);
+    LoggingService.info('ProductStorage', `performSave: Attempting to upsert product to Supabase. Data: ${JSON.stringify(snakeCaseProduct)}`);
+
     const { error } = await supabase
       .from('products')
-      .upsert(convertProductToSnakeCase(productWithUser) as any);
-      
+      .upsert(snakeCaseProduct as any);
+
     if (error) {
       LoggingService.error('ProductStorage', 'Supabase upsert error:', error);
       throw error;
     }
-    
+
     LoggingService.info('ProductStorage', 'Product successfully saved to Supabase');
 
     // Salva il template se c'è un barcode, ma non bloccare il salvataggio principale
@@ -143,7 +146,7 @@ export class ProductStorage {
         // Non propaghiamo l'errore del template per non bloccare il salvataggio principale
       }
     }
-    
+
     LoggingService.info('ProductStorage', 'Product save process completed successfully');
   }
 
@@ -159,18 +162,18 @@ export class ProductStorage {
 
   static async updateProductStatus(productId: string, status: Product['status']): Promise<void> {
     try {
-        const updatedFields: Partial<Product> = { status };
+      const updatedFields: Partial<Product> = { status };
 
-        if (status === 'consumed') {
-            updatedFields.consumedDate = new Date().toISOString();
-        }
+      if (status === 'consumed') {
+        updatedFields.consumedDate = new Date().toISOString();
+      }
 
-        const { error: updateError } = await supabase
-            .from('products')
-            .update(convertProductToSnakeCase(updatedFields) as any)
-            .eq('id', productId);
+      const { error: updateError } = await supabase
+        .from('products')
+        .update(convertProductToSnakeCase(updatedFields) as any)
+        .eq('id', productId);
 
-        if (updateError) throw updateError;
+      if (updateError) throw updateError;
 
     } catch (error: any) {
       LoggingService.error('ProductStorage', 'Error updating product status in Supabase', error);
@@ -311,11 +314,11 @@ export class ProductStorage {
    */
   static async restoreConsumedProduct(productId: string): Promise<void> {
     try {
-        await this.updateProductStatus(productId, 'active');
-        LoggingService.info('ProductStorage', `Product ${productId} restored successfully`);
+      await this.updateProductStatus(productId, 'active');
+      LoggingService.info('ProductStorage', `Product ${productId} restored successfully`);
     } catch (error: any) {
-        LoggingService.error('ProductStorage', `Error restoring product ${productId}`, error);
-        throw error;
+      LoggingService.error('ProductStorage', `Error restoring product ${productId}`, error);
+      throw error;
     }
   }
 }
