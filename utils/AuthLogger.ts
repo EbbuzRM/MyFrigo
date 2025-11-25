@@ -17,7 +17,7 @@ export class AuthLogger {
   private startTime: number = 0;
   private isAuthInProgress: boolean = false;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): AuthLogger {
     if (!AuthLogger.instance) {
@@ -77,6 +77,11 @@ export class AuthLogger {
    * Completa il processo di autenticazione e registra la durata totale
    */
   public completeAuth(success: boolean = true): void {
+    // Se non c'è un processo di autenticazione in corso, ignora la chiamata silenziosamente
+    if (!this.isAuthInProgress && this.startTime === 0) {
+      return;
+    }
+
     try {
       const totalDuration = Date.now() - this.startTime;
       this.logStep(
@@ -89,7 +94,7 @@ export class AuthLogger {
       // Log dettagliato dell'intero processo
       const summary = this.getAuthSummary();
       LoggingService.info('AuthLogger', 'Riepilogo processo di autenticazione', summary);
-      
+
       // Log aggiuntivo per debug
       LoggingService.info('AuthLogger', `Processo di autenticazione ${success ? 'completato con successo' : 'fallito'} in ${totalDuration}ms`);
     } catch (error) {
@@ -104,13 +109,13 @@ export class AuthLogger {
   public getAuthSummary(): any {
     const successSteps = this.steps.filter(s => s.status === 'success').length;
     const errorSteps = this.steps.filter(s => s.status === 'error').length;
-    const pendingSteps = this.steps.filter(s => s.status === 'start' && 
+    const pendingSteps = this.steps.filter(s => s.status === 'start' &&
       !this.steps.some(s2 => s2.step === s.step && s2.status !== 'start')).length;
-    
-    const totalDuration = this.isAuthInProgress 
-      ? Date.now() - this.startTime 
+
+    const totalDuration = this.isAuthInProgress
+      ? Date.now() - this.startTime
       : this.steps[this.steps.length - 1]?.timestamp - this.startTime;
-    
+
     const stepsWithDuration = this.steps
       .filter(s => s.status !== 'start')
       .map(s => ({
@@ -119,7 +124,7 @@ export class AuthLogger {
         duration: s.duration || 0
       }))
       .sort((a, b) => b.duration - a.duration);
-    
+
     return {
       isComplete: !this.isAuthInProgress,
       totalDuration,
@@ -142,10 +147,10 @@ export class AuthLogger {
    */
   public checkForBlockingOperations(): string[] {
     const blockingOperations: string[] = [];
-    
+
     // Trova passaggi iniziati ma non completati
     const startedSteps = new Map<string, number>();
-    
+
     this.steps.forEach(step => {
       if (step.status === 'start') {
         startedSteps.set(step.step, step.timestamp);
@@ -153,7 +158,7 @@ export class AuthLogger {
         startedSteps.delete(step.step);
       }
     });
-    
+
     // Controlla quali operazioni sono in corso da troppo tempo
     const now = Date.now();
     startedSteps.forEach((timestamp, step) => {
@@ -162,7 +167,7 @@ export class AuthLogger {
         blockingOperations.push(`${step} (${Math.round(duration / 1000)}s)`);
       }
     });
-    
+
     return blockingOperations;
   }
 
@@ -170,9 +175,9 @@ export class AuthLogger {
    * Registra un passaggio nel log
    */
   private logStep(
-    step: string, 
-    status: 'start' | 'success' | 'error', 
-    data?: any, 
+    step: string,
+    status: 'start' | 'success' | 'error',
+    data?: any,
     duration?: number,
     error?: any
   ): void {
@@ -188,7 +193,7 @@ export class AuthLogger {
 
     // Log anche nel sistema di logging generale
     const message = `Auth step ${status}: ${step}${duration ? ` (${duration}ms)` : ''}`;
-    
+
     switch (status) {
       case 'start':
         LoggingService.info('AuthLogger', message, data);
