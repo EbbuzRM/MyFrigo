@@ -16,7 +16,7 @@ export class AuthTests {
     const startTime = Date.now();
 
     try {
-      authLogger.completeAuth(false);
+
       authLogger.startAuth();
       LoggingService.info('AuthTests', 'Processo di autenticazione iniziato');
 

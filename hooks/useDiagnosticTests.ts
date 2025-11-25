@@ -7,6 +7,7 @@ import { AuthTests, AuthTestResult } from '@/services/diagnostic/AuthTests';
 import { DatabaseTests, DatabaseTestResult } from '@/services/diagnostic/DatabaseTests';
 import { PerformanceTests, PerformanceTestResult } from '@/services/diagnostic/PerformanceTests';
 import { SystemTests, SystemTestResult } from '@/services/diagnostic/SystemTests';
+import { NotificationTests, NotificationTestResult } from '@/services/diagnostic/NotificationTests';
 
 export interface DiagnosticTest {
   id: string;
@@ -112,6 +113,32 @@ export const useDiagnosticTests = () => {
     });
   }, [addResult, user, settings]);
 
+  // Test Permessi Notifiche
+  const runNotificationPermissionsTest = useCallback(async () => {
+    const result = await NotificationTests.runNotificationPermissionsTest();
+    addResult({
+      testId: result.testId,
+      success: result.success,
+      duration: result.duration,
+      error: result.error,
+      data: result.data,
+      category: 'system'
+    });
+  }, [addResult]);
+
+  // Test Scheduling Notifiche
+  const runNotificationSchedulingTest = useCallback(async () => {
+    const result = await NotificationTests.runNotificationSchedulingTest();
+    addResult({
+      testId: result.testId,
+      success: result.success,
+      duration: result.duration,
+      error: result.error,
+      data: result.data,
+      category: 'system'
+    });
+  }, [addResult]);
+
   // Elenco completo dei test disponibili
   const availableTests: DiagnosticTest[] = [
     {
@@ -149,6 +176,18 @@ export const useDiagnosticTests = () => {
       name: 'Test Salute Sistema',
       category: 'system',
       run: runSystemHealthTest
+    },
+    {
+      id: 'notification-permissions',
+      name: 'Test Permessi Notifiche',
+      category: 'system',
+      run: runNotificationPermissionsTest
+    },
+    {
+      id: 'notification-scheduling',
+      name: 'Test Scheduling Notifiche',
+      category: 'system',
+      run: runNotificationSchedulingTest
     }
   ];
 
@@ -177,6 +216,12 @@ export const useDiagnosticTests = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       await runSystemHealthTest();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await runNotificationPermissionsTest();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await runNotificationSchedulingTest();
 
       LoggingService.info('DiagnosticPanel', 'Sequenza completa di test diagnostici completata');
 
@@ -199,7 +244,9 @@ export const useDiagnosticTests = () => {
     runDatabaseConnectivityTest,
     runApiPerformanceTest,
     runDataIntegrityTest,
-    runSystemHealthTest
+    runSystemHealthTest,
+    runNotificationPermissionsTest,
+    runNotificationSchedulingTest
   ]);
 
   return {

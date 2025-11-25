@@ -140,7 +140,7 @@ const Settings = () => {
             onPress={() => setIsDaysModalVisible(true)}
           />
         </View>
-        
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Aspetto</Text>
           <SettingsCard
@@ -175,38 +175,37 @@ const Settings = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informazioni e Supporto</Text>
           <SettingsCard
-            icon={<Info size={24} color={isDarkMode ? '#9ca3af' : '#6b7280'} />}
-            title="Informazioni sull'App"
-            description={`Versione ${Constants.expoConfig?.version}`}
+            icon={<MessageSquareQuote size={24} color={isDarkMode ? '#a78bfa' : '#7c3aed'} />}
+            title="Invia un Feedback"
+            description="Segnala un bug o suggerisci un'idea"
+            onPress={() => router.push('/feedback')}
+          />
+        </View>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            activeOpacity={0.7}
             onPress={() => {
-              // Cancella il timer di pressione prolungata se esiste
-              if (longPressTimerRef.current) {
-                clearTimeout(longPressTimerRef.current);
-                longPressTimerRef.current = null;
-                setLongPressProgress(0);
-              }
-              
-              // Mostra le informazioni sull'app
               Alert.alert('MyFrigo', `Versione ${Constants.expoConfig?.version}`);
             }}
-            onLongPress={() => {
+            onPressIn={() => {
               // Avvia un timer per rilevare la pressione prolungata di 5 secondi
-              LoggingService.info('Settings', 'Rilevata pressione prolungata su Informazioni App');
-              
+              LoggingService.info('Settings', 'Inizio pressione su versione app');
+
               // Inizializza il progresso
               setLongPressProgress(0);
-              
-              // Crea un intervallo per aggiornare il progresso visivamente (opzionale)
+
+              // Crea un intervallo per aggiornare il progresso visivamente
               const progressInterval = setInterval(() => {
                 setLongPressProgress(prev => {
-                  const newProgress = prev + 20; // Incrementa del 20% ogni secondo
+                  const newProgress = prev + 2; // 50 step in 5 secondi (100ms * 50 = 5000ms)
                   if (newProgress >= 100) {
                     clearInterval(progressInterval);
                   }
                   return newProgress;
                 });
-              }, 1000);
-              
+              }, 100); // Aggiorna ogni 100ms
+
               // Imposta il timer principale per attivare il pannello diagnostico dopo 5 secondi
               longPressTimerRef.current = setTimeout(() => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -216,14 +215,25 @@ const Settings = () => {
                 clearInterval(progressInterval);
                 longPressTimerRef.current = null;
               }, 5000);
+
+              // Salva l'intervallo nel ref per poterlo cancellare se necessario (hacky ma funzionale per ora, meglio sarebbe uno state o ref dedicato)
+              (longPressTimerRef as any).progressInterval = progressInterval;
             }}
-          />
-          <SettingsCard
-            icon={<MessageSquareQuote size={24} color={isDarkMode ? '#a78bfa' : '#7c3aed'} />}
-            title="Invia un Feedback"
-            description="Segnala un bug o suggerisci un'idea"
-            onPress={() => router.push('/feedback')}
-          />
+            onPressOut={() => {
+              // Cancella tutto se l'utente rilascia prima dei 5 secondi
+              if (longPressTimerRef.current) {
+                LoggingService.info('Settings', 'Pressione rilasciata prima del timeout');
+                clearTimeout(longPressTimerRef.current);
+                if ((longPressTimerRef as any).progressInterval) {
+                  clearInterval((longPressTimerRef as any).progressInterval);
+                }
+                longPressTimerRef.current = null;
+                setLongPressProgress(0);
+              }
+            }}
+          >
+            <Text style={styles.versionText}>MyFrigo v{Constants.expoConfig?.version}</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -286,7 +296,7 @@ const Settings = () => {
           type={toast.type}
         />
       )}
-      
+
       {/* Indicatore di progresso per la pressione prolungata (opzionale) */}
       {longPressProgress > 0 && (
         <View style={styles.progressOverlay}>
@@ -298,7 +308,7 @@ const Settings = () => {
           </Text>
         </View>
       )}
-      
+
       {/* Pannello Diagnostico */}
       <Modal
         transparent={true}
@@ -366,5 +376,16 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontFamily: 'Inter-Regular',
+  },
+  footer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  versionText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: isDarkMode ? '#8b949e' : '#94a3b8',
   },
 });
