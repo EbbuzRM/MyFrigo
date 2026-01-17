@@ -27,9 +27,9 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
-  signOut: async () => {},
-  refreshUserProfile: async () => {},
-  updateProfile: async () => {},
+  signOut: async () => { },
+  refreshUserProfile: async () => { },
+  updateProfile: async () => { },
 });
 
 export const useAuth = () => {
@@ -144,18 +144,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(currentSession);
 
       if (event === 'SIGNED_IN') {
-        await fetchUserProfile(currentSession?.user ?? null);
         const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
         if (isResetting) {
+          LoggingService.info('AuthProvider', 'User signed in for reset. Skipping profile fetch.');
           router.replace('/password-reset-form');
         } else {
+          await fetchUserProfile(currentSession?.user ?? null);
           router.replace('/(tabs)');
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
         router.replace('/login');
+      } else if (event === 'PASSWORD_RECOVERY') {
+        LoggingService.info('AuthProvider', 'PASSWORD_RECOVERY event received, redirecting to password reset form');
+        router.replace('/password-reset-form');
       } else if (event === 'USER_UPDATED') {
-        await fetchUserProfile(currentSession?.user ?? null);
+        setSession(currentSession);
+        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
+        LoggingService.info('AuthProvider', 'USER_UPDATED event received', { isResetting });
+
+        if (isResetting) {
+          LoggingService.info('AuthProvider', 'User is resetting password. Skipping profile fetch and redirect.');
+        } else {
+          await fetchUserProfile(currentSession?.user ?? null);
+        }
       }
     });
 
@@ -166,10 +178,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
-      LoggingService.info('AuthProvider', 'Signing out user');
-      await supabase.auth.signOut();
+      LoggingService.info('AuthProvider', 'Signing out user initiated');
+      setLoading(true);
+
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        LoggingService.error('AuthProvider', 'Error during supabase.auth.signOut', error);
+        // We continue anyway to clear local state
+      }
+
+      // Explicitly clear local state
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+
+      LoggingService.info('AuthProvider', 'Local state cleared, redirecting to login');
+      router.replace('/login');
+
     } catch (error) {
       LoggingService.error('AuthProvider', 'Unexpected error during sign out', error);
+      // Force redirect anyway
+      router.replace('/login');
+    } finally {
+      setLoading(false);
     }
   };
 

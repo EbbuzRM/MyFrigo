@@ -26,6 +26,7 @@ export const useProductForm = () => {
     originalProductId,
     hasManuallySelectedCategory, setHasManuallySelectedCategory,
     isInitialized, setIsInitialized, // Get from context
+    isFrozen, setIsFrozen,
     initializeForm,
     clearForm
   } = useManualEntry();
@@ -238,6 +239,7 @@ export const useProductForm = () => {
       addedMethod: params.addedMethod === 'photo' ? 'photo' : barcode ? 'barcode' : 'manual',
       barcode: barcode || '',
       imageUrl: imageUrl || undefined,
+      isFrozen: isFrozen,
     };
 
     if (isEditMode && originalProductId) {
@@ -291,7 +293,7 @@ export const useProductForm = () => {
         Alert.alert('Errore', `${errorMessage}. Riprova o contatta il supporto.`);
       }
     }
-  }, [name, brand, selectedCategory, quantities, purchaseDate, expirationDate, notes, barcode, imageUrl, isEditMode, originalProductId, params.addedMethod, clearForm]);
+  }, [name, brand, selectedCategory, quantities, purchaseDate, expirationDate, notes, barcode, imageUrl, isEditMode, originalProductId, params.addedMethod, clearForm, isFrozen]);
 
   const categoryData = useMemo(() => {
     const formatData = (data: ProductCategory[], columns: number) => {
@@ -334,5 +336,6 @@ export const useProductForm = () => {
     onChangePurchaseDate,
     onChangeExpirationDate,
     handleSaveProduct,
+    isFrozen, setIsFrozen,
   };
 };

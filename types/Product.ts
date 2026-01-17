@@ -64,6 +64,8 @@ export interface Product {
   addedMethod: AddMethod;
   /** Informazioni nutrizionali (opzionale) */
   nutritionalInfo?: NutritionalInfo;
+  /** Indica se il prodotto è congelato */
+  isFrozen?: boolean;
 }
 
 /**
@@ -84,6 +86,7 @@ export interface ProductSnakeCase {
   consumed_date?: ISODateString;
   added_method: AddMethod;
   nutritional_info?: NutritionalInfo;
+  is_frozen?: boolean;
 }
 
 /**
@@ -186,6 +189,7 @@ export interface ProductForSupabase {
   consumed_date?: ISODateString;
   added_method: AddMethod;
   nutritional_info?: NutritionalInfo;
+  is_frozen?: boolean;
 }
 
 import flourIcon from '../assets/images/flour-icon.png';

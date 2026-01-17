@@ -61,26 +61,26 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Funzione di utilità per validare le date di scadenza
   const isValidExpirationDate = useCallback((dateString?: string): boolean => {
     if (!dateString) return false;
-    
+
     // Verifica che la data sia in formato ISO
     if (!/^\d{4}-\d{2}-\d{2}/.test(dateString)) return false;
-    
+
     try {
       // Verifica che la data sia valida
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return false;
-      
+
       // Verifica che la data sia nel futuro o oggi
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const expirationDate = new Date(dateString);
       expirationDate.setHours(0, 0, 0, 0);
-      
+
       return expirationDate >= today;
     } catch (e) {
       LoggingService.error("ProductContext", `Invalid date format: ${dateString}`, e);
@@ -90,17 +90,17 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const handleNotificationReschedule = useCallback(async (currentSettings: AppSettings) => {
     LoggingService.info('ProductContext', 'handleNotificationReschedule triggered.');
-    
+
     // Filtra prodotti attivi con date di scadenza valide
     const activeProducts = productsRef.current.filter(p =>
       p.status === 'active' && isValidExpirationDate(p.expirationDate)
     );
-    
+
     if (activeProducts.length !== productsRef.current.filter(p => p.status === 'active').length) {
       LoggingService.warning('ProductContext',
         `Filtered out ${productsRef.current.filter(p => p.status === 'active').length - activeProducts.length} products with invalid expiration dates`);
     }
-    
+
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
       await NotificationService.scheduleMultipleNotifications(activeProducts, currentSettings);
@@ -115,17 +115,17 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Riferimenti alle funzioni di cleanup
       let productsUnsubscribe: (() => void) | null = null;
       let settingsUnsubscribe: (() => void) | null = null;
-      
+
       // Flag per tracciare se il componente è montato
       let isMounted = true;
-      
+
       // Carica i prodotti iniziali
       fetchProducts().catch(error => {
         if (isMounted) {
           LoggingService.error("ProductContext", "Error fetching initial products", error);
         }
       });
-      
+
       // Imposta il listener per i prodotti
       try {
         productsUnsubscribe = ProductStorage.listenToProducts(() => {
@@ -140,7 +140,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } catch (error) {
         LoggingService.error("ProductContext", "Error setting up products listener", error);
       }
-      
+
       // Imposta il listener per le impostazioni
       if (eventEmitter) {
         try {
@@ -156,11 +156,11 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } else {
         LoggingService.warning("ProductContext", "Event emitter not available, settings changes won't trigger notification reschedule");
       }
-      
+
       // Funzione di cleanup
       return () => {
         isMounted = false;
-        
+
         // Rimuovi il listener dei prodotti
         if (productsUnsubscribe) {
           try {
@@ -170,7 +170,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
             LoggingService.error("ProductContext", "Error unsubscribing products listener", error);
           }
         }
-        
+
         // Rimuovi il listener delle impostazioni
         if (eventEmitter && settingsUnsubscribe) {
           try {
@@ -182,7 +182,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       };
     }
-  }, [user, fetchProducts, handleNotificationReschedule]);
+  }, [user?.id, fetchProducts, handleNotificationReschedule]);
 
   useEffect(() => {
     if (!settings || !prevProducts) {
@@ -206,7 +206,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     currentMap.forEach((currentProduct, id) => {
 
       const prevProduct = prevMap.get(id);
-      
+
       // Nuovo prodotto attivo
       if (!prevProduct && currentProduct.status === 'active') {
         if (isValidExpirationDate(currentProduct.expirationDate)) {
@@ -222,7 +222,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       else if (prevProduct && currentProduct.status === 'active') {
         const dateChanged = currentProduct.expirationDate !== prevProduct.expirationDate;
         const statusChangedToActive = prevProduct.status !== 'active';
-        
+
         if (dateChanged || statusChangedToActive) {
           if (isValidExpirationDate(currentProduct.expirationDate)) {
             NotificationService.scheduleExpirationNotification(currentProduct, settings.notificationDays)

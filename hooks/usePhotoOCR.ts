@@ -30,6 +30,12 @@ export const usePhotoOCR = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const monthMap: { [key: string]: number } = {
+    'GEN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAG': 5, 'GIU': 6,
+    'LUG': 7, 'AGO': 8, 'SET': 9, 'OTT': 10, 'NOV': 11, 'DIC': 12,
+    'JAN': 1, 'MAY': 5, 'JUN': 6, 'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'DEC': 12
+  };
+
   const datePatterns = useMemo(() => [
     // Pattern standard DD/MM/YYYY o DD-MM-YYYY
     /\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.](\d{4}|\d{2}))\b/g,
@@ -42,24 +48,39 @@ export const usePhotoOCR = () => {
   const monthYearPattern = /\b(0?[1-9]|1[0-2])[\/\-\.](\d{4}|\d{2})\b/g;
   const sequencePattern = /\b(\d{8}|\d{6})\b/g;
 
-  const normalizeDate = useCallback((match: string, isSequence: boolean = false, isMonthYear: boolean = false): string | null => {
+  // Nuovo pattern per mesi testuali (es. 12 DIC 2024 o 12 DIC 24)
+  const textualMonthPattern = /\b(\d{1,2})\s+([A-Z]{3})\s+(\d{4}|\d{2})\b/gi;
+
+  const normalizeDate = useCallback((match: string, isSequence: boolean = false, isMonthYear: boolean = false, isTextual: boolean = false): string | null => {
     let day: number, month: number, year: number;
 
-    if (isMonthYear) {
-        const parts = match.replace(/[\/\-\.]/g, '/').split('/');
-        if (parts.length !== 2) return null;
+    if (isTextual) {
+      // Formato: DD MMM YYYY
+      const parts = match.toUpperCase().split(/\s+/);
+      if (parts.length !== 3) return null;
 
-        month = parseInt(parts[0], 10);
-        year = parseInt(parts[1], 10);
+      day = parseInt(parts[0], 10);
+      const monthStr = parts[1];
+      year = parseInt(parts[2], 10);
 
-        if (year < 100) {
-          year += year < 50 ? 2000 : 1900; // Assumi 20xx per anni < 50
-        }
+      month = monthMap[monthStr];
+      if (!month) return null; // Mese non valido
 
-        // Calcola l'ultimo giorno del mese. new Date(y, m, 0) restituisce l'ultimo giorno del mese m-1.
-        // Poiché il nostro mese è 1-12, passando `month` direttamente otteniamo l'ultimo giorno del mese corretto.
-        const lastDayOfMonth = new Date(year, month, 0).getDate();
-        day = lastDayOfMonth;
+    } else if (isMonthYear) {
+      const parts = match.replace(/[\/\-\.]/g, '/').split('/');
+      if (parts.length !== 2) return null;
+
+      month = parseInt(parts[0], 10);
+      year = parseInt(parts[1], 10);
+
+      if (year < 100) {
+        year += year < 50 ? 2000 : 1900; // Assumi 20xx per anni < 50
+      }
+
+      // Calcola l'ultimo giorno del mese. new Date(y, m, 0) restituisce l'ultimo giorno del mese m-1.
+      // Poiché il nostro mese è 1-12, passando `month` direttamente otteniamo l'ultimo giorno del mese corretto.
+      const lastDayOfMonth = new Date(year, month, 0).getDate();
+      day = lastDayOfMonth;
 
     } else if (isSequence) {
       if (match.length === 8) { // DDMMYYYY
@@ -93,14 +114,20 @@ export const usePhotoOCR = () => {
     const currentYear = new Date().getFullYear();
     const maxAllowedYear = currentYear + 20;
 
-    // Permetti date dal 2020 fino a 20 anni nel futuro per essere più permissivi
-    if (year > maxAllowedYear || year < 2020) {
+    // Strict validation: Reject dates before 2020
+    if (year < 2020) {
+      LoggingService.debug('normalizeDate', `Scartata data troppo vecchia (< 2020): ${day}/${month}/${year}`);
+      return null;
+    }
+
+    // Permetti date fino a 20 anni nel futuro
+    if (year > maxAllowedYear) {
       return null;
     }
 
     const parsedDate = new Date(year, month - 1, day);
     if (parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month - 1 || parsedDate.getDate() !== day) {
-        return null;
+      return null;
     }
 
     // Rilassa il filtro delle date - solo se è più di 1 anno fa la consideriamo sospetta
@@ -110,7 +137,7 @@ export const usePhotoOCR = () => {
 
     if (parsedDate < oneYearAgo) {
       // Log della data scartata per debugging
-      LoggingService.debug('normalizeDate', `Scartata data troppo vecchia: ${match} -> ${toLocalISOString(parsedDate)}`);
+      LoggingService.debug('normalizeDate', `Scartata data troppo vecchia (filtro oneYearAgo): ${match} -> ${toLocalISOString(parsedDate)}`);
       return null;
     }
 
@@ -143,38 +170,44 @@ export const usePhotoOCR = () => {
       setOcrProgress(prev => ({ ...prev, progress: 50, currentStep: 'Pulizia e analisi testo...' }));
 
       const rawText = textRecognitionResult.blocks.map((block: TextBlock) => block.text).join(' ').replace(/\n/g, ' ');
-      
+
       const cleanedText = rawText
         .toUpperCase()
         .replace(/O/g, '0')
-        .replace(/[IL]/g, '1')
+        // .replace(/[IL]/g, '1') // Removed to avoid breaking textual months like 'LUG' or 'LIG'
         .replace(/S/g, '5')
         .replace(/B/g, '8');
 
       LoggingService.debug(TAG, 'Testo grezzo:', rawText);
       LoggingService.debug(TAG, 'Testo pulito:', cleanedText);
 
-      const allMatches: { value: string, isSequence: boolean, isMonthYear: boolean }[] = [];
+      const allMatches: { value: string, isSequence: boolean, isMonthYear: boolean, isTextual: boolean }[] = [];
+
+      // Strategia 0: Pattern Testuale (DD MMM YYYY)
+      const textualMatches = cleanedText.match(textualMonthPattern);
+      if (textualMatches) {
+        allMatches.push(...textualMatches.map(m => ({ value: m, isSequence: false, isMonthYear: false, isTextual: true })));
+      }
 
       // Strategia 1: Pattern standard
       for (const pattern of datePatterns) {
         const matches = cleanedText.match(pattern);
         if (matches) {
-          allMatches.push(...matches.map(m => ({ value: m, isSequence: false, isMonthYear: false })));
+          allMatches.push(...matches.map(m => ({ value: m, isSequence: false, isMonthYear: false, isTextual: false })));
         }
       }
 
       // Strategia 2: Pattern Mese/Anno
       const monthYearMatches = cleanedText.match(monthYearPattern);
       if (monthYearMatches) {
-        allMatches.push(...monthYearMatches.map(m => ({ value: m, isSequence: false, isMonthYear: true })));
+        allMatches.push(...monthYearMatches.map(m => ({ value: m, isSequence: false, isMonthYear: true, isTextual: false })));
       }
 
       // Strategia 3: Pattern a sequenza
       const spacelessText = cleanedText.replace(/[\s\.\-\/]/g, '');
       const sequenceMatches = spacelessText.match(sequencePattern);
       if (sequenceMatches) {
-        allMatches.push(...sequenceMatches.map(m => ({ value: m, isSequence: true, isMonthYear: false })));
+        allMatches.push(...sequenceMatches.map(m => ({ value: m, isSequence: true, isMonthYear: false, isTextual: false })));
       }
 
       if (allMatches.length === 0) {
@@ -185,9 +218,9 @@ export const usePhotoOCR = () => {
 
       const validDates: string[] = [];
       const rejectedDates: string[] = [];
-      
+
       for (const match of allMatches) {
-        const normalized = normalizeDate(match.value, match.isSequence, match.isMonthYear);
+        const normalized = normalizeDate(match.value, match.isSequence, match.isMonthYear, match.isTextual);
         if (normalized) {
           validDates.push(normalized);
           LoggingService.debug(TAG, `Data valida trovata: ${match.value} -> ${normalized}`);
@@ -238,7 +271,7 @@ export const usePhotoOCR = () => {
         confidence: 0.9, // Confidence è ora fissa, dato che il match è più euristico
         rawText,
       };
-      
+
       LoggingService.info(TAG, 'OCR extraction completed successfully');
       return ocrResult;
 

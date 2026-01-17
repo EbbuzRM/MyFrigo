@@ -135,6 +135,11 @@ const Products = () => {
             return true;
         }
       });
+
+      // Secondary filter: exclude frozen products from 'expiring' and 'expired' status
+      if (selectedStatus === 'expiring' || selectedStatus === 'expired') {
+        filtered = filtered.filter(p => !p.isFrozen);
+      }
     }
 
     filtered.sort((a, b) => {
@@ -190,7 +195,12 @@ const Products = () => {
         // Rimuovi le quantità con valore 0
         const filteredQuantities = newQuantities.filter(q => q.quantity > 0);
 
-        await ProductStorage.saveProduct({ id: productToConsume.id, quantities: filteredQuantities });
+        // Create a full product object with the updated quantities to avoid not-null constraint violations
+        const productToUpdate = {
+          ...productToConsume,
+          quantities: filteredQuantities
+        };
+        await ProductStorage.saveProduct(productToUpdate);
         LoggingService.info('ProductsScreen', `Updated quantity for ${productToConsume.name}. Remaining: ${remainingQuantity}`);
       } else {
         await ProductStorage.updateProductStatus(productToConsume.id!, 'consumed');

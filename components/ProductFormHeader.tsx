@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { Text, TextInput, TouchableOpacity, Image, StyleSheet, View, Switch } from 'react-native';
 import { router } from 'expo-router';
 import { formStateLogger } from '@/utils/FormStateLogger';
 import { useTheme } from '@/context/ThemeContext';
@@ -19,6 +19,8 @@ interface ProductFormHeaderProps {
   setBrand: (value: string) => void;
   navigatingToPhotoCapture: React.MutableRefObject<boolean>;
   productId?: string | null;
+  isFrozen: boolean;
+  setIsFrozen: (value: boolean) => void;
 }
 
 const ProductFormHeader = React.memo(({
@@ -33,7 +35,9 @@ const ProductFormHeader = React.memo(({
   notes,
   setName,
   setBrand,
-  navigatingToPhotoCapture
+  navigatingToPhotoCapture,
+  isFrozen,
+  setIsFrozen
 }: ProductFormHeaderProps) => {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
@@ -57,13 +61,13 @@ const ProductFormHeader = React.memo(({
             };
             formStateLogger.logNavigation('TAKE_PHOTO', 'manual-entry', 'photo-capture', currentFormData);
             navigatingToPhotoCapture.current = true;
-        router.push({
-          pathname: '/photo-capture',
-          params: {
-            captureMode: 'updateProductPhoto',
-            ...currentFormData
-          }
-        });
+            router.push({
+              pathname: '/photo-capture',
+              params: {
+                captureMode: 'updateProductPhoto',
+                ...currentFormData
+              }
+            });
             setTimeout(() => {
               navigatingToPhotoCapture.current = false;
             }, 500);
@@ -127,7 +131,15 @@ const ProductFormHeader = React.memo(({
         placeholderTextColor={isDarkMode ? '#8b949e' : '#64748b'}
       />
 
-
+      <View style={styles.switchContainer}>
+        <Text style={styles.label}>(Freezer)</Text>
+        <Switch
+          value={isFrozen}
+          onValueChange={setIsFrozen}
+          trackColor={{ false: isDarkMode ? '#30363d' : '#cbd5e1', true: '#2563EB' }}
+          thumbColor={isDarkMode ? '#c9d1d9' : '#ffffff'}
+        />
+      </View>
     </>
   );
 });
@@ -182,6 +194,18 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   placeholder: {
     color: isDarkMode ? '#8b949e' : '#64748b',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: isDarkMode ? '#21262d' : '#f8fafc',
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
+    marginBottom: 16,
   },
 });
 

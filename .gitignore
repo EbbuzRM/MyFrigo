@@ -90,6 +90,8 @@ dist/
 *.swo
 *.sublime-project
 *.sublime-workspace
+.agent/
+.cursor/
 
 # OS
 .DS_Store

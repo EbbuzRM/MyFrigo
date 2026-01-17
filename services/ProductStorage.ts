@@ -122,6 +122,12 @@ export class ProductStorage {
     };
 
     const snakeCaseProduct = convertProductToSnakeCase(productWithUser);
+
+    // Explicitly ensure is_frozen is set if isFrozen exists, to avoid any converter issues
+    if (productWithUser.isFrozen !== undefined) {
+      (snakeCaseProduct as any).is_frozen = productWithUser.isFrozen;
+    }
+
     LoggingService.info('ProductStorage', `performSave: Attempting to upsert product to Supabase. Data: ${JSON.stringify(snakeCaseProduct)}`);
 
     const { error } = await supabase
