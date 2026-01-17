@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
@@ -26,6 +26,9 @@ export default function PasswordResetForm() {
 
   const router = useRouter();
 
+  // Track if we received a confirmation event from the server
+  const serverConfirmed = React.useRef(false);
+
   const passwordValidation = validatePassword(newPassword);
   const passwordsMatch = newPassword === confirmPassword && newPassword !== '';
 
@@ -33,7 +36,7 @@ export default function PasswordResetForm() {
     const checkSession = async () => {
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           LoggingService.error('PasswordResetForm', 'Error getting session', error);
           Alert.alert('Errore', 'Impossibile verificare la sessione utente');
@@ -48,82 +51,122 @@ export default function PasswordResetForm() {
           return;
         }
 
-        const isResetting = currentSession.user.user_metadata?.is_resetting_password;
-        if (!isResetting) {
-          LoggingService.error('PasswordResetForm', 'User not in password reset mode');
-          Alert.alert('Errore', 'Sessione non valida per il reset password');
+        // Refresh session to Ensure we have the latest flags (like is_resetting_password)
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          LoggingService.warning('PasswordResetForm', 'Session refresh failed', refreshError);
+        }
+
+        const { data: { session: refreshedSession }, error: sessionError } = await supabase.auth.getSession();
+        const currentSessionToCheck = refreshedSession || currentSession;
+
+        if (!currentSessionToCheck) {
+          LoggingService.error('PasswordResetForm', 'Critical: No session available.');
+          Alert.alert('Errore', 'Sessione scaduta o non valida. Riprova il login.');
           router.replace('/login');
           return;
         }
 
-        setSession(currentSession);
-        setIsReady(true);
-        LoggingService.info('PasswordResetForm', 'Session verified successfully', { userId: currentSession.user.id });
+        setSession(currentSessionToCheck);
+        LoggingService.info('PasswordResetForm', 'Session verified successfully', { userId: currentSessionToCheck.user.id });
+
       } catch (error) {
         LoggingService.error('PasswordResetForm', 'Unexpected error checking session', error);
-        Alert.alert('Errore', 'Errore durante la verifica della sessione');
-        router.replace('/login');
+      } finally {
+        setIsReady(true);
       }
     };
 
     checkSession();
+
+    // Safety timer for UI unblocking
+    const timer = setTimeout(() => setIsReady(true), 2000);
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (event === 'SIGNED_OUT' || !currentSession) {
         LoggingService.info('PasswordResetForm', 'User signed out or session lost');
         router.replace('/login');
       } else if (event === 'USER_UPDATED') {
+        LoggingService.info('PasswordResetForm', 'USER_UPDATED event received from server listener');
+        serverConfirmed.current = true;
         setSession(currentSession);
+
+        // If metadata flag is cleared, redirect. 
+        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
+        if (currentSession && !isResetting) {
+          LoggingService.info('PasswordResetForm', 'Metadata flag cleared via event, redirecting...');
+          router.replace('/(tabs)');
+        }
       }
     });
 
     return () => {
+      clearTimeout(timer);
       authListener.subscription.unsubscribe();
     };
   }, [router]);
 
   const handleUpdatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      Alert.alert('Errore', 'Inserisci e conferma la password.');
+      return;
+    }
+
     if (!isPasswordValid(newPassword) || !passwordsMatch) {
       Alert.alert('Errore', 'La password non soddisfa tutti i requisiti di sicurezza o le password non coincidono.');
       return;
     }
 
     setLoading(true);
-    LoggingService.info('PasswordResetForm', 'Updating password');
+    serverConfirmed.current = false; // Reset tracker
+    LoggingService.info('PasswordResetForm', 'Starting password update process');
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      // ATOMIC UPDATE: Password + Metadata Clear in one single request
+      LoggingService.info('PasswordResetForm', 'Sending atomic update request (20s timeout)...');
+
+      const updatePromise = supabase.auth.updateUser({
         password: newPassword,
-        data: {
-          is_resetting_password: false
-        }
+        data: { is_resetting_password: false }
       });
 
-      if (error) {
-        LoggingService.error('PasswordResetForm', 'Password update failed', error);
-        let errorMessage = error.message;
-        
-        if (error.message.includes('New password should be different from the old password')) {
-          errorMessage = 'La nuova password deve essere diversa dalla precedente.';
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 20000)
+      );
+
+      try {
+        await Promise.race([updatePromise, timeoutPromise]);
+        LoggingService.info('PasswordResetForm', 'Atomic update request resolved normally');
+      } catch (err: any) {
+        if (err.message === 'TIMEOUT' && serverConfirmed.current) {
+          LoggingService.info('PasswordResetForm', 'Request timed out locally but server confirmed success via event. Both password and flag updated.');
+        } else {
+          throw err;
         }
-        
-        Alert.alert('Errore', errorMessage);
-        return;
       }
 
-      LoggingService.info('PasswordResetForm', 'Password updated successfully');
       Alert.alert(
-        'Successo', 
+        'Successo',
         'Password reimpostata con successo! Verrai reindirizzato alla dashboard.',
         [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
       );
     } catch (error: unknown) {
-      LoggingService.error('PasswordResetForm', 'Unexpected error during password update', error);
-      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante l\'aggiornamento della password'));
+      LoggingService.error('PasswordResetForm', 'Error during password update', error);
+      let errorMessage = error instanceof Error && error.message !== 'TIMEOUT'
+        ? error.message
+        : (error instanceof Error && error.message === 'TIMEOUT' ? 'Il server non ha risposto in tempo, riprova tra poco.' : 'Errore sconosciuto');
+
+      if (errorMessage.includes('New password should be different')) {
+        errorMessage = 'La nuova password deve essere diversa dalla precedente.';
+      }
+
+      Alert.alert('Errore', errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const isButtonDisabled = loading || !isPasswordValid(newPassword) || !passwordsMatch;
 
   if (!isReady) {
     return (
@@ -177,11 +220,18 @@ export default function PasswordResetForm() {
         <ValidationCheck text="Le password coincidono" isValid={passwordsMatch} />
       </View>
 
-      <Button
-        title="Aggiorna Password"
+      <TouchableOpacity
+        style={[
+          styles.button,
+          isButtonDisabled ? styles.buttonDisabled : styles.buttonEnabled
+        ]}
         onPress={handleUpdatePassword}
-        disabled={loading || !isPasswordValid(newPassword) || !passwordsMatch}
-      />
+        disabled={isButtonDisabled}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Aggiornamento...' : 'Aggiorna Password'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -191,6 +241,24 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonEnabled: {
+    backgroundColor: '#000', // Nero quando attivo
+  },
+  buttonDisabled: {
+    backgroundColor: '#ccc', // Grigio quando disabilitato
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 24,

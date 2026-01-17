@@ -25,6 +25,7 @@ export interface ManualEntryFormData {
   originalProductId: string | null;
   hasManuallySelectedCategory: boolean;
   isInitialized: boolean; // Flag to track initialization
+  isFrozen: boolean;
 }
 
 // Definisce il contesto completo con stato e funzioni
@@ -43,6 +44,7 @@ interface ManualEntryContextType {
   originalProductId: string | null;
   hasManuallySelectedCategory: boolean;
   isInitialized: boolean; // Flag to track initialization
+  isFrozen: boolean;
 
   // Funzioni per aggiornare lo stato
   setName: (name: string) => void;
@@ -61,6 +63,7 @@ interface ManualEntryContextType {
   setIsEditMode: (editMode: boolean) => void;
   setOriginalProductId: (productId: string | null) => void;
   setIsInitialized: (initialized: boolean) => void; // Setter for the flag
+  setIsFrozen: (frozen: boolean) => void;
 
   // Funzioni helper
   initializeForm: (initialData?: Partial<ManualEntryFormData & { product?: any }>) => void;
@@ -85,6 +88,7 @@ const getInitialState = (): ManualEntryFormData => ({
   originalProductId: null,
   hasManuallySelectedCategory: false,
   isInitialized: false, // Initial value for the flag
+  isFrozen: false,
 });
 
 // Crea il Provider
@@ -174,6 +178,10 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     LoggingService.info('ManualEntryContext', `Setting isInitialized to: ${initialized}`);
     setFormData(prev => ({ ...prev, isInitialized: initialized }));
   }, []);
+  const setIsFrozen = useCallback((frozen: boolean) => {
+    LoggingService.info('ManualEntryContext', `Setting isFrozen to: ${frozen}`);
+    setFormData(prev => ({ ...prev, isFrozen: frozen }));
+  }, []);
 
   const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string, productName?: string }> = {}) => {
     LoggingService.info('ManualEntryContext', `Initializing form with: ${JSON.stringify(initialData, null, 2)}`);
@@ -193,7 +201,17 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
         newState = getInitialState();
       } else {
         // Merge the initial data with the previous state only if we have significant data
-        newState = { ...prevState, ...initialData };
+        // Gestione sicura dei booleani provenienti dai parametri di navigazione (che sono spesso stringhe)
+        const safeIsEditMode = String(initialData.isEditMode) === 'true';
+        const safeHasManuallySelected = String(initialData.hasManuallySelectedCategory) === 'true';
+
+        newState = {
+          ...prevState,
+          ...initialData,
+          isEditMode: initialData.isEditMode !== undefined ? safeIsEditMode : prevState.isEditMode,
+          hasManuallySelectedCategory: initialData.hasManuallySelectedCategory !== undefined ? safeHasManuallySelected : prevState.hasManuallySelectedCategory,
+          isFrozen: initialData.isFrozen !== undefined ? initialData.isFrozen : prevState.isFrozen
+        };
       }
 
       if (initialData.product) {
@@ -204,8 +222,9 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
         newState = {
           ...getInitialState(),
           ...initialData.product,
-          isEditMode: initialData.isEditMode ?? false,
-          originalProductId: initialData.originalProductId ?? undefined
+          isEditMode: String(initialData.isEditMode) === 'true',
+          originalProductId: initialData.originalProductId ?? undefined,
+          isFrozen: initialData.product.isFrozen || initialData.product.is_frozen || false
         };
 
         // Map the 'category' field from the product to 'selectedCategory' for the form state
@@ -272,6 +291,7 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setIsEditMode,
     setOriginalProductId,
     setIsInitialized,
+    setIsFrozen,
     initializeForm,
     clearForm,
   }), [formData, setName, setBrand, setSelectedCategory, setQuantities, addQuantity, removeQuantity, updateQuantity, setPurchaseDate, setExpirationDate, setNotes, setBarcode, setImageUrl, setHasManuallySelectedCategory, setIsEditMode, setOriginalProductId, setIsInitialized, initializeForm, clearForm]);

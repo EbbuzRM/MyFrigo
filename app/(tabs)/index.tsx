@@ -108,18 +108,18 @@ function Dashboard() {
       const expirationParts = p.expirationDate.split('-').map(Number);
       const startOfExpirationUTC = Date.UTC(expirationParts[0], expirationParts[1] - 1, expirationParts[2]);
       const diffDays = (startOfExpirationUTC - startOfTodayUTC) / (1000 * 60 * 60 * 24);
-      return diffDays >= 0 && diffDays <= settings.notificationDays && !p.consumedDate;
+      return diffDays >= 0 && diffDays <= settings.notificationDays && !p.consumedDate && !p.isFrozen;
     })
     .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const expiredCount = allProducts.filter(p => {
-      const expirationDate = new Date(p.expirationDate);
-      expirationDate.setHours(0, 0, 0, 0);
-      return p.status === 'active' && expirationDate < today;
+    const expirationDate = new Date(p.expirationDate);
+    expirationDate.setHours(0, 0, 0, 0);
+    return p.status === 'active' && expirationDate < today && !p.isFrozen;
   }).length;
-  
+
   const styles = getStyles(isDarkMode);
 
   const displayName = profile?.first_name && profile?.last_name
@@ -143,8 +143,8 @@ function Dashboard() {
       style={styles.scrollView}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <ProfileMenu 
-        isVisible={menuVisible} 
+      <ProfileMenu
+        isVisible={menuVisible}
         onClose={() => setMenuVisible(false)}
         onLogout={handleLogout}
         userName={displayName || ''}
@@ -153,7 +153,7 @@ function Dashboard() {
         <TouchableOpacity style={styles.titleContainer} onPress={handleBellPress} disabled={permissionStatus !== 'denied'}>
           <Text style={styles.title}>La Tua Dispensa</Text>
           <View style={styles.notificationIconContainer}>
-            {permissionStatus === 'granted' 
+            {permissionStatus === 'granted'
               ? <Bell size={18} color={isDarkMode ? '#4ade80' : '#16a34a'} style={styles.notificationIcon} />
               : <BellOff size={18} color={isDarkMode ? '#f87171' : '#dc2626'} style={styles.notificationIcon} />
             }
@@ -168,7 +168,7 @@ function Dashboard() {
         </TouchableOpacity>
       </View>
       <Text style={styles.subtitle}>Tutto sotto controllo</Text>
-      
+
       <View style={styles.ctaContainer}>
         <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/add')}>
           <Plus size={20} color="#ffffff" />
@@ -251,12 +251,12 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   profileButton: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: isDarkMode ? '#161b22' : '#e2e8f0',
-      justifyContent: 'center',
-      alignItems: 'center',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: isDarkMode ? '#161b22' : '#e2e8f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileButtonText: {
     fontSize: 28,

@@ -9,7 +9,7 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
-  
+
   const router = useRouter();
 
   // Metodo principale: reset con OTP
@@ -30,7 +30,7 @@ export default function ForgotPassword() {
       if (error) {
         LoggingService.error('ForgotPassword', `Error sending password reset email: ${error.message}`, error);
         let errorMessage = 'Errore nell\'invio dell\'email di reset della password. Si prega di riprovare.';
-        
+
         // Errori specifici di Supabase
         if (error.message.includes('User not found')) {
           errorMessage = 'Nessun account trovato con questa email.';
@@ -39,7 +39,7 @@ export default function ForgotPassword() {
         } else if (error.message.includes('Invalid email')) {
           errorMessage = 'L\'indirizzo email inserito non è valido.';
         }
-        
+
         Alert.alert('Errore', errorMessage);
         return;
       }
@@ -75,13 +75,13 @@ export default function ForgotPassword() {
       if (error) {
         LoggingService.error('ForgotPassword', 'OTP verification failed', error);
         let errorMessage = 'Codice OTP non valido o scaduto.';
-        
+
         if (error.message.includes('Token has expired')) {
           errorMessage = 'Il codice OTP è scaduto. Richiedi un nuovo codice.';
         } else if (error.message.includes('Invalid token')) {
           errorMessage = 'Il codice OTP inserito non è corretto.';
         }
-        
+
         Alert.alert('Errore', errorMessage);
         return;
       }
@@ -94,7 +94,7 @@ export default function ForgotPassword() {
           is_resetting_password: true
         }
       });
-      
+
       if (updateError) {
         LoggingService.error('ForgotPassword', 'Failed to update user metadata', updateError);
         Alert.alert('Errore', 'Impossibile aggiornare lo stato di reset password');
@@ -102,13 +102,20 @@ export default function ForgotPassword() {
       }
 
       LoggingService.info('ForgotPassword', 'User metadata updated successfully', { userId: data.user?.id });
-      // Reindirizza alla pagina di reimpostazione password
-      router.replace('/password-reset-form');
+
+      // Explicitly try to navigate
+      LoggingService.info('ForgotPassword', 'Attempting navigation to /password-reset-form');
+
+      // Delay slightly to ensure metadata propagation if needed, though updatedUser should be enough.
+      // We use setTimeout to break out of current event loop stack if needed.
+      setTimeout(() => {
+        router.replace('/password-reset-form');
+      }, 100);
+
     } catch (error: unknown) {
       LoggingService.error('ForgotPassword', 'Unexpected error during OTP verification', error);
       Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante la verifica del codice'));
-    }
- finally {
+    } finally {
       setLoading(false);
     }
   };

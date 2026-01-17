@@ -23,19 +23,19 @@ const mapOffCategoryToAppCategory = (
   }
 
   const keywordMap: { [key: string]: string[] } = {
-      'latticini': ['dairy', 'cheeses', 'yogurts', 'milks', 'butters', 'creams'],
-      'carne': ['meats', 'poultry', 'beef', 'pork', 'sausages', 'hams', 'salami', 'turkey', 'lamb'],
-      'pesce': ['seafood', 'fishes', 'tuna', 'salmon', 'cod', 'shrimps', 'clams', 'mussels'],
-      'frutta': ['fruits', 'apples', 'bananas', 'oranges', 'strawberries', 'grapes', 'peaches', 'apricots', 'kiwis'],
-      'verdura': ['vegetables', 'tomatoes', 'lettuces', 'zucchini', 'eggplants', 'carrots', 'potatoes', 'onions', 'spinach'],
-      'surgelati': ['frozen-foods', 'ice-creams', 'frozen-pizzas', 'frozen-ready-meals', 'frozen-vegetables'],
-      'bevande': ['beverages', 'waters', 'juices', 'sodas', 'wines', 'beers', 'teas', 'coffees'],
-      'dispensa': ['pantry', 'pastas', 'rices', 'breads', 'biscuits', 'flours', 'sugars', 'salts', 'oils', 'vinegars', 'canned-foods', 'pulses', 'beans', 'chickpeas', 'lentils'],
-      'snack': ['snacks', 'crisps', 'chocolates', 'sweets', 'crackers'],
-      'colazione': ['breakfasts', 'cereals', 'rusks', 'jams', 'croissants'],
-      'condimenti': ['condiments', 'sauces', 'mayonnaises', 'ketchups', 'mustards'],
-      'uova': ['eggs'],
-      'dolci': ['desserts', 'cakes', 'puddings', 'pastries'],
+    'latticini': ['dairy', 'cheeses', 'yogurts', 'milks', 'butters', 'creams'],
+    'carne': ['meats', 'poultry', 'beef', 'pork', 'sausages', 'hams', 'salami', 'turkey', 'lamb'],
+    'pesce': ['seafood', 'fishes', 'tuna', 'salmon', 'cod', 'shrimps', 'clams', 'mussels'],
+    'frutta': ['fruits', 'apples', 'bananas', 'oranges', 'strawberries', 'grapes', 'peaches', 'apricots', 'kiwis'],
+    'verdura': ['vegetables', 'tomatoes', 'lettuces', 'zucchini', 'eggplants', 'carrots', 'potatoes', 'onions', 'spinach'],
+    'surgelati': ['frozen-foods', 'ice-creams', 'frozen-pizzas', 'frozen-ready-meals', 'frozen-vegetables'],
+    'bevande': ['beverages', 'waters', 'juices', 'sodas', 'wines', 'beers', 'teas', 'coffees'],
+    'dispensa': ['pantry', 'pastas', 'rices', 'breads', 'biscuits', 'flours', 'sugars', 'salts', 'oils', 'vinegars', 'canned-foods', 'pulses', 'beans', 'chickpeas', 'lentils'],
+    'snack': ['snacks', 'crisps', 'chocolates', 'sweets', 'crackers'],
+    'colazione': ['breakfasts', 'cereals', 'rusks', 'jams', 'croissants'],
+    'condimenti': ['condiments', 'sauces', 'mayonnaises', 'ketchups', 'mustards'],
+    'uova': ['eggs'],
+    'dolci': ['desserts', 'cakes', 'puddings', 'pastries'],
   };
 
   const lowerCaseOffCategories = offCategories.map(c => c.toLowerCase());
@@ -100,7 +100,7 @@ export default function BarcodeScannerScreen() {
   // Funzione per recuperare i dati del prodotto da Open Food Facts
   const fetchProductFromOpenFoodFacts = useCallback((barcode: string): Promise<unknown> => {
     setLoadingProgress('Cercando prodotto online...');
-    
+
     // Crea una promessa che si risolve con il risultato della fetch o viene rifiutata dopo il timeout
     const fetchPromise = new Promise<unknown>((resolve, reject) => {
       try {
@@ -132,22 +132,22 @@ export default function BarcodeScannerScreen() {
         reject(error);
       }
     });
-    
+
     return fetchPromise;
   }, []);
 
 
   // Modifica handleBarCodeScanned per velocizzare l'esperienza
-interface CachedResult {
-  type: 'template' | 'online' | 'not_found';
-  data?: any;
-  params: Partial<Product> & { barcodeType?: string; addedMethod?: string };
-}
+  interface CachedResult {
+    type: 'template' | 'online' | 'not_found';
+    data?: any;
+    params: Partial<Product> & { barcodeType?: string; addedMethod?: string };
+  }
 
-interface CachedEntry {
-  timestamp: number;
-  result: CachedResult;
-}
+  interface CachedEntry {
+    timestamp: number;
+    result: CachedResult;
+  }
 
   const useBarcodeCache = useRef<Map<string, CachedEntry>>(new Map());
 
@@ -166,7 +166,7 @@ interface CachedEntry {
             text: 'Continua',
             onPress: () => {
               LoggingService.info('Scanner', `Navigating to manual-entry with cached params: ${JSON.stringify(cacheEntry.result.params)}`);
-              router.replace({ pathname: '/manual-entry', params: { ...cacheEntry.result.params, isEditMode: 'false' } as any });
+              router.replace({ pathname: '/manual-entry', params: { ...cacheEntry.result.params, isEditMode: 'false', resetForm: 'true' } as any });
             }
           },
           {
@@ -198,8 +198,8 @@ interface CachedEntry {
     const barcodeArea = bounds.size.width * bounds.size.height;
     const overlapArea = overlapX * overlapY;
 
-    // Richiede almeno il 30% del barcode visibile nel frame
-    if (overlapArea < barcodeArea * 0.3) {
+    // Richiede almeno il 10% del barcode visibile nel frame (ridotto da 30% per velocità)
+    if (overlapArea < barcodeArea * 0.1) {
       return;
     }
 
@@ -237,7 +237,7 @@ interface CachedEntry {
               text: 'Continua',
               onPress: () => {
                 LoggingService.info('Scanner', `Navigating to manual-entry with params: ${JSON.stringify(paramsForManualEntry)}`);
-                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false' } as any });
+                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false', resetForm: 'true' } as any });
               }
             },
             {
@@ -280,7 +280,7 @@ interface CachedEntry {
               text: 'Continua',
               onPress: () => {
                 LoggingService.info('Scanner', `Navigating to manual-entry with online params: ${JSON.stringify(paramsForManualEntry)}`);
-                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false' } as any });
+                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false', resetForm: 'true' } as any });
               }
             },
             {
@@ -332,7 +332,7 @@ interface CachedEntry {
               text: 'Sì, Aggiungi',
               onPress: () => {
                 LoggingService.info('Scanner', `Navigating to manual-entry for manual entry: ${JSON.stringify(paramsForManualEntry)}`);
-                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false' } as any });
+                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false', resetForm: 'true' } as any });
               }
             },
             {
@@ -375,7 +375,7 @@ interface CachedEntry {
 
   // Renderizza il contenuto appropriato in base allo stato
   let content;
-  
+
   if (!permission) {
     // Camera permissions are still loading
     content = <View />;
@@ -408,7 +408,7 @@ interface CachedEntry {
         )}
       </SafeAreaView>
     );
-      } else if (loadingError) {
+  } else if (loadingError) {
     content = (
       <SafeAreaView style={[styles.container, styles.errorContainer]}>
         <Text style={styles.errorText}>{loadingError}</Text>
@@ -418,7 +418,7 @@ interface CachedEntry {
         </TouchableOpacity>
         <TouchableOpacity style={styles.manualButton} onPress={() => {
           LoggingService.info('Scanner', `Manual entry button pressed, navigating with barcode: ${currentBarcode}`);
-          router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true', isEditMode: 'false' } as any })
+          router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true', isEditMode: 'false', resetForm: 'true' } as any })
         }}>
           <Text style={styles.manualButtonText}>Inserisci Manualmente</Text>
         </TouchableOpacity>
@@ -431,17 +431,17 @@ interface CachedEntry {
     content = (
       <SafeAreaView style={styles.container}>
         {isFocused && (
-        <CameraView
-          onBarcodeScanned={scanned || isLoading ? undefined : handleBarCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "qr", "pdf417", "datamatrix", "code39", "code93", "code128", "itf14", "codabar", "aztec"], // Add more types as needed
-          }}
-          style={StyleSheet.absoluteFillObject}
-        />
+          <CameraView
+            onBarcodeScanned={scanned || isLoading ? undefined : handleBarCodeScanned}
+            barcodeScannerSettings={{
+              barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "qr", "pdf417", "datamatrix", "code39", "code93", "code128", "itf14", "codabar", "aztec"], // Add more types as needed
+            }}
+            style={StyleSheet.absoluteFillObject}
+          />
         )}
         <View style={styles.scanFrameContainer} pointerEvents="none">
-            <View style={styles.scanFrame} onLayout={handleFrameLayout} />
-            <Text style={styles.scanFrameText}>Inquadra il codice a barre</Text>
+          <View style={styles.scanFrame} onLayout={handleFrameLayout} />
+          <Text style={styles.scanFrameText}>Inquadra il codice a barre</Text>
         </View>
         {scanned && !isLoading && (
           <TouchableOpacity style={styles.rescanButtonContainer} onPress={() => { setScanned(false); setIsLoading(false); }}>

@@ -25,57 +25,57 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loading, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<Notifications.PermissionStatus | null>(null);
 
-const checkAndRequestPermissions = useCallback(async () => {
-  LoggingService.info('SettingsContext', 'Checking notification permissions...');
-  const { status } = await Notifications.getPermissionsAsync();
-  setPermissionStatus(status as Notifications.PermissionStatus | null);
+  const checkAndRequestPermissions = useCallback(async () => {
+    LoggingService.info('SettingsContext', 'Checking notification permissions...');
+    const { status } = await Notifications.getPermissionsAsync();
+    setPermissionStatus(status as Notifications.PermissionStatus | null);
 
-  if (status !== 'granted') {
-    const requested = await NotificationService.getOrRequestPermissionsAsync();
-    if (requested) {
-      setPermissionStatus('granted' as Notifications.PermissionStatus);
+    if (status !== 'granted') {
+      const requested = await NotificationService.getOrRequestPermissionsAsync();
+      if (requested) {
+        setPermissionStatus('granted' as Notifications.PermissionStatus);
+      }
     }
-  }
-}, []);
+  }, []);
 
-const refreshPermissions = useCallback(async () => {
-  const { status } = await Notifications.getPermissionsAsync();
-  setPermissionStatus(status as Notifications.PermissionStatus | null);
-}, []);
+  const refreshPermissions = useCallback(async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    setPermissionStatus(status as Notifications.PermissionStatus | null);
+  }, []);
 
   useEffect(() => {
     if (user) {
       checkAndRequestPermissions();
     }
-  }, [user, checkAndRequestPermissions]);
+  }, [user?.id, checkAndRequestPermissions]);
 
-const fetchSettings = useCallback(async () => {
-  LoggingService.info('SettingsContext', 'Starting fetchSettings...');
-  setLoading(true);
-  try {
-    const initialSettings = await SettingsService.getSettings();
-    if (initialSettings) {
-      LoggingService.info('SettingsContext', 'Successfully fetched settings:', initialSettings);
-      setSettings(initialSettings);
-    } else {
-      LoggingService.info('SettingsContext', 'No settings found in DB, using default values.');
-      const defaultSettings: AppSettings = {
+  const fetchSettings = useCallback(async () => {
+    LoggingService.info('SettingsContext', 'Starting fetchSettings...');
+    setLoading(true);
+    try {
+      const initialSettings = await SettingsService.getSettings();
+      if (initialSettings) {
+        LoggingService.info('SettingsContext', 'Successfully fetched settings:', initialSettings);
+        setSettings(initialSettings);
+      } else {
+        LoggingService.info('SettingsContext', 'No settings found in DB, using default values.');
+        const defaultSettings: AppSettings = {
+          notificationDays: 3,
+          theme: 'auto',
+        };
+        setSettings(defaultSettings);
+      }
+    } catch (error) {
+      LoggingService.error('SettingsContext', `FATAL: Failed to fetch settings: ${error}`);
+      setSettings({
         notificationDays: 3,
         theme: 'auto',
-      };
-      setSettings(defaultSettings);
+      } as AppSettings);
+    } finally {
+      LoggingService.info('SettingsContext', 'fetchSettings finished, setting loading to false.');
+      setLoading(false);
     }
-  } catch (error) {
-    LoggingService.error('SettingsContext', `FATAL: Failed to fetch settings: ${error}`);
-    setSettings({
-      notificationDays: 3,
-      theme: 'auto',
-    } as AppSettings);
-  } finally {
-    LoggingService.info('SettingsContext', 'fetchSettings finished, setting loading to false.');
-    setLoading(false);
-  }
-}, []);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -88,26 +88,26 @@ const fetchSettings = useCallback(async () => {
       setSettings(null);
       setLoading(false);
     }
-  }, [user, fetchSettings]);
+  }, [user?.id, fetchSettings]);
 
-const updateSettings = async (newSettings: Partial<AppSettings>) => {
-  if (!settings) {
-    LoggingService.error('SettingsContext', 'Cannot update settings, current settings are null.');
-    return;
-  }
-  LoggingService.info('SettingsContext', 'Attempting optimistic update with:', newSettings);
-  setSettings(current => ({ ...current!, ...newSettings }));
-  try {
-    const updatedSettings = await SettingsService.updateSettings(newSettings);
-    LoggingService.info('SettingsContext', 'Update call to SettingsService successful.');
-    if (updatedSettings) {
-      eventEmitter.emit('settingsChanged', updatedSettings);
+  const updateSettings = async (newSettings: Partial<AppSettings>) => {
+    if (!settings) {
+      LoggingService.error('SettingsContext', 'Cannot update settings, current settings are null.');
+      return;
     }
-  } catch (error) {
-    LoggingService.error('SettingsContext', `Failed to update settings, rolling back: ${error}`);
-    fetchSettings(); 
-  }
-};
+    LoggingService.info('SettingsContext', 'Attempting optimistic update with:', newSettings);
+    setSettings(current => ({ ...current!, ...newSettings }));
+    try {
+      const updatedSettings = await SettingsService.updateSettings(newSettings);
+      LoggingService.info('SettingsContext', 'Update call to SettingsService successful.');
+      if (updatedSettings) {
+        eventEmitter.emit('settingsChanged', updatedSettings);
+      }
+    } catch (error) {
+      LoggingService.error('SettingsContext', `Failed to update settings, rolling back: ${error}`);
+      fetchSettings();
+    }
+  };
 
   return (
     <SettingsContext.Provider value={{ settings, loading, permissionStatus, updateSettings, refreshPermissions }}>

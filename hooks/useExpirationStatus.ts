@@ -12,7 +12,7 @@ import { COLORS } from '@/constants/colors';
  * @param {string|undefined} expirationDate - La data di scadenza del prodotto in formato stringa ISO o undefined.
  * @returns {{text: string, color: string, backgroundColor: string}} Lo stato di scadenza calcolato.
  */
-export function useExpirationStatus(expirationDate: string | undefined, isDarkMode: boolean) {
+export function useExpirationStatus(expirationDate: string | undefined, isDarkMode: boolean, isFrozen?: boolean) {
 
   const status = useMemo(() => {
     // Utilizziamo i colori centralizzati
@@ -47,9 +47,25 @@ export function useExpirationStatus(expirationDate: string | undefined, isDarkMo
           background: COLORS.DARK.ERROR_DARK + '20'
         },
       },
+      frozen: {
+        light: {
+          color: '#2563EB', // Blue for frozen
+          background: '#2563EB20'
+        },
+        dark: {
+          color: '#58a6ff', // Lighter blue for dark mode
+          background: '#58a6ff20'
+        }
+      }
     };
 
     const theme = isDarkMode ? 'dark' : 'light';
+
+    // Se è congelato, restituisci sempre uno stato "sicuro" con colore blu
+    if (isFrozen) {
+      const { color, background } = statusColors.frozen[theme];
+      return { text: 'Congelato', color, backgroundColor: background };
+    }
 
     // Se la data di scadenza non è definita, restituisci uno stato predefinito
     if (!expirationDate) {
@@ -59,13 +75,13 @@ export function useExpirationStatus(expirationDate: string | undefined, isDarkMo
 
     const now = new Date();
     const expDate = new Date(expirationDate);
-    
+
     // Verifica che la data sia valida
     if (isNaN(expDate.getTime())) {
       const { color, background } = statusColors.warning[theme];
       return { text: 'Data non valida', color, backgroundColor: background };
     }
-    
+
     const daysUntil = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     if (daysUntil < 0) {
@@ -81,7 +97,7 @@ export function useExpirationStatus(expirationDate: string | undefined, isDarkMo
       const { color, background } = statusColors.good[theme];
       return { text: `${daysUntil} giorni`, color, backgroundColor: background };
     }
-  }, [expirationDate, isDarkMode]);
+  }, [expirationDate, isDarkMode, isFrozen]);
 
   return status;
 }

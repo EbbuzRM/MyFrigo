@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
-import { Calendar, Package, Trash2, Check, ShoppingCart } from 'lucide-react-native';
+import { Calendar, Package, Trash2, Check, ShoppingCart, Snowflake } from 'lucide-react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
@@ -35,11 +35,11 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
 
   const { isDarkMode, colors } = useTheme();
 
-  
+
   // Gestione sicura della data di scadenza
   const safeExpirationDate = React.useMemo(() => {
     if (!product.expirationDate) return null;
-    
+
     try {
       const date = new Date(product.expirationDate);
       // Verifica che la data sia valida
@@ -53,10 +53,10 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
       return null;
     }
   }, [product.expirationDate]);
-  
+
   // Passa la data sicura al hook
-  const expirationInfo = useExpirationStatus(safeExpirationDate ? safeExpirationDate.toISOString() : undefined, isDarkMode);
-  
+  const expirationInfo = useExpirationStatus(safeExpirationDate ? safeExpirationDate.toISOString() : undefined, isDarkMode, product.isFrozen);
+
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
 
@@ -71,7 +71,7 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
       transform: [{ translateY: translateY.value }],
     };
   });
-  
+
   // Memoizziamo gli stili per evitare ricalcoli inutili
   const styles = React.useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
@@ -87,7 +87,7 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
     );
   };
 
-  
+
 
   return (
     <Animated.View style={animatedStyle}>
@@ -121,7 +121,14 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
               </View>
               <View style={styles.textContainer}>
                 <Text style={styles.productName}>{product.name}</Text>
-                {product.brand && <Text style={styles.brandName}>{product.brand}</Text>}
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                  {product.brand && <Text style={styles.brandName}>{product.brand}</Text>}
+                  {product.isFrozen && (
+                    <Text style={{ color: '#2563EB', fontSize: 14, fontWeight: 'bold' }}>
+                      (Freezer)
+                    </Text>
+                  )}
+                </View>
               </View>
             </View>
             <View style={styles.actionsContainer}>
@@ -144,13 +151,13 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
 
           <View style={styles.details}>
             <View style={styles.detailRow}>
-                <View style={styles.detailItem}>
-                    <ShoppingCart size={16} color={colors.textSecondary} />
-                    <Text style={styles.detailText}>Acquisto</Text>
-                </View>
-                <Text style={styles.dateText}>
-                    {product.purchaseDate ? new Date(product.purchaseDate).toLocaleDateString('it-IT') : 'N/A'}
-                </Text>
+              <View style={styles.detailItem}>
+                <ShoppingCart size={16} color={colors.textSecondary} />
+                <Text style={styles.detailText}>Acquisto</Text>
+              </View>
+              <Text style={styles.dateText}>
+                {product.purchaseDate ? new Date(product.purchaseDate).toLocaleDateString('it-IT') : 'N/A'}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <View style={styles.detailItem}>
@@ -161,6 +168,12 @@ export const ProductCard = React.memo(({ product, categoryInfo, onDelete, onCons
                 {safeExpirationDate ? safeExpirationDate.toLocaleDateString('it-IT') : 'N/A'}
               </Text>
             </View>
+
+            {product.isFrozen && (
+              <View style={styles.detailRow}>
+                {/* Visual indicator removed from details as requested, moved to header */}
+              </View>
+            )}
 
             {Array.isArray(product.quantities) && product.quantities.length > 0 && (
               <View style={styles.detailRow}>

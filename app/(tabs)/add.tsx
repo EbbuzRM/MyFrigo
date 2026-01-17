@@ -21,8 +21,9 @@ const AddProduct = () => {
     // Check if we have barcode data, implying we came from the scanner
     if (params.barcode && typeof params.barcode === 'string') {
       // Prepare all parameters to forward to the manual entry screen
-      const forwardParams: { [key: string]: string | undefined | string[] } = { 
+      const forwardParams: { [key: string]: string | undefined | string[] } = {
         barcode: params.barcode,
+        resetForm: 'true',
       };
       if (params.barcodeType && typeof params.barcodeType === 'string') {
         forwardParams.barcodeType = params.barcodeType;
@@ -49,7 +50,7 @@ const AddProduct = () => {
   };
 
   const handleManualEntry = () => {
-    router.push('/manual-entry?isEditMode=false');
+    router.push('/manual-entry?isEditMode=false&resetForm=true');
   };
 
   const styles = getStyles(isDarkMode);
@@ -58,47 +59,47 @@ const AddProduct = () => {
     <SafeAreaView style={styles.container} testID="add-product-screen">
       <View style={{ flex: 1, marginBottom: 60 + insets.bottom }}>
         <View style={styles.header}>
-        <Text style={styles.title}>Aggiungi Prodotto</Text>
-        <Text style={styles.subtitle}>
-          Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
-        </Text>
-      </View>
-
-      <View style={styles.methodsContainer}>
-        <AddMethodCard
-          testID="photo-capture-button"
-          title="Scansiona Codice a Barre"
-          description="Usa la fotocamera per una scansione rapida"
-          icon={<Barcode size={28} />}
-          onPress={handleBarcodeScanner}
-          variant="barcode"
-        />
-
-        <AddMethodCard
-          testID="manual-entry-button"
-          title="Inserimento Manuale"
-          description="Aggiungi i dettagli del prodotto manualmente"
-          icon={<Keyboard size={28} />}
-          onPress={handleManualEntry}
-          variant="manual"
-        />
-      </View>
-
-      <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>Suggerimenti</Text>
-        <View style={styles.tipContainer}>
-          <Text style={styles.tipText}>
-            • Puoi inserire la data di scadenza anche da un'immagine della galleria.Assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
-          </Text>
-          <Text style={styles.tipText}>
-            • L'inserimento manuale ti permette il controllo completo sui dettagli
-          </Text>
-          <Text style={styles.tipText}>
-            
+          <Text style={styles.title}>Aggiungi Prodotto</Text>
+          <Text style={styles.subtitle}>
+            Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
           </Text>
         </View>
+
+        <View style={styles.methodsContainer}>
+          <AddMethodCard
+            testID="photo-capture-button"
+            title="Scansiona Codice a Barre"
+            description="Usa la fotocamera per una scansione rapida"
+            icon={<Barcode size={28} />}
+            onPress={handleBarcodeScanner}
+            variant="barcode"
+          />
+
+          <AddMethodCard
+            testID="manual-entry-button"
+            title="Inserimento Manuale"
+            description="Aggiungi i dettagli del prodotto manualmente"
+            icon={<Keyboard size={28} />}
+            onPress={handleManualEntry}
+            variant="manual"
+          />
+        </View>
+
+        <View style={styles.infoSection}>
+          <Text style={styles.infoTitle}>Suggerimenti</Text>
+          <View style={styles.tipContainer}>
+            <Text style={styles.tipText}>
+              • Puoi inserire la data di scadenza anche da un'immagine della galleria.Assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
+            </Text>
+            <Text style={styles.tipText}>
+              • L'inserimento manuale ti permette il controllo completo sui dettagli
+            </Text>
+            <Text style={styles.tipText}>
+
+            </Text>
+          </View>
+        </View>
       </View>
-    </View>
     </SafeAreaView>
   );
 };

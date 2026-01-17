@@ -94,7 +94,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             passwordValidation.handlePasswordChange(value);
           }}
           secureTextEntry={!isPasswordVisible}
-        />        <TouchableOpacity
+        />
+        <TouchableOpacity
           style={styles.eyeIcon}
           onPress={() => setIsPasswordVisible(!isPasswordVisible)}
         >
@@ -139,7 +140,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   header: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#212529',
+    color: isDarkMode ? '#ffffff' : '#212529',
     textAlign: 'center',
     marginBottom: 10
   },

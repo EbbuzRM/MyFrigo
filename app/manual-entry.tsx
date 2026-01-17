@@ -184,13 +184,14 @@ export default function ManualEntryScreen() {
     onChangePurchaseDate,
     onChangeExpirationDate,
     handleSaveProduct,
+    isFrozen, setIsFrozen,
   } = useProductForm();
 
   const renderCategoryItem = useCallback(({ item }: { item: ProductCategory & { spacer?: boolean } }) => {
     if (item.spacer) {
       return <View style={styles.categoryItemSpacer} />;
     }
-    
+
     const hasIcon = (item.localIcon || (item.icon && item.icon !== '+')) && !item.iconNotFound;
 
     return (
@@ -251,6 +252,8 @@ export default function ManualEntryScreen() {
           setBrand={setBrand}
           navigatingToPhotoCapture={navigatingToPhotoCapture}
           productId={originalProductId}
+          isFrozen={isFrozen}
+          setIsFrozen={setIsFrozen}
         />
         <FlatList
           data={categoryData}

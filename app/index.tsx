@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
+import { LoggingService } from '@/services/LoggingService';
 
 const Index = () => {
   const { session, loading } = useAuth();
@@ -12,7 +13,14 @@ const Index = () => {
       return; // Attendere che il contesto di autenticazione sia pronto
     }
     if (session) {
-      router.replace('/(tabs)');
+      const isResetting = session.user.user_metadata?.is_resetting_password;
+      if (isResetting) {
+        LoggingService.info('Index', 'Redirecting to password-reset-form (flag present)');
+        router.replace('/password-reset-form');
+      } else {
+        LoggingService.info('Index', 'Redirecting to (tabs)');
+        router.replace('/(tabs)');
+      }
     } else {
       router.replace('/login');
     }
