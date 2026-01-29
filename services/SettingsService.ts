@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { TablesInsert, TablesUpdate } from '@/types/supabase';
 import {
   convertSettingsToCamelCase,
   convertSettingsToSnakeCase
@@ -72,7 +73,7 @@ export class SettingsService {
 
       const { error: insertError } = await supabase
         .from('app_settings')
-        .insert(defaultSettings as any);
+        .insert(defaultSettings as unknown as TablesInsert<'app_settings'>);
 
       if (insertError) {
         throw insertError;
@@ -80,7 +81,7 @@ export class SettingsService {
 
       return convertSettingsToCamelCase(defaultSettings);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('SettingsService', 'Error getting or creating settings in Supabase', error);
       return {
         notificationDays: 3,
@@ -99,7 +100,7 @@ export class SettingsService {
     try {
       const { data, error } = await supabase
         .from('app_settings')
-        .upsert({ id: 1, ...convertSettingsToSnakeCase(newSettings) } as any)
+        .upsert({ id: 1, ...convertSettingsToSnakeCase(newSettings) } as unknown as TablesUpdate<'app_settings'>)
         .select()
         .single();
 
@@ -120,7 +121,7 @@ export class SettingsService {
         }
       }
       return updatedSettings;
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('SettingsService', 'Error updating settings in Supabase', error);
       throw error;
     }

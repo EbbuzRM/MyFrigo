@@ -72,7 +72,7 @@ export class AuthTests {
       formStateLogger.saveFormState('test-form-1', formState2);
 
       const retrievedState = formStateLogger.getFormState('test-form-1');
-      const comparison = formStateLogger.compareStates(formState1, retrievedState);
+      const comparison = formStateLogger.compareStates(formState1, retrievedState as Record<string, unknown>);
       const summary = formStateLogger.getStateSummary();
 
       LoggingService.info('AuthTests', 'Confronto stati:', comparison);

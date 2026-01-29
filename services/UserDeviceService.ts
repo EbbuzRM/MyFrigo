@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { TablesInsert } from '@/types/supabase';
 import { LoggingService } from './LoggingService';
 
 export class UserDeviceService {
@@ -24,7 +25,7 @@ export class UserDeviceService {
           {
             user_id: userId,
             device_id: deviceId,
-          },
+          } as TablesInsert<'user_devices'>,
           {
             onConflict: 'user_id, device_id', // In caso di conflitto su questa coppia, non fare nulla
           }
@@ -51,7 +52,7 @@ export class UserDeviceService {
       LoggingService.warning('UserDeviceService', 'UserId or DeviceId is missing, skipping removeDevice.');
       return;
     }
-    
+
     try {
       LoggingService.info('UserDeviceService', `Removing device ${deviceId.substring(0, 8)}... for user ${userId}`);
 

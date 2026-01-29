@@ -146,7 +146,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         try {
           settingsUnsubscribe = eventEmitter.on('settingsChanged', (newSettings) => {
             if (isMounted) {
-              handleNotificationReschedule(newSettings);
+              handleNotificationReschedule(newSettings as AppSettings);
             }
           });
           LoggingService.info("ProductContext", "Settings listener registered successfully");

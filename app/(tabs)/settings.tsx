@@ -14,13 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Trash2,
-  Info,
   Sun,
   Moon,
   ListTree,
   Calendar,
   User,
   MessageSquareQuote,
+  Download,
+  RefreshCw,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
@@ -29,6 +30,7 @@ import { SettingsCard } from '@/components/SettingsCard';
 import { Toast } from '@/components/Toast';
 import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useUpdate } from '@/context/UpdateContext';
 import { LoggingService } from '@/services/LoggingService';
 import { DiagnosticPanel } from '@/components/DiagnosticPanel';
 
@@ -36,6 +38,15 @@ import { DiagnosticPanel } from '@/components/DiagnosticPanel';
 const Settings = () => {
   const { setAppTheme, isDarkMode } = useTheme();
   const { settings, loading, updateSettings } = useSettings();
+  const { 
+    checkForUpdates, 
+    isChecking, 
+    isDownloading, 
+    lastUpdateInfo, 
+    settings: updateSettingsConfig, 
+    updateSettings: updateAppUpdateSettings, 
+    openModal 
+  } = useUpdate();
   const styles = getStyles(isDarkMode);
 
   const [isDaysModalVisible, setIsDaysModalVisible] = useState(false);
@@ -101,6 +112,22 @@ const Settings = () => {
         },
       ]
     );
+  };
+
+  const handleCheckUpdates = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const updateInfo = await checkForUpdates();
+      
+      if (updateInfo.isAvailable) {
+        showToast(`Aggiornamento disponibile: v${updateInfo.availableVersion}`, 'success');
+      } else {
+        showToast('L\'app è aggiornata all\'ultima versione', 'success');
+      }
+    } catch (error) {
+      LoggingService.error('Settings', 'Errore durante controllo aggiornamenti:', error);
+      showToast('Errore durante il controllo aggiornamenti', 'error');
+    }
   };
 
   if (loading || !settings) {
@@ -173,6 +200,59 @@ const Settings = () => {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Aggiornamenti</Text>
+          <SettingsCard
+            icon={<RefreshCw size={24} color={isDarkMode ? '#4ade80' : '#16a34a'} />}
+            title="Controllo Automatico"
+            description="Controlla automaticamente gli aggiornamenti"
+            control={
+              <Switch
+                testID="auto-check-switch"
+                value={updateSettingsConfig?.autoCheckEnabled ?? true}
+                onValueChange={(value) => updateAppUpdateSettings({ autoCheckEnabled: value })}
+                trackColor={{ false: '#e5e7eb', true: '#4ade80' }}
+                thumbColor={updateSettingsConfig?.autoCheckEnabled ? '#16a34a' : '#f1f5f9'}
+              />
+            }
+          />
+          <SettingsCard
+            icon={<Download size={24} color={isDarkMode ? '#3b82f6' : '#2563eb'} />}
+            title="Installazione Automatica"
+            description="Installa automaticamente gli aggiornamenti"
+            control={
+              <Switch
+                testID="auto-install-switch"
+                value={updateSettingsConfig?.autoInstallEnabled ?? true}
+                onValueChange={(value) => updateAppUpdateSettings({ autoInstallEnabled: value })}
+                trackColor={{ false: '#e5e7eb', true: '#3b82f6' }}
+                thumbColor={updateSettingsConfig?.autoInstallEnabled ? '#2563eb' : '#f1f5f9'}
+              />
+            }
+          />
+          <SettingsCard
+            icon={<RefreshCw size={24} color={isDarkMode ? '#a78bfa' : '#7c3aed'} />}
+            title="Controlla Aggiornamenti"
+            description={lastUpdateInfo?.isAvailable 
+              ? `Disponibile v${lastUpdateInfo.availableVersion}` 
+              : ''}
+            onPress={() => handleCheckUpdates()}
+            control={
+              isChecking || isDownloading ? (
+                <ActivityIndicator size="small" color={isDarkMode ? '#a78bfa' : '#7c3aed'} />
+              ) : null
+            }
+          />
+          {lastUpdateInfo?.isAvailable && (
+            <SettingsCard
+              icon={<Download size={24} color={isDarkMode ? '#f59e0b' : '#d97706'} />}
+              title="Installa Aggiornamento"
+              description={`Aggiorna alla versione ${lastUpdateInfo.availableVersion}`}
+              onPress={openModal}
+            />
+          )}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informazioni e Supporto</Text>
           <SettingsCard
             icon={<MessageSquareQuote size={24} color={isDarkMode ? '#a78bfa' : '#7c3aed'} />}
@@ -216,16 +296,16 @@ const Settings = () => {
                 longPressTimerRef.current = null;
               }, 5000);
 
-              // Salva l'intervallo nel ref per poterlo cancellare se necessario (hacky ma funzionale per ora, meglio sarebbe uno state o ref dedicato)
-              (longPressTimerRef as any).progressInterval = progressInterval;
+      // Salva l'intervallo nel ref per poterlo cancellare se necessario (hacky ma funzionale per ora, meglio sarebbe uno state o ref dedicato)
+      (longPressTimerRef as unknown as { progressInterval: NodeJS.Timeout }).progressInterval = progressInterval;
             }}
             onPressOut={() => {
               // Cancella tutto se l'utente rilascia prima dei 5 secondi
               if (longPressTimerRef.current) {
                 LoggingService.info('Settings', 'Pressione rilasciata prima del timeout');
                 clearTimeout(longPressTimerRef.current);
-                if ((longPressTimerRef as any).progressInterval) {
-                  clearInterval((longPressTimerRef as any).progressInterval);
+                if ((longPressTimerRef as unknown as { progressInterval: NodeJS.Timeout }).progressInterval) {
+                  clearInterval((longPressTimerRef as unknown as { progressInterval: NodeJS.Timeout }).progressInterval);
                 }
                 longPressTimerRef.current = null;
                 setLongPressProgress(0);
@@ -387,5 +467,10 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: isDarkMode ? '#8b949e' : '#94a3b8',
+  },
+  updateIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

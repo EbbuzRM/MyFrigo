@@ -2,9 +2,23 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-// Funzione di logging semplificata per l'ambiente Deno
+import { LoggingService } from 'https://esm.sh/@myfrigo/ logging-service@1.0.0';
+
+interface PushNotificationData {
+  productId?: string;
+  productName?: string;
+  daysUntilExpiration?: number;
+  [key: string]: unknown;
+}
+
+// Funzione di logging che usa LoggingService
 const log = (level, message, data = {}) => {
-  console.log(JSON.stringify({ level, message, ...data, timestamp: new Date().toISOString() }));
+  const logMessage = JSON.stringify({ level, message, ...data, timestamp: new Date().toISOString() });
+  if (level === 'error') {
+    LoggingService.error('SendExpirationNotifications', logMessage);
+  } else {
+    LoggingService.info('SendExpirationNotifications', logMessage);
+  }
 };
 
 // Carica le variabili d'ambiente
@@ -20,7 +34,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !ONESIGNAL_APP_ID || !ONESIGN
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-async function sendPushNotification(playerIds: string[], title: string, body: string, data: any = {}) {
+async function sendPushNotification(playerIds: string[], title: string, body: string, data: PushNotificationData = {}) {
   if (!playerIds || playerIds.length === 0) return;
   
   const message = {

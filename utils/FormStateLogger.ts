@@ -11,14 +11,14 @@ export class FormStateLogger {
     action: string;
     from: string;
     to: string;
-    data?: any;
+    data?: unknown;
   }> = [];
   private formStates: Map<string, {
     timestamp: number;
-    data: any;
+    data: unknown;
   }> = new Map();
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): FormStateLogger {
     if (!FormStateLogger.instance) {
@@ -30,7 +30,7 @@ export class FormStateLogger {
   /**
    * Registra un'azione di navigazione
    */
-  public logNavigation(action: string, from: string, to: string, data?: any): void {
+  public logNavigation(action: string, from: string, to: string, data?: unknown): void {
     const entry = {
       timestamp: Date.now(),
       action,
@@ -38,7 +38,7 @@ export class FormStateLogger {
       to,
       data
     };
-    
+
     this.navigationHistory.push(entry);
     LoggingService.info('FormStateLogger', `Navigation: ${action} from ${from} to ${to}`, data);
   }
@@ -46,25 +46,25 @@ export class FormStateLogger {
   /**
    * Salva lo stato di un form
    */
-  public saveFormState(formId: string, data: any): void {
+  public saveFormState(formId: string, data: unknown): void {
     this.formStates.set(formId, {
       timestamp: Date.now(),
       data
     });
-    
+
     LoggingService.info('FormStateLogger', `Form state saved: ${formId}`, data);
   }
 
   /**
    * Recupera lo stato di un form
    */
-  public getFormState(formId: string): any | null {
+  public getFormState<T = unknown>(formId: string): T | null {
     const state = this.formStates.get(formId);
     if (state) {
       LoggingService.info('FormStateLogger', `Form state retrieved: ${formId}`, state.data);
-      return state.data;
+      return state.data as T;
     }
-    
+
     LoggingService.warning('FormStateLogger', `Form state not found: ${formId}`);
     return null;
   }
@@ -72,12 +72,12 @@ export class FormStateLogger {
   /**
    * Verifica se ci sono differenze tra due stati
    */
-  public compareStates(stateA: any, stateB: any): { 
-    hasDifferences: boolean; 
-    differences: { key: string; oldValue: any; newValue: any }[] 
+  public compareStates(stateA: Record<string, unknown>, stateB: Record<string, unknown>): {
+    hasDifferences: boolean;
+    differences: { key: string; oldValue: unknown; newValue: unknown }[]
   } {
-    const differences: { key: string; oldValue: any; newValue: any }[] = [];
-    
+    const differences: { key: string; oldValue: unknown; newValue: unknown }[] = [];
+
     // Verifica le chiavi in stateA
     Object.keys(stateA || {}).forEach(key => {
       if (stateB && JSON.stringify(stateA[key]) !== JSON.stringify(stateB[key])) {
@@ -88,7 +88,7 @@ export class FormStateLogger {
         });
       }
     });
-    
+
     // Verifica le chiavi in stateB che non sono in stateA
     Object.keys(stateB || {}).forEach(key => {
       if (stateA && !(key in stateA)) {
@@ -99,7 +99,7 @@ export class FormStateLogger {
         });
       }
     });
-    
+
     return {
       hasDifferences: differences.length > 0,
       differences
@@ -109,28 +109,28 @@ export class FormStateLogger {
   /**
    * Ottiene la cronologia di navigazione
    */
-  public getNavigationHistory(): any[] {
+  public getNavigationHistory(): Array<{ timestamp: number; action: string; from: string; to: string; data?: unknown }> {
     return [...this.navigationHistory];
   }
 
   /**
    * Ottiene un riepilogo dello stato attuale
    */
-  public getStateSummary(): any {
-    const formStatesSummary: any = {};
-    
+  public getStateSummary(): Record<string, unknown> {
+    const formStatesSummary: Record<string, unknown> = {};
+
     this.formStates.forEach((value, key) => {
       formStatesSummary[key] = {
         timestamp: value.timestamp,
         lastUpdated: new Date(value.timestamp).toISOString(),
-        dataKeys: Object.keys(value.data || {})
+        dataKeys: Object.keys(value.data as Record<string, unknown> || {})
       };
     });
-    
+
     return {
       navigationHistoryLength: this.navigationHistory.length,
-      lastNavigation: this.navigationHistory.length > 0 
-        ? this.navigationHistory[this.navigationHistory.length - 1] 
+      lastNavigation: this.navigationHistory.length > 0
+        ? this.navigationHistory[this.navigationHistory.length - 1]
         : null,
       formStates: formStatesSummary
     };

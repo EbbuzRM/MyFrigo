@@ -11,8 +11,8 @@ export class AuthLogger {
     timestamp: number;
     duration?: number;
     status: 'start' | 'success' | 'error';
-    error?: any;
-    data?: any;
+    error?: unknown;
+    data?: unknown;
   }> = [];
   private startTime: number = 0;
   private isAuthInProgress: boolean = false;
@@ -40,7 +40,7 @@ export class AuthLogger {
   /**
    * Registra l'inizio di un passaggio del processo di autenticazione
    */
-  public startStep(step: string, data?: any): void {
+  public startStep(step: string, data?: unknown): void {
     if (!this.isAuthInProgress) {
       this.startAuth();
     }
@@ -50,7 +50,7 @@ export class AuthLogger {
   /**
    * Registra il completamento con successo di un passaggio
    */
-  public endStep(step: string, data?: any): void {
+  public endStep(step: string, data?: unknown): void {
     const startStep = this.findLastStepByName(step, 'start');
     if (startStep) {
       const duration = Date.now() - startStep.timestamp;
@@ -63,7 +63,7 @@ export class AuthLogger {
   /**
    * Registra un errore durante un passaggio
    */
-  public errorStep(step: string, error: any, data?: any): void {
+  public errorStep(step: string, error: unknown, data?: unknown): void {
     const startStep = this.findLastStepByName(step, 'start');
     if (startStep) {
       const duration = Date.now() - startStep.timestamp;
@@ -106,7 +106,7 @@ export class AuthLogger {
   /**
    * Ottiene un riepilogo del processo di autenticazione
    */
-  public getAuthSummary(): any {
+  public getAuthSummary(): Record<string, unknown> {
     const successSteps = this.steps.filter(s => s.status === 'success').length;
     const errorSteps = this.steps.filter(s => s.status === 'error').length;
     const pendingSteps = this.steps.filter(s => s.status === 'start' &&
@@ -177,9 +177,9 @@ export class AuthLogger {
   private logStep(
     step: string,
     status: 'start' | 'success' | 'error',
-    data?: any,
+    data?: unknown,
     duration?: number,
-    error?: any
+    error?: unknown
   ): void {
     const timestamp = Date.now();
     this.steps.push({

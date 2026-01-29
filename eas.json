@@ -11,6 +11,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "node": "20.19.4"
     },
     "release-apk": {
@@ -33,6 +34,9 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmaGp1cGN5YmlldHd6bW5wd2ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NDU1NzcsImV4cCI6MjA2NzIyMTU3N30.iudNIbN5GfL-Pw9XirnwsRJ1HvQ28cj4gH9pV49PnAA",
         "EXPO_PUBLIC_ONESIGNAL_APP_ID": "b2f7f966-d8cc-11e4-bed1-df8f05be55ba"
       }
+    },
+    "updates": {
+      "channel": "preview"
     }
   },
   "submit": {

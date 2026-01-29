@@ -29,7 +29,7 @@ export class UserService {
       // per ora è solo un placeholder per future funzionalità
       LoggingService.info('UserService', 'getCurrentUserProfile not implemented yet');
       return null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('UserService', 'Error getting current user profile', error);
       return null;
     }
@@ -45,7 +45,7 @@ export class UserService {
       // Questo metodo può essere implementato quando necessario
       // per ora è solo un placeholder per future funzionalità
       LoggingService.info('UserService', 'updateUserProfile not implemented yet', profile);
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('UserService', 'Error updating user profile', error);
       throw error;
     }

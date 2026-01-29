@@ -1,7 +1,16 @@
 import { IconLoader, IconData } from './IconLoader';
 import { IconMapper } from './IconMapper';
 import { LoggingService } from './LoggingService';
-const openmojiData = require('../assets/data/openmoji.json') as any[];
+// Basic interface for OpenMoji data structure
+interface OpenMojiIcon {
+  annotation: string;
+  hexcode: string;
+  tags: string[]; // Some tags might be comma separated strings in raw data but usually arrays in processed
+  svg?: string;
+  url?: string;
+}
+
+const openmojiData = require('../assets/data/openmoji.json') as OpenMojiIcon[];
 
 // Translation map for Italian to English categories
 const TRANSLATION_MAP: Record<string, string> = {
@@ -44,7 +53,7 @@ export const IconService = {
     return translation;
   },
 
-  loadLocalEmojiData(): any[] {
+  loadLocalEmojiData(): OpenMojiIcon[] {
     try {
       return openmojiData;
     } catch (error) {
@@ -53,22 +62,23 @@ export const IconService = {
     }
   },
 
-  searchInLocalData(name: string): any[] {
+  searchInLocalData(name: string): (OpenMojiIcon & { score: number; id: string; name: string })[] {
     const translated = this.translateToEnglish(name);
     const data = this.loadLocalEmojiData();
     if (!data.length) return [];
 
     const keywords = translated.toLowerCase().split(' ').filter(k => k.length > 0);
     const results = data
-      .map((emoji: any) => {
+      .map((emoji: OpenMojiIcon) => {
         const score = keywords.reduce((acc, kw) => {
-          const match = emoji.annotation.toLowerCase().includes(kw) || emoji.tags.some((tag: string) => tag.toLowerCase().includes(kw));
+          const match = emoji.annotation.toLowerCase().includes(kw) ||
+            (Array.isArray(emoji.tags) && emoji.tags.some((tag: string) => tag.toLowerCase().includes(kw)));
           return acc + (match ? 1 : 0);
         }, 0);
         return { ...emoji, score, id: emoji.hexcode, name: emoji.annotation, svg: emoji.svg || '' };
       })
-      .filter((r: any) => r.score > 0)
-      .sort((a: any, b: any) => b.score - a.score)
+      .filter((r) => r.score > 0)
+      .sort((a, b) => b.score - a.score)
       .slice(0, 10); // Top 10
 
     if (results.length === 0) {
@@ -88,7 +98,7 @@ export const IconService = {
 
       // Check cache (simple in-memory for now; expand if needed)
       const cacheKey = categoryName.toLowerCase();
-      const cached = (this as any).iconCache?.[cacheKey];
+      const cached = this.iconCache?.[cacheKey];
       if (cached) {
         LoggingService.info('IconService', `Using cached icon for category: ${categoryName}`);
         return Promise.resolve(cached);
@@ -99,7 +109,7 @@ export const IconService = {
       if (icons.length > 0) {
         const iconUrl = icons[0].svg || icons[0].url || null;
         // Cache it
-        if ((this as any).iconCache) (this as any).iconCache[cacheKey] = iconUrl;
+        if (this.iconCache && iconUrl) this.iconCache[cacheKey] = iconUrl;
         LoggingService.info('IconService', `Found local icon for ${categoryName}: ${iconUrl}`);
         return Promise.resolve(iconUrl);
       }
@@ -127,8 +137,8 @@ export const IconService = {
     if (!iconPath) return undefined;
     // Logic to convert global URL to local path (e.g., replace base URL)
     // Example: From test, replace 'icon_products/' to 'assets/icon_products/'
-    const localPath = iconPath.startsWith('icon_products/') 
-      ? iconPath.replace('icon_products/', 'assets/icon_products/') 
+    const localPath = iconPath.startsWith('icon_products/')
+      ? iconPath.replace('icon_products/', 'assets/icon_products/')
       : iconPath;
     LoggingService.info('IconService', `Converted icon path: ${iconPath} -> ${localPath}`);
     // Restituisce un oggetto { uri } se il path locale è diverso dall'originale

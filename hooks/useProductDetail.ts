@@ -85,8 +85,9 @@ export const useProductDetail = (productId: string | undefined) => {
     try {
       // placeholder: integrare IconService.getIconsForCategory quando disponibile
       updateState({ relatedIcons: [] });
-    } catch (err: any) {
-      updateState({ error: err?.message || 'Errore caricamento icone correlate', relatedIcons: [] });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Errore caricamento icone correlate';
+      updateState({ error: message, relatedIcons: [] });
     }
   }, [updateState]);
 
@@ -230,8 +231,8 @@ export const useProductDetail = (productId: string | undefined) => {
   // Computed values
   const canConsume = useMemo(() => {
     return state.product?.status === 'active' &&
-           state.product?.quantities &&
-           state.product.quantities.length > 0;
+      state.product?.quantities &&
+      state.product.quantities.length > 0;
   }, [state.product]);
 
   const totalQuantity = useMemo(() => {
