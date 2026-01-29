@@ -175,7 +175,7 @@ package-lock.json
 # Backups
 /unused_code_backup/ 
 
-.opencode.json
+opencode.json
 *.md
 !README.md
 directives/
