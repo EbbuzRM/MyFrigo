@@ -15,7 +15,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   LoggingService.error('SupabaseClient', 'Supabase init error: URL or Anon Key is missing.');
   LoggingService.error('SupabaseClient', 'EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Present' : 'Missing');
   LoggingService.error('SupabaseClient', 'EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present' : 'Missing');
-  
+
   // In test environment, don't throw error but return mock client
   if (process.env.NODE_ENV === 'test') {
     // Create mock supabase client for tests
@@ -38,9 +38,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
       })),
       rpc: jest.fn(() => Promise.resolve({ data: [], error: null })),
     };
-    
+
     // Return mock client instead of throwing error
-    supabase = mockSupabase as any;
+    supabase = mockSupabase as unknown as ReturnType<typeof createClient<Database>>;
   } else {
     throw new Error("Supabase URL and Anon Key must be provided.");
   }
@@ -48,7 +48,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   try {
     // Validate URL format
     new URL(supabaseUrl);
-    
+
     supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         storage: AsyncStorage,
@@ -93,7 +93,7 @@ export const clearSession = async () => {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) {
-       // Ignoriamo l'errore "Auth session not found" perché è l'obiettivo della pulizia.
+      // Ignoriamo l'errore "Auth session not found" perché è l'obiettivo della pulizia.
       if (error.message !== 'Auth session not found') {
         LoggingService.error('SupabaseClient', 'Error during sign out for cleanup', error);
       }

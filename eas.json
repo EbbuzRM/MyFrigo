@@ -11,6 +11,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "node": "20.19.4"
     },
     "release-apk": {
@@ -33,6 +34,9 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "***REMOVED***",
         "EXPO_PUBLIC_ONESIGNAL_APP_ID": "b2f7f966-d8cc-11e4-bed1-df8f05be55ba"
       }
+    },
+    "updates": {
+      "channel": "preview"
     }
   },
   "submit": {

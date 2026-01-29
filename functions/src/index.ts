@@ -2,6 +2,14 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { LoggingService } from "../../services/LoggingService";
 
+interface FeedbackEmailData {
+  userId: string;
+  feedbackText: string;
+  screenshotUrl?: string;
+  timestamp: string;
+  appVersion: string;
+}
+
 admin.initializeApp();
 
 // Funzione per salvare il token FCM in Firestore
@@ -172,7 +180,7 @@ export const sendFeedback = functions.https.onCall(async (data, _context) => {
 });
 
 // Funzione helper per inviare email di feedback tramite Resend
-async function sendFeedbackEmail(data: any) {
+async function sendFeedbackEmail(data: FeedbackEmailData) {
   const { userId, feedbackText, screenshotUrl, timestamp, appVersion } = data;
   
   const formattedDate = timestamp ? new Date(timestamp.toDate()).toLocaleString('it-IT') : 'Data non disponibile';

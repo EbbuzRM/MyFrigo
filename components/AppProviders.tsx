@@ -4,6 +4,7 @@ import { SettingsProvider } from '@/context/SettingsContext';
 import { ProductProvider } from '@/context/ProductContext';
 import { CategoryProvider } from '@/context/CategoryContext';
 import { ManualEntryProvider } from '@/context/ManualEntryContext';
+import { UpdateProvider } from '@/context/UpdateContext';
 import { LoggingService } from '@/services/LoggingService';
 
 // Inizializza il LoggingService in modo sincrono all'importazione
@@ -16,12 +17,12 @@ if (!isLoggingServiceInitialized) {
     LoggingService.initialize().then(() => {
       isLoggingServiceInitialized = true;
     }).catch(error => {
-      console.error('Failed to initialize LoggingService:', error);
+      LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + error.message);
     });
     // Imposta il flag immediatamente per evitare inizializzazioni multiple
     isLoggingServiceInitialized = true;
   } catch (error) {
-    console.error('Failed to initialize LoggingService:', error);
+    LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + error.message);
     isLoggingServiceInitialized = true;
   }
 }
@@ -38,7 +39,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   useEffect(() => {
     // Rinizializza il LoggingService in background per garantire la configurazione completa
     LoggingService.initialize().catch(error => {
-      console.error('Failed to reinitialize LoggingService:', error);
+      LoggingService.error('AppProviders', 'Failed to reinitialize LoggingService: ' + error.message);
     });
   }, []);
 
@@ -48,7 +49,9 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
         <ProductProvider>
           <CategoryProvider>
             <ManualEntryProvider>
-              {children}
+              <UpdateProvider>
+                {children}
+              </UpdateProvider>
             </ManualEntryProvider>
           </CategoryProvider>
         </ProductProvider>

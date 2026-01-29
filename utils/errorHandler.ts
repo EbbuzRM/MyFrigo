@@ -1,12 +1,46 @@
 import { LoggingService } from '../services/LoggingService';
 
 /**
+ * Type guard per verificare se è un oggetto errore con proprietà code
+ */
+function hasErrorCode(error: unknown): error is { code: string | number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as Record<string, unknown>).code === 'string'
+  );
+}
+
+/**
+ * Type guard per verificare se è un oggetto errore con proprietà message
+ */
+function hasErrorMessage(error: unknown): error is { message: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  );
+}
+
+/**
+ * Type guard per verificare se è un errore di rete
+ */
+function isNetworkError(error: unknown): error is { code: string; message?: string } {
+  return hasErrorCode(error) && (
+    error.code === 'ERR_NETWORK' || 
+    error.code === 'ECONNABORTED'
+  );
+}
+
+/**
  * Interfaccia per gli errori standardizzati
  */
 export interface AppError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
   timestamp: string;
   stack?: string;
 }
@@ -56,15 +90,17 @@ export class ErrorHandler {
   static createError(
     code: ErrorCode,
     message: string,
-    details?: any,
-    originalError?: any
+    details?: Record<string, unknown>,
+    originalError?: unknown
   ): AppError {
     const error: AppError = {
       code,
       message,
       details,
       timestamp: new Date().toISOString(),
-      stack: originalError?.stack
+      stack: originalError && typeof originalError === 'object' && 'stack' in originalError 
+        ? (originalError as { stack?: string }).stack 
+        : undefined
     };
     
     // Logga l'errore con dettagli appropriati
@@ -76,10 +112,10 @@ export class ErrorHandler {
   /**
    * Converte un errore sconosciuto in un AppError standardizzato
    */
-  static normalizeError(error: any): AppError {
+  static normalizeError(error: unknown): AppError {
     let code = ErrorCode.SYSTEM_ERROR;
     let message = 'Errore sconosciuto';
-    let details = undefined;
+    let details: Record<string, unknown> | undefined = undefined;
     
     if (error instanceof Error) {
       message = error.message;
@@ -103,13 +139,12 @@ export class ErrorHandler {
         originalMessage: error.message,
         stack: error.stack
       };
-    } else if (typeof error === 'object') {
-      message = error.message || 'Errore sconosciuto';
-      details = error;
+    } else if (typeof error === 'object' && error !== null) {
+      message = hasErrorMessage(error) ? error.message : 'Errore sconosciuto';
+      details = error as Record<string, unknown>;
       
-      if (error.code) {
-        // Prova a mappare i codici esistenti
-        const errorCode = error.code.toUpperCase();
+      if (hasErrorCode(error)) {
+        const errorCode = String(error.code).toUpperCase();
         if (Object.values(ErrorCode).includes(errorCode as ErrorCode)) {
           code = errorCode as ErrorCode;
         }
@@ -122,7 +157,7 @@ export class ErrorHandler {
   /**
    * Logga l'errore in modo appropriato
    */
-  private static logError(error: AppError, originalError?: any): void {
+  private static logError(error: AppError, originalError?: unknown): void {
     const logMessage = `[${error.code}] ${error.message}`;
     
     switch (error.code) {
@@ -158,12 +193,13 @@ export class ErrorHandler {
   /**
    * Gestisce gli errori di rete
    */
-  static handleNetworkError(error: any): AppError {
-    if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+  static handleNetworkError(error: unknown): AppError {
+    if (isNetworkError(error)) {
+      const errorMessage = hasErrorMessage(error) ? error.message : 'Errore di rete';
       return this.createError(
         ErrorCode.NETWORK_ERROR,
         'Errore di connessione. Controlla la tua connessione a internet e riprova.',
-        { originalError: error.message }
+        { originalError: errorMessage }
       );
     }
     
@@ -173,29 +209,34 @@ export class ErrorHandler {
   /**
    * Gestisce gli errori di database
    */
-  static handleDatabaseError(error: any): AppError {
+  static handleDatabaseError(error: unknown): AppError {
     let message = 'Errore durante l\'operazione sul database.';
     let code = ErrorCode.DATABASE_ERROR;
     
     // Analizza l'errore specifico del database
-    if (error.code === '23505') { // Unique violation
-      message = 'Dati duplicati. Questo valore esiste già.';
-      code = ErrorCode.DUPLICATE_ENTRY;
-    } else if (error.code === '23503') { // Foreign key violation
-      message = 'Riferimento a dati non esistenti.';
-      code = ErrorCode.VALIDATION_ERROR;
-    } else if (error.code === 'PGRST116') { // Rows not returned
-      message = 'Dati non trovati.';
-      code = ErrorCode.NOT_FOUND;
+    if (hasErrorCode(error)) {
+      if (error.code === '23505') { // Unique violation
+        message = 'Dati duplicati. Questo valore esiste già.';
+        code = ErrorCode.DUPLICATE_ENTRY;
+      } else if (error.code === '23503') { // Foreign key violation
+        message = 'Riferimento a dati non esistenti.';
+        code = ErrorCode.VALIDATION_ERROR;
+      } else if (error.code === 'PGRST116') { // Rows not returned
+        message = 'Dati non trovati.';
+        code = ErrorCode.NOT_FOUND;
+      }
     }
     
-    return this.createError(code, message, { originalError: error.code, details: error.message });
+    const errorMessage = hasErrorMessage(error) ? error.message : String(error);
+    const errorCode = hasErrorCode(error) ? error.code : undefined;
+    
+    return this.createError(code, message, { originalError: errorCode, details: errorMessage });
   }
   
   /**
    * Gestisce gli errori di validazione
    */
-  static handleValidationError(field: string, value: any, rule: string): AppError {
+  static handleValidationError(field: string, value: unknown, rule: string): AppError {
     return this.createError(
       ErrorCode.VALIDATION_ERROR,
       `Campo "${field}" non valido: ${rule}`,
@@ -206,8 +247,8 @@ export class ErrorHandler {
   /**
    * Gestisce gli errori di autenticazione
    */
-  static handleAuthError(error: any): AppError {
-    if (error.message?.includes('Email not confirmed')) {
+  static handleAuthError(error: unknown): AppError {
+    if (hasErrorMessage(error) && error.message.includes('Email not confirmed')) {
       return this.createError(
         ErrorCode.EMAIL_NOT_CONFIRMED,
         'Email non confermata. Controlla la tua email e clicca sul link di conferma.',
@@ -215,7 +256,7 @@ export class ErrorHandler {
       );
     }
     
-    if (error.message?.includes('Invalid credentials') || error.message?.includes('Invalid login')) {
+    if (hasErrorMessage(error) && (error.message.includes('Invalid credentials') || error.message.includes('Invalid login'))) {
       return this.createError(
         ErrorCode.INVALID_CREDENTIALS,
         'Email o password non validi.',
@@ -229,22 +270,33 @@ export class ErrorHandler {
   /**
    * Verifica se è un errore di sessione scaduta
    */
-  static isSessionExpired(error: any): boolean {
+  static isSessionExpired(error: unknown): boolean {
+    if (!hasErrorMessage(error)) {
+      return hasErrorCode(error) && error.code === 'PGRST301';
+    }
+    
     return (
-      error.message?.includes('session') && 
+      error.message.includes('session') && 
       (error.message.includes('expired') || error.message.includes('invalid'))
-    ) || error.code === 'PGRST301';
+    ) || (hasErrorCode(error) && error.code === 'PGRST301');
   }
   
   /**
    * Verifica se è un errore di autorizzazione
    */
-  static isUnauthorized(error: any): boolean {
+  static isUnauthorized(error: unknown): boolean {
+    if (hasErrorCode(error) && error.code === 'PGRST301') {
+      return true;
+    }
+    
+    if (!hasErrorMessage(error)) {
+      return false;
+    }
+    
     return (
-      error.code === 'PGRST301' ||
-      error.message?.includes('unauthorized') ||
-      error.message?.includes('JWT') ||
-      error.message?.includes('token')
+      error.message.includes('unauthorized') ||
+      error.message.includes('JWT') ||
+      error.message.includes('token')
     );
   }
   

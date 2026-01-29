@@ -2,12 +2,19 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { LoggingService } from '@/services/LoggingService';
+import { Product } from '@/types/Product';
 
 // Definisce la forma di una singola quantità
 export interface Quantity {
   id: string;
   quantity: string;
   unit: string;
+}
+
+interface LegacyProduct extends Product {
+  quantity?: number;
+  unit?: string;
+  is_frozen?: boolean;
 }
 
 // Definisce la forma dello stato del form
@@ -66,7 +73,7 @@ interface ManualEntryContextType {
   setIsFrozen: (frozen: boolean) => void;
 
   // Funzioni helper
-  initializeForm: (initialData?: Partial<ManualEntryFormData & { product?: any }>) => void;
+  initializeForm: (initialData?: Partial<ManualEntryFormData & { product?: Product, category?: string, quantity?: string, unit?: string, productName?: string }>) => void;
   clearForm: () => void;
 }
 
@@ -183,7 +190,7 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setFormData(prev => ({ ...prev, isFrozen: frozen }));
   }, []);
 
-  const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: any, category?: string, quantity?: string, unit?: string, productName?: string }> = {}) => {
+  const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: Product, category?: string, quantity?: string, unit?: string, productName?: string }> = {}) => {
     LoggingService.info('ManualEntryContext', `Initializing form with: ${JSON.stringify(initialData, null, 2)}`);
 
     setFormData(prevState => {
@@ -217,14 +224,17 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
       if (initialData.product) {
         LoggingService.info('ManualEntryContext', `Processing product data: ${JSON.stringify(initialData.product, null, 2)}`);
 
+        // Destructure quantities out to avoid type mismatch during spread
+        const { quantities: productQuantities, ...restProduct } = initialData.product;
+
         // When loading a full product, start from a clean slate to avoid merging old data.
         // MA preserviamo i flag critici passati in initialData come isEditMode e originalProductId
         newState = {
           ...getInitialState(),
-          ...initialData.product,
+          ...restProduct,
           isEditMode: String(initialData.isEditMode) === 'true',
-          originalProductId: initialData.originalProductId ?? undefined,
-          isFrozen: initialData.product.isFrozen || initialData.product.is_frozen || false
+          originalProductId: initialData.originalProductId || null,
+          isFrozen: initialData.product.isFrozen || (initialData.product as LegacyProduct).is_frozen || false
         };
 
         // Map the 'category' field from the product to 'selectedCategory' for the form state
@@ -234,19 +244,22 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Handle quantities
-        if (Array.isArray(initialData.product.quantities) && initialData.product.quantities.length > 0) {
-          newState.quantities = initialData.product.quantities.map((q: any) => ({
+        if (Array.isArray(productQuantities) && productQuantities.length > 0) {
+          newState.quantities = productQuantities.map((q) => ({
             ...q,
             quantity: q.quantity !== undefined && q.quantity !== null ? String(q.quantity) : '1',
             unit: q.unit || 'pz',
             id: uuidv4()
           }));
           LoggingService.info('ManualEntryContext', `Processed quantities array: ${JSON.stringify(newState.quantities)}`);
-        } else if (initialData.product.quantity !== undefined && initialData.product.quantity !== null) {
-          newState.quantities = [{ id: uuidv4(), quantity: String(initialData.product.quantity), unit: initialData.product.unit || 'pz' }];
+        } else if ((initialData.product as LegacyProduct).quantity !== undefined && (initialData.product as LegacyProduct).quantity !== null) {
+          const legacyProduct = initialData.product as LegacyProduct;
+          newState.quantities = [{ id: uuidv4(), quantity: String(legacyProduct.quantity), unit: legacyProduct.unit || 'pz' }];
           LoggingService.info('ManualEntryContext', `Processed single quantity: ${JSON.stringify(newState.quantities)}`);
         }
-        delete (newState as any).product;
+        // Cleanup temporary product field
+        const { product, ...rest } = newState as any;
+        newState = rest;
       }
 
       // This handles the case where 'category' is passed directly, not inside a product object
@@ -256,9 +269,9 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Clean up legacy fields
-      delete (newState as any).category;
-      delete (newState as any).quantity;
-      delete (newState as any).unit;
+      // Clean up legacy fields by destructuring
+      const { category, quantity, unit, ...finalState } = newState as any;
+      newState = finalState;
 
       LoggingService.info('ManualEntryContext', `Final new state: ${JSON.stringify(newState, null, 2)}`);
       return newState;

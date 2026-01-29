@@ -1,5 +1,6 @@
 import { Product } from '@/types/Product';
 import { supabase } from './supabaseClient';
+import { TablesInsert } from '@/types/supabase';
 import {
   convertTemplateToCamelCase,
   convertTemplateToSnakeCase
@@ -36,7 +37,7 @@ export class TemplateService {
         .single();
       if (error && error.code !== 'PGRST116') throw error;
       return data ? convertTemplateToCamelCase(data) : null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('TemplateService', `Error getting product template for barcode ${barcode}`, error);
       return null;
     }
@@ -62,14 +63,15 @@ export class TemplateService {
       };
 
       // Converti le chiavi in snake_case e salva nel database
+      // Converti le chiavi in snake_case e salva nel database
       const { error } = await supabase
         .from('barcode_templates')
-        .upsert(convertTemplateToSnakeCase(templateData) as any);
+        .upsert(convertTemplateToSnakeCase(templateData) as unknown as TablesInsert<'barcode_templates'>);
 
       if (error) throw error;
 
       LoggingService.info('TemplateService', `Product template saved for barcode ${product.barcode}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('TemplateService', `Error saving product template for barcode ${product.barcode}`, error);
       // Non propaghiamo l'errore per non bloccare il flusso principale
     }

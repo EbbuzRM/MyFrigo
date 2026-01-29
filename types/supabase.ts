@@ -86,7 +86,7 @@ export interface Database {
           id?: string
           is_default?: boolean | null
           local_icon?: Json | null
-          name?: string
+          name: string
           user_id?: string | null
         }
         Relationships: []
@@ -102,6 +102,7 @@ export interface Database {
           expiration_date: string | null
           id: string
           image_url: string | null
+          is_frozen: boolean | null
           name: string
           notes: string | null
           purchase_date: string | null
@@ -121,6 +122,7 @@ export interface Database {
           expiration_date?: string | null
           id: string
           image_url?: string | null
+          is_frozen?: boolean | null
           name: string
           notes?: string | null
           purchase_date?: string | null
@@ -136,10 +138,11 @@ export interface Database {
           brand?: string | null
           category?: string | null
           consumed_date?: string | null
-          created_at?: string
+          created_at?: string | null
           expiration_date?: string | null
           id?: string
           image_url?: string | null
+          is_frozen?: boolean | null
           name?: string
           notes?: string | null
           purchase_date?: string | null
@@ -163,7 +166,7 @@ export interface Database {
           updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
@@ -173,7 +176,7 @@ export interface Database {
           updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
@@ -181,6 +184,27 @@ export interface Database {
           onesignal_id?: string | null
           push_token?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: number
+          user_id?: string
         }
         Relationships: []
       }

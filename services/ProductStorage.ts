@@ -1,6 +1,6 @@
-
 import { Product } from '@/types/Product';
 import { supabase } from './supabaseClient';
+import { TablesInsert, TablesUpdate } from '@/types/supabase';
 import {
   convertProductToCamelCase,
   convertProductToSnakeCase,
@@ -36,7 +36,7 @@ export class ProductStorage {
       });
 
       return { data: products, error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error in getProducts', error);
       return { data: null, error: error as Error };
     }
@@ -73,7 +73,7 @@ export class ProductStorage {
         .single();
       if (error) throw error;
       return convertProductToCamelCase(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', `Error getting product by ID ${productId}`, error);
       return null;
     }
@@ -92,7 +92,7 @@ export class ProductStorage {
 
       await Promise.race([savePromise, timeoutPromise]);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error saving product to Supabase', error);
       throw error;
     }
@@ -125,14 +125,14 @@ export class ProductStorage {
 
     // Explicitly ensure is_frozen is set if isFrozen exists, to avoid any converter issues
     if (productWithUser.isFrozen !== undefined) {
-      (snakeCaseProduct as any).is_frozen = productWithUser.isFrozen;
+      (snakeCaseProduct as unknown as Record<string, unknown>).is_frozen = productWithUser.isFrozen;
     }
 
     LoggingService.info('ProductStorage', `performSave: Attempting to upsert product to Supabase. Data: ${JSON.stringify(snakeCaseProduct)}`);
 
     const { error } = await supabase
       .from('products')
-      .upsert(snakeCaseProduct as any);
+      .upsert(snakeCaseProduct as unknown as TablesInsert<'products'>);
 
     if (error) {
       LoggingService.error('ProductStorage', 'Supabase upsert error:', error);
@@ -160,7 +160,7 @@ export class ProductStorage {
     try {
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error deleting product from Supabase', error);
       throw error;
     }
@@ -176,12 +176,12 @@ export class ProductStorage {
 
       const { error: updateError } = await supabase
         .from('products')
-        .update(convertProductToSnakeCase(updatedFields) as any)
+        .update(convertProductToSnakeCase(updatedFields) as unknown as TablesUpdate<'products'>)
         .eq('id', productId);
 
       if (updateError) throw updateError;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error updating product status in Supabase', error);
       throw error;
     }
@@ -213,7 +213,7 @@ export class ProductStorage {
       }
 
       return data ? convertProductsToCamelCase(data) : [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error in getExpiredProducts', error);
       return [];
     }
@@ -239,7 +239,7 @@ export class ProductStorage {
       }
 
       return data ? convertProductsToCamelCase(data) : [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error in getTrulyExpiredProducts', error);
       return [];
     }
@@ -252,7 +252,7 @@ export class ProductStorage {
     }
 
     try {
-      const updateData = { status: 'expired' as const };
+      const updateData: TablesUpdate<'products'> = { status: 'expired' };
       const { error: updateError } = await supabase
         .from('products')
         .update(updateData)
@@ -264,7 +264,7 @@ export class ProductStorage {
       }
 
       LoggingService.info('ProductStorage', `${productIds.length} products moved to history as expired.`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error in moveProductsToHistory', error);
       throw error;
     }
@@ -272,7 +272,7 @@ export class ProductStorage {
 
   static async updateProductImage(productId: string, imageUrl: string): Promise<void> {
     try {
-      const updateData = { image_url: imageUrl };
+      const updateData: TablesUpdate<'products'> = { image_url: imageUrl };
       const { error } = await supabase
         .from('products')
         .update(updateData)
@@ -282,7 +282,7 @@ export class ProductStorage {
         throw error;
       }
       LoggingService.info('ProductStorage', `Immagine aggiornata per il prodotto ${productId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', `Errore durante l'aggiornamento dell'immagine per il prodotto ${productId}`, error);
       throw error;
     }
@@ -306,7 +306,7 @@ export class ProductStorage {
         .order('consumed_date', { ascending: false });
       if (error) throw error;
       return data ? convertProductsToCamelCase(data) : [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', 'Error getting history from Supabase', error);
       return [];
     }
@@ -322,7 +322,7 @@ export class ProductStorage {
     try {
       await this.updateProductStatus(productId, 'active');
       LoggingService.info('ProductStorage', `Product ${productId} restored successfully`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       LoggingService.error('ProductStorage', `Error restoring product ${productId}`, error);
       throw error;
     }

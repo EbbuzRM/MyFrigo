@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font';
 import SpaceMono from '../assets/fonts/SpaceMono-Regular.ttf';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AppProviders } from '@/components/AppProviders';
+import { GlobalUpdateModal } from '@/components/GlobalUpdateModal';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,6 +45,7 @@ export default function RootLayout() {
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />
+        <GlobalUpdateModal />
       </AppProviders>
     </ThemeProvider>
   );

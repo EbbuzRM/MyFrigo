@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { Paths, Directory, File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 // Definizione dei livelli di log
@@ -22,7 +22,8 @@ interface LoggerConfig {
 class Logger {
   private static instance: Logger;
   private config: LoggerConfig;
-  private logFilePath: string = ''; // Inizializza a stringa vuota
+  private logFile: File | null = null;
+  private logsDirectory: Directory | null = null;
   private isInitialized: boolean = false;
   private pendingLogs: string[] = [];
 
@@ -31,11 +32,9 @@ class Logger {
       minLevel: __DEV__ ? LogLevel.DEBUG : LogLevel.INFO,
       enableConsole: true,
       enableFileLogging: !__DEV__, // Abilita il logging su file solo in produzione
-      maxLogFileSize: 1024 * 1024, // 1MB
+      maxLogFileSize: 1024 * 1024, //1MB
       maxLogFiles: 5
     };
-
-    // this.logFilePath viene impostato in initialize()
   }
 
   public static getInstance(): Logger {
@@ -53,20 +52,23 @@ class Logger {
 
     try {
       if (this.config.enableFileLogging && Platform.OS !== 'web') {
-        // Imposta il percorso del file di log qui, in modo sicuro
-        this.logFilePath = FileSystem.documentDirectory + 'logs/app.log';
+        // Crea la directory dei log
+        this.logsDirectory = new Directory(Paths.document, 'logs');
 
         // Assicurati che la directory dei log esista
-        const logDir = FileSystem.documentDirectory + 'logs/';
-        const dirInfo = await FileSystem.getInfoAsync(logDir);
-        if (!dirInfo.exists) {
-          await FileSystem.makeDirectoryAsync(logDir, { intermediates: true });
+        if (!this.logsDirectory.exists) {
+          this.logsDirectory.create({ intermediates: true });
         }
 
+        // Crea il file di log
+        this.logFile = new File(this.logsDirectory, 'app.log');
+
         // Verifica se il file di log esiste
-        const fileInfo = await FileSystem.getInfoAsync(this.logFilePath);
-        if (fileInfo.exists && fileInfo.size > this.config.maxLogFileSize) {
-          await this.rotateLogFiles();
+        if (this.logFile && this.logFile.exists) {
+          const fileInfo = this.logFile.info();
+          if (fileInfo.size !== undefined && fileInfo.size > this.config.maxLogFileSize) {
+            await this.rotateLogFiles();
+          }
         }
 
         // Scrivi i log pendenti
@@ -75,16 +77,15 @@ class Logger {
           // Leggi il contenuto esistente e aggiungi i nuovi log
           let existingContent = '';
           try {
-            const fileInfo = await FileSystem.getInfoAsync(this.logFilePath);
-            if (fileInfo.exists) {
-              existingContent = await FileSystem.readAsStringAsync(this.logFilePath);
+            if (this.logFile.exists) {
+              existingContent = await this.logFile.text();
             }
           } catch (error) {
             console.error('Error reading log file:', error);
           }
-          
-          await FileSystem.writeAsStringAsync(this.logFilePath, existingContent + logsToWrite, {
-            encoding: FileSystem.EncodingType.UTF8
+
+          this.logFile.write(existingContent + logsToWrite, {
+            encoding: 'utf8' as const
           });
           this.pendingLogs = [];
         }
@@ -109,28 +110,28 @@ class Logger {
   /**
    * Log di debug
    */
-  public debug(tag: string, message: string, data?: any): void {
+  public debug(tag: string, message: string, data?: unknown): void {
     this.log(LogLevel.DEBUG, tag, message, data);
   }
 
   /**
    * Log informativo
    */
-  public info(tag: string, message: string, data?: any): void {
+  public info(tag: string, message: string, data?: unknown): void {
     this.log(LogLevel.INFO, tag, message, data);
   }
 
   /**
    * Log di avviso
    */
-  public warning(tag: string, message: string, data?: any): void {
+  public warning(tag: string, message: string, data?: unknown): void {
     this.log(LogLevel.WARNING, tag, message, data);
   }
 
   /**
    * Log di errore
    */
-  public error(tag: string, message: string, error?: any): void {
+  public error(tag: string, message: string, error?: unknown): void {
     if (error) {
       this.log(LogLevel.ERROR, tag, message, error);
     } else {
@@ -141,15 +142,15 @@ class Logger {
   /**
    * Metodo principale per il logging
    */
-  public log(level: LogLevel, tag: string, message: string, data?: any): void {
+  public log(level: LogLevel, tag: string, message: string, data?: unknown): void {
     if (level < this.config.minLevel) return;
-    
+
     const timestamp = new Date().toISOString();
     const levelStr = LogLevel[level];
-    
+
     // Formatta il messaggio di log
     let logMessage = `${timestamp} [${levelStr}] [${tag}] ${message}`;
-    
+
     // Aggiungi i dati se presenti
     if (data !== undefined) {
       if (data instanceof Error) {
@@ -193,7 +194,7 @@ class Logger {
    * Scrive un messaggio nel file di log
    */
   private async writeToLogFile(message: string): Promise<void> {
-    if (!this.isInitialized) {
+    if (!this.isInitialized || !this.logFile) {
       // Salva il log per scriverlo dopo l'inizializzazione
       this.pendingLogs.push(message);
       return;
@@ -203,22 +204,23 @@ class Logger {
       // Leggi il contenuto esistente e aggiungi il nuovo messaggio
       let existingContent = '';
       try {
-        const fileInfo = await FileSystem.getInfoAsync(this.logFilePath);
-        if (fileInfo.exists) {
-          existingContent = await FileSystem.readAsStringAsync(this.logFilePath);
+        if (this.logFile.exists) {
+          existingContent = await this.logFile.text();
         }
       } catch (error) {
         console.error('Error reading log file:', error);
       }
-      
-      await FileSystem.writeAsStringAsync(this.logFilePath, existingContent + message + '\n', {
-        encoding: FileSystem.EncodingType.UTF8
+
+      this.logFile.write(existingContent + message + '\n', {
+        encoding: 'utf8' as const
       });
 
       // Verifica la dimensione del file di log
-      const fileInfo = await FileSystem.getInfoAsync(this.logFilePath);
-      if (fileInfo.exists && fileInfo.size > this.config.maxLogFileSize) {
-        await this.rotateLogFiles();
+      if (this.logFile && this.logFile.exists) {
+        const fileInfo = this.logFile.info();
+        if (fileInfo.size !== undefined && fileInfo.size > this.config.maxLogFileSize) {
+          await this.rotateLogFiles();
+        }
       }
     } catch (error) {
       console.error('Failed to write to log file:', error);
@@ -230,24 +232,28 @@ class Logger {
    */
   private async rotateLogFiles(): Promise<void> {
     try {
+      if (!this.logsDirectory || !this.logFile) {
+        return;
+      }
+
       // Rinomina i file di log esistenti
       for (let i = this.config.maxLogFiles - 1; i > 0; i--) {
-        const oldPath = `${FileSystem.documentDirectory}logs/app.log.${i - 1}`;
-        const newPath = `${FileSystem.documentDirectory}logs/app.log.${i}`;
-        
-        const oldFileInfo = await FileSystem.getInfoAsync(oldPath);
-        if (oldFileInfo.exists) {
-          await FileSystem.moveAsync({ from: oldPath, to: newPath });
+        const oldFile = new File(this.logsDirectory, `app.log.${i - 1}`);
+        const newFile = new File(this.logsDirectory, `app.log.${i}`);
+
+        if (oldFile.exists) {
+          oldFile.move(newFile);
         }
       }
 
       // Rinomina il file di log corrente
-      const newPath = `${FileSystem.documentDirectory}logs/app.log.0`;
-      await FileSystem.moveAsync({ from: this.logFilePath, to: newPath });
-      
+      const rotatedFile = new File(this.logsDirectory, 'app.log.0');
+      this.logFile.move(rotatedFile);
+
       // Crea un nuovo file di log vuoto
-      await FileSystem.writeAsStringAsync(this.logFilePath, '', {
-        encoding: FileSystem.EncodingType.UTF8
+      this.logFile = new File(this.logsDirectory, 'app.log');
+      this.logFile.write('', {
+        encoding: 'utf8' as const
       });
     } catch (error) {
       console.error('Failed to rotate log files:', error);
@@ -263,14 +269,11 @@ class Logger {
     }
 
     try {
-      const fileInfo = await FileSystem.getInfoAsync(this.logFilePath);
-      if (!fileInfo.exists) {
+      if (!this.logFile || !this.logFile.exists) {
         return 'No log file exists';
       }
 
-      return await FileSystem.readAsStringAsync(this.logFilePath, {
-        encoding: FileSystem.EncodingType.UTF8
-      });
+      return await this.logFile.text();
     } catch (error) {
       console.error('Failed to read log file:', error);
       return `Error reading logs: ${error}`;
@@ -286,9 +289,11 @@ class Logger {
     }
 
     try {
-      await FileSystem.writeAsStringAsync(this.logFilePath, '', {
-        encoding: FileSystem.EncodingType.UTF8
-      });
+      if (this.logFile) {
+        this.logFile.write('', {
+          encoding: 'utf8' as const
+        });
+      }
       this.log(LogLevel.INFO, 'LoggingService', 'Logs cleared');
     } catch (error) {
       console.error('Failed to clear logs:', error);

@@ -9,7 +9,7 @@ import { AppSettings } from './SettingsService';
 import { LoggingService } from './LoggingService';
 
 // --- Event Emitter Migliorato ---
-type EventListener = (data?: any) => void;
+type EventListener = (data?: unknown) => void;
 const listeners: { [key: string]: EventListener[] } = {};
 
 export const eventEmitter = {
@@ -22,7 +22,7 @@ export const eventEmitter = {
       listeners[event] = listeners[event].filter(l => l !== listener);
     };
   },
-  emit(event: string, data?: any) {
+  emit(event: string, data?: unknown) {
     if (listeners[event]) {
       listeners[event].forEach(listener => listener(data));
     }
@@ -63,19 +63,21 @@ export class NotificationService {
    */
   static checkExpoNotificationsAvailability(): boolean {
     if (Platform.OS === 'web') return false;
-    
+
     try {
       // Verifica che le funzioni principali di Expo Notifications siano disponibili
       if (!Notifications ||
-          typeof Notifications.scheduleNotificationAsync !== 'function' ||
-          typeof Notifications.cancelScheduledNotificationAsync !== 'function') {
+        typeof Notifications.scheduleNotificationAsync !== 'function' ||
+        typeof Notifications.cancelScheduledNotificationAsync !== 'function') {
         LoggingService.error('NotificationService', 'Expo Notifications API not available or not properly linked');
         return false;
       }
-      
+
       this.isExpoNotificationsAvailable = true;
       return true;
-    } catch (error) {
+      this.isExpoNotificationsAvailable = true;
+      return true;
+    } catch (error: unknown) {
       LoggingService.error('NotificationService', 'Error checking Expo Notifications availability:', error);
       return false;
     }
@@ -110,22 +112,23 @@ export class NotificationService {
       OneSignal.initialize(oneSignalAppId);
       OneSignal.Notifications.requestPermission(true);
       this.isInitialized = true;
+      this.isInitialized = true;
       LoggingService.info('NotificationService', 'OneSignal SDK Initialized successfully.');
-    } catch (error) {
+    } catch (error: unknown) {
       LoggingService.error('NotificationService', 'Error initializing OneSignal:', error);
     }
   }
 
   static async cancelNotification(productId: string): Promise<void> {
     if (Platform.OS === 'web') return;
-    
+
     // Verifica che Expo Notifications sia disponibile
     if (!this.isExpoNotificationsAvailable && !this.checkExpoNotificationsAvailability()) {
       LoggingService.error('NotificationService', 'Cannot cancel notification: Expo Notifications not available');
       return;
     }
     LoggingService.info('NotificationService', `Received cancellation request for product ID: ${productId}`);
-    
+
     // Cancella sia la notifica principale che quella di preavviso
     const notificationId = productId;
     const preWarningNotificationId = `${productId}-pre`;
@@ -133,27 +136,27 @@ export class NotificationService {
     try {
       await Notifications.cancelScheduledNotificationAsync(notificationId);
       LoggingService.info('NotificationService', `SUCCESS: Main notification ${notificationId} cancelled.`);
-    } catch (error) {
+    } catch (error: unknown) {
       // Non logghiamo come errore, perché è normale che una delle due non esista
       LoggingService.info('NotificationService', `INFO: Could not cancel main notification ${notificationId} (may not exist).`);
     }
-    
+
     try {
       await Notifications.cancelScheduledNotificationAsync(preWarningNotificationId);
       LoggingService.info('NotificationService', `SUCCESS: Pre-warning notification ${preWarningNotificationId} cancelled.`);
-    } catch (error) {
-       LoggingService.info('NotificationService', `INFO: Could not cancel pre-warning notification ${preWarningNotificationId} (may not exist).`);
+    } catch (error: unknown) {
+      LoggingService.info('NotificationService', `INFO: Could not cancel pre-warning notification ${preWarningNotificationId} (may not exist).`);
     }
   }
 
   static async scheduleExpirationNotification(product: Product, notificationDays: number): Promise<void> {
     if (Platform.OS === 'web' || !product.expirationDate) {
-        if (!product.expirationDate) {
-            LoggingService.info('NotificationService', `SKIPPING notification for "${product.name}" (ID: ${product.id}) because it has no expiration date.`);
-        }
-        return;
+      if (!product.expirationDate) {
+        LoggingService.info('NotificationService', `SKIPPING notification for "${product.name}" (ID: ${product.id}) because it has no expiration date.`);
+      }
+      return;
     }
-    
+
     // Verifica che Expo Notifications sia disponibile
     if (!this.isExpoNotificationsAvailable && !this.checkExpoNotificationsAvailability()) {
       LoggingService.error('NotificationService', 'Cannot schedule notification: Expo Notifications not available');
@@ -174,34 +177,34 @@ export class NotificationService {
       if (!/^\d{4}-\d{2}-\d{2}/.test(product.expirationDate)) {
         throw new Error(`Invalid date format: ${product.expirationDate}`);
       }
-      
+
       const dateString = product.expirationDate.split('T')[0];
       const parts = dateString.split('-');
-      
+
       if (parts.length !== 3) {
         throw new Error(`Invalid date parts: ${dateString}`);
       }
-      
+
       const [year, month, day] = parts.map(Number);
-      
+
       // Verifica che i valori siano numeri validi
       if (isNaN(year) || isNaN(month) || isNaN(day)) {
         throw new Error(`Invalid date components: year=${year}, month=${month}, day=${day}`);
       }
-      
+
       // Verifica che i valori siano in un intervallo ragionevole
       if (year < 2000 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
         throw new Error(`Date values out of range: year=${year}, month=${month}, day=${day}`);
       }
-      
+
       // Imposta l'orario di scadenza alle 9:00 del mattino, ora locale
       expirationDate = new Date(year, month - 1, day, 9, 0, 0);
-      
+
       // Verifica che la data risultante sia valida
       if (isNaN(expirationDate.getTime())) {
         throw new Error(`Resulting date is invalid: ${expirationDate}`);
       }
-      
+
       LoggingService.info('NotificationService', `Constructed expiration date (local 9 AM): ${expirationDate.toISOString()}`);
 
       // Notifica per il giorno della scadenza
@@ -219,11 +222,11 @@ export class NotificationService {
             identifier: expirationIdentifier,
           });
           LoggingService.info('NotificationService', `SUCCESS: Expiration notification scheduled for product ${product.id}.`);
-        } catch (error) {
+        } catch (error: unknown) {
           LoggingService.error('NotificationService', `ERROR scheduling expiration notification for product ${product.id}:`, error);
         }
       } else {
-          LoggingService.info('NotificationService', `SKIPPING expiration notification because the target time ${expirationDate.toISOString()} is in the past (current time: ${now.toISOString()}).`);
+        LoggingService.info('NotificationService', `SKIPPING expiration notification because the target time ${expirationDate.toISOString()} is in the past (current time: ${now.toISOString()}).`);
       }
 
       // Notifica di preavviso
@@ -246,31 +249,31 @@ export class NotificationService {
               identifier: preWarningIdentifier,
             });
             LoggingService.info('NotificationService', `SUCCESS: Pre-warning notification scheduled for product ${product.id}.`);
-          } catch (error) {
+          } catch (error: unknown) {
             LoggingService.error('NotificationService', `ERROR scheduling pre-warning notification for product ${product.id}:`, error);
           }
         } else {
-            LoggingService.info('NotificationService', `SKIPPING pre-warning notification because the target time ${preWarningDate.toISOString()} is in the past (current time: ${now.toISOString()}).`);
+          LoggingService.info('NotificationService', `SKIPPING pre-warning notification because the target time ${preWarningDate.toISOString()} is in the past (current time: ${now.toISOString()}).`);
         }
       }
       LoggingService.info('NotificationService', `--- Finished scheduling for product: "${product.name}" ---`);
-    } catch (error) {
+    } catch (error: unknown) {
       LoggingService.error('NotificationService', `Error processing expiration date for product ${product.id}:`, error);
     }
   }
 
   static async getOrRequestPermissionsAsync(): Promise<boolean> {
     if (Platform.OS === 'web') return false;
-    
+
     // Verifica che Expo Notifications sia disponibile
     if (!this.isExpoNotificationsAvailable && !this.checkExpoNotificationsAvailability()) {
       LoggingService.error('NotificationService', 'Cannot check permissions: Expo Notifications not available');
       return false;
     }
-    
+
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    
+
     if (existingStatus !== 'granted') {
       LoggingService.info('NotificationService', 'Permissions not granted, requesting...');
       const { status } = await Notifications.requestPermissionsAsync({
@@ -283,19 +286,19 @@ export class NotificationService {
       });
       finalStatus = status;
     }
-    
+
     if (finalStatus !== 'granted') {
       LoggingService.info('NotificationService', 'Permission request denied or failed.');
       return false;
     }
-    
+
     LoggingService.info('NotificationService', 'Permissions are granted.');
     return true;
   }
 
   static async scheduleTestNotification(): Promise<void> {
     if (Platform.OS === 'web') return;
-    
+
     // Verifica che Expo Notifications sia disponibile
     if (!this.isExpoNotificationsAvailable && !this.checkExpoNotificationsAvailability()) {
       LoggingService.error('NotificationService', 'Cannot schedule test notification: Expo Notifications not available');
@@ -304,7 +307,7 @@ export class NotificationService {
 
     const date = new Date(Date.now() + 10 * 1000); // 10 secondi da adesso
     LoggingService.info('NotificationService', `Scheduling TEST notification to trigger at ${date.toISOString()}.`);
-    
+
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -315,14 +318,14 @@ export class NotificationService {
         trigger: { type: SchedulableTriggerInputTypes.DATE, date }, // NUOVO FORMATO
       });
       LoggingService.info('NotificationService', 'SUCCESS: Test notification scheduled.');
-    } catch (error) {
+    } catch (error: unknown) {
       LoggingService.error('NotificationService', 'ERROR scheduling test notification:', error);
     }
   }
 
   static async isNotificationScheduled(productId: string): Promise<boolean> {
     if (Platform.OS === 'web') return false;
-    
+
     // Verifica che Expo Notifications sia disponibile
     if (!this.isExpoNotificationsAvailable && !this.checkExpoNotificationsAvailability()) {
       LoggingService.error('NotificationService', 'Cannot check scheduled notifications: Expo Notifications not available');
@@ -333,7 +336,7 @@ export class NotificationService {
       const preWarningIdentifier = `${productId}-pre`;
 
       const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-      
+
       const mainNotification = scheduledNotifications.find(n => n.identifier === mainIdentifier);
       const preWarningNotification = scheduledNotifications.find(n => n.identifier === preWarningIdentifier);
 
@@ -341,25 +344,26 @@ export class NotificationService {
       let isScheduled = false;
 
       if (preWarningNotification && preWarningNotification.trigger && 'date' in preWarningNotification.trigger) {
-          const date = new Date(preWarningNotification.trigger.date);
-          logMessage += ` Pre-warning SCHEDULED for ${date.toLocaleDateString('it-IT')}.`;
-          isScheduled = true;
+        const date = new Date(preWarningNotification.trigger.date);
+        logMessage += ` Pre-warning SCHEDULED for ${date.toLocaleDateString('it-IT')}.`;
+        isScheduled = true;
       }
 
       if (mainNotification && mainNotification.trigger && 'date' in mainNotification.trigger) {
-          const date = new Date(mainNotification.trigger.date);
-          logMessage += ` Expiration SCHEDULED for ${date.toLocaleDateString('it-IT')}.`;
-          isScheduled = true;
+        const date = new Date(mainNotification.trigger.date);
+        logMessage += ` Expiration SCHEDULED for ${date.toLocaleDateString('it-IT')}.`;
+        isScheduled = true;
       }
 
       if (!isScheduled) {
-          logMessage += ` NOT SCHEDULED.`;
+        logMessage += ` NOT SCHEDULED.`;
       }
 
       LoggingService.info('NotificationService', logMessage);
       return isScheduled;
 
-    } catch (error) {
+      return isScheduled;
+    } catch (error: unknown) {
       LoggingService.error('NotificationService', `Error checking scheduled notification for product ${productId}:`, error);
       return false; // È più sicuro restituire false in caso di errore
     }
@@ -367,35 +371,35 @@ export class NotificationService {
 
   static async scheduleMultipleNotifications(products: Product[], settings: AppSettings): Promise<void> {
     if (Platform.OS === 'web') return;
-    
+
     // Verifica che Expo Notifications sia disponibile
     if (!this.isExpoNotificationsAvailable && !this.checkExpoNotificationsAvailability()) {
       LoggingService.error('NotificationService', 'Cannot schedule multiple notifications: Expo Notifications not available');
       return;
     }
-    
+
     // Ottimizzazione: processa le notifiche in batch di 5 alla volta
     const batchSize = 5;
     const batches = [];
-    
+
     // Dividi i prodotti in batch
     for (let i = 0; i < products.length; i += batchSize) {
       batches.push(products.slice(i, i + batchSize));
     }
-    
+
     // Processa i batch in parallelo
     for (const batch of batches) {
       await Promise.all(
         batch.map(product =>
           this.scheduleExpirationNotification(product, settings.notificationDays)
-            .catch(error => {
+            .catch((error: unknown) => {
               LoggingService.error('NotificationService',
                 `Error scheduling notification for product ${product.id}:`, error);
             })
         )
       );
     }
-    
+
     LoggingService.info('NotificationService',
       `Scheduled notifications for ${products.length} products in ${batches.length} batches`);
   }

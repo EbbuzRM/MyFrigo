@@ -2,9 +2,16 @@ module.exports = {
   expo: {
     name: "MyFrigo",
     slug: "myfrigoapp",
-    version: "1.0.1",
+    version: "1.0.2",
+    runtimeVersion: "1.0.2",
     orientation: "portrait",
     scheme: "myfrigo",
+    updates: {
+      url: "https://u.expo.dev/6120f00b-d739-4a6d-886f-e96cf23c12fb",
+      enabled: true,
+      fallbackToCacheTimeout: 0,
+      checkAutomatically: "ON_LOAD"
+    },
     extra: {
       router: {
         origin: false,

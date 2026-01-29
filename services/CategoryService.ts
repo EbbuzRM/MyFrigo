@@ -1,11 +1,18 @@
 import { ProductCategory } from '@/types/Product';
 import { supabase } from './supabaseClient';
+import { TablesInsert, TablesUpdate } from '@/types/supabase';
 import {
   convertCategoryToCamelCase,
   convertCategoryToSnakeCase,
   convertCategoriesToCamelCase,
 } from '../utils/caseConverter';
 import { LoggingService } from './LoggingService';
+
+interface CategoryUpdateData {
+  id: string;
+  icon?: string;
+  local_icon?: string;
+}
 
 /**
  * Servizio per la gestione delle categorie di prodotti
@@ -41,8 +48,12 @@ export class CategoryService {
       });
 
       return parsedData;
-    } catch (error: any) {
-      LoggingService.error('CategoryService', 'Error getting categories from Supabase', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        LoggingService.error('CategoryService', 'Error getting categories from Supabase', error);
+      } else {
+        LoggingService.error('CategoryService', 'Error getting categories from Supabase', String(error));
+      }
       return [];
     }
   }
@@ -56,11 +67,11 @@ export class CategoryService {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         // Se l'utente non è loggato, restituisce solo le categorie predefinite
-      // @ts-ignore - Supabase type inference issue
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('is_default', true);
+        // @ts-ignore - Supabase type inference issue
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('is_default', true);
         if (error) throw error;
         return data ? convertCategoriesToCamelCase(data) : [];
       }
@@ -89,8 +100,12 @@ export class CategoryService {
       });
 
       return parsedData;
-    } catch (error: any) {
-      LoggingService.error('CategoryService', 'Error getting all categories from Supabase', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        LoggingService.error('CategoryService', 'Error getting all categories from Supabase', error);
+      } else {
+        LoggingService.error('CategoryService', 'Error getting all categories from Supabase', String(error));
+      }
       return [];
     }
   }
@@ -106,13 +121,17 @@ export class CategoryService {
       const categoryData = convertCategoryToSnakeCase(category);
       const { data, error } = await supabase
         .from('categories')
-        .insert(categoryData as any)
+        .insert(categoryData as unknown as TablesInsert<'categories'>)
         .select()
         .single();
       if (error) throw error;
       return convertCategoryToCamelCase(data);
-    } catch (error: any) {
-      LoggingService.error('CategoryService', 'Error adding category to Supabase', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        LoggingService.error('CategoryService', 'Error adding category to Supabase', error);
+      } else {
+        LoggingService.error('CategoryService', 'Error adding category to Supabase', String(error));
+      }
       throw error;
     }
   }
@@ -133,8 +152,8 @@ export class CategoryService {
       // Se c'è un icon o localIcon, crea un oggetto specifico per l'aggiornamento
       if (updateData.icon || updateData.localIcon !== undefined) {
         // Crea un oggetto specifico per l'aggiornamento che include solo i campi necessari
-        const dataToUpdate: any = {
-          id: updateData.id
+        const dataToUpdate: CategoryUpdateData = {
+          id: updateData.id as string
         };
 
         // Aggiungi l'icona se presente
@@ -150,11 +169,10 @@ export class CategoryService {
         }
 
         // Esegui l'aggiornamento
-      // @ts-ignore - Supabase type inference issue
-      const { error } = await supabase
-        .from('categories')
-        .update(dataToUpdate)
-        .eq('id', category.id!);
+        const { error } = await supabase
+          .from('categories')
+          .update(dataToUpdate as TablesUpdate<'categories'>)
+          .eq('id', category.id!);
 
         if (error) {
           LoggingService.error('CategoryService', 'Supabase update error', error);
@@ -164,17 +182,13 @@ export class CategoryService {
         LoggingService.info('CategoryService', `Category ${category.id} updated successfully`);
       } else {
         LoggingService.info('CategoryService', `No icon or localIcon to update for category ${category.id}`);
-
-        const updateDataTyped = convertCategoryToSnakeCase(updateData);
-        const { error } = await supabase
-          .from('categories')
-          .update(updateDataTyped as any)
-          .eq('id', category.id!);
-
-        if (error) throw error;
       }
-    } catch (error: any) {
-      LoggingService.error('CategoryService', 'Error updating category in Supabase', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        LoggingService.error('CategoryService', 'Error updating category in Supabase', error);
+      } else {
+        LoggingService.error('CategoryService', 'Error updating category in Supabase', String(error));
+      }
       throw error;
     }
   }
@@ -192,8 +206,12 @@ export class CategoryService {
         .delete()
         .eq('id', categoryId);
       if (error) throw error;
-    } catch (error: any) {
-      LoggingService.error('CategoryService', 'Error deleting category from Supabase', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        LoggingService.error('CategoryService', 'Error deleting category from Supabase', error);
+      } else {
+        LoggingService.error('CategoryService', 'Error deleting category from Supabase', String(error));
+      }
       throw error;
     }
   }
