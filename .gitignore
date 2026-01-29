@@ -158,6 +158,8 @@ log.txt
 # User-specific and sensitive directories
 .kilocode/
 .npmrc
+.agent
+.opencode
 memory-bank/
 
 # Maestro test files
@@ -172,3 +174,7 @@ package-lock.json
 
 # Backups
 /unused_code_backup/ 
+
+.opencode.json
+*.md
+directives/
