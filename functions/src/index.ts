@@ -141,6 +141,7 @@ export const sendFeedback = functions.https.onCall(async (data, _context) => {
 
   const userId = _context.auth.uid;
   const timestamp = admin.firestore.FieldValue.serverTimestamp();
+  const emailTimestamp = new Date(); // Use JavaScript Date for email
 
   try {
     // Prepara i dati per l'email
@@ -148,7 +149,7 @@ export const sendFeedback = functions.https.onCall(async (data, _context) => {
       userId,
       feedbackText: feedbackText.trim(),
       screenshotUrl: screenshotUrl || null,
-      timestamp,
+      timestamp: emailTimestamp.toISOString(),
       appVersion: "1.0.0", // Puoi ottenere questa informazione dall'app
     };
 
@@ -183,7 +184,7 @@ export const sendFeedback = functions.https.onCall(async (data, _context) => {
 async function sendFeedbackEmail(data: FeedbackEmailData) {
   const { userId, feedbackText, screenshotUrl, timestamp, appVersion } = data;
   
-  const formattedDate = timestamp ? new Date(timestamp.toDate()).toLocaleString('it-IT') : 'Data non disponibile';
+  const formattedDate = timestamp ? new Date(timestamp).toLocaleString('it-IT') : 'Data non disponibile';
   
   const emailSubject = `Nuovo Feedback da MyFrigo - ${formattedDate}`;
   

@@ -201,4 +201,3 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     </UpdateContext.Provider>
   );
 };
-};

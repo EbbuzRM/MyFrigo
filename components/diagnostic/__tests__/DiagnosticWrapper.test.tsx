@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { DiagnosticWrapper, TestResultIndicator } from '../DiagnosticWrapper';
@@ -15,7 +16,7 @@ jest.mock('@/context/ThemeContext', () => ({
 }));
 
 describe('DiagnosticWrapper', () => {
-  const mockChildren = <div>Test Children</div>;
+  const mockChildren = <Text>Test Children</Text>;
 
   it('renders children when no error or loading', () => {
     const { getByText } = render(
