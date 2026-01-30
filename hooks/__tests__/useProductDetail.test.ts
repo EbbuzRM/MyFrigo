@@ -7,16 +7,6 @@ import { Alert } from 'react-native';
 // Mock delle dipendenze
 jest.mock('expo-router');
 jest.mock('@/services/ProductStorage');
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  return {
-    ...RN,
-    Alert: {
-      ...RN.Alert,
-      alert: jest.fn(),
-    },
-  };
-});
 
 const mockRouter = router as jest.Mocked<typeof router>;
 const mockProductStorage = ProductStorage as jest.Mocked<typeof ProductStorage>;

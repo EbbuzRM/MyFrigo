@@ -1,4 +1,36 @@
 // Jest setup file
+// Note: Expo Winter API mocks are configured in jest.config.js moduleNameMapper
+
+// Mock DevMenu TurboModule BEFORE any imports to prevent errors
+jest.mock('react-native/Libraries/NativeModules/specs/NativeDevMenu', () => ({
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+    reload: jest.fn(),
+    debugRemotely: jest.fn(),
+    setProfilingEnabled: jest.fn(),
+  },
+}), { virtual: true });
+
+// Mock DevMenu module
+jest.mock('react-native/src/private/devsupport/devmenu/DevMenu', () => ({
+  show: jest.fn(),
+  reload: jest.fn(),
+  debugRemotely: jest.fn(),
+  setProfilingEnabled: jest.fn(),
+}), { virtual: true });
+
+// Mock the specs module
+jest.mock('react-native/src/private/devsupport/devmenu/specs/NativeDevMenu', () => ({
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+    reload: jest.fn(),
+    debugRemotely: jest.fn(),
+    setProfilingEnabled: jest.fn(),
+  },
+}), { virtual: true });
+
 import 'react-native-gesture-handler/jestSetup';
 
 // Mock Platform before other imports
@@ -37,6 +69,7 @@ jest.mock('react-native', () => {
   const Switch = (props) => React.createElement('Switch', props);
   const SafeAreaView = (props) => React.createElement('SafeAreaView', props);
   const StatusBar = (props) => React.createElement('StatusBar', props);
+  const ActivityIndicator = (props) => React.createElement('ActivityIndicator', props);
   const Dimensions = {
     get: jest.fn(() => ({ width: 375, height: 667 })),
   };
@@ -81,6 +114,7 @@ jest.mock('react-native', () => {
     Switch,
     SafeAreaView,
     StatusBar,
+    ActivityIndicator,
     Dimensions,
     Animated,
     Easing,
@@ -139,6 +173,25 @@ Object.defineProperty(globalThis, '__ExpoImportMetaRegistry', {
   enumerable: false,
   configurable: true,
 });
+
+// Mock DevMenu TurboModule to prevent errors in tests
+jest.mock('react-native/Libraries/NativeModules/specs/NativeDevMenu', () => ({
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+    reload: jest.fn(),
+    debugRemotely: jest.fn(),
+    setProfilingEnabled: jest.fn(),
+  },
+}), { virtual: true });
+
+// Mock DevMenu
+jest.mock('react-native/Libraries/DevMenu/DevMenu', () => ({
+  show: jest.fn(),
+  reload: jest.fn(),
+  debugRemotely: jest.fn(),
+  setProfilingEnabled: jest.fn(),
+}), { virtual: true });
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
@@ -398,6 +451,10 @@ jest.mock('lucide-react-native', () => {
     X: createMockComponent('X'),
     Plus: createMockComponent('Plus'),
     ScanBarcode: createMockComponent('ScanBarcode'),
+    Play: createMockComponent('Play'),
+    Square: createMockComponent('Square'),
+    AlertTriangle: createMockComponent('AlertTriangle'),
+    RefreshCw: createMockComponent('RefreshCw'),
   };
 });
 
@@ -576,22 +633,40 @@ jest.mock('@/constants/colors', () => ({
   COLORS: {
     LIGHT: {
       textPrimary: '#1a1a1a',
+      SUCCESS: '#16a34a',
+      SUCCESS_LIGHT: '#dcfce7',
+      WARNING: '#f59e0b',
+      WARNING_LIGHT: '#fef3c7',
+      ERROR: '#ef4444',
+      ERROR_LIGHT: '#fee2e2',
     },
     DARK: {
       textPrimary: '#ffffff',
+      SUCCESS: '#22c55e',
+      SUCCESS_DARK: '#14532d',
+      WARNING: '#fbbf24',
+      WARNING_DARK: '#78350f',
+      ERROR: '#f87171',
+      ERROR_DARK: '#7f1d1d',
     },
   },
 }));
 
-// Mock hooks
-jest.mock('@/hooks/useExpirationStatus', () => ({
-  useExpirationStatus: jest.fn(() => ({
-    backgroundColor: '#ffffff',
-    color: '#16a34a',
-    daysUntilExpiration: 5,
-    isExpiringSoon: false,
-    isExpired: false,
-  })),
+// Mock hooks - Note: useExpirationStatus is NOT mocked here to allow real implementation testing
+// If specific tests need mocking, they should do it in the test file
+
+// Mock SettingsContext
+jest.mock('@/context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      language: 'it',
+      theme: 'light',
+      notifications: true,
+      defaultSort: 'expirationDate',
+    },
+    updateSettings: jest.fn(),
+    resetSettings: jest.fn(),
+  }),
 }));
 
 // Mock react-native-url-polyfill
@@ -670,5 +745,119 @@ jest.mock('@/context/ManualEntryContext', () => ({
     setIsInitialized: jest.fn(),
     initializeForm: jest.fn(),
     clearForm: jest.fn(),
+  }),
+}));
+
+// Mock dateUtils module
+jest.mock('@/utils/dateUtils', () => ({
+  DATE_CONSTANTS: {
+    MIN_YEAR: 2020,
+    MAX_YEAR_OFFSET: 20,
+    TIMEOUT_MS: 15000,
+    MIN_CONFIDENCE: 0.9,
+    PAST_DATE_FILTER_YEARS: 1,
+  },
+  parseDateFromString: jest.fn((dateString) => {
+    const match = dateString.toString().match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const year = parseInt(match[3], 10);
+      const date = new Date(year, month, day);
+      return {
+        success: true,
+        date,
+        formattedDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      };
+    }
+    return { success: false, date: null, formattedDate: null };
+  }),
+  parseTextualMonthDate: jest.fn(() => ({ success: false, date: null, formattedDate: null })),
+  parseSequenceDate: jest.fn((sequence) => {
+    const match = sequence.toString().match(/(\d{2})(\d{2})(\d{4})/);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const year = parseInt(match[3], 10);
+      const date = new Date(year, month, day);
+      return {
+        success: true,
+        date,
+        formattedDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      };
+    }
+    return { success: false, date: null, formattedDate: null };
+  }),
+  parseMonthYearDate: jest.fn(() => ({ success: false, date: null, formattedDate: null })),
+  isDateInFuture: jest.fn((date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today;
+  }),
+  isDateTooOld: jest.fn(() => false),
+  isDateWith31InShortMonth: jest.fn(() => false),
+  sortDatesAscending: jest.fn((dates) => dates.sort((a, b) => a.getTime() - b.getTime())),
+  formatDateToISO: jest.fn((date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }),
+}));
+
+// Mock date-fns with proper Italian date parsing
+jest.mock('date-fns', () => ({
+  parse: jest.fn((dateString, formatStr, referenceDate) => {
+    // Handle various Italian date formats commonly found in OCR
+    const cleaned = dateString.toString().trim();
+    
+    // Try DD/MM/YYYY or DD-MM-YYYY
+    let match = cleaned.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+      const year = parseInt(match[3], 10);
+      return new Date(year, month, day);
+    }
+    
+    // Try DDMMYYYY format (sequence)
+    match = cleaned.match(/^(\d{2})(\d{2})(\d{4})$/);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const year = parseInt(match[3], 10);
+      if (day > 0 && day <= 31 && month >= 0 && month <= 11 && year >= 2020) {
+        return new Date(year, month, day);
+      }
+    }
+    
+    // Fallback to standard Date parsing
+    return new Date(cleaned);
+  }),
+  isValid: jest.fn((date) => {
+    if (!(date instanceof Date)) return false;
+    if (isNaN(date.getTime())) return false;
+    const year = date.getFullYear();
+    return year >= 2020 && year <= 2100;
+  }),
+  isAfter: jest.fn((date, compareDate) => date > compareDate),
+  isBefore: jest.fn((date, compareDate) => date < compareDate),
+  format: jest.fn((date, formatStr) => {
+    if (!(date instanceof Date) || isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }),
+  getYear: jest.fn((date) => date instanceof Date ? date.getFullYear() : NaN),
+  startOfToday: jest.fn(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }),
+  subYears: jest.fn((date, years) => {
+    const result = new Date(date);
+    result.setFullYear(result.getFullYear() - years);
+    return result;
   }),
 }));

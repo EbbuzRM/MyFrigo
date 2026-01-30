@@ -17,12 +17,12 @@ if (!isLoggingServiceInitialized) {
     LoggingService.initialize().then(() => {
       isLoggingServiceInitialized = true;
     }).catch(error => {
-      LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + error.message);
+      LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + (error instanceof Error ? error.message : String(error)));
     });
     // Imposta il flag immediatamente per evitare inizializzazioni multiple
     isLoggingServiceInitialized = true;
   } catch (error) {
-    LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + error.message);
+    LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + (error instanceof Error ? error.message : String(error)));
     isLoggingServiceInitialized = true;
   }
 }
@@ -39,7 +39,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   useEffect(() => {
     // Rinizializza il LoggingService in background per garantire la configurazione completa
     LoggingService.initialize().catch(error => {
-      LoggingService.error('AppProviders', 'Failed to reinitialize LoggingService: ' + error.message);
+      LoggingService.error('AppProviders', 'Failed to reinitialize LoggingService: ' + (error instanceof Error ? error.message : String(error)));
     });
   }, []);
 

@@ -1,28 +1,7 @@
+// Unmock ProductStorage to test the real implementation
+jest.unmock('@/services/ProductStorage');
+
 // Mock dependencies first
-jest.mock('../supabaseClient', () => {
-  const mockQueryBuilder = {
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    upsert: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn().mockReturnThis(),
-    lt: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    in: jest.fn().mockReturnThis(),
-  };
-  
-  const mockSupabase = {
-    from: jest.fn(() => mockQueryBuilder),
-    auth: {
-      getSession: jest.fn(),
-    },
-  };
-  return {
-    supabase: mockSupabase,
-  };
-});
 jest.mock('../../utils/caseConverter');
 jest.mock('../LoggingService');
 jest.mock('expo-crypto', () => ({

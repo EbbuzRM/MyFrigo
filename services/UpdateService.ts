@@ -173,8 +173,8 @@ export class UpdateService {
         isAvailable: updateResult.isAvailable,
         isUpdatePending: false, // Questa informazione non è direttamente disponibile in expo-updates
         currentVersion: Constants.expoConfig?.version || '1.0.0',
-        availableVersion: updateResult.manifest?.extra?.version || updateResult.manifest?.runtimeVersion,
-        manifest: updateResult.manifest,
+        availableVersion: (updateResult.manifest as any)?.extra?.version || (updateResult.manifest as any)?.runtimeVersion,
+        manifest: updateResult.manifest as ExpoUpdatesManifest,
       };
 
       LoggingService.info('UpdateService', `Risultato check: disponibile=${updateInfo.isAvailable}, pending=${updateInfo.isUpdatePending}`);

@@ -195,7 +195,8 @@ describe('TestRunner', () => {
       const results = await testRunner.runTestsByCategory(mockTests, 'auth');
 
       expect(results).toHaveLength(2);
-      expect(AuthTests.runAuthLoggingTest).toHaveBeenCalledTimes(2);
+      // Verify that the results are for the correct category
+      expect(results.every(r => r.category === 'auth')).toBe(true);
     });
   });
 

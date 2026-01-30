@@ -35,6 +35,37 @@ export interface ManualEntryFormData {
   isFrozen: boolean;
 }
 
+// Tipo per i dati iniziali del form che possono includere campi legacy
+interface InitializeFormData {
+  product?: Product;
+  category?: string;
+  quantity?: string;
+  unit?: string;
+  productName?: string;
+  name?: string;
+  brand?: string;
+  selectedCategory?: string;
+  quantities?: Quantity[];
+  purchaseDate?: string;
+  expirationDate?: string;
+  notes?: string;
+  barcode?: string;
+  imageUrl?: string | null;
+  isEditMode?: boolean;
+  originalProductId?: string | null;
+  hasManuallySelectedCategory?: boolean;
+  isInitialized?: boolean;
+  isFrozen?: boolean;
+}
+
+// Tipo esteso per lo stato interno durante l'elaborazione
+interface InternalFormState extends ManualEntryFormData {
+  product?: Product;
+  category?: string;
+  quantity?: string;
+  unit?: string;
+}
+
 // Definisce il contesto completo con stato e funzioni
 interface ManualEntryContextType {
   // Stato del form
@@ -73,7 +104,7 @@ interface ManualEntryContextType {
   setIsFrozen: (frozen: boolean) => void;
 
   // Funzioni helper
-  initializeForm: (initialData?: Partial<ManualEntryFormData & { product?: Product, category?: string, quantity?: string, unit?: string, productName?: string }>) => void;
+  initializeForm: (initialData?: InitializeFormData) => void;
   clearForm: () => void;
 }
 
@@ -190,7 +221,7 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
     setFormData(prev => ({ ...prev, isFrozen: frozen }));
   }, []);
 
-  const initializeForm = useCallback((initialData: Partial<ManualEntryFormData & { product?: Product, category?: string, quantity?: string, unit?: string, productName?: string }> = {}) => {
+  const initializeForm = useCallback((initialData: InitializeFormData = {}) => {
     LoggingService.info('ManualEntryContext', `Initializing form with: ${JSON.stringify(initialData, null, 2)}`);
 
     setFormData(prevState => {
@@ -202,7 +233,7 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
       const hasSignificantData = hasProductData || hasScannedData;
 
       // If no significant data, start with a completely fresh state
-      let newState: ManualEntryFormData;
+      let newState: InternalFormState;
       if (!hasSignificantData) {
         LoggingService.info('ManualEntryContext', 'No significant data - starting with fresh state');
         newState = getInitialState();
@@ -258,8 +289,8 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
           LoggingService.info('ManualEntryContext', `Processed single quantity: ${JSON.stringify(newState.quantities)}`);
         }
         // Cleanup temporary product field
-        const { product, ...rest } = newState as any;
-        newState = rest;
+        const { product, ...rest } = newState;
+        newState = rest as InternalFormState;
       }
 
       // This handles the case where 'category' is passed directly, not inside a product object
@@ -270,8 +301,8 @@ export const ManualEntryProvider = ({ children }: { children: ReactNode }) => {
 
       // Clean up legacy fields
       // Clean up legacy fields by destructuring
-      const { category, quantity, unit, ...finalState } = newState as any;
-      newState = finalState;
+      const { category, quantity, unit, ...finalState } = newState;
+      newState = finalState as InternalFormState;
 
       LoggingService.info('ManualEntryContext', `Final new state: ${JSON.stringify(newState, null, 2)}`);
       return newState;

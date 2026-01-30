@@ -1,386 +1,111 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { ArrowLeft, RefreshCw } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TemplateService } from '@/services/TemplateService';
 import { useCategories } from '@/context/CategoryContext';
-import { ProductCategory, Product } from '@/types/Product';
-import { ProductTemplate } from '@/services/TemplateService';
+import { Product } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
+import { useBarcodeScanner, ScanResult } from '@/hooks/useBarcodeScanner';
 
-// Timeout per le richieste API (in millisecondi)
-const API_TIMEOUT = 10000;
-
-const mapOffCategoryToAppCategory = (
-  offCategories: string[] | undefined,
-  appCategories: ProductCategory[]
-): string | null => {
-  if (!offCategories || offCategories.length === 0) {
-    return null;
-  }
-
-  const keywordMap: { [key: string]: string[] } = {
-    'latticini': ['dairy', 'cheeses', 'yogurts', 'milks', 'butters', 'creams'],
-    'carne': ['meats', 'poultry', 'beef', 'pork', 'sausages', 'hams', 'salami', 'turkey', 'lamb'],
-    'pesce': ['seafood', 'fishes', 'tuna', 'salmon', 'cod', 'shrimps', 'clams', 'mussels'],
-    'frutta': ['fruits', 'apples', 'bananas', 'oranges', 'strawberries', 'grapes', 'peaches', 'apricots', 'kiwis'],
-    'verdura': ['vegetables', 'tomatoes', 'lettuces', 'zucchini', 'eggplants', 'carrots', 'potatoes', 'onions', 'spinach'],
-    'surgelati': ['frozen-foods', 'ice-creams', 'frozen-pizzas', 'frozen-ready-meals', 'frozen-vegetables'],
-    'bevande': ['beverages', 'waters', 'juices', 'sodas', 'wines', 'beers', 'teas', 'coffees'],
-    'dispensa': ['pantry', 'pastas', 'rices', 'breads', 'biscuits', 'flours', 'sugars', 'salts', 'oils', 'vinegars', 'canned-foods', 'pulses', 'beans', 'chickpeas', 'lentils'],
-    'snack': ['snacks', 'crisps', 'chocolates', 'sweets', 'crackers'],
-    'colazione': ['breakfasts', 'cereals', 'rusks', 'jams', 'croissants'],
-    'condimenti': ['condiments', 'sauces', 'mayonnaises', 'ketchups', 'mustards'],
-    'uova': ['eggs'],
-    'dolci': ['desserts', 'cakes', 'puddings', 'pastries'],
-  };
-
-  const lowerCaseOffCategories = offCategories.map(c => c.toLowerCase());
-
-  for (const appCategoryId in keywordMap) {
-    const keywords = keywordMap[appCategoryId];
-    if (keywords.some(keyword => lowerCaseOffCategories.some(offCat => offCat.includes(keyword)))) {
-      if (appCategories.some(cat => cat.id === appCategoryId)) {
-        return appCategoryId;
-      }
-    }
-  }
-
-  return null;
-};
+interface FrameLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export default function BarcodeScannerScreen() {
-  // Tutti i hooks devono essere chiamati all'inizio del componente
-  const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingError, setLoadingError] = useState<string | null>(null);
-  const [loadingProgress, setLoadingProgress] = useState<string>('Inizializzazione...');
+  const [frameLayout, setFrameLayout] = useState<FrameLayout | null>(null);
   const isFocused = useIsFocused();
   const { categories: appCategories } = useCategories();
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [currentBarcode, setCurrentBarcode] = useState<string | null>(null);
-  const [frameLayout, setFrameLayout] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
 
-  const handleFrameLayout = (event: { nativeEvent: { layout: { x: number, y: number, width: number, height: number } } }) => {
-    const { x, y, width, height } = event.nativeEvent.layout;
-    setFrameLayout({ x, y, width, height });
-  };
-
-  const clearApiTimeout = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
-
-  // Funzione per recuperare i dati del prodotto da Supabase
-  const fetchProductFromSupabase = useCallback(async (barcode: string): Promise<Partial<Product> | null> => {
-    setLoadingProgress('Cercando prodotto nel database locale...');
-
-    try {
-      // Ridotto timeout da 5000 a 2000ms per velocità
-      const timeoutPromise = new Promise<null>((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout database locale')), 2000);
-      });
-
-      const templatePromise = TemplateService.getProductTemplate(barcode);
-
-      const template = await Promise.race([templatePromise, timeoutPromise]);
-      return template;
-    } catch (error) {
-      LoggingService.error('Scanner', 'Errore nel database locale:', error);
-      return null;
-    }
-  }, []);
-
-  // Funzione per recuperare i dati del prodotto da Open Food Facts
-  const fetchProductFromOpenFoodFacts = useCallback((barcode: string): Promise<unknown> => {
-    setLoadingProgress('Cercando prodotto online...');
-
-    // Crea una promessa che si risolve con il risultato della fetch o viene rifiutata dopo il timeout
-    const fetchPromise = new Promise<unknown>((resolve, reject) => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-          reject(new Error('Timeout della richiesta API'));
-        }, API_TIMEOUT);
-
-        fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}`, {
-          signal: controller.signal
-        }).then(response => {
-          clearTimeout(timeoutId);
-          if (!response.ok) {
-            reject(new Error(`Errore HTTP: ${response.status}`));
-            return;
+  const handleProductFound = useCallback((result: ScanResult, barcode: string) => {
+    if (result.type === 'template' && result.data) {
+      Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${result.data.name}`, [
+        {
+          text: 'Continua',
+          onPress: () => {
+            LoggingService.info('Scanner', `Navigating to manual-entry with params: ${JSON.stringify(result.params)}`);
+            router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as any });
           }
-          return response.json();
-        }).then(jsonResponse => {
-          if (jsonResponse.status !== 1 || !jsonResponse.product) {
-            reject(new Error('Prodotto non trovato nel database online'));
-            return;
+        },
+        {
+          text: 'Scansiona di Nuovo',
+          onPress: () => resetScanner(),
+          style: 'cancel',
+        },
+      ]);
+    } else if (result.type === 'online' && result.data) {
+      Alert.alert('Prodotto Trovato!', `Trovato online: ${result.data.product_name || barcode}`, [
+        {
+          text: 'Continua',
+          onPress: () => {
+            LoggingService.info('Scanner', `Navigating to manual-entry with online params: ${JSON.stringify(result.params)}`);
+            router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as any });
           }
-          resolve(jsonResponse.product);
-        }).catch(error => {
-          reject(error);
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
-
-    return fetchPromise;
-  }, []);
-
-
-  // Modifica handleBarCodeScanned per velocizzare l'esperienza
-  interface CachedResult {
-    type: 'template' | 'online' | 'not_found';
-    data?: any;
-    params: Partial<Product> & { barcodeType?: string; addedMethod?: string };
-  }
-
-  interface CachedEntry {
-    timestamp: number;
-    result: CachedResult;
-  }
-
-  const useBarcodeCache = useRef<Map<string, CachedEntry>>(new Map());
-
-  const handleBarCodeScanned = useCallback(async ({ type, data, bounds }: { type: string; data: string; bounds: { origin: { x: number, y: number }, size: { width: number, height: number } } }) => {
-    if (!frameLayout) return;
-
-    // Controlla cache per evitare ricerche ripetute (valida per 30 minuti)
-    const now = Date.now();
-    const cacheEntry = useBarcodeCache.current.get(data);
-    if (cacheEntry && (now - cacheEntry.timestamp) < 30 * 60 * 1000) {
-      // Usa cache per risposta veloce
-      if (cacheEntry.result.type === 'template' && cacheEntry.result.data) {
-        LoggingService.info('Scanner', `Using cached template result for barcode: ${data}`);
-        Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${cacheEntry.result.data.name}`, [
+        },
+        {
+          text: 'Scansiona di Nuovo',
+          onPress: () => resetScanner(),
+          style: 'cancel',
+        },
+      ]);
+    } else if (result.type === 'not_found') {
+      Alert.alert(
+        'Prodotto Non Trovato',
+        `Vuoi aggiungere manualmente il prodotto con codice ${barcode}?`,
+        [
           {
-            text: 'Continua',
+            text: 'Sì, Aggiungi',
             onPress: () => {
-              LoggingService.info('Scanner', `Navigating to manual-entry with cached params: ${JSON.stringify(cacheEntry.result.params)}`);
-              router.replace({ pathname: '/manual-entry', params: { ...cacheEntry.result.params, isEditMode: 'false', resetForm: 'true' } as any });
+              LoggingService.info('Scanner', `Navigating to manual-entry for manual entry: ${JSON.stringify(result.params)}`);
+              router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as any });
             }
           },
           {
             text: 'Scansiona di Nuovo',
-            onPress: () => setScanned(false),
+            onPress: () => resetScanner(),
             style: 'cancel',
           },
-        ]);
-        return;
-      }
+        ]
+      );
     }
-
-    // Controllo rilassato: se almeno una parte del codice è visibile nel quadro
-    // invece di richiedere che il centro sia dentro
-    const barcodeLeft = bounds.origin.x;
-    const barcodeRight = bounds.origin.x + bounds.size.width;
-    const barcodeTop = bounds.origin.y;
-    const barcodeBottom = bounds.origin.y + bounds.size.height;
-
-    const frameLeft = frameLayout.x;
-    const frameRight = frameLayout.x + frameLayout.width;
-    const frameTop = frameLayout.y;
-    const frameBottom = frameLayout.y + frameLayout.height;
-
-    // Controllo se c'è almeno una intersezione significativa tra barcode e frame
-    const overlapX = Math.max(0, Math.min(barcodeRight, frameRight) - Math.max(barcodeLeft, frameLeft));
-    const overlapY = Math.max(0, Math.min(barcodeBottom, frameBottom) - Math.max(barcodeTop, frameTop));
-
-    const barcodeArea = bounds.size.width * bounds.size.height;
-    const overlapArea = overlapX * overlapY;
-
-    // Richiede almeno il 10% del barcode visibile nel frame (ridotto da 30% per velocità)
-    if (overlapArea < barcodeArea * 0.1) {
-      return;
-    }
-
-    setScanned(true);
-    setIsLoading(true);
-    setLoadingError(null);
-    setCurrentBarcode(data);
-    setLoadingProgress('Inizializzazione scansione...');
-
-    let paramsForManualEntry: Partial<Product> & { barcodeType?: string; addedMethod?: string } = { barcode: data, barcodeType: type, addedMethod: 'barcode' };
-
-    try {
-      // Ricerca parallela ultra veloce
-      setLoadingProgress('Ricerca velocissima in corso...');
-
-      const [supabaseResult, offResult] = await Promise.allSettled([
-        fetchProductFromSupabase(data),
-        fetchProductFromOpenFoodFacts(data)
-      ]);
-
-      // 1. Controlla se abbiamo trovato un template locale (preferito)
-      if (supabaseResult.status === 'fulfilled' && supabaseResult.value) {
-        useBarcodeCache.current.set(data, {
-          timestamp: now,
-          result: {
-            type: 'template',
-            data: supabaseResult.value,
-            params: paramsForManualEntry
-          }
-        });
-        if (supabaseResult.value.name) {
-          LoggingService.info('Scanner', `Found template result for barcode: ${data}, navigating to manual-entry`);
-          Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${supabaseResult.value.name}`, [
-            {
-              text: 'Continua',
-              onPress: () => {
-                LoggingService.info('Scanner', `Navigating to manual-entry with params: ${JSON.stringify(paramsForManualEntry)}`);
-                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false', resetForm: 'true' } as any });
-              }
-            },
-            {
-              text: 'Scansiona di Nuovo',
-              onPress: () => setScanned(false),
-              style: 'cancel',
-            },
-          ]);
-          return;
-        }
-      }
-
-      // 2. Controlla se abbiamo trovato dati online
-      if (offResult.status === 'fulfilled') {
-        const productInfo = offResult.value as any; // API esterna, non possiamo definire il tipo esatto
-        if (productInfo && typeof productInfo === 'object') {
-          const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
-
-          paramsForManualEntry = {
-            ...paramsForManualEntry,
-            name: productInfo.product_name || '',
-            brand: productInfo.brands || '',
-            imageUrl: productInfo.image_url || '',
-            category: suggestedCategoryId || '',
-          };
-
-          // Salva in cache
-          useBarcodeCache.current.set(data, {
-            timestamp: now,
-            result: {
-              type: 'online',
-              data: productInfo,
-              params: paramsForManualEntry
-            }
-          });
-
-          LoggingService.info('Scanner', `Found online result for barcode: ${data}, navigating to manual-entry`);
-          Alert.alert('Prodotto Trovato!', `Trovato online: ${productInfo.product_name || data}`, [
-            {
-              text: 'Continua',
-              onPress: () => {
-                LoggingService.info('Scanner', `Navigating to manual-entry with online params: ${JSON.stringify(paramsForManualEntry)}`);
-                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false', resetForm: 'true' } as any });
-              }
-            },
-            {
-              text: 'Scansiona di Nuovo',
-              onPress: () => setScanned(false),
-              style: 'cancel',
-            },
-          ]);
-          return;
-        }
-      }
-
-      // Se entrambe le ricerche hanno fallito, mostra errore
-      const supabaseError = supabaseResult.status === 'rejected' ? supabaseResult.reason?.message : null;
-      const offError = offResult.status === 'rejected' ? 'Prodotto non trovato online' : null;
-
-      // Non mostrare errore se è solo timeout locale - passa direttamente alla ricerca online
-      if (supabaseError?.includes('Timeout database locale') && !offError) {
-        throw new Error(offError || 'Entrambe le ricerche hanno fallito');
-      }
-
-      const errorMessage = supabaseError && offError
-        ? `Database locale: ${supabaseError}. ${offError}`
-        : supabaseError || offError || 'Entrambe le ricerche hanno fallito';
-
-      throw new Error(errorMessage);
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-      LoggingService.error('Scanner', "Errore durante la ricerca del prodotto:", errorMessage);
-
-      // Se l'errore è che il prodotto non è stato trovato (o è un 404), lo gestiamo come un caso normale
-      if (errorMessage.includes('Prodotto non trovato') || errorMessage.includes('Errore HTTP: 404')) {
-        // Salva in cache anche il mancato ritrovamento per evitare ricerche ripetute
-        useBarcodeCache.current.set(data, {
-          timestamp: now,
-          result: {
-            type: 'not_found',
-            params: paramsForManualEntry
-          }
-        });
-
-        LoggingService.info('Scanner', `Product not found for barcode: ${data}, offering manual entry`);
-        Alert.alert(
-          'Prodotto Non Trovato',
-          `Vuoi aggiungere manualmente il prodotto con codice ${data}?`,
-          [
-            {
-              text: 'Sì, Aggiungi',
-              onPress: () => {
-                LoggingService.info('Scanner', `Navigating to manual-entry for manual entry: ${JSON.stringify(paramsForManualEntry)}`);
-                router.replace({ pathname: '/manual-entry', params: { ...paramsForManualEntry, isEditMode: 'false', resetForm: 'true' } as any });
-              }
-            },
-            {
-              text: 'Scansiona di Nuovo',
-              onPress: () => setScanned(false),
-              style: 'cancel',
-            },
-          ]
-        );
-      } else {
-        // Per tutti gli altri errori (rete, timeout, etc.), mostriamo un errore bloccante
-        setLoadingError(`Errore: ${errorMessage}. Riprova o inserisci manualmente.`);
-      }
-    } finally {
-      setIsLoading(false);
-      clearApiTimeout();
-    }
-  }, [appCategories, clearApiTimeout, fetchProductFromSupabase, fetchProductFromOpenFoodFacts, frameLayout]);
-
-  // Funzione per riprovare la scansione
-  const handleRetry = useCallback(() => {
-    setLoadingError(null);
-    setIsLoading(false);
-    setScanned(false);
   }, []);
 
-  // Richiedi permessi della fotocamera se necessario
-  useEffect(() => {
-    if (permission && !permission.granted && permission.canAskAgain) {
-      requestPermission();
-    }
-  }, [permission, requestPermission]);
+  const {
+    permission,
+    scanned,
+    isLoading,
+    loadingError,
+    loadingProgress,
+    currentBarcode,
+    handleBarCodeScanned,
+    resetScanner,
+    requestPermission
+  } = useBarcodeScanner(appCategories, handleProductFound);
 
-  // Pulisci il timeout quando il componente viene smontato
-  useEffect(() => {
-    return () => {
-      clearApiTimeout();
-    };
-  }, [clearApiTimeout]);
+  const handleFrameLayout = (event: { nativeEvent: { layout: FrameLayout } }) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
+    setFrameLayout({ x, y, width, height });
+  };
 
-  // Renderizza il contenuto appropriato in base allo stato
+  const onBarcodeScanned = useCallback(({ type, data, bounds }: { 
+    type: string; 
+    data: string; 
+    bounds: { origin: { x: number, y: number }, size: { width: number, height: number } } 
+  }) => {
+    handleBarCodeScanned(data, type, bounds, frameLayout);
+  }, [handleBarCodeScanned, frameLayout]);
+
+  // Render content based on state
   let content;
 
   if (!permission) {
-    // Camera permissions are still loading
     content = <View />;
   } else if (!permission.granted) {
-    // Camera permissions are not granted yet
     content = (
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
@@ -395,13 +120,10 @@ export default function BarcodeScannerScreen() {
       <SafeAreaView style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color="#fff" style={styles.loadingIndicator} />
         <Text style={styles.loadingText}>{loadingProgress}</Text>
-        {loadingProgress.includes('velocemente') && (
+        {loadingProgress.includes('velocissima') && (
           <TouchableOpacity
             style={styles.skipButton}
-            onPress={() => {
-              setIsLoading(false);
-              setScanned(false);
-            }}
+            onPress={() => resetScanner()}
           >
             <Text style={styles.skipButtonText}>Salta ricerca e aggiungi manualmente</Text>
           </TouchableOpacity>
@@ -412,7 +134,7 @@ export default function BarcodeScannerScreen() {
     content = (
       <SafeAreaView style={[styles.container, styles.errorContainer]}>
         <Text style={styles.errorText}>{loadingError}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => resetScanner()}>
           <RefreshCw size={20} color="#fff" />
           <Text style={styles.retryButtonText}>Riprova</Text>
         </TouchableOpacity>
@@ -432,9 +154,9 @@ export default function BarcodeScannerScreen() {
       <SafeAreaView style={styles.container}>
         {isFocused && (
           <CameraView
-            onBarcodeScanned={scanned || isLoading ? undefined : handleBarCodeScanned}
+            onBarcodeScanned={scanned || isLoading ? undefined : onBarcodeScanned}
             barcodeScannerSettings={{
-              barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "qr", "pdf417", "datamatrix", "code39", "code93", "code128", "itf14", "codabar", "aztec"], // Add more types as needed
+              barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "qr", "pdf417", "datamatrix", "code39", "code93", "code128", "itf14", "codabar", "aztec"],
             }}
             style={StyleSheet.absoluteFillObject}
           />
@@ -444,7 +166,7 @@ export default function BarcodeScannerScreen() {
           <Text style={styles.scanFrameText}>Inquadra il codice a barre</Text>
         </View>
         {scanned && !isLoading && (
-          <TouchableOpacity style={styles.rescanButtonContainer} onPress={() => { setScanned(false); setIsLoading(false); }}>
+          <TouchableOpacity style={styles.rescanButtonContainer} onPress={() => resetScanner()}>
             <Text style={styles.rescanButtonText}>Tocca per Scansionare di Nuovo</Text>
           </TouchableOpacity>
         )}
@@ -455,7 +177,6 @@ export default function BarcodeScannerScreen() {
     );
   }
 
-  // Un unico return alla fine del componente
   return content;
 }
 
