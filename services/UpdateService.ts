@@ -94,6 +94,9 @@ export class UpdateService {
   private static isInitialized = false;
   private static isChecking = false;
   private static isDownloading = false;
+  // Traccia internamente se c'è un aggiornamento scaricato e in attesa
+  private static _isUpdatePending = false;
+
   private static defaultSettings: UpdateSettings = {
     autoCheckEnabled: true,
     autoInstallEnabled: true,
@@ -154,11 +157,23 @@ export class UpdateService {
       };
     }
 
+    // Se abbiamo già scaricato un aggiornamento, restituiamo quello stato
+    // Questo evita di fare un altro check di rete inutile e potenzialmente fuorviante
+    if (this._isUpdatePending) {
+      return {
+        isAvailable: true,
+        isUpdatePending: true,
+        currentVersion: Constants.expoConfig?.version || '1.0.0',
+        // Non abbiamo il manifesto a portata di mano qui facilmente senza check, 
+        // ma sappiamo che è pending.
+      };
+    }
+
     if (this.isChecking && !forceCheck) {
       LoggingService.info('UpdateService', 'Check aggiornamento già in corso');
       return {
         isAvailable: false,
-        isUpdatePending: false,
+        isUpdatePending: this._isUpdatePending,
         currentVersion: Constants.expoConfig?.version || '1.0.0',
       };
     }
@@ -168,10 +183,10 @@ export class UpdateService {
       LoggingService.info('UpdateService', 'Inizio check aggiornamenti...');
 
       const updateResult = await Updates.checkForUpdateAsync();
-      
+
       const updateInfo: UpdateInfo = {
         isAvailable: updateResult.isAvailable,
-        isUpdatePending: false, // Questa informazione non è direttamente disponibile in expo-updates
+        isUpdatePending: this._isUpdatePending, // Usa lo stato interno
         currentVersion: Constants.expoConfig?.version || '1.0.0',
         availableVersion: (updateResult.manifest as any)?.extra?.version || (updateResult.manifest as any)?.runtimeVersion,
         manifest: updateResult.manifest as ExpoUpdatesManifest,
@@ -188,10 +203,10 @@ export class UpdateService {
 
     } catch (error: unknown) {
       LoggingService.error('UpdateService', 'Errore durante il check aggiornamenti:', error);
-      
+
       const errorInfo: UpdateInfo = {
         isAvailable: false,
-        isUpdatePending: false,
+        isUpdatePending: this._isUpdatePending,
         currentVersion: Constants.expoConfig?.version || '1.0.0',
       };
 
@@ -229,6 +244,12 @@ export class UpdateService {
 
       // Prima verifica che ci sia un aggiornamento disponibile
       const updateInfo = await this.checkForUpdate();
+      // Se è già pending, consideriamolo un successo (è già scaricato)
+      if (this._isUpdatePending) {
+        LoggingService.info('UpdateService', 'Aggiornamento già scaricato e in attesa di installazione');
+        return true;
+      }
+
       if (!updateInfo.isAvailable) {
         LoggingService.info('UpdateService', 'Nessun aggiornamento disponibile da scaricare');
         return false;
@@ -244,11 +265,18 @@ export class UpdateService {
 
       // Scarica l'aggiornamento
       const downloadResult = await Updates.fetchUpdateAsync();
-      
+
       LoggingService.info('UpdateService', `Download completato: isNew=${downloadResult.isNew}`);
 
-      // Emetti evento per notificare l'UI
-      UpdateEventEmitter.emit('updateDownloaded', updateInfo);
+      if (downloadResult.isNew) {
+        this._isUpdatePending = true; // Segna come pending!
+      }
+
+      // Emetti evento per notificare l'UI -> Passiamo isUpdatePending a true
+      UpdateEventEmitter.emit('updateDownloaded', {
+        ...updateInfo,
+        isUpdatePending: true
+      });
 
       return downloadResult.isNew;
 
@@ -278,19 +306,24 @@ export class UpdateService {
 
     try {
       LoggingService.info('UpdateService', 'Richiesta riavvio per applicare aggiornamento...');
-      
-      // Verifica che ci sia un aggiornamento da applicare
-      const updateInfo = await this.checkForUpdate();
-      if (!updateInfo.isUpdatePending) {
-        LoggingService.warning('UpdateService', 'Nessun aggiornamento in attesa da applicare');
-        return;
+
+      // Controllo esplicito sullo flag interno prima, per evitare check di rete
+      if (!this._isUpdatePending) {
+        // Fallback al check classico se per qualche motivo il flag non è settato
+        const updateInfo = await this.checkForUpdate();
+
+        // Se non c'è un aggiornamento PENDING (cioè scaricato), non riavviare
+        if (!updateInfo.isUpdatePending) {
+          LoggingService.warning('UpdateService', 'Nessun aggiornamento in attesa da applicare');
+          return;
+        }
       }
 
       // Emetti evento per notificare l'UI che stiamo per riavviare
-      UpdateEventEmitter.emit('appRestarting', updateInfo);
+      UpdateEventEmitter.emit('appRestarting', null);
 
       // Attendi un momento per permettere all'UI di mostrare il messaggio
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Riavvia l'app
       await Updates.reloadAsync();
@@ -316,7 +349,7 @@ export class UpdateService {
 
       // 1. Check aggiornamenti
       const updateInfo = await this.checkForUpdate();
-      
+
       if (!updateInfo.isAvailable) {
         return {
           success: true,
@@ -328,7 +361,7 @@ export class UpdateService {
 
       // 2. Download aggiornamento
       const downloadSuccess = await this.downloadUpdate(onProgress);
-      
+
       if (!downloadSuccess) {
         return {
           success: false,
@@ -390,12 +423,12 @@ export class UpdateService {
 
     try {
       LoggingService.info('UpdateService', 'Esecuzione check automatico aggiornamenti...');
-      
+
       const updateInfo = await this.checkForUpdate();
-      
+
       // Aggiorna il timestamp dell'ultimo check (clonato per evitare race condition)
       const updatedSettings = { ...settings, lastCheckTime: Date.now() };
-      
+
       // Se c'è un aggiornamento e l'auto-install è abilitata, scaricalo
       if (updateInfo.isAvailable && settings.autoInstallEnabled) {
         LoggingService.info('UpdateService', 'Aggiornamento disponibile, inizio download automatico...');
@@ -456,5 +489,15 @@ export class UpdateService {
       isEmbeddedLaunch: Updates.isEmbeddedLaunch,
       runtimeVersion: Updates.runtimeVersion,
     };
+  }
+
+  /**
+   * Resetta lo stato interno del servizio (utile per i test)
+   */
+  static resetState(): void {
+    this.isInitialized = false;
+    this.isChecking = false;
+    this.isDownloading = false;
+    this._isUpdatePending = false;
   }
 }
