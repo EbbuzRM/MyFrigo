@@ -5,7 +5,6 @@ jest.unmock('@/services/ProductStorage');
 import { ProductStorage } from '../ProductStorage';
 import { supabase } from '../supabaseClient';
 import { Product } from '@/types/Product';
-import { randomUUID } from 'expo-crypto';
 
 // Mock di expo-crypto
 jest.mock('expo-crypto', () => ({
@@ -40,7 +39,7 @@ describe('ProductStorage', () => {
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
         data: { session: { user: { id: 'test-user-id' } } },
       });
-      
+
       // Setup: Simula la risposta del database
       const mockProducts = [{ id: '1', name: 'Latte', user_id: 'test-user-id' }];
       const mockQueryBuilder = {
@@ -53,31 +52,32 @@ describe('ProductStorage', () => {
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 
       // Azione: Chiama la funzione da testare
-      const { data, error } = await ProductStorage.getProducts();
+      const result = await ProductStorage.getProducts();
 
       // Asserzioni: Verifica che le funzioni corrette siano state chiamate
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'test-user-id');
-      
+
       // Asserzioni: Verifica che i dati restituiti siano corretti
-      expect(error).toBeNull();
-      expect(data).toEqual(mockProducts);
+      expect(result.success).toBe(true);
+      expect(result.error).toBeNull();
+      expect(result.data).toEqual(mockProducts);
     });
 
-    it('should return an empty array if no user is authenticated', async () => {
+    it('should return an error if no user is authenticated', async () => {
       // Setup: Simula l'assenza di una sessione
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
         data: { session: null },
       });
 
       // Azione
-      const { data, error } = await ProductStorage.getProducts();
+      const result = await ProductStorage.getProducts();
 
       // Asserzioni
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
-      expect(supabase.from).not.toHaveBeenCalled(); // Non dovrebbe nemmeno provare a chiamare il db
+      expect(result.success).toBe(false);
+      expect(result.error).not.toBeNull();
+      expect(supabase.from).not.toHaveBeenCalled();
     });
   });
 
@@ -88,7 +88,7 @@ describe('ProductStorage', () => {
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({
         data: { session: { user: { id: 'test-user-id' } } },
       });
-      
+
       const mockQueryBuilder = {
         upsert: jest.fn().mockResolvedValue({ error: null }),
       };
@@ -97,15 +97,15 @@ describe('ProductStorage', () => {
       const newProduct: Partial<Product> = { name: 'Pane', quantity: 1, unit: 'kg' };
 
       // Azione
-      await ProductStorage.saveProduct(newProduct);
+      const result = await ProductStorage.saveProduct(newProduct);
 
       // Asserzioni
+      expect(result.success).toBe(true);
       expect(supabase.from).toHaveBeenCalledWith('products');
-      // Verifica che upsert sia stato chiamato
       expect(mockQueryBuilder.upsert).toHaveBeenCalled();
     });
   });
-  
+
   // Test per deleteProduct
   describe('deleteProduct', () => {
     it('should delete a product by its ID', async () => {
@@ -115,13 +115,14 @@ describe('ProductStorage', () => {
         eq: jest.fn().mockResolvedValue({ error: null }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
-      
+
       const productId = 'product-to-delete';
 
       // Azione
-      await ProductStorage.deleteProduct(productId);
+      const result = await ProductStorage.deleteProduct(productId);
 
       // Asserzioni
+      expect(result.success).toBe(true);
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.delete).toHaveBeenCalled();
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', productId);
@@ -141,11 +142,11 @@ describe('ProductStorage', () => {
       const productId = 'product-to-consume';
 
       // Azione
-      await ProductStorage.updateProductStatus(productId, 'consumed');
+      const result = await ProductStorage.updateProductStatus(productId, 'consumed');
 
       // Asserzioni
+      expect(result.success).toBe(true);
       expect(supabase.from).toHaveBeenCalledWith('products');
-      // Verifica che update sia stato chiamato con i parametri corretti
       expect(mockQueryBuilder.update).toHaveBeenCalled();
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', productId);
     });

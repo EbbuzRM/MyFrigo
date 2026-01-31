@@ -20,7 +20,11 @@ export default function ConsumedListScreen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const history = await ProductStorage.getHistory();
+      const { data: history, success } = await ProductStorage.getHistory();
+      if (!success || !history) {
+        LoggingService.error('ConsumedList', 'Failed to load consumed products: ServiceResult failed');
+        return;
+      }
       const consumed = history.filter((p: Product) => p.status === 'consumed');
       setConsumedProducts(consumed);
     } catch (error) {

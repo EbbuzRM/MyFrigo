@@ -239,19 +239,27 @@ export default function ManualEntryScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
         <ProductFormHeader
-          isEditMode={isEditMode}
-          imageUrl={imageUrl}
-          barcode={barcode}
-          name={name}
-          brand={brand}
-          selectedCategory={selectedCategory}
-          purchaseDate={purchaseDate}
-          expirationDate={expirationDate}
-          notes={notes}
-          setName={setName}
-          setBrand={setBrand}
-          navigatingToPhotoCapture={navigatingToPhotoCapture}
-          productId={originalProductId}
+          productData={{
+            name,
+            brand,
+            selectedCategory,
+            isEditMode,
+            originalProductId,
+          }}
+          formActions={{
+            setName,
+            setBrand,
+          }}
+          photoConfig={{
+            imageUrl,
+            barcode,
+            navigatingToPhotoCapture,
+          }}
+          formData={{
+            purchaseDate,
+            expirationDate,
+            notes,
+          }}
           isFrozen={isFrozen}
           setIsFrozen={setIsFrozen}
         />
@@ -264,29 +272,34 @@ export default function ManualEntryScreen() {
           scrollEnabled={false}
         />
         <ProductFormFooter
+          formData={{
+            name,
+            brand,
+            selectedCategory,
+            purchaseDate,
+            expirationDate,
+            notes,
+            barcode,
+            imageUrl,
+          }}
+          dateHandlers={{
+            setShowPurchaseDatePicker,
+            setShowExpirationDatePicker,
+            onChangePurchaseDate,
+            onChangeExpirationDate,
+          }}
+          quantityHandlers={{
+            updateQuantity,
+            addQuantity,
+            removeQuantity,
+          }}
           quantities={quantities}
-          purchaseDate={purchaseDate}
-          expirationDate={expirationDate}
-          notes={notes}
-          addQuantity={addQuantity}
-          removeQuantity={removeQuantity}
-          updateQuantity={updateQuantity}
-          setShowPurchaseDatePicker={setShowPurchaseDatePicker}
-          setShowExpirationDatePicker={setShowExpirationDatePicker}
           setNotes={setNotes}
           handleSaveProduct={handleSaveProduct}
           isEditMode={isEditMode}
           showPurchaseDatePicker={showPurchaseDatePicker}
           showExpirationDatePicker={showExpirationDatePicker}
-          onChangePurchaseDate={onChangePurchaseDate}
-          onChangeExpirationDate={onChangeExpirationDate}
-          name={name}
-          brand={brand}
-          selectedCategory={selectedCategory}
-          barcode={barcode}
-          imageUrl={imageUrl}
           loading={categoriesLoading}
-          navigatingToPhotoCapture={navigatingToPhotoCapture}
         />
       </ScrollView>
       <Modal transparent={true} animationType="fade" visible={isCategoryModalVisible} onRequestClose={() => setIsCategoryModalVisible(false)}>

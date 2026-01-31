@@ -72,8 +72,8 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getProducts();
 
-      expect(result.data).toEqual([]);
-      expect(result.error).toBeNull();
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('User not authenticated');
     });
 
     it('should handle database errors gracefully', async () => {
@@ -135,7 +135,7 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getProductById('test-id');
 
-      expect(result).toEqual(mockProduct);
+      expect(result.data).toEqual(mockProduct);
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'test-id');
@@ -153,7 +153,8 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getProductById('non-existent-id');
 
-      expect(result).toBeNull();
+      expect(result.success).toBe(false);
+      expect(result.data).toBeNull();
     });
   });
 
@@ -194,7 +195,9 @@ describe('ProductStorage', () => {
       });
       (caseConverter.convertProductToSnakeCase as jest.Mock).mockReturnValue(mockProductSnakeCase);
 
-      await expect(ProductStorage.saveProduct(mockProduct as any)).rejects.toThrow('Save failed');
+      const result = await ProductStorage.saveProduct(mockProduct as any);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Save failed');
     });
 
     it('should throw error when user is not authenticated', async () => {
@@ -202,7 +205,9 @@ describe('ProductStorage', () => {
         data: { session: null },
       });
 
-      await expect(ProductStorage.saveProduct(mockProduct as any)).rejects.toThrow('User not authenticated');
+      const result = await ProductStorage.saveProduct(mockProduct as any);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('User not authenticated');
     });
   });
 
@@ -229,7 +234,9 @@ describe('ProductStorage', () => {
         }),
       });
 
-      await expect(ProductStorage.deleteProduct('test-id')).rejects.toThrow('Delete failed');
+      const result = await ProductStorage.deleteProduct('test-id');
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Delete failed');
     });
   });
 
@@ -263,7 +270,9 @@ describe('ProductStorage', () => {
         }),
       });
 
-      await expect(ProductStorage.updateProductStatus('test-id', 'consumed')).rejects.toThrow('Update failed');
+      const result = await ProductStorage.updateProductStatus('test-id', 'consumed');
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Update failed');
     });
   });
 
@@ -281,7 +290,7 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getExpiredProducts();
 
-      expect(result).toEqual([mockProduct]);
+      expect(result.data).toEqual([mockProduct]);
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
@@ -297,7 +306,7 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getExpiredProducts();
 
-      expect(result).toEqual([]);
+      expect(result.success).toBe(false);
     });
   });
 
@@ -310,9 +319,9 @@ describe('ProductStorage', () => {
         select: jest.fn().mockReturnThis(),
         eq: eqMock,
       };
-      
+
       // Configure the eq mock to return different values based on call count
-      eqMock.mockImplementation(function(field: string, value: any) {
+      eqMock.mockImplementation(function (field: string, value: any) {
         if (eqMock.mock.calls.length === 1) {
           // First call: eq('user_id', 'user-123')
           return mockQueryBuilder;
@@ -322,13 +331,13 @@ describe('ProductStorage', () => {
         }
         return mockQueryBuilder;
       });
-      
+
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
       (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue([mockProduct]);
 
       const result = await ProductStorage.getTrulyExpiredProducts();
 
-      expect(result).toEqual([mockProduct]);
+      expect(result.data).toEqual([mockProduct]);
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
       expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
@@ -347,7 +356,7 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getTrulyExpiredProducts();
 
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
     });
   });
 
@@ -380,7 +389,9 @@ describe('ProductStorage', () => {
         }),
       });
 
-      await expect(ProductStorage.moveProductsToHistory(['id-1'])).rejects.toThrow('Move failed');
+      const result = await ProductStorage.moveProductsToHistory(['id-1']);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Move failed');
     });
   });
 
@@ -394,9 +405,9 @@ describe('ProductStorage', () => {
         order: jest.fn().mockResolvedValue({ data: mockData, error: null }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
-      
+
       // Configure eq mock to handle multiple calls
-      eqMock.mockImplementation(function(field: string, value: any) {
+      eqMock.mockImplementation(function (field: string, value: any) {
         if (eqMock.mock.calls.length === 1) {
           // First call: eq('user_id', 'user-123')
           return mockQueryBuilder;
@@ -406,12 +417,12 @@ describe('ProductStorage', () => {
         }
         return mockQueryBuilder;
       });
-      
+
       (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue([mockProduct]);
 
       const result = await ProductStorage.getHistory();
 
-      expect(result).toEqual([mockProduct]);
+      expect(result.data).toEqual([mockProduct]);
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
       expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
@@ -426,7 +437,7 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getHistory();
 
-      expect(result).toEqual([]);
+      expect(result.success).toBe(false);
     });
   });
 
@@ -458,7 +469,9 @@ describe('ProductStorage', () => {
         }),
       });
 
-      await expect(ProductStorage.restoreConsumedProduct('test-id')).rejects.toThrow('Restore failed');
+      const result = await ProductStorage.restoreConsumedProduct('test-id');
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Restore failed');
     });
   });
 
@@ -481,16 +494,15 @@ describe('ProductStorage', () => {
 
     it('should log info messages for successful operations', async () => {
       const mockQueryBuilder = {
-        upsert: jest.fn().mockResolvedValue({ error: null }),
+        update: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValue({ error: null }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
-      (caseConverter.convertProductToSnakeCase as jest.Mock).mockReturnValue(mockProductSnakeCase);
 
-      await ProductStorage.saveProduct(mockProduct as any);
+      await ProductStorage.moveProductsToHistory(['id-1']);
 
       expect(LoggingService.info).toHaveBeenCalled();
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.upsert).toHaveBeenCalledWith(mockProductSnakeCase);
     });
   });
 });

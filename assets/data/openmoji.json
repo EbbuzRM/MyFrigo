@@ -1,13 +1,68 @@
 [
   {
-    "hexcode": "1F34E",
-    "annotation": "apple",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34E.svg"
+    "hexcode": "1F32D",
+    "annotation": "hot dog",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F32D.svg"
   },
   {
-    "hexcode": "1F34C",
-    "annotation": "banana",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34C.svg"
+    "hexcode": "1F32E",
+    "annotation": "taco",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F32E.svg"
+  },
+  {
+    "hexcode": "1F32F",
+    "annotation": "burrito",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F32F.svg"
+  },
+  {
+    "hexcode": "1F330",
+    "annotation": "chestnuts",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F330.svg"
+  },
+  {
+    "hexcode": "1F336",
+    "annotation": "hot pepper",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F336.svg"
+  },
+  {
+    "hexcode": "1F33C",
+    "annotation": "cereals",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F33C.svg"
+  },
+  {
+    "hexcode": "1F33D",
+    "annotation": "corn",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F33D.svg"
+  },
+  {
+    "hexcode": "1F344",
+    "annotation": "mushroom",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F344.svg"
+  },
+  {
+    "hexcode": "1F345",
+    "annotation": "tomato",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F345.svg"
+  },
+  {
+    "hexcode": "1F346",
+    "annotation": "tomato",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F346.svg"
+  },
+  {
+    "hexcode": "1F347",
+    "annotation": "grapes",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F347.svg"
+  },
+  {
+    "hexcode": "1F348",
+    "annotation": "melon",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F348.svg"
+  },
+  {
+    "hexcode": "1F349",
+    "annotation": "watermelon",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F349.svg"
   },
   {
     "hexcode": "1F34A",
@@ -15,24 +70,284 @@
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34A.svg"
   },
   {
-    "hexcode": "1F9C0",
-    "annotation": "cheese",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C0.svg"
+    "hexcode": "1F34B",
+    "annotation": "lemon",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34B.svg"
   },
   {
-    "hexcode": "1F95B",
-    "annotation": "milk",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95B.svg"
+    "hexcode": "1F34C",
+    "annotation": "banana",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34C.svg"
   },
   {
-    "hexcode": "1F9C7",
-    "annotation": "yogurt",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C7.svg"
+    "hexcode": "1F34D",
+    "annotation": "pineapple",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34D.svg"
   },
   {
-    "hexcode": "1F969",
+    "hexcode": "1F34E",
+    "annotation": "apple",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34E.svg"
+  },
+  {
+    "hexcode": "1F34F",
+    "annotation": "green apple",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F34F.svg"
+  },
+  {
+    "hexcode": "1F350",
+    "annotation": "pear",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F350.svg"
+  },
+  {
+    "hexcode": "1F351",
+    "annotation": "peach",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F351.svg"
+  },
+  {
+    "hexcode": "1F352",
+    "annotation": "cherries",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F352.svg"
+  },
+  {
+    "hexcode": "1F353",
+    "annotation": "strawberry",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F353.svg"
+  },
+  {
+    "hexcode": "1F354",
+    "annotation": "hamburger",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F354.svg"
+  },
+  {
+    "hexcode": "1F355",
+    "annotation": "pizza",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F355.svg"
+  },
+  {
+    "hexcode": "1F356",
     "annotation": "meat",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F969.svg"
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F356.svg"
+  },
+  {
+    "hexcode": "1F357",
+    "annotation": "chicken",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F357.svg"
+  },
+  {
+    "hexcode": "1F358",
+    "annotation": "rice cracker",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F358.svg"
+  },
+  {
+    "hexcode": "1F359",
+    "annotation": "rice ball",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F359.svg"
+  },
+  {
+    "hexcode": "1F35A",
+    "annotation": "rice",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35A.svg"
+  },
+  {
+    "hexcode": "1F35B",
+    "annotation": "curry",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35B.svg"
+  },
+  {
+    "hexcode": "1F35C",
+    "annotation": "bowl",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35C.svg"
+  },
+  {
+    "hexcode": "1F35D",
+    "annotation": "pasta",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35D.svg"
+  },
+  {
+    "hexcode": "1F35E",
+    "annotation": "bread",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35E.svg"
+  },
+  {
+    "hexcode": "1F35F",
+    "annotation": "fries",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35F.svg"
+  },
+  {
+    "hexcode": "1F360",
+    "annotation": "sweet potato",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F360.svg"
+  },
+  {
+    "hexcode": "1F361",
+    "annotation": "dango",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F361.svg"
+  },
+  {
+    "hexcode": "1F362",
+    "annotation": "oden",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F362.svg"
+  },
+  {
+    "hexcode": "1F363",
+    "annotation": "sushi",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F363.svg"
+  },
+  {
+    "hexcode": "1F364",
+    "annotation": "shrimp",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F364.svg"
+  },
+  {
+    "hexcode": "1F365",
+    "annotation": "fish cake",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F365.svg"
+  },
+  {
+    "hexcode": "1F366",
+    "annotation": "ice cream soft",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F366.svg"
+  },
+  {
+    "hexcode": "1F367",
+    "annotation": "shaved ice",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F367.svg"
+  },
+  {
+    "hexcode": "1F368",
+    "annotation": "ice cream",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F368.svg"
+  },
+  {
+    "hexcode": "1F369",
+    "annotation": "doughnut",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F369.svg"
+  },
+  {
+    "hexcode": "1F36A",
+    "annotation": "cookies",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36A.svg"
+  },
+  {
+    "hexcode": "1F36B",
+    "annotation": "chocolate",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36B.svg"
+  },
+  {
+    "hexcode": "1F36C",
+    "annotation": "candy",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36C.svg"
+  },
+  {
+    "hexcode": "1F36D",
+    "annotation": "chocolate",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36D.svg"
+  },
+  {
+    "hexcode": "1F36E",
+    "annotation": "custard",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36E.svg"
+  },
+  {
+    "hexcode": "1F36F",
+    "annotation": "honey",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36F.svg"
+  },
+  {
+    "hexcode": "1F370",
+    "annotation": "cake",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F370.svg"
+  },
+  {
+    "hexcode": "1F371",
+    "annotation": "bento",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F371.svg"
+  },
+  {
+    "hexcode": "1F372",
+    "annotation": "pot",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F372.svg"
+  },
+  {
+    "hexcode": "1F373",
+    "annotation": "cooking",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F373.svg"
+  },
+  {
+    "hexcode": "1F374",
+    "annotation": "fork knife",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F374.svg"
+  },
+  {
+    "hexcode": "1F375",
+    "annotation": "tea",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F375.svg"
+  },
+  {
+    "hexcode": "1F376",
+    "annotation": "sake",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F376.svg"
+  },
+  {
+    "hexcode": "1F377",
+    "annotation": "wine",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F377.svg"
+  },
+  {
+    "hexcode": "1F378",
+    "annotation": "cocktail",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F378.svg"
+  },
+  {
+    "hexcode": "1F379",
+    "annotation": "tropical drink",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F379.svg"
+  },
+  {
+    "hexcode": "1F37A",
+    "annotation": "beer",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F37A.svg"
+  },
+  {
+    "hexcode": "1F37B",
+    "annotation": "clinking beer",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F37B.svg"
+  },
+  {
+    "hexcode": "1F37C",
+    "annotation": "baby bottle",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F37C.svg"
+  },
+  {
+    "hexcode": "1F37D",
+    "annotation": "plate",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F37D.svg"
+  },
+  {
+    "hexcode": "1F37E",
+    "annotation": "champagne",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F37E.svg"
+  },
+  {
+    "hexcode": "1F37F",
+    "annotation": "popcorn",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F37F.svg"
+  },
+  {
+    "hexcode": "1F382",
+    "annotation": "birthday cake",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F382.svg"
+  },
+  {
+    "hexcode": "1F3FA",
+    "annotation": "amphora",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F3FA.svg"
+  },
+  {
+    "hexcode": "1F40A",
+    "annotation": "crocodile",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F40A.svg"
   },
   {
     "hexcode": "1F414",
@@ -40,9 +355,9 @@
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F414.svg"
   },
   {
-    "hexcode": "1F9C4",
-    "annotation": "bacon",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C4.svg"
+    "hexcode": "1F41D",
+    "annotation": "salmon",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F41D.svg"
   },
   {
     "hexcode": "1F41F",
@@ -55,159 +370,9 @@
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F433.svg"
   },
   {
-    "hexcode": "1F41D",
-    "annotation": "salmon",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F41D.svg"
-  },
-  {
-    "hexcode": "1F346",
-    "annotation": "tomato",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F346.svg"
-  },
-  {
-    "hexcode": "1F96C",
-    "annotation": "salad",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96C.svg"
-  },
-  {
-    "hexcode": "1F954",
-    "annotation": "potato",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F954.svg"
-  },
-  {
-    "hexcode": "1F9CA",
-    "annotation": "ice cream",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9CA.svg"
-  },
-  {
-    "hexcode": "1F355",
-    "annotation": "pizza",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F355.svg"
-  },
-  {
-    "hexcode": "1F35D",
-    "annotation": "pasta",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35D.svg"
-  },
-  {
-    "hexcode": "1F964",
-    "annotation": "drinks",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F964.svg"
-  },
-  {
     "hexcode": "1F4A7",
     "annotation": "water",
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4A7.svg"
-  },
-  {
-    "hexcode": "1F9C3",
-    "annotation": "juice",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C3.svg"
-  },
-  {
-    "hexcode": "1F377",
-    "annotation": "wine",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F377.svg"
-  },
-  {
-    "hexcode": "1F37A",
-    "annotation": "beer",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F37A.svg"
-  },
-  {
-    "hexcode": "2615",
-    "annotation": "coffee",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/2615.svg"
-  },
-  {
-    "hexcode": "1F375",
-    "annotation": "tea",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F375.svg"
-  },
-  {
-    "hexcode": "1F35E",
-    "annotation": "bread",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35E.svg"
-  },
-  {
-    "hexcode": "1F36A",
-    "annotation": "cookies",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36A.svg"
-  },
-  {
-    "hexcode": "1F33C",
-    "annotation": "cereals",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F33C.svg"
-  },
-  {
-    "hexcode": "1F35A",
-    "annotation": "rice",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F35A.svg"
-  },
-  {
-    "hexcode": "1F9C8",
-    "annotation": "flour",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C8.svg"
-  },
-  {
-    "hexcode": "1F36D",
-    "annotation": "chocolate",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36D.svg"
-  },
-  {
-    "hexcode": "1F36C",
-    "annotation": "candy",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F36C.svg"
-  },
-  {
-    "hexcode": "1F95A",
-    "annotation": "eggs",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95A.svg"
-  },
-  {
-    "hexcode": "1F370",
-    "annotation": "cake",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F370.svg"
-  },
-  {
-    "hexcode": "1F9C9",
-    "annotation": "salami",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C9.svg"
-  },
-  {
-    "hexcode": "1F330",
-    "annotation": "chestnuts",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F330.svg"
-  },
-  {
-    "hexcode": "1F950",
-    "annotation": "croissant",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F950.svg"
-  },
-  {
-    "hexcode": "1F96F",
-    "annotation": "brioches",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96F.svg"
-  },
-  {
-    "hexcode": "1F4E6",
-    "annotation": "package",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4E6.svg"
-  },
-  {
-    "hexcode": "1F6D1",
-    "annotation": "trash",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6D1.svg"
-  },
-  {
-    "hexcode": "26D4",
-    "annotation": "expired",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/26D4.svg"
-  },
-  {
-    "hexcode": "1F4CA",
-    "annotation": "expiration",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4CA.svg"
   },
   {
     "hexcode": "1F4B0",
@@ -215,19 +380,14 @@
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4B0.svg"
   },
   {
-    "hexcode": "1F4E5",
-    "annotation": "shopping",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4E5.svg"
+    "hexcode": "1F4C5",
+    "annotation": "calendar",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4C5.svg"
   },
   {
-    "hexcode": "1F6D2",
-    "annotation": "shopping cart",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6D2.svg"
-  },
-  {
-    "hexcode": "1F4F0",
-    "annotation": "list",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4F0.svg"
+    "hexcode": "1F4CA",
+    "annotation": "expiration",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4CA.svg"
   },
   {
     "hexcode": "1F4DD",
@@ -235,14 +395,19 @@
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4DD.svg"
   },
   {
-    "hexcode": "1F4C5",
-    "annotation": "calendar",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4C5.svg"
+    "hexcode": "1F4E5",
+    "annotation": "shopping",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4E5.svg"
   },
   {
-    "hexcode": "23F0",
-    "annotation": "alarm",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/23F0.svg"
+    "hexcode": "1F4E6",
+    "annotation": "package",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4E6.svg"
+  },
+  {
+    "hexcode": "1F4F0",
+    "annotation": "list",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F4F0.svg"
   },
   {
     "hexcode": "1F514",
@@ -250,19 +415,9 @@
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F514.svg"
   },
   {
-    "hexcode": "1F6CF",
-    "annotation": "bed",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6CF.svg"
-  },
-  {
-    "hexcode": "1F6B8",
-    "annotation": "kitchen",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6B8.svg"
-  },
-  {
-    "hexcode": "1F6BF",
-    "annotation": "refrigerator",
-    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6BF.svg"
+    "hexcode": "1F52A",
+    "annotation": "knife",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F52A.svg"
   },
   {
     "hexcode": "1F6B0",
@@ -338,6 +493,11 @@
     "hexcode": "1F6BE",
     "annotation": "glass",
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6BE.svg"
+  },
+  {
+    "hexcode": "1F6BF",
+    "annotation": "refrigerator",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6BF.svg"
   },
   {
     "hexcode": "1F6C0",
@@ -658,5 +818,285 @@
     "hexcode": "1F6FF",
     "annotation": "tube reaction",
     "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F6FF.svg"
+  },
+  {
+    "hexcode": "1F942",
+    "annotation": "clinking glasses",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F942.svg"
+  },
+  {
+    "hexcode": "1F943",
+    "annotation": "tumbler",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F943.svg"
+  },
+  {
+    "hexcode": "1F944",
+    "annotation": "spoon",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F944.svg"
+  },
+  {
+    "hexcode": "1F950",
+    "annotation": "croissant",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F950.svg"
+  },
+  {
+    "hexcode": "1F951",
+    "annotation": "avocado",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F951.svg"
+  },
+  {
+    "hexcode": "1F952",
+    "annotation": "cucumber",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F952.svg"
+  },
+  {
+    "hexcode": "1F953",
+    "annotation": "bacon",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F953.svg"
+  },
+  {
+    "hexcode": "1F954",
+    "annotation": "potato",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F954.svg"
+  },
+  {
+    "hexcode": "1F955",
+    "annotation": "carrot",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F955.svg"
+  },
+  {
+    "hexcode": "1F956",
+    "annotation": "baguette",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F956.svg"
+  },
+  {
+    "hexcode": "1F957",
+    "annotation": "salad",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F957.svg"
+  },
+  {
+    "hexcode": "1F958",
+    "annotation": "pan",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F958.svg"
+  },
+  {
+    "hexcode": "1F959",
+    "annotation": "flatbread",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F959.svg"
+  },
+  {
+    "hexcode": "1F95A",
+    "annotation": "eggs",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95A.svg"
+  },
+  {
+    "hexcode": "1F95B",
+    "annotation": "milk",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95B.svg"
+  },
+  {
+    "hexcode": "1F95C",
+    "annotation": "peanuts",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95C.svg"
+  },
+  {
+    "hexcode": "1F95D",
+    "annotation": "kiwifruit",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95D.svg"
+  },
+  {
+    "hexcode": "1F95E",
+    "annotation": "pancakes",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95E.svg"
+  },
+  {
+    "hexcode": "1F95F",
+    "annotation": "dumpling",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F95F.svg"
+  },
+  {
+    "hexcode": "1F960",
+    "annotation": "fortune cookie",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F960.svg"
+  },
+  {
+    "hexcode": "1F961",
+    "annotation": "takeout",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F961.svg"
+  },
+  {
+    "hexcode": "1F962",
+    "annotation": "chopsticks",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F962.svg"
+  },
+  {
+    "hexcode": "1F964",
+    "annotation": "drinks",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F964.svg"
+  },
+  {
+    "hexcode": "1F965",
+    "annotation": "coconut",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F965.svg"
+  },
+  {
+    "hexcode": "1F966",
+    "annotation": "broccoli",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F966.svg"
+  },
+  {
+    "hexcode": "1F967",
+    "annotation": "pie",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F967.svg"
+  },
+  {
+    "hexcode": "1F968",
+    "annotation": "pretzel",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F968.svg"
+  },
+  {
+    "hexcode": "1F969",
+    "annotation": "meat",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F969.svg"
+  },
+  {
+    "hexcode": "1F96A",
+    "annotation": "sandwich",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96A.svg"
+  },
+  {
+    "hexcode": "1F96B",
+    "annotation": "canned food",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96B.svg"
+  },
+  {
+    "hexcode": "1F96C",
+    "annotation": "salad",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96C.svg"
+  },
+  {
+    "hexcode": "1F96D",
+    "annotation": "mango",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96D.svg"
+  },
+  {
+    "hexcode": "1F96E",
+    "annotation": "moon cake",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96E.svg"
+  },
+  {
+    "hexcode": "1F96F",
+    "annotation": "brioches",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F96F.svg"
+  },
+  {
+    "hexcode": "1F980",
+    "annotation": "crab",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F980.svg"
+  },
+  {
+    "hexcode": "1F991",
+    "annotation": "squid",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F991.svg"
+  },
+  {
+    "hexcode": "1F99E",
+    "annotation": "lobster",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F99E.svg"
+  },
+  {
+    "hexcode": "1F9AA",
+    "annotation": "oyster",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9AA.svg"
+  },
+  {
+    "hexcode": "1F9C0",
+    "annotation": "cheese",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C0.svg"
+  },
+  {
+    "hexcode": "1F9C1",
+    "annotation": "cupcake",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C1.svg"
+  },
+  {
+    "hexcode": "1F9C2",
+    "annotation": "salt",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C2.svg"
+  },
+  {
+    "hexcode": "1F9C3",
+    "annotation": "juice",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C3.svg"
+  },
+  {
+    "hexcode": "1F9C4",
+    "annotation": "bacon",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C4.svg"
+  },
+  {
+    "hexcode": "1F9C5",
+    "annotation": "onion",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C5.svg"
+  },
+  {
+    "hexcode": "1F9C6",
+    "annotation": "falafel",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C6.svg"
+  },
+  {
+    "hexcode": "1F9C7",
+    "annotation": "yogurt",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C7.svg"
+  },
+  {
+    "hexcode": "1F9C8",
+    "annotation": "flour",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C8.svg"
+  },
+  {
+    "hexcode": "1F9C9",
+    "annotation": "salami",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9C9.svg"
+  },
+  {
+    "hexcode": "1F9CA",
+    "annotation": "ice cream",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9CA.svg"
+  },
+  {
+    "hexcode": "1F9CB",
+    "annotation": "bubble tea",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1F9CB.svg"
+  },
+  {
+    "hexcode": "1FAD0",
+    "annotation": "blueberries",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1FAD0.svg"
+  },
+  {
+    "hexcode": "1FAD1",
+    "annotation": "bell pepper",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1FAD1.svg"
+  },
+  {
+    "hexcode": "1FAD2",
+    "annotation": "olive",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/1FAD2.svg"
+  },
+  {
+    "hexcode": "23F0",
+    "annotation": "alarm",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/23F0.svg"
+  },
+  {
+    "hexcode": "2615",
+    "annotation": "coffee",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/2615.svg"
+  },
+  {
+    "hexcode": "26D4",
+    "annotation": "expired",
+    "svg": "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@latest/color/svg/26D4.svg"
   }
 ]

@@ -1,10 +1,11 @@
-
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import React, { useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { AnimatedPressable } from './AnimatedPressable';
 import { Quantity as FormQuantity } from '@/context/ManualEntryContext';
+import { useQuantityInput } from '@/hooks/useQuantityInput';
+import { QuantityButton } from './QuantityButton';
+import { QuantityUnitSelector } from './QuantityUnitSelector';
+import { getStyles } from './QuantityInputRow.styles';
 
 interface QuantityInputRowProps {
   item: FormQuantity;
@@ -13,18 +14,9 @@ interface QuantityInputRowProps {
   isOnlyOne: boolean;
 }
 
-const COMMON_UNITS = [
-  { id: 'pz', name: 'pz (pezzi)' },
-  { id: 'kg', name: 'kg (chilogrammi)' },
-  { id: 'g', name: 'g (grammi)' },
-  { id: 'L', name: 'L (litri)' },
-  { id: 'ml', name: 'ml (millilitri)' },
-  { id: 'conf', name: 'conf. (confezione)' },
-  { id: 'barattolo', name: 'barattolo' },
-  { id: 'bottiglia', name: 'bottiglia' },
-  { id: 'vasetto', name: 'vasetto' },
-];
-
+/**
+ * Renders a row with quantity input (+/- buttons), unit selector, and optional remove button
+ */
 const QuantityInputRow = React.memo(({
   item,
   updateQuantity,
@@ -33,59 +25,50 @@ const QuantityInputRow = React.memo(({
 }: QuantityInputRowProps) => {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
+  const handleQuantityUpdate = useCallback((value: string) => updateQuantity(item.id, 'quantity', value), [item.id, updateQuantity]);
+  const handleUnitUpdate = useCallback((value: string) => updateQuantity(item.id, 'unit', value), [item.id, updateQuantity]);
+  const { handleIncrement, handleDecrement, handleQuantityChange, isAtMin } = useQuantityInput({
+    quantity: item.quantity,
+    onUpdate: handleQuantityUpdate,
+  });
 
-    return (
+  return (
     <View style={styles.container}>
       <View style={styles.mainRow}>
         <View style={[styles.column, !isOnlyOne && styles.columnWithRemove]}>
           <Text style={styles.label}>Quantità*</Text>
           <View style={styles.quantityContainer}>
-            <AnimatedPressable
-              onPress={() => {
-                const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0;
-                const newValue = String(Math.max(0, currentVal - 1));
-                updateQuantity(item.id, 'quantity', newValue);
-              }}
-              style={styles.quantityButton}
-            >
-              <Text style={styles.quantityButtonText}>-</Text>
-            </AnimatedPressable>
+            <QuantityButton operation="decrement" onPress={handleDecrement} disabled={isAtMin} />
             <TextInput
               style={styles.quantityInput}
               value={item.quantity}
-              onChangeText={(text) => updateQuantity(item.id, 'quantity', text.replace(',', '.'))}
+              onChangeText={handleQuantityChange}
               keyboardType="decimal-pad"
-              placeholderTextColor={styles.placeholder.color}
+              placeholder="0"
+              placeholderTextColor={isDarkMode ? '#8b949e' : '#64748b'}
+              accessibilityLabel="Quantità"
+              accessibilityHint="Inserisci la quantità del prodotto"
+              testID={`quantity-input-${item.id}`}
             />
-            <AnimatedPressable
-              onPress={() => {
-                const currentVal = parseFloat(item.quantity.replace(',', '.')) || 0;
-                const newValue = String(currentVal + 1);
-                updateQuantity(item.id, 'quantity', newValue);
-              }}
-              style={styles.quantityButton}
-            >
-              <Text style={styles.quantityButtonText}>+</Text>
-            </AnimatedPressable>
+            <QuantityButton operation="increment" onPress={handleIncrement} />
           </View>
         </View>
-        <View style={[styles.column, !isOnlyOne && styles.columnWithRemove]}>
-          <Text style={styles.label}>Unità*</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={item.unit}
-              style={styles.picker}
-              onValueChange={(itemValue) => updateQuantity(item.id, 'unit', itemValue)}
-              dropdownIconColor={styles.picker.color}
-            >
-              {COMMON_UNITS.map((u) => (
-                <Picker.Item key={u.id} label={u.name} value={u.id} />
-              ))}
-            </Picker>
-          </View>
-        </View>
+
+        <QuantityUnitSelector
+          selectedValue={item.unit}
+          onValueChange={handleUnitUpdate}
+          containerStyle={!isOnlyOne ? { marginHorizontal: 2 } : undefined}
+          testID={`unit-selector-${item.id}`}
+        />
+
         {!isOnlyOne && (
-          <TouchableOpacity onPress={() => removeQuantity(item.id)} style={styles.removeButton}>
+          <TouchableOpacity
+            onPress={() => removeQuantity(item.id)}
+            style={styles.removeButton}
+            accessibilityLabel="Rimuovi quantità"
+            accessibilityHint="Rimuovi questa riga di quantità"
+            testID={`remove-quantity-${item.id}`}
+          >
             <Text style={styles.removeButtonText}>-</Text>
           </TouchableOpacity>
         )}
@@ -94,102 +77,5 @@ const QuantityInputRow = React.memo(({
   );
 });
 
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-    container: {
-        marginBottom: 16,
-    },
-    mainRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    column: {
-        flex: 1,
-        marginHorizontal: 4,
-    },
-    columnWithRemove: {
-        flex: 1,
-        marginHorizontal: 2,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '500',
-        marginBottom: 8,
-        color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    },
-    quantityContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
-        borderRadius: 8,
-        backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
-    },
-    quantityButton: {
-        padding: 12,
-        backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minWidth: 44,
-    },
-    quantityButtonText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    },
-    quantityInput: {
-        flex: 1,
-        textAlign: 'center',
-        fontSize: 16,
-        padding: 12,
-        color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    },
-    pickerContainer: {
-        borderWidth: 1,
-        borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
-        borderRadius: 8,
-        backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
-    },
-    picker: {
-        color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    },
-    removeButton: {
-        backgroundColor: isDarkMode ? '#440c0c' : '#fee2e2',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        marginLeft: 8,
-        marginTop: 26,
-    },
-    removeButtonText: {
-        color: isDarkMode ? '#ff7b72' : '#ef4444',
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    quantityIndicator: {
-        backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0',
-        padding: 8,
-        borderRadius: 6,
-        marginLeft: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 60,
-    },
-    controlsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        marginTop: 8,
-    },
-    quantityIndicatorText: {
-        color: isDarkMode ? '#c9d1d9' : '#1e293b',
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    placeholder: {
-        color: isDarkMode ? '#8b949e' : '#64748b',
-    },
-});
-
+QuantityInputRow.displayName = 'QuantityInputRow';
 export default QuantityInputRow;

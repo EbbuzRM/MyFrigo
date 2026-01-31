@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Alert, Platform, BackHandler } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { LoggingService } from '@/services/LoggingService';
 import { AuthService, AuthResult } from '@/services/AuthService';
 import { authLogger } from '@/utils/AuthLogger';
-import { GoogleAuthRetryManager } from '@/utils/GoogleAuthRetryManager';
+import { createGoogleAuthRetryManager } from '@/utils/GoogleAuthRetryManager';
+import { GoogleAuthStorage, AuthAttemptRepository } from '@/utils/GoogleAuthStorage';
+import { DEFAULT_RETRY_CONFIG } from '@/types/auth';
 import { useAuth } from '@/context/AuthContext';
+import { useGoogleAuthFeedback } from '@/components/GoogleAuthFeedback';
 
 /**
  * Hook per la gestione dell'autenticazione Google
@@ -18,6 +21,16 @@ export const useGoogleAuth = () => {
   const [configError, setConfigError] = useState<string | null>(null);
 
   const { session, user, profile } = useAuth();
+
+  // Create retry manager instance with dependencies
+  const retryManager = useMemo(() => {
+    const storage = new GoogleAuthStorage();
+    const repository = new AuthAttemptRepository(storage, DEFAULT_RETRY_CONFIG.retryWindowMs);
+    return createGoogleAuthRetryManager(repository, DEFAULT_RETRY_CONFIG);
+  }, []);
+
+  // Create feedback handler
+  const feedback = useGoogleAuthFeedback();
 
   // Configura Google Sign-In all'inizializzazione
   useEffect(() => {
@@ -64,7 +77,7 @@ export const useGoogleAuth = () => {
           profile
         });
 
-        const retryResult = await GoogleAuthRetryManager.analyzeRetryNeed(
+        const retryResult = await retryManager.analyzeRetryNeed(
           user.id,
           user.email || '',
           { first_name: profile?.first_name || null, last_name: profile?.last_name || null }
@@ -76,7 +89,7 @@ export const useGoogleAuth = () => {
           setRetryAttemptNumber(retryResult.attemptNumber);
 
           if (retryResult.message) {
-            GoogleAuthRetryManager.showRetryFeedback(retryResult.attemptNumber);
+            feedback.showRetryFeedback(retryResult.attemptNumber, DEFAULT_RETRY_CONFIG.maxRetryAttempts, retryResult.message);
           }
 
           // Attendi un momento prima del retry
@@ -88,7 +101,7 @@ export const useGoogleAuth = () => {
         } else if (retryResult.shouldShowError) {
           setGoogleRetryInProgress(false);
           setRetryAttemptNumber(0);
-          GoogleAuthRetryManager.showMaxAttemptsError();
+          feedback.showMaxAttemptsError();
 
         } else {
           // Successo o non necessario

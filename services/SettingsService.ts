@@ -112,8 +112,9 @@ export class SettingsService {
         if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
           // Import ProductStorage dynamically to avoid circular dependency
           const { ProductStorage } = await import('./ProductStorage');
-          const { data: products, error: productsError } = await ProductStorage.getProducts();
-          if (products && !productsError) {
+          const productsResult = await ProductStorage.getProducts();
+          if (productsResult.success && productsResult.data) {
+            const products = productsResult.data;
             const activeProducts = products.filter(p => p.status === 'active');
             await Notifications.cancelAllScheduledNotificationsAsync();
             await NotificationService.scheduleMultipleNotifications(activeProducts, updatedSettings);

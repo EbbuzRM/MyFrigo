@@ -55,20 +55,37 @@ export const IconService = {
 
   loadLocalEmojiData(): OpenMojiIcon[] {
     try {
-      return openmojiData;
+      const emojiData = require('../assets/data/openmoji.json');
+      return emojiData as OpenMojiIcon[];
     } catch (error) {
       LoggingService.error('IconService', 'Error loading local emoji data', error);
       return [];
     }
   },
 
+  /**
+   * Converts a hexcode (e.g., "1FAD2") to its Unicode emoji character (e.g., "🫒")
+   */
+  hexcodeToEmoji(hexcode: string): string {
+    try {
+      // Handle multiple codepoints separated by hyphen (e.g., "1F468-200D-1F373")
+      const codepoints = hexcode.split('-').map(code => parseInt(code, 16));
+      return String.fromCodePoint(...codepoints);
+    } catch (error) {
+      LoggingService.error('IconService', `Error converting hexcode ${hexcode} to emoji`, error);
+      return '❓'; // Fallback emoji
+    }
+  },
+
   searchInLocalData(name: string): (OpenMojiIcon & { score: number; id: string; name: string })[] {
-    const translated = this.translateToEnglish(name);
     const data = this.loadLocalEmojiData();
     if (!data.length) return [];
 
+    // Prima prova con la traduzione
+    const translated = this.translateToEnglish(name);
     const keywords = translated.toLowerCase().split(' ').filter(k => k.length > 0);
-    const results = data
+
+    let results = data
       .map((emoji: OpenMojiIcon) => {
         const score = keywords.reduce((acc, kw) => {
           const match = emoji.annotation.toLowerCase().includes(kw) ||
@@ -81,9 +98,31 @@ export const IconService = {
       .sort((a, b) => b.score - a.score)
       .slice(0, 10); // Top 10
 
+    // Se non ha trovato risultati con la traduzione, prova con il nome originale
+    if (results.length === 0 && name.toLowerCase() !== translated.toLowerCase()) {
+      LoggingService.info('IconService', `No results with translation, trying direct search for "${name}"`);
+      const directKeywords = name.toLowerCase().split(' ').filter(k => k.length > 0);
+
+      results = data
+        .map((emoji: OpenMojiIcon) => {
+          const score = directKeywords.reduce((acc, kw) => {
+            const match = emoji.annotation.toLowerCase().includes(kw) ||
+              (Array.isArray(emoji.tags) && emoji.tags.some((tag: string) => tag.toLowerCase().includes(kw)));
+            return acc + (match ? 1 : 0);
+          }, 0);
+          return { ...emoji, score, id: emoji.hexcode, name: emoji.annotation, svg: emoji.svg || '' };
+        })
+        .filter((r) => r.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+    }
+
     if (results.length === 0) {
       LoggingService.warning('IconService', `No local icons found for "${name}"`);
+    } else {
+      LoggingService.info('IconService', `Found ${results.length} icons for "${name}"`);
     }
+
     return results;
   },
 
@@ -107,11 +146,14 @@ export const IconService = {
       // Search local data
       const icons = this.searchInLocalData(categoryName);
       if (icons.length > 0) {
-        const iconUrl = icons[0].svg || icons[0].url || null;
+        // Convert hexcode to emoji Unicode instead of SVG URL (React Native doesn't support SVG in Image)
+        const hexcode = icons[0].hexcode;
+        const emoji = this.hexcodeToEmoji(hexcode);
+
         // Cache it
-        if (this.iconCache && iconUrl) this.iconCache[cacheKey] = iconUrl;
-        LoggingService.info('IconService', `Found local icon for ${categoryName}: ${iconUrl}`);
-        return Promise.resolve(iconUrl);
+        if (this.iconCache && emoji) this.iconCache[cacheKey] = emoji;
+        LoggingService.info('IconService', `Found local icon for ${categoryName}: ${emoji} (${hexcode})`);
+        return Promise.resolve(emoji);
       }
 
       const fallback = this.getFallbackIcon(categoryName);
@@ -145,8 +187,35 @@ export const IconService = {
     return localPath !== iconPath ? { uri: localPath } : undefined;
   },
 
-  getFallbackIcon(_categoryName: string): string | null {
-    return null; // As per test expectation
+  getFallbackIcon(categoryName: string): string | null {
+    // Mappa di fallback emoji per categorie comuni
+    const fallbackMap: Record<string, string> = {
+      'food': '🍽️',
+      'cibo': '🍽️',
+      'alimenti': '🥫',
+      'bevande': '🥤',
+      'drinks': '🥤',
+      'snack': '🍿',
+      'dolci': '🍬',
+      'sweets': '🍬',
+    };
+
+    const lowerName = categoryName.toLowerCase();
+
+    // Cerca una corrispondenza diretta
+    if (fallbackMap[lowerName]) {
+      return fallbackMap[lowerName];
+    }
+
+    // Cerca una corrispondenza parziale
+    for (const [key, emoji] of Object.entries(fallbackMap)) {
+      if (lowerName.includes(key) || key.includes(lowerName)) {
+        return emoji;
+      }
+    }
+
+    // Emoji generico per alimenti (scatola di conserva)
+    return '🥫';
   },
 
   // Cache property (for internal use)
