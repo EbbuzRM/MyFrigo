@@ -56,8 +56,9 @@ export class DatabaseTests {
     const startTime = Date.now();
 
     try {
-      const { data: products, error: productsError } = await ProductStorage.getProducts();
-      if (productsError) throw productsError;
+      const productsResult = await ProductStorage.getProducts();
+      if (!productsResult.success) throw productsResult.error;
+      const products = productsResult.data;
 
       const activeProducts = products?.filter(p => p.status === 'active') || [];
       const consumedProducts = products?.filter(p => p.status === 'consumed') || [];
@@ -105,7 +106,8 @@ export class DatabaseTests {
           isValidSettings,
           categoriesCount,
           issues
-        }      };
+        }
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
 

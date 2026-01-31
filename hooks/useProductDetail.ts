@@ -63,9 +63,9 @@ export const useProductDetail = (productId: string | undefined) => {
 
     try {
       updateState({ isLoading: true, error: undefined });
-      const productData = await ProductStorage.getProductById(productId);
+      const { data: productData, success } = await ProductStorage.getProductById(productId);
 
-      if (!productData) {
+      if (!success || !productData) {
         updateState({ isLoading: false, error: 'Prodotto non trovato' });
         return;
       }

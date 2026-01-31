@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useProductDetail } from '../useProductDetail';
 import { ProductStorage } from '@/services/ProductStorage';
 import { Alert } from 'react-native';
+import { createSuccessResult, createErrorResult } from '@/types/ServiceResult';
 
 // Mock delle dipendenze
 jest.mock('expo-router');
@@ -49,7 +50,7 @@ describe('useProductDetail', () => {
   });
 
   it('should load product successfully', async () => {
-    mockProductStorage.getProductById.mockResolvedValue(mockProduct);
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(mockProduct));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 
@@ -65,7 +66,7 @@ describe('useProductDetail', () => {
 
   it('should handle product loading error', async () => {
     const mockError = new Error('Product not found');
-    mockProductStorage.getProductById.mockRejectedValue(mockError);
+    mockProductStorage.getProductById.mockResolvedValue(createErrorResult(mockError));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 
@@ -75,7 +76,7 @@ describe('useProductDetail', () => {
 
     expect(result.current.state.product).toBeNull();
     expect(result.current.state.isLoading).toBe(false);
-    expect(result.current.state.error).toBe('Impossibile caricare il prodotto');
+    expect(result.current.state.error).toBe('Prodotto non trovato');
   });
 
   it('should handle consume action for single quantity', async () => {
@@ -83,8 +84,8 @@ describe('useProductDetail', () => {
       ...mockProduct,
       quantities: [{ quantity: 1, unit: 'pz' }],
     };
-    mockProductStorage.getProductById.mockResolvedValue(singleQuantityProduct);
-    mockProductStorage.saveProduct.mockResolvedValue();
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(singleQuantityProduct));
+    mockProductStorage.saveProduct.mockResolvedValue(createSuccessResult(undefined));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 
@@ -103,8 +104,8 @@ describe('useProductDetail', () => {
   });
 
   it('should handle consume action for multiple quantities', async () => {
-    mockProductStorage.getProductById.mockResolvedValue(mockProduct);
-    mockProductStorage.saveProduct.mockResolvedValue();
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(mockProduct));
+    mockProductStorage.saveProduct.mockResolvedValue(createSuccessResult(undefined));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 
@@ -122,8 +123,8 @@ describe('useProductDetail', () => {
   });
 
   it('should handle delete action with confirmation', async () => {
-    mockProductStorage.getProductById.mockResolvedValue(mockProduct);
-    mockProductStorage.deleteProduct.mockResolvedValue();
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(mockProduct));
+    mockProductStorage.deleteProduct.mockResolvedValue(createSuccessResult(undefined));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 
@@ -147,7 +148,7 @@ describe('useProductDetail', () => {
   });
 
   it('should handle edit action', async () => {
-    mockProductStorage.getProductById.mockResolvedValue(mockProduct);
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(mockProduct));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 
@@ -187,7 +188,7 @@ describe('useProductDetail', () => {
   });
 
   it('should compute canConsume correctly', async () => {
-    mockProductStorage.getProductById.mockResolvedValue(mockProduct);
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(mockProduct));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 
@@ -221,8 +222,8 @@ describe('useProductDetail', () => {
       ],
     };
 
-    mockProductStorage.getProductById.mockResolvedValue(multiQuantityProduct);
-    mockProductStorage.saveProduct.mockResolvedValue();
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(multiQuantityProduct));
+    mockProductStorage.saveProduct.mockResolvedValue(createSuccessResult(undefined));
 
     const { result } = renderHook(() => useProductDetail('test-id'));
 

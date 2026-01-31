@@ -1,26 +1,52 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Calendar, Package } from 'lucide-react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, TouchableOpacity } from 'react-native';
 import { Product } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { useExpirationStatus } from '@/hooks/useExpirationStatus';
-import { LoggingService } from '@/services/LoggingService';
-import { getExpirationCardAccessibilityProps, getImageAccessibilityProps } from '@/utils/accessibility';
-import { scaleFont } from '@/utils/scaleFont';
+import { getExpirationCardAccessibilityProps } from '@/utils/accessibility';
+import { ExpirationCardHeader } from './ExpirationCardHeader';
+import { ExpirationCardDetails } from './ExpirationCardDetails';
+import { getExpirationCardStyles, getExpirationCardColors } from './ExpirationCard.styles';
 
+/**
+ * Props for the ExpirationCard component
+ */
 interface ExpirationCardProps {
+  /** Product information to display */
   product: Product;
+  /** Callback when card is pressed */
   onPress?: () => void;
 }
 
-export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
+/**
+ * ExpirationCard Component
+ * @description Displays a product card with expiration status, category icon,
+ * and details. Used in expiration lists to show products nearing expiration.
+ * 
+ * @example
+ * ```tsx
+ * <ExpirationCard 
+ *   product={product} 
+ *   onPress={() => navigation.navigate('ProductDetail', { id: product.id })} 
+ * />
+ * ```
+ */
+export const ExpirationCard = React.memo(({ product, onPress }: ExpirationCardProps) => {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const colors = useMemo(() => getExpirationCardColors(isDarkMode), [isDarkMode]);
+  const styles = useMemo(() => getExpirationCardStyles(isDarkMode, colors), [isDarkMode, colors]);
   const { getCategoryById } = useCategories();
   const expirationInfo = useExpirationStatus(product.expirationDate, isDarkMode);
   
-  const categoryInfo = getCategoryById(product.category);
+  const categoryInfo = useMemo(
+    () => getCategoryById(product.category),
+    [getCategoryById, product.category]
+  );
+
+  const handlePress = useCallback(() => {
+    onPress?.();
+  }, [onPress]);
 
   if (!categoryInfo) {
     return null;
@@ -29,152 +55,27 @@ export function ExpirationCard({ product, onPress }: ExpirationCardProps) {
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
       {...getExpirationCardAccessibilityProps(product, expirationInfo)}
     >
       <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.productInfo}>
-            <View style={[styles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
-              {categoryInfo.localIcon ? (
-                <Image
-                  source={categoryInfo.localIcon}
-                  style={styles.categoryImage}
-                  {...getImageAccessibilityProps(`Icona categoria ${categoryInfo.name}`)}
-                />
-              ) : categoryInfo.icon && categoryInfo.icon.startsWith('http') ? (
-                <Image
-                  source={{ uri: categoryInfo.icon }}
-                  style={styles.categoryImage}
-                  {...getImageAccessibilityProps(`Icona categoria ${categoryInfo.name}`)}
-                />
-              ) : (
-                <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
-              )}
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.productName} numberOfLines={1}>
-                {product.name}
-              </Text>
-              {product.brand && (
-                <Text style={styles.brandName} numberOfLines={1}>
-                  {product.brand}
-                </Text>
-              )}
-            </View>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: expirationInfo.backgroundColor }]}>
-            <Text style={[styles.statusText, { color: expirationInfo.color }]}>
-              {expirationInfo.text}
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.details}>
-          <View style={styles.detailItem}>
-            <Package size={16} color="#64748B" />
-            <Text style={styles.detailText}>
-              {Array.isArray(product.quantities) && product.quantities.length > 0
-                ? product.quantities.length > 1
-                  ? `${product.quantities.map(q => `${q.quantity} ${q.unit || 'pz'}`).join(', ')}`
-                  : `${product.quantities[0].quantity} ${product.quantities[0].unit || 'pz'}`
-                : 'N/A'
-              }
-            </Text>
-          </View>
-          <View style={[styles.detailItem, { marginLeft: 8 }]}>
-            <Calendar size={16} color="#64748B" />
-            <Text style={styles.detailText}>
-              {new Date(product.expirationDate).toLocaleDateString('it-IT')}
-            </Text>
-          </View>
-        </View>
+        <ExpirationCardHeader
+          product={product}
+          categoryInfo={categoryInfo}
+          statusBackgroundColor={expirationInfo.backgroundColor}
+          statusTextColor={expirationInfo.color}
+          statusText={expirationInfo.text}
+          isDarkMode={isDarkMode}
+        />
+        <ExpirationCardDetails
+          quantities={product.quantities}
+          expirationDate={product.expirationDate}
+          isDarkMode={isDarkMode}
+        />
       </View>
     </TouchableOpacity>
   );
-}
-
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  card: {
-    backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  productInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 12,
-  },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  categoryImage: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-  },
-  categoryEmoji: {
-    fontSize: scaleFont(20),
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
-  },
-  textContainer: {
-    flex: 1,
-  },
-  productName: {
-    fontSize: scaleFont(16),
-    fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    marginBottom: 2,
-  },
-  brandName: {
-    fontSize: scaleFont(14),
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  statusText: {
-    fontSize: scaleFont(12),
-    fontFamily: 'Inter-Medium',
-  },
-  details: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailText: {
-    fontSize: scaleFont(14),
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
-    marginLeft: 6,
-  },
 });
+
+ExpirationCard.displayName = 'ExpirationCard';

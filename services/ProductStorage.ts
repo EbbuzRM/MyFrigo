@@ -1,330 +1,193 @@
 import { Product } from '@/types/Product';
+import { ServiceResult, createSuccessResult, createErrorResult } from '@/types/ServiceResult';
 import { supabase } from './supabaseClient';
 import { TablesInsert, TablesUpdate } from '@/types/supabase';
-import {
-  convertProductToCamelCase,
-  convertProductToSnakeCase,
-  convertProductsToCamelCase,
-} from '../utils/caseConverter';
+import { convertProductToCamelCase, convertProductToSnakeCase, convertProductsToCamelCase } from '../utils/caseConverter';
 import { randomUUID } from 'expo-crypto';
 import { LoggingService } from './LoggingService';
-import { TemplateService } from './TemplateService'; // Import for template saving
+import { TemplateService } from './TemplateService';
 
+/**
+ * Service for managing products in Supabase storage.
+ * All methods return standardized ServiceResult<T> for consistent error handling.
+ */
 export class ProductStorage {
+  private static readonly TIMEOUT_MS = 15000;
 
-  static async getProducts(): Promise<{ data: Product[] | null, error: Error | null }> {
+  /** Get current user ID or return error if not authenticated. */
+  private static async getCurrentUserId(): Promise<ServiceResult<string>> {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        return { data: [], error: null };
-      }
-      const userId = session.user.id;
+      return session?.user ? createSuccessResult(session.user.id) : createErrorResult(new Error('User not authenticated'));
+    } catch (error) {
+      return createErrorResult(error instanceof Error ? error : new Error('Failed to get session'));
+    }
+  }
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', userId);
+  /** Validate that a string ID is not empty. */
+  private static validateId(id: string, name: string): Error | null {
+    return !id || id.trim().length === 0 ? new Error(`${name} is required`) : null;
+  }
 
+  /** Handle database errors with logging. */
+  private static handleError(operation: string, error: unknown): Error {
+    const err = error instanceof Error ? error : new Error('Unknown error');
+    LoggingService.error('ProductStorage', operation, error);
+    return err;
+  }
+
+  /** Fetch all products for current user, sorted by expiration date. */
+  static async getProducts(): Promise<ServiceResult<Product[]>> {
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
+    try {
+      const { data, error } = await supabase.from('products').select('*').eq('user_id', userResult.data!);
       if (error) throw error;
-
       const products = data ? convertProductsToCamelCase(data) : [];
-
-      products.sort((a, b) => {
-        const dateA = new Date(a.expirationDate);
-        const dateB = new Date(b.expirationDate);
-        return dateA.getTime() - dateB.getTime();
-      });
-
-      return { data: products, error: null };
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error in getProducts', error);
-      return { data: null, error: error as Error };
-    }
+      products.sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
+      return createSuccessResult(products);
+    } catch (error) { return createErrorResult(this.handleError('Error in getProducts', error)); }
   }
 
-  static listenToProducts(callback: () => void): (() => void) {
-    const channel = supabase
-      .channel('public:products')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        () => {
-          LoggingService.info('ProductStorage', 'Change detected in products table, invoking callback');
-          callback();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          LoggingService.info('ProductStorage', 'Realtime channel subscribed for products');
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }
-
-  static async getProductById(productId: string): Promise<Product | null> {
+  /** Get single product by ID. */
+  static async getProductById(productId: string): Promise<ServiceResult<Product | null>> {
+    const validationError = this.validateId(productId, 'Product ID');
+    if (validationError) return createErrorResult(validationError);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', productId)
-        .single();
+      const { data, error } = await supabase.from('products').select('*').eq('id', productId).single();
       if (error) throw error;
-      return convertProductToCamelCase(data);
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', `Error getting product by ID ${productId}`, error);
-      return null;
-    }
+      return createSuccessResult(data ? convertProductToCamelCase(data) : null);
+    } catch (error) { return createErrorResult(this.handleError(`Error getting product by ID ${productId}`, error)); }
   }
 
-  static async saveProduct(product: Partial<Product>): Promise<void> {
+  /** Subscribe to real-time product changes. */
+  static listenToProducts(callback: () => void): () => void {
+    const channel = supabase.channel('public:products').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+      LoggingService.info('ProductStorage', 'Change detected in products table');
+      callback();
+    }).subscribe((status) => { if (status === 'SUBSCRIBED') LoggingService.info('ProductStorage', 'Realtime channel subscribed'); });
+    return () => supabase.removeChannel(channel);
+  }
+
+  /** Save product to database (insert or update). */
+  static async saveProduct(product: Partial<Product>): Promise<ServiceResult<void>> {
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<void>;
     try {
-      LoggingService.info('ProductStorage', 'Starting product save process');
-
-      // Aumentato timeout a 30s per debug
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout during product save')), 15000);
-      });
-
-      const savePromise = this.performSave(product);
-
-      await Promise.race([savePromise, timeoutPromise]);
-
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error saving product to Supabase', error);
-      throw error;
-    }
+      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout during product save')), this.TIMEOUT_MS));
+      await Promise.race([this.performUpsert(product, userResult.data!), timeoutPromise]);
+      return createSuccessResult(undefined);
+    } catch (error) { return createErrorResult(this.handleError('Error saving product', error)); }
   }
 
-  private static async performSave(product: Partial<Product>): Promise<void> {
-    LoggingService.info('ProductStorage', 'performSave: Getting session...');
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      throw new Error('User not authenticated to save product.');
-    }
-    const userId = session.user.id;
-    LoggingService.info('ProductStorage', 'performSave: User authenticated, proceeding with save');
-
-    const productToUpsert: Partial<Product> = { ...product };
-
-    if (!productToUpsert.id) {
-      productToUpsert.id = randomUUID();
-      if (!productToUpsert.status) {
-        productToUpsert.status = 'active';
-      }
-    }
-
-    const productWithUser: Partial<Product> & { userId: string } = {
-      ...productToUpsert,
-      userId: userId,
-    };
-
-    const snakeCaseProduct = convertProductToSnakeCase(productWithUser);
-
-    // Explicitly ensure is_frozen is set if isFrozen exists, to avoid any converter issues
-    if (productWithUser.isFrozen !== undefined) {
-      (snakeCaseProduct as unknown as Record<string, unknown>).is_frozen = productWithUser.isFrozen;
-    }
-
-    LoggingService.info('ProductStorage', `performSave: Attempting to upsert product to Supabase. Data: ${JSON.stringify(snakeCaseProduct)}`);
-
-    const { error } = await supabase
-      .from('products')
-      .upsert(snakeCaseProduct as unknown as TablesInsert<'products'>);
-
-    if (error) {
-      LoggingService.error('ProductStorage', 'Supabase upsert error:', error);
-      throw error;
-    }
-
-    LoggingService.info('ProductStorage', 'Product successfully saved to Supabase');
-
-    // Salva il template se c'è un barcode, ma non bloccare il salvataggio principale
-    if (productWithUser.barcode) {
-      try {
-        LoggingService.info('ProductStorage', 'Saving product template');
-        await TemplateService.saveProductTemplate(productWithUser as Product);
-        LoggingService.info('ProductStorage', 'Product template saved successfully');
-      } catch (templateError) {
-        LoggingService.error('ProductStorage', 'Error saving template (non-blocking):', templateError);
-        // Non propaghiamo l'errore del template per non bloccare il salvataggio principale
-      }
-    }
-
-    LoggingService.info('ProductStorage', 'Product save process completed successfully');
+  private static async performUpsert(product: Partial<Product>, userId: string): Promise<void> {
+    const productToUpsert = this.prepareProductForUpsert(product);
+    const snakeCaseProduct = convertProductToSnakeCase(productToUpsert);
+    (snakeCaseProduct as Record<string, unknown>).user_id = userId;
+    if (productToUpsert.isFrozen !== undefined) (snakeCaseProduct as Record<string, unknown>).is_frozen = productToUpsert.isFrozen;
+    const { error } = await supabase.from('products').upsert(snakeCaseProduct as TablesInsert<'products'>);
+    if (error) throw error;
+    if (productToUpsert.barcode) this.saveTemplateNonBlocking(productToUpsert as Product);
   }
 
-  static async deleteProduct(productId: string): Promise<void> {
+  private static prepareProductForUpsert(product: Partial<Product>): Partial<Product> {
+    const prepared = { ...product };
+    if (!prepared.id) { prepared.id = randomUUID(); prepared.status ??= 'active'; }
+    return prepared;
+  }
+
+  private static saveTemplateNonBlocking(product: Product): void {
+    TemplateService.saveProductTemplate(product).catch((error) => LoggingService.error('ProductStorage', 'Error saving template (non-blocking)', error));
+  }
+
+  /** Delete product by ID. */
+  static async deleteProduct(productId: string): Promise<ServiceResult<void>> {
+    const validationError = this.validateId(productId, 'Product ID');
+    if (validationError) return createErrorResult(validationError);
     try {
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error deleting product from Supabase', error);
-      throw error;
-    }
+      return createSuccessResult(undefined);
+    } catch (error) { return createErrorResult(this.handleError('Error deleting product', error)); }
   }
 
-  static async updateProductStatus(productId: string, status: Product['status']): Promise<void> {
+  /** Update product status and optionally set consumed date. */
+  static async updateProductStatus(productId: string, status: Product['status']): Promise<ServiceResult<void>> {
+    const idError = this.validateId(productId, 'Product ID');
+    if (idError) return createErrorResult(idError);
     try {
       const updatedFields: Partial<Product> = { status };
-
-      if (status === 'consumed') {
-        updatedFields.consumedDate = new Date().toISOString();
-      }
-
-      const { error: updateError } = await supabase
-        .from('products')
-        .update(convertProductToSnakeCase(updatedFields) as unknown as TablesUpdate<'products'>)
-        .eq('id', productId);
-
-      if (updateError) throw updateError;
-
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error updating product status in Supabase', error);
-      throw error;
-    }
-  }
-
-  static async getExpiredProducts(): Promise<Product[]> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        return [];
-      }
-      const userId = session.user.id;
-
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-      twoDaysAgo.setHours(0, 0, 0, 0);
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .lt('expiration_date', twoDaysAgo.toISOString())
-        .order('expiration_date', { ascending: true });
-
-      if (error) {
-        LoggingService.error('ProductStorage', 'Error getting expired products', error);
-        throw error;
-      }
-
-      return data ? convertProductsToCamelCase(data) : [];
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error in getExpiredProducts', error);
-      return [];
-    }
-  }
-
-  static async getTrulyExpiredProducts(): Promise<Product[]> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        return [];
-      }
-      const userId = session.user.id;
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'expired');
-
-      if (error) {
-        LoggingService.error('ProductStorage', 'Error getting truly expired products', error);
-        throw error;
-      }
-
-      return data ? convertProductsToCamelCase(data) : [];
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error in getTrulyExpiredProducts', error);
-      return [];
-    }
-  }
-
-  static async moveProductsToHistory(productIds: string[]): Promise<void> {
-    if (productIds.length === 0) {
-      LoggingService.info('ProductStorage', 'No product IDs provided to move to history.');
-      return;
-    }
-
-    try {
-      const updateData: TablesUpdate<'products'> = { status: 'expired' };
-      const { error: updateError } = await supabase
-        .from('products')
-        .update(updateData)
-        .in('id', productIds);
-
-      if (updateError) {
-        LoggingService.error('ProductStorage', 'Error updating products status to expired', updateError);
-        throw updateError;
-      }
-
-      LoggingService.info('ProductStorage', `${productIds.length} products moved to history as expired.`);
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error in moveProductsToHistory', error);
-      throw error;
-    }
-  }
-
-  static async updateProductImage(productId: string, imageUrl: string): Promise<void> {
-    try {
-      const updateData: TablesUpdate<'products'> = { image_url: imageUrl };
-      const { error } = await supabase
-        .from('products')
-        .update(updateData)
-        .eq('id', productId);
-
-      if (error) {
-        throw error;
-      }
-      LoggingService.info('ProductStorage', `Immagine aggiornata per il prodotto ${productId}`);
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', `Errore durante l'aggiornamento dell'immagine per il prodotto ${productId}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Recupera la cronologia dei prodotti consumati
-   * @returns Promise con la lista dei prodotti consumati
-   */
-  static async getHistory(): Promise<Product[]> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return [];
-      const userId = session.user.id;
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'consumed')
-        .order('consumed_date', { ascending: false });
+      if (status === 'consumed') updatedFields.consumedDate = new Date().toISOString();
+      const { error } = await supabase.from('products').update(convertProductToSnakeCase(updatedFields) as TablesUpdate<'products'>).eq('id', productId);
       if (error) throw error;
-      return data ? convertProductsToCamelCase(data) : [];
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', 'Error getting history from Supabase', error);
-      return [];
-    }
+      return createSuccessResult(undefined);
+    } catch (error) { return createErrorResult(this.handleError('Error updating product status', error)); }
   }
 
-  /**
-   * Ripristina un prodotto consumato impostandolo come attivo
-   * @param productId ID del prodotto da ripristinare
-   * @returns Promise che si risolve quando il prodotto è stato ripristinato
-   * @throws Error se si verifica un errore durante il ripristino
-   */
-  static async restoreConsumedProduct(productId: string): Promise<void> {
+  /** Get products expiring in last 2 days with active status. */
+  static async getExpiredProducts(): Promise<ServiceResult<Product[]>> {
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    twoDaysAgo.setHours(0, 0, 0, 0);
     try {
-      await this.updateProductStatus(productId, 'active');
-      LoggingService.info('ProductStorage', `Product ${productId} restored successfully`);
-    } catch (error: unknown) {
-      LoggingService.error('ProductStorage', `Error restoring product ${productId}`, error);
-      throw error;
-    }
+      const { data, error } = await supabase.from('products').select('*').eq('user_id', userResult.data!).eq('status', 'active').lt('expiration_date', twoDaysAgo.toISOString()).order('expiration_date', { ascending: true });
+      if (error) throw error;
+      return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
+    } catch (error) { return createErrorResult(this.handleError('Error getting expired products', error)); }
+  }
+
+  /** Get products with status 'expired'. */
+  static async getTrulyExpiredProducts(): Promise<ServiceResult<Product[]>> {
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
+    try {
+      const { data, error } = await supabase.from('products').select('*').eq('user_id', userResult.data!).eq('status', 'expired');
+      if (error) throw error;
+      return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
+    } catch (error) { return createErrorResult(this.handleError('Error getting truly expired products', error)); }
+  }
+
+  /** Move multiple products to history by setting status to 'expired'. */
+  static async moveProductsToHistory(productIds: string[]): Promise<ServiceResult<void>> {
+    if (!productIds.length) return createSuccessResult(undefined);
+    try {
+      const { error } = await supabase.from('products').update({ status: 'expired' } as TablesUpdate<'products'>).in('id', productIds);
+      if (error) throw error;
+      LoggingService.info('ProductStorage', `${productIds.length} products moved to history`);
+      return createSuccessResult(undefined);
+    } catch (error) { return createErrorResult(this.handleError('Error moving products to history', error)); }
+  }
+
+  /** Update product image URL. */
+  static async updateProductImage(productId: string, imageUrl: string): Promise<ServiceResult<void>> {
+    const idError = this.validateId(productId, 'Product ID');
+    if (idError) return createErrorResult(idError);
+    if (!imageUrl?.trim()) return createErrorResult(new Error('Image URL is required'));
+    try {
+      const { error } = await supabase.from('products').update({ image_url: imageUrl } as TablesUpdate<'products'>).eq('id', productId);
+      if (error) throw error;
+      return createSuccessResult(undefined);
+    } catch (error) { return createErrorResult(this.handleError('Error updating product image', error)); }
+  }
+
+  /** Get all consumed products ordered by consumed date (descending). */
+  static async getHistory(): Promise<ServiceResult<Product[]>> {
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
+    try {
+      const { data, error } = await supabase.from('products').select('*').eq('user_id', userResult.data!).eq('status', 'consumed').order('consumed_date', { ascending: false });
+      if (error) throw error;
+      return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
+    } catch (error) { return createErrorResult(this.handleError('Error getting history', error)); }
+  }
+
+  /** Restore consumed product back to active status. */
+  static async restoreConsumedProduct(productId: string): Promise<ServiceResult<void>> {
+    const result = await this.updateProductStatus(productId, 'active');
+    if (result.success) LoggingService.info('ProductStorage', `Product ${productId} restored successfully`);
+    else LoggingService.error('ProductStorage', `Error restoring product ${productId}`, result.error);
+    return result;
   }
 }

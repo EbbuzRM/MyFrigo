@@ -1,327 +1,376 @@
+/**
+ * @fileoverview Centralized error handler - Facade pattern.
+ * Aggregates specialized error handlers and provides a unified interface.
+ * This is the main entry point for error handling in the application.
+ */
+
 import { LoggingService } from '../services/LoggingService';
+import { ErrorCode, getErrorCategory, ErrorCategory } from '../types/errorCodes';
+import {
+  AppError,
+  ErrorConfig,
+  hasErrorCode,
+  hasErrorMessage,
+  isNetworkError,
+  extractErrorMessage,
+} from '../types/errorTypes';
+
+// Import specialized handlers
+import {
+  handleNetworkError,
+  isSessionExpired,
+  isUnauthorized,
+} from './NetworkErrorHandler';
+import { handleDatabaseError, isNotFoundError, isDuplicateEntryError } from './DatabaseErrorHandler';
+import { handleAuthError, isEmailNotConfirmed, isInvalidCredentials } from './AuthErrorHandler';
+
+// Import formatters
+import {
+  formatErrorForUI,
+  formatErrorForDebug,
+  getErrorTitle,
+  getErrorSuggestions,
+} from './errorFormatters';
+
+// ==================== ERROR CREATION ====================
 
 /**
- * Type guard per verificare se è un oggetto errore con proprietà code
+ * Creates a standardized application error
+ * @param config - Error configuration
+ * @returns Standardized AppError
  */
-function hasErrorCode(error: unknown): error is { code: string | number } {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    typeof (error as Record<string, unknown>).code === 'string'
-  );
-}
-
-/**
- * Type guard per verificare se è un oggetto errore con proprietà message
- */
-function hasErrorMessage(error: unknown): error is { message: string } {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-/**
- * Type guard per verificare se è un errore di rete
- */
-function isNetworkError(error: unknown): error is { code: string; message?: string } {
-  return hasErrorCode(error) && (
-    error.code === 'ERR_NETWORK' || 
-    error.code === 'ECONNABORTED'
-  );
-}
-
-/**
- * Interfaccia per gli errori standardizzati
- */
-export interface AppError {
-  code: string;
-  message: string;
-  details?: Record<string, unknown>;
-  timestamp: string;
-  stack?: string;
-}
-
-/**
- * Codici di errore standard
- */
-export enum ErrorCode {
-  // Errori di autenticazione
-  UNAUTHORIZED = 'UNAUTHORIZED',
-  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
-  EMAIL_NOT_CONFIRMED = 'EMAIL_NOT_CONFIRMED',
-  SESSION_EXPIRED = 'SESSION_EXPIRED',
-  
-  // Errori di validazione
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  INVALID_EMAIL_FORMAT = 'INVALID_EMAIL_FORMAT',
-  INVALID_DATA_FORMAT = 'INVALID_DATA_FORMAT',
-  
-  // Errori di database
-  DATABASE_ERROR = 'DATABASE_ERROR',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  NOT_FOUND = 'NOT_FOUND',
-  DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
-  
-  // Errori di sistema
-  SYSTEM_ERROR = 'SYSTEM_ERROR',
-  SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
-  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
-  
-  // Errori di autorizzazione
-  FORBIDDEN = 'FORBIDDEN',
-  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
-  
-  // Errori di configurazione
-  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
-  MISSING_ENVIRONMENT_VARIABLE = 'MISSING_ENVIRONMENT_VARIABLE'
-}
-
-/**
- * Classe per la gestione centralizzata degli errori
- */
-export class ErrorHandler {
-  /**
-   * Crea un errore standardizzato
-   */
-  static createError(
-    code: ErrorCode,
-    message: string,
-    details?: Record<string, unknown>,
-    originalError?: unknown
-  ): AppError {
-    const error: AppError = {
-      code,
-      message,
-      details,
-      timestamp: new Date().toISOString(),
-      stack: originalError && typeof originalError === 'object' && 'stack' in originalError 
-        ? (originalError as { stack?: string }).stack 
-        : undefined
-    };
-    
-    // Logga l'errore con dettagli appropriati
-    this.logError(error, originalError);
-    
-    return error;
+export function createError(config: ErrorConfig): AppError;
+export function createError(
+  code: ErrorCode,
+  message: string,
+  details?: Record<string, unknown>,
+  originalError?: unknown
+): AppError;
+export function createError(
+  codeOrConfig: ErrorCode | ErrorConfig,
+  message?: string,
+  details?: Record<string, unknown>,
+  originalError?: unknown
+): AppError {
+  // Handle object config
+  if (typeof codeOrConfig === 'object') {
+    const config = codeOrConfig;
+    return createErrorInternal(config.code, config.message, config.details, config.originalError);
   }
-  
-  /**
-   * Converte un errore sconosciuto in un AppError standardizzato
-   */
-  static normalizeError(error: unknown): AppError {
-    let code = ErrorCode.SYSTEM_ERROR;
-    let message = 'Errore sconosciuto';
-    let details: Record<string, unknown> | undefined = undefined;
-    
-    if (error instanceof Error) {
-      message = error.message;
-      
-      // Analizza il tipo di errore
-      if (error.message.includes('unauthorized') || error.message.includes('JWT')) {
-        code = ErrorCode.UNAUTHORIZED;
-      } else if (error.message.includes('email') && error.message.includes('confirm')) {
-        code = ErrorCode.EMAIL_NOT_CONFIRMED;
-      } else if (error.message.includes('validation') || error.message.includes('invalid')) {
-        code = ErrorCode.VALIDATION_ERROR;
-      } else if (error.message.includes('network') || error.message.includes('fetch')) {
-        code = ErrorCode.NETWORK_ERROR;
-      } else if (error.message.includes('not found')) {
-        code = ErrorCode.NOT_FOUND;
-      } else if (error.message.includes('duplicate') || error.message.includes('unique')) {
-        code = ErrorCode.DUPLICATE_ENTRY;
-      }
-      
-      details = {
-        originalMessage: error.message,
-        stack: error.stack
-      };
-    } else if (typeof error === 'object' && error !== null) {
-      message = hasErrorMessage(error) ? error.message : 'Errore sconosciuto';
-      details = error as Record<string, unknown>;
-      
-      if (hasErrorCode(error)) {
-        const errorCode = String(error.code).toUpperCase();
-        if (Object.values(ErrorCode).includes(errorCode as ErrorCode)) {
-          code = errorCode as ErrorCode;
-        }
-      }
-    }
-    
-    return this.createError(code, message, details, error);
-  }
-  
-  /**
-   * Logga l'errore in modo appropriato
-   */
-  private static logError(error: AppError, originalError?: unknown): void {
-    const logMessage = `[${error.code}] ${error.message}`;
-    
-    switch (error.code) {
-      case ErrorCode.UNAUTHORIZED:
-      case ErrorCode.SESSION_EXPIRED:
-      case ErrorCode.FORBIDDEN:
+
+  // Handle positional arguments
+  return createErrorInternal(codeOrConfig, message || 'Errore', details, originalError);
+}
+
+/**
+ * Internal error creation with logging
+ */
+function createErrorInternal(
+  code: ErrorCode,
+  message: string,
+  details?: Record<string, unknown>,
+  originalError?: unknown
+): AppError {
+  const error: AppError = {
+    code,
+    message,
+    details,
+    timestamp: new Date().toISOString(),
+    stack:
+      originalError && typeof originalError === 'object' && 'stack' in originalError
+        ? (originalError as { stack?: string }).stack
+        : undefined,
+  };
+
+  logError(error, originalError);
+  return error;
+}
+
+// ==================== ERROR LOGGING ====================
+
+/**
+ * Logs an error with appropriate severity based on error category
+ * @param error - The error to log
+ * @param originalError - Original error for additional context
+ */
+function logError(error: AppError, originalError?: unknown): void {
+  const logMessage = `[${error.code}] ${error.message}`;
+  const category = getErrorCategory(error.code);
+
+  switch (category) {
+    case 'AUTH':
+    case 'AUTHORIZATION':
+      LoggingService.warning('ErrorHandler', logMessage, error.details);
+      break;
+
+    case 'VALIDATION':
+      LoggingService.info('ErrorHandler', logMessage, error.details);
+      break;
+
+    case 'DATABASE':
+      if (error.code === ErrorCode.NETWORK_ERROR) {
         LoggingService.warning('ErrorHandler', logMessage, error.details);
-        break;
-        
-      case ErrorCode.VALIDATION_ERROR:
-      case ErrorCode.INVALID_EMAIL_FORMAT:
-        LoggingService.info('ErrorHandler', logMessage, error.details);
-        break;
-        
-      case ErrorCode.NETWORK_ERROR:
-      case ErrorCode.SERVICE_UNAVAILABLE:
-        LoggingService.warning('ErrorHandler', logMessage, error.details);
-        break;
-        
-      case ErrorCode.NOT_FOUND:
-        LoggingService.info('ErrorHandler', logMessage, error.details);
-        break;
-        
-      case ErrorCode.DATABASE_ERROR:
-      case ErrorCode.SYSTEM_ERROR:
-      case ErrorCode.CONFIGURATION_ERROR:
-      default:
+      } else {
         LoggingService.error('ErrorHandler', logMessage, originalError || error.details);
-        break;
-    }
-  }
-  
-  /**
-   * Gestisce gli errori di rete
-   */
-  static handleNetworkError(error: unknown): AppError {
-    if (isNetworkError(error)) {
-      const errorMessage = hasErrorMessage(error) ? error.message : 'Errore di rete';
-      return this.createError(
-        ErrorCode.NETWORK_ERROR,
-        'Errore di connessione. Controlla la tua connessione a internet e riprova.',
-        { originalError: errorMessage }
-      );
-    }
-    
-    return this.normalizeError(error);
-  }
-  
-  /**
-   * Gestisce gli errori di database
-   */
-  static handleDatabaseError(error: unknown): AppError {
-    let message = 'Errore durante l\'operazione sul database.';
-    let code = ErrorCode.DATABASE_ERROR;
-    
-    // Analizza l'errore specifico del database
-    if (hasErrorCode(error)) {
-      if (error.code === '23505') { // Unique violation
-        message = 'Dati duplicati. Questo valore esiste già.';
-        code = ErrorCode.DUPLICATE_ENTRY;
-      } else if (error.code === '23503') { // Foreign key violation
-        message = 'Riferimento a dati non esistenti.';
-        code = ErrorCode.VALIDATION_ERROR;
-      } else if (error.code === 'PGRST116') { // Rows not returned
-        message = 'Dati non trovati.';
-        code = ErrorCode.NOT_FOUND;
       }
-    }
-    
-    const errorMessage = hasErrorMessage(error) ? error.message : String(error);
-    const errorCode = hasErrorCode(error) ? error.code : undefined;
-    
-    return this.createError(code, message, { originalError: errorCode, details: errorMessage });
+      break;
+
+    case 'SYSTEM':
+    case 'CONFIGURATION':
+    default:
+      LoggingService.error('ErrorHandler', logMessage, originalError || error.details);
+      break;
   }
-  
-  /**
-   * Gestisce gli errori di validazione
-   */
-  static handleValidationError(field: string, value: unknown, rule: string): AppError {
-    return this.createError(
+}
+
+// ==================== ERROR ROUTING ====================
+
+/**
+ * Determines which error handler should handle the error
+ * @param error - Unknown error to analyze
+ * @returns Category of error for routing
+ */
+function determineErrorCategory(error: unknown): ErrorCategory {
+  // Check for network errors first (includes session/timeout)
+  if (isNetworkError(error) || isSessionExpired(error) || isUnauthorized(error)) {
+    return 'DATABASE'; // Network errors handled by NetworkErrorHandler
+  }
+
+  // Check for auth errors
+  if (isEmailNotConfirmed(error) || isInvalidCredentials(error)) {
+    return 'AUTH';
+  }
+
+  // Check for database errors by code
+  if (hasErrorCode(error)) {
+    const code = String(error.code);
+    // PostgreSQL error codes
+    if (/^\d{5}$/.test(code) || code.startsWith('PGRST')) {
+      return 'DATABASE';
+    }
+  }
+
+  // Check by message content
+  if (hasErrorMessage(error)) {
+    const msg = error.message.toLowerCase();
+
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
+      return 'DATABASE';
+    }
+    if (
+      msg.includes('unauthorized') ||
+      msg.includes('jwt') ||
+      msg.includes('token') ||
+      msg.includes('session')
+    ) {
+      return 'AUTH';
+    }
+    if (msg.includes('validation') || msg.includes('invalid format')) {
+      return 'VALIDATION';
+    }
+    if (msg.includes('database') || msg.includes('query') || msg.includes('sql')) {
+      return 'DATABASE';
+    }
+  }
+
+  return 'SYSTEM';
+}
+
+/**
+ * Main error handler - routes to specialized handlers
+ * @param error - Unknown error to handle
+ * @returns Standardized AppError
+ */
+export function handleError(error: unknown): AppError {
+  const category = determineErrorCategory(error);
+
+  switch (category) {
+    case 'AUTH':
+    case 'AUTHORIZATION':
+      return handleAuthError(error);
+
+    case 'DATABASE':
+      // Network errors go through network handler first
+      if (isNetworkError(error) || (hasErrorMessage(error) && error.message.includes('network'))) {
+        return handleNetworkError(error);
+      }
+      return handleDatabaseError(error);
+
+    case 'VALIDATION':
+      return handleValidationError(error);
+
+    case 'SYSTEM':
+    case 'CONFIGURATION':
+    default:
+      return normalizeError(error);
+  }
+}
+
+/**
+ * Handles validation errors
+ * @param error - Validation error or field info
+ * @returns Standardized AppError
+ */
+export function handleValidationError(
+  error: unknown,
+  field?: string,
+  rule?: string
+): AppError {
+  // If called with field and rule, create validation error
+  if (field && rule) {
+    return createError(
       ErrorCode.VALIDATION_ERROR,
       `Campo "${field}" non valido: ${rule}`,
-      { field, value, rule }
+      { field, rule, value: error }
     );
   }
-  
-  /**
-   * Gestisce gli errori di autenticazione
-   */
-  static handleAuthError(error: unknown): AppError {
-    if (hasErrorMessage(error) && error.message.includes('Email not confirmed')) {
-      return this.createError(
-        ErrorCode.EMAIL_NOT_CONFIRMED,
-        'Email non confermata. Controlla la tua email e clicca sul link di conferma.',
-        { originalError: error.message }
-      );
-    }
-    
-    if (hasErrorMessage(error) && (error.message.includes('Invalid credentials') || error.message.includes('Invalid login'))) {
-      return this.createError(
-        ErrorCode.INVALID_CREDENTIALS,
-        'Email o password non validi.',
-        { originalError: error.message }
-      );
-    }
-    
-    return this.normalizeError(error);
-  }
-  
-  /**
-   * Verifica se è un errore di sessione scaduta
-   */
-  static isSessionExpired(error: unknown): boolean {
-    if (!hasErrorMessage(error)) {
-      return hasErrorCode(error) && error.code === 'PGRST301';
-    }
-    
-    return (
-      error.message.includes('session') && 
-      (error.message.includes('expired') || error.message.includes('invalid'))
-    ) || (hasErrorCode(error) && error.code === 'PGRST301');
-  }
-  
-  /**
-   * Verifica se è un errore di autorizzazione
-   */
-  static isUnauthorized(error: unknown): boolean {
-    if (hasErrorCode(error) && error.code === 'PGRST301') {
-      return true;
-    }
-    
-    if (!hasErrorMessage(error)) {
-      return false;
-    }
-    
-    return (
-      error.message.includes('unauthorized') ||
-      error.message.includes('JWT') ||
-      error.message.includes('token')
+
+  // Otherwise normalize the error
+  if (hasErrorMessage(error)) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      error.message,
+      hasErrorCode(error) ? { originalCode: error.code } : undefined,
+      error
     );
   }
-  
-  /**
-   * Formatta un errore per la visualizzazione nell'interfaccia
-   */
-  static formatForUI(error: AppError): string {
-    // Messaggi personalizzati per gli errori comuni
-    switch (error.code) {
-      case ErrorCode.UNAUTHORIZED:
-        return 'Sessione scaduta. Per favore accedi di nuovo.';
-      case ErrorCode.EMAIL_NOT_CONFIRMED:
-        return error.message;
-      case ErrorCode.INVALID_CREDENTIALS:
-        return 'Credenziali non valide. Riprova.';
-      case ErrorCode.NETWORK_ERROR:
-        return 'Problema di connessione. Controlla la rete e riprova.';
-      case ErrorCode.NOT_FOUND:
-        return 'Dati non trovati.';
-      case ErrorCode.VALIDATION_ERROR:
-        return 'Dati inseriti non validi.';
-      case ErrorCode.DATABASE_ERROR:
-        return 'Errore durante il salvataggio dei dati.';
-      default:
-        return 'Si è verificato un errore. Riprova più tardi.';
-    }
-  }
+
+  return createError(
+    ErrorCode.VALIDATION_ERROR,
+    'Dati inseriti non validi.',
+    { originalError: String(error) },
+    error
+  );
 }
+
+/**
+ * Normalizes any error to AppError format
+ * @param error - Unknown error to normalize
+ * @returns Standardized AppError
+ */
+export function normalizeError(error: unknown): AppError {
+  let code = ErrorCode.SYSTEM_ERROR;
+  let message = extractErrorMessage(error, 'Errore sconosciuto');
+  let details: Record<string, unknown> | undefined;
+
+  if (error instanceof Error) {
+    details = {
+      originalMessage: error.message,
+      stack: error.stack,
+    };
+
+    // Analyze message for specific error types
+    const msg = error.message.toLowerCase();
+    if (msg.includes('unauthorized') || msg.includes('jwt')) {
+      code = ErrorCode.UNAUTHORIZED;
+    } else if (msg.includes('email') && msg.includes('confirm')) {
+      code = ErrorCode.EMAIL_NOT_CONFIRMED;
+    } else if (msg.includes('validation') || msg.includes('invalid')) {
+      code = ErrorCode.VALIDATION_ERROR;
+    } else if (msg.includes('network') || msg.includes('fetch')) {
+      code = ErrorCode.NETWORK_ERROR;
+    } else if (msg.includes('not found')) {
+      code = ErrorCode.NOT_FOUND;
+    } else if (msg.includes('duplicate') || msg.includes('unique')) {
+      code = ErrorCode.DUPLICATE_ENTRY;
+    }
+  } else if (typeof error === 'object' && error !== null) {
+    details = error as Record<string, unknown>;
+
+    if (hasErrorCode(error)) {
+      const errorCode = String(error.code).toUpperCase();
+      if (Object.values(ErrorCode).includes(errorCode as ErrorCode)) {
+        code = errorCode as ErrorCode;
+      }
+    }
+  }
+
+  return createError(code, message, details, error);
+}
+
+// ==================== BACKWARD COMPATIBILITY ====================
+
+/**
+ * @deprecated Use handleError() instead
+ * Handles network errors - delegates to NetworkErrorHandler
+ */
+export function handleNetworkErrorCompat(error: unknown): AppError {
+  return handleNetworkError(error);
+}
+
+/**
+ * @deprecated Use handleError() instead
+ * Handles database errors - delegates to DatabaseErrorHandler
+ */
+export function handleDatabaseErrorCompat(error: unknown): AppError {
+  return handleDatabaseError(error);
+}
+
+/**
+ * @deprecated Use handleAuthError() from AuthErrorHandler instead
+ * Handles auth errors - delegates to AuthErrorHandler
+ */
+export function handleAuthErrorCompat(error: unknown): AppError {
+  return handleAuthError(error);
+}
+
+// ==================== EXPORTS ====================
+
+// Re-export all types for convenience
+export { ErrorCode, getErrorCategory, isErrorCategory } from '../types/errorCodes';
+export type { ErrorCategory } from '../types/errorCodes';
+export type { AppError, ErrorConfig } from '../types/errorTypes';
+export {
+  hasErrorCode,
+  hasErrorMessage,
+  isNetworkError,
+  isStandardError,
+  extractErrorMessage,
+  extractErrorCode,
+} from '../types/errorTypes';
+
+// Re-export specialized handlers
+export { handleNetworkError, isSessionExpired, isUnauthorized } from './NetworkErrorHandler';
+export {
+  handleDatabaseError,
+  isNotFoundError,
+  isDuplicateEntryError,
+  isForeignKeyError,
+} from './DatabaseErrorHandler';
+export {
+  handleAuthError,
+  isEmailNotConfirmed,
+  isInvalidCredentials,
+  isAuthSessionExpired,
+  isForbidden,
+  isInsufficientPermissions,
+} from './AuthErrorHandler';
+
+// Re-export formatters
+export {
+  formatErrorForUI,
+  formatErrorForDebug,
+  getErrorTitle,
+  getErrorSuggestions,
+  formatErrorCode,
+} from './errorFormatters';
+
+// Legacy class for backward compatibility
+/**
+ * @deprecated Use the exported functions directly instead
+ * Legacy ErrorHandler class maintained for backward compatibility
+ */
+export class ErrorHandler {
+  static createError = createError;
+  static normalizeError = normalizeError;
+  static handleNetworkError = handleNetworkError;
+  static handleDatabaseError = handleDatabaseError;
+  static handleAuthError = handleAuthError;
+  static handleValidationError = handleValidationError;
+  static isSessionExpired = isSessionExpired;
+  static isUnauthorized = isUnauthorized;
+  static formatForUI = formatErrorForUI;
+}
+
+// Default export for backward compatibility
+export default ErrorHandler;

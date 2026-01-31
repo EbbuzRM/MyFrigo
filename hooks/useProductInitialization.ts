@@ -63,8 +63,8 @@ export const useProductInitialization = ({
     try {
       if (productId) {
         LoggingService.info('useProductInitialization', `Loading product for edit with ID: ${productId}`);
-        const productToEdit = await ProductStorage.getProductById(productId);
-        if (productToEdit) {
+        const { data: productToEdit, success } = await ProductStorage.getProductById(productId);
+        if (success && productToEdit) {
           LoggingService.info('useProductInitialization', `Product loaded successfully: ${productToEdit.name}`);
           initializeForm({
             product: productToEdit,

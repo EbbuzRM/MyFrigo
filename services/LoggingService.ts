@@ -1,39 +1,38 @@
-import { Paths, Directory, File } from 'expo-file-system';
 import { Platform } from 'react-native';
+import { LogFileManager } from './LogFileManager';
 
-// Definizione dei livelli di log
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARNING = 2,
   ERROR = 3,
-  NONE = 4 // Per disabilitare completamente i log
+  NONE = 4
 }
 
-// Configurazione del logger
 interface LoggerConfig {
   minLevel: LogLevel;
   enableConsole: boolean;
   enableFileLogging: boolean;
-  maxLogFileSize: number; // in bytes
-  maxLogFiles: number;
+  batchInterval: number;
+  batchSize: number;
 }
 
 class Logger {
   private static instance: Logger;
   private config: LoggerConfig;
-  private logFile: File | null = null;
-  private logsDirectory: Directory | null = null;
+  private fileManager: LogFileManager | null = null;
+  private logQueue: string[] = [];
+  private isWriting: boolean = false;
+  private batchTimer: ReturnType<typeof setInterval> | null = null;
   private isInitialized: boolean = false;
-  private pendingLogs: string[] = [];
 
   private constructor() {
     this.config = {
       minLevel: __DEV__ ? LogLevel.DEBUG : LogLevel.INFO,
       enableConsole: true,
-      enableFileLogging: !__DEV__, // Abilita il logging su file solo in produzione
-      maxLogFileSize: 1024 * 1024, //1MB
-      maxLogFiles: 5
+      enableFileLogging: !__DEV__,
+      batchInterval: 1000,
+      batchSize: 10
     };
   }
 
@@ -44,53 +43,14 @@ class Logger {
     return Logger.instance;
   }
 
-  /**
-   * Inizializza il logger
-   */
   public async initialize(): Promise<void> {
     if (this.isInitialized) return;
-
     try {
       if (this.config.enableFileLogging && Platform.OS !== 'web') {
-        // Crea la directory dei log
-        this.logsDirectory = new Directory(Paths.document, 'logs');
-
-        // Assicurati che la directory dei log esista
-        if (!this.logsDirectory.exists) {
-          this.logsDirectory.create({ intermediates: true });
-        }
-
-        // Crea il file di log
-        this.logFile = new File(this.logsDirectory, 'app.log');
-
-        // Verifica se il file di log esiste
-        if (this.logFile && this.logFile.exists) {
-          const fileInfo = this.logFile.info();
-          if (fileInfo.size !== undefined && fileInfo.size > this.config.maxLogFileSize) {
-            await this.rotateLogFiles();
-          }
-        }
-
-        // Scrivi i log pendenti
-        if (this.pendingLogs.length > 0) {
-          const logsToWrite = this.pendingLogs.join('\n') + '\n';
-          // Leggi il contenuto esistente e aggiungi i nuovi log
-          let existingContent = '';
-          try {
-            if (this.logFile.exists) {
-              existingContent = await this.logFile.text();
-            }
-          } catch (error) {
-            console.error('Error reading log file:', error);
-          }
-
-          this.logFile.write(existingContent + logsToWrite, {
-            encoding: 'utf8' as const
-          });
-          this.pendingLogs = [];
-        }
+        this.fileManager = new LogFileManager();
+        await this.fileManager.initialize();
+        this.batchTimer = setInterval(() => this.flushQueue(), this.config.batchInterval);
       }
-
       this.isInitialized = true;
       this.log(LogLevel.INFO, 'LoggingService', 'Logger initialized successfully');
     } catch (error) {
@@ -99,207 +59,89 @@ class Logger {
     }
   }
 
-  /**
-   * Configura il logger
-   */
   public configure(config: Partial<LoggerConfig>): void {
     this.config = { ...this.config, ...config };
     this.log(LogLevel.INFO, 'LoggingService', 'Logger configuration updated', config);
   }
 
-  /**
-   * Log di debug
-   */
   public debug(tag: string, message: string, data?: unknown): void {
     this.log(LogLevel.DEBUG, tag, message, data);
   }
 
-  /**
-   * Log informativo
-   */
   public info(tag: string, message: string, data?: unknown): void {
     this.log(LogLevel.INFO, tag, message, data);
   }
 
-  /**
-   * Log di avviso
-   */
   public warning(tag: string, message: string, data?: unknown): void {
     this.log(LogLevel.WARNING, tag, message, data);
   }
 
-  /**
-   * Log di errore
-   */
   public error(tag: string, message: string, error?: unknown): void {
-    if (error) {
-      this.log(LogLevel.ERROR, tag, message, error);
-    } else {
-      this.log(LogLevel.ERROR, tag, message);
-    }
+    this.log(LogLevel.ERROR, tag, message, error ?? undefined);
   }
 
-  /**
-   * Metodo principale per il logging
-   */
   public log(level: LogLevel, tag: string, message: string, data?: unknown): void {
     if (level < this.config.minLevel) return;
-
     const timestamp = new Date().toISOString();
     const levelStr = LogLevel[level];
-
-    // Formatta il messaggio di log
     let logMessage = `${timestamp} [${levelStr}] [${tag}] ${message}`;
-
-    // Aggiungi i dati se presenti
     if (data !== undefined) {
-      if (data instanceof Error) {
-        logMessage += `\nError: ${data.message}\nStack: ${data.stack || 'No stack trace available'}`;
-      } else if (typeof data === 'object') {
-        try {
-          logMessage += `\nData: ${JSON.stringify(data, null, 2)}`;
-        } catch (e) {
-          logMessage += `\nData: [Object cannot be stringified]`;
-        }
-      } else {
-        logMessage += `\nData: ${data}`;
-      }
+      if (data instanceof Error) logMessage += `\nError: ${data.message}\nStack: ${data.stack || 'No stack trace'}`;
+      else if (typeof data === 'object') {
+        try { logMessage += `\nData: ${JSON.stringify(data, null, 2)}`; } 
+        catch { logMessage += `\nData: [Object cannot be stringified]`; }
+      } else logMessage += `\nData: ${data}`;
     }
-
-    // Log su console se abilitato
     if (this.config.enableConsole) {
-      switch (level) {
-        case LogLevel.DEBUG:
-          console.debug(logMessage);
-          break;
-        case LogLevel.INFO:
-          console.info(logMessage);
-          break;
-        case LogLevel.WARNING:
-          console.warn(logMessage);
-          break;
-        case LogLevel.ERROR:
-          console.error(logMessage);
-          break;
-      }
+      const fn = level === LogLevel.DEBUG ? console.debug : level === LogLevel.INFO ? console.info :
+        level === LogLevel.WARNING ? console.warn : console.error;
+      fn(logMessage);
     }
+    if (this.config.enableFileLogging && Platform.OS !== 'web') this.queueLog(logMessage);
+  }
 
-    // Log su file se abilitato
-    if (this.config.enableFileLogging && Platform.OS !== 'web') {
-      this.writeToLogFile(logMessage);
+  private queueLog(message: string): void {
+    this.logQueue.push(message);
+    if (this.logQueue.length >= this.config.batchSize) {
+      this.flushQueue();
     }
   }
 
-  /**
-   * Scrive un messaggio nel file di log
-   */
-  private async writeToLogFile(message: string): Promise<void> {
-    if (!this.isInitialized || !this.logFile) {
-      // Salva il log per scriverlo dopo l'inizializzazione
-      this.pendingLogs.push(message);
-      return;
-    }
-
+  private async flushQueue(): Promise<void> {
+    if (this.isWriting || this.logQueue.length === 0 || !this.fileManager) return;
+    this.isWriting = true;
+    const logsToWrite = [...this.logQueue];
+    this.logQueue = [];
     try {
-      // Leggi il contenuto esistente e aggiungi il nuovo messaggio
-      let existingContent = '';
-      try {
-        if (this.logFile.exists) {
-          existingContent = await this.logFile.text();
-        }
-      } catch (error) {
-        console.error('Error reading log file:', error);
-      }
-
-      this.logFile.write(existingContent + message + '\n', {
-        encoding: 'utf8' as const
-      });
-
-      // Verifica la dimensione del file di log
-      if (this.logFile && this.logFile.exists) {
-        const fileInfo = this.logFile.info();
-        if (fileInfo.size !== undefined && fileInfo.size > this.config.maxLogFileSize) {
-          await this.rotateLogFiles();
-        }
-      }
+      await this.fileManager.writeBatch(logsToWrite);
     } catch (error) {
-      console.error('Failed to write to log file:', error);
+      console.error('Failed to flush log queue:', error);
+      this.logQueue.unshift(...logsToWrite);
+    } finally {
+      this.isWriting = false;
     }
   }
 
-  /**
-   * Ruota i file di log quando il file corrente diventa troppo grande
-   */
-  private async rotateLogFiles(): Promise<void> {
-    try {
-      if (!this.logsDirectory || !this.logFile) {
-        return;
-      }
-
-      // Rinomina i file di log esistenti
-      for (let i = this.config.maxLogFiles - 1; i > 0; i--) {
-        const oldFile = new File(this.logsDirectory, `app.log.${i - 1}`);
-        const newFile = new File(this.logsDirectory, `app.log.${i}`);
-
-        if (oldFile.exists) {
-          oldFile.move(newFile);
-        }
-      }
-
-      // Rinomina il file di log corrente
-      const rotatedFile = new File(this.logsDirectory, 'app.log.0');
-      this.logFile.move(rotatedFile);
-
-      // Crea un nuovo file di log vuoto
-      this.logFile = new File(this.logsDirectory, 'app.log');
-      this.logFile.write('', {
-        encoding: 'utf8' as const
-      });
-    } catch (error) {
-      console.error('Failed to rotate log files:', error);
-    }
-  }
-
-  /**
-   * Ottiene i log correnti
-   */
   public async getLogs(): Promise<string> {
-    if (!this.config.enableFileLogging || Platform.OS === 'web') {
-      return 'File logging is disabled or not supported on this platform';
-    }
-
-    try {
-      if (!this.logFile || !this.logFile.exists) {
-        return 'No log file exists';
-      }
-
-      return await this.logFile.text();
-    } catch (error) {
-      console.error('Failed to read log file:', error);
-      return `Error reading logs: ${error}`;
-    }
+    if (!this.fileManager) return 'File logging is disabled or not supported on this platform';
+    await this.flushQueue();
+    return this.fileManager.getLogs();
   }
 
-  /**
-   * Cancella tutti i log
-   */
   public async clearLogs(): Promise<void> {
-    if (!this.config.enableFileLogging || Platform.OS === 'web') {
-      return;
-    }
+    if (!this.fileManager) return;
+    await this.flushQueue();
+    await this.fileManager.clear();
+    this.log(LogLevel.INFO, 'LoggingService', 'Logs cleared');
+  }
 
-    try {
-      if (this.logFile) {
-        this.logFile.write('', {
-          encoding: 'utf8' as const
-        });
-      }
-      this.log(LogLevel.INFO, 'LoggingService', 'Logs cleared');
-    } catch (error) {
-      console.error('Failed to clear logs:', error);
+  public destroy(): void {
+    if (this.batchTimer) {
+      clearInterval(this.batchTimer);
+      this.batchTimer = null;
     }
+    this.flushQueue();
   }
 }
 
-// Esporta un'istanza singleton del logger
 export const LoggingService = Logger.getInstance();

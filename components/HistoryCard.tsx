@@ -1,248 +1,116 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Calendar, Package, CheckCircle, XCircle, RotateCcw } from 'lucide-react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay } from 'react-native-reanimated';
 import { Product } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay } from 'react-native-reanimated';
-import { LoggingService } from '@/services/LoggingService';
-import { scaleFont } from '@/utils/scaleFont';
-
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    flexDirection: 'row',
-    overflow: 'hidden',
-  },
-  statusIndicator: {
-    width: 5,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  productInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-    marginRight: 4,
-  },
-  categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  categoryEmoji: {
-    fontSize: scaleFont(24),
-  },
-  categoryImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-  },
-  textContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  productName: {
-    fontSize: scaleFont(17),
-    fontFamily: 'Inter-SemiBold',
-    color: isDarkMode ? '#c9d1d9' : '#1e293b',
-  },
-  brandName: {
-    fontSize: scaleFont(14),
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
-  },
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  categoryName: {
-    fontSize: scaleFont(14),
-    fontFamily: 'Inter-Medium',
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  restoreButton: {
-    padding: 8,
-  },
-  details: {
-    gap: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  detailText: {
-    fontSize: scaleFont(14),
-    fontFamily: 'Inter-Regular',
-    color: isDarkMode ? '#8b949e' : '#64748B',
-  },
-  dateText: {
-    fontSize: scaleFont(14),
-    fontFamily: 'Inter-Medium',
-    color: isDarkMode ? '#c9d1d9' : '#334155',
-  },
-});
+import { HistoryCardHeader } from './HistoryCardHeader';
+import { HistoryCardDetails } from './HistoryCardDetails';
+import { useStatusInfo, formatHistoryDate, HistoryStatus } from './HistoryCardStatus';
+import { getHistoryCardStyles } from './HistoryCard.styles';
 
 interface HistoryCardProps {
+  /** Product data to display */
   product: Product;
-  type: 'consumed' | 'expired';
+  /** History entry type */
+  type: HistoryStatus;
+  /** Callback when restore button is pressed */
   onRestore?: (productId: string) => void;
+  /** Index for staggered animation */
   index?: number;
 }
 
-export function HistoryCard({ product, type, onRestore, index = 0 }: HistoryCardProps) {
+/**
+ * Animation delay per item (ms)
+ */
+const ANIMATION_DELAY_PER_ITEM = 100;
+
+/**
+ * Animation duration (ms)
+ */
+const ANIMATION_DURATION = 400;
+
+/**
+ * HistoryCard Component
+ * @description Displays a history entry card for consumed or expired products.
+ * Features animated entry, category icon, quantity display, and restore functionality.
+ */
+export const HistoryCard = React.memo(({
+  product,
+  type,
+  onRestore,
+  index = 0,
+}: HistoryCardProps) => {
   const { isDarkMode } = useTheme();
   const { getCategoryById } = useCategories();
-  const styles = getStyles(isDarkMode);
+  const styles = getHistoryCardStyles(isDarkMode);
 
   const categoryInfo = getCategoryById(product.category);
-  
-  // Animazione
+
+  // Animation setup
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
 
   React.useEffect(() => {
-    opacity.value = withDelay(index * 100, withTiming(1, { duration: 400 }));
-    translateY.value = withDelay(index * 100, withTiming(0, { duration: 400 }));
+    opacity.value = withDelay(
+      index * ANIMATION_DELAY_PER_ITEM,
+      withTiming(1, { duration: ANIMATION_DURATION })
+    );
+    translateY.value = withDelay(
+      index * ANIMATION_DELAY_PER_ITEM,
+      withTiming(0, { duration: ANIMATION_DURATION })
+    );
   }, [index, opacity, translateY]);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-      transform: [{ translateY: translateY.value }],
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
-  const getStatusInfo = () => {
-    const themeColors = {
-      consumed: {
-        icon: <CheckCircle size={24} color={isDarkMode ? '#4ade80' : '#16a34a'} />,
-        backgroundColor: isDarkMode ? '#142e1f' : '#f0fdf4',
-        borderColor: isDarkMode ? '#1c4b2a' : '#bbf7d0',
-        color: isDarkMode ? '#4ade80' : '#16a34a'
-      },
-      expired: {
-        icon: <XCircle size={24} color={isDarkMode ? '#f87171' : '#dc2626'} />,
-        backgroundColor: isDarkMode ? '#311919' : '#fee2e2',
-        borderColor: isDarkMode ? '#5b2121' : '#fecaca',
-        color: isDarkMode ? '#f87171' : '#dc2626'
-      },
-    };
-    const date = type === 'consumed' ? product.consumedDate : product.expirationDate;
-    const statusText = type === 'consumed' ? 'Consumato' : 'Scaduto';
-    
-    return { ...themeColors[type], date, statusText };
-  };
+  // Status info with memoization
+  const date = type === 'consumed' ? product.consumedDate : product.expirationDate;
+  const statusInfo = useStatusInfo({ type, isDarkMode, date });
 
-  const statusInfo = getStatusInfo();
+  // Memoized handlers
+  const handleRestore = useCallback(() => {
+    onRestore?.(product.id);
+  }, [onRestore, product.id]);
+
+  // Memoized formatted date
+  const formattedDate = useMemo(() => formatHistoryDate(date), [date]);
 
   if (!categoryInfo) {
-    return null; // or a placeholder
+    return null;
   }
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={animatedStyle} testID="history-card">
       <View style={[styles.card, { borderColor: statusInfo.borderColor }]}>
-        <View style={[styles.statusIndicator, { backgroundColor: statusInfo.color }]} />
+        <View
+          style={[styles.statusIndicator, { backgroundColor: statusInfo.color }]}
+          accessibilityLabel={`Status: ${statusInfo.statusText}`}
+        />
         <View style={styles.content}>
           <View style={styles.header}>
-            <View style={styles.productInfo}>
-              <View style={[styles.categoryIcon, { backgroundColor: categoryInfo.color + '20' }]}>
-                {categoryInfo.localIcon ? (
-                  <Image source={categoryInfo.localIcon} style={styles.categoryImage} />
-                ) : categoryInfo.icon && categoryInfo.icon.startsWith('http') ? (
-                  <Image source={{ uri: categoryInfo.icon }} style={styles.categoryImage} />
-                ) : (
-                  <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
-                )}
-              </View>
-              <View style={styles.textContainer}>
-                <Text style={styles.productName} numberOfLines={1}>
-                  {product.name}
-                </Text>
-                {product.brand && (
-                  <Text style={styles.brandName} numberOfLines={1}>
-                    {product.brand}
-                  </Text>
-                )}
-                <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '33' }]}>
-                  <Text style={[styles.categoryName, { color: isDarkMode ? '#ffffff' : categoryInfo.color }]}>
-                    {categoryInfo.name}
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.statusContainer}>
-              {statusInfo.icon}
-            </View>
+            <HistoryCardHeader
+              productName={product.name}
+              brand={product.brand}
+              categoryInfo={categoryInfo}
+            />
+            <View style={styles.statusContainer}>{statusInfo.icon}</View>
           </View>
-          
-          <View style={styles.details}>
-            <View style={styles.detailRow}>
-              <View style={styles.detailItem}>
-                <Package size={16} color={isDarkMode ? '#8b949e' : '#64748B'} />
-                <Text style={styles.detailText}>
-                  {Array.isArray(product.quantities) && product.quantities.length > 0
-                    ? product.quantities.length > 1
-                      ? `${product.quantities.map(q => `${q.quantity} ${q.unit || 'pz'}`).join(', ')}`
-                      : `${product.quantities[0].quantity} ${product.quantities[0].unit || 'pz'}`
-                    : 'N/A'
-                  }
-                </Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Calendar size={16} color={isDarkMode ? '#8b949e' : '#64748B'} />
-                <Text style={styles.dateText}>
-                  {statusInfo.statusText}: {new Date(statusInfo.date || '').toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                </Text>
-              </View>
-            </View>
-            
-            {type === 'consumed' && onRestore && (
-              <TouchableOpacity
-                testID="restore-button"
-                style={[styles.restoreButton, { alignSelf: 'flex-end' }]}
-                onPress={() => onRestore(product.id)}
-              >
-                <RotateCcw size={20} color={isDarkMode ? '#4ade80' : '#16a34a'} />
-                <Text style={{ color: isDarkMode ? '#4ade80' : '#16a34a', fontFamily: 'Inter-Medium', fontSize: scaleFont(14) }}>
-                  Ripristina
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          <HistoryCardDetails
+            quantities={product.quantities}
+            statusText={statusInfo.statusText}
+            formattedDate={formattedDate}
+            statusColor={statusInfo.color}
+            type={type}
+            onRestore={handleRestore}
+          />
         </View>
       </View>
     </Animated.View>
   );
-}
+});
+
+HistoryCard.displayName = 'HistoryCard';
