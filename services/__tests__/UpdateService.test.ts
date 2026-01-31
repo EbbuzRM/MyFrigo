@@ -32,22 +32,24 @@ Object.defineProperty(process, 'env', {
 describe('UpdateService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset __DEV__ to false before each test (some tests might change it)
+    // Reset __DEV__ to false before each test
     (global as any).__DEV__ = false;
+    // Reset service state
+    UpdateService.resetState();
   });
 
   describe('initialize', () => {
     it('should initialize successfully in production', async () => {
       await UpdateService.initialize();
-      
+
       expect(UpdateService.isReady()).toBe(true);
     });
 
     it('should not initialize in development mode', async () => {
       (global as any).__DEV__ = true;
-      
+
       await UpdateService.initialize();
-      
+
       expect(UpdateService.isReady()).toBe(true);
     });
 
@@ -57,7 +59,7 @@ describe('UpdateService', () => {
       // checks Platform.OS and the default is not 'web'
       // This test verifies the service can handle different platforms
       await UpdateService.initialize();
-      
+
       expect(UpdateService.isReady()).toBe(true);
     });
   });
