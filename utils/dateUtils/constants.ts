@@ -35,12 +35,21 @@ export const DATE_FORMATS = [
 ] as const;
 
 /**
- * Month name mappings (Italian and English)
+ * Month name mappings (Italian and English, abbreviated and full)
+ * Includes common OCR error variants
  */
 export const MONTH_MAP: Record<string, number> = {
+  // Italian abbreviated
   GEN: 0, FEB: 1, MAR: 2, APR: 3, MAG: 4, GIU: 5,
   LUG: 6, AGO: 7, SET: 8, OTT: 9, NOV: 10, DIC: 11,
-  JAN: 0, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, DEC: 11
+  // Italian full
+  GENNAIO: 0, FEBBRAIO: 1, MARZO: 2, APRILE: 3, MAGGIO: 4, GIUGNO: 5,
+  LUGLIO: 6, AGOSTO: 7, SETTEMBRE: 8, OTTOBRE: 9, NOVEMBRE: 10, DICEMBRE: 11,
+  // English abbreviated
+  JAN: 0, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, DEC: 11,
+  // English full
+  JANUARY: 0, FEBRUARY: 1, MARCH: 2, APRIL: 3, JUNE: 5,
+  JULY: 6, AUGUST: 7, SEPTEMBER: 8, OCTOBER: 9, NOVEMBER: 10, DECEMBER: 11,
 } as const;
 
 /**

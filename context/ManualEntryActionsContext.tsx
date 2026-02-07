@@ -57,6 +57,9 @@ function processScannedData(data: InitializeFormData): Partial<FormState> {
     barcode: data.barcode || '',
     selectedCategory: data.category || data.selectedCategory || '',
     imageUrl: data.imageUrl || null,
+    expirationDate: data.expirationDate || '',
+    purchaseDate: data.purchaseDate || '',
+    notes: data.notes || '',
   };
   if (data.quantity != null) {
     state.quantities = [{ id: uuidv4(), quantity: String(data.quantity), unit: data.unit || 'pz' }];

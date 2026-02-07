@@ -77,21 +77,24 @@ export function createDateValidator(
 }
 
 /**
- * Validates that a year is a 2-digit year and normalizes it.
- * Applies 2000/1900 century logic based on year value.
+ * Normalizes a 2-digit year to 4-digit year for food expiration dates.
+ * All 2-digit years are interpreted as 2000s (26→2026, 99→2099).
+ * This is appropriate for food expiration dates which are always in the future.
  *
- * @param year - The 2-digit year (0-99)
- * @returns The normalized 4-digit year
+ * @param year - The 2-digit year (0-99) or already 4-digit year
+ * @returns The normalized 4-digit year in 2000s
  *
  * @example
  * ```typescript
  * normalizeTwoDigitYear(25); // Returns 2025
- * normalizeTwoDigitYear(80); // Returns 1980
+ * normalizeTwoDigitYear(99); // Returns 2099
+ * normalizeTwoDigitYear(2024); // Returns 2024 (unchanged)
  * ```
  */
 export function normalizeTwoDigitYear(year: number): number {
   if (year < 0 || year > 99) {
-    return year;
+    return year; // Already 4-digit or invalid, return as-is
   }
-  return year < 50 ? year + 2000 : year + 1900;
+  // For food expiration dates: all 2-digit years are in 2000s
+  return year + 2000;
 }
