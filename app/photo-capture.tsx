@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { View, Button, BackHandler, Text } from 'react-native';
+import { View, Button, BackHandler, Text, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,6 +24,8 @@ import { LoggingService } from '@/services/LoggingService';
 const PhotoCaptureScreen: React.FC = memo(() => {
   const { isDarkMode } = useTheme();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [extractedDate, setExtractedDate] = useState<string | null>(null);
+  const [showDateConfirmation, setShowDateConfirmation] = useState(false);
   const isFocused = useIsFocused();
 
   const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
@@ -56,6 +58,8 @@ const PhotoCaptureScreen: React.FC = memo(() => {
   // Initialize photo actions hook
   const {
     confirmPhoto,
+    extractExpirationDate,
+    navigateToManualEntry,
     ocrProgress,
     resetOCRProgress,
   } = usePhotoActions();
@@ -82,17 +86,83 @@ const PhotoCaptureScreen: React.FC = memo(() => {
 
   /**
    * Handle confirming the captured photo
+   * For expiration date mode, runs OCR and shows confirmation UI
    */
   const handleConfirmPhoto = useCallback(async () => {
-    await confirmPhoto(capturedImage, captureMode);
-  }, [confirmPhoto, capturedImage, captureMode]);
+    if (captureMode === 'expirationDateOnly' && capturedImage) {
+      try {
+        const ocrResult = await extractExpirationDate(capturedImage);
+        
+        if (ocrResult.success && ocrResult.extractedDate) {
+          // Show date confirmation UI
+          setExtractedDate(ocrResult.extractedDate);
+          setShowDateConfirmation(true);
+        } else {
+          // No date detected - show options to retry or enter manually
+          Alert.alert(
+            "Data Non Rilevata",
+            ocrResult.error || "Non è stato possibile trovare una data di scadenza nell'immagine.",
+            [
+              {
+                text: 'Inserisci manualmente',
+                onPress: () => router.replace({ 
+                  pathname: '/manual-entry', 
+                  params: { ...params, isEditMode: 'false' } 
+                }),
+                style: 'cancel'
+              },
+              {
+                text: 'Riprova',
+                onPress: () => {
+                  resetOCRProgress();
+                  setCapturedImage(null);
+                }
+              }
+            ]
+          );
+        }
+      } catch (error) {
+        LoggingService.error('PhotoCaptureScreen', 'Error extracting expiration date', error);
+        Alert.alert(
+          "Errore",
+          "Si è verificato un errore durante l'elaborazione dell'immagine.",
+          [{ text: 'OK' }]
+        );
+      }
+    } else {
+      // For other modes, use the standard confirm flow
+      await confirmPhoto(capturedImage, captureMode);
+    }
+  }, [captureMode, capturedImage, extractExpirationDate, confirmPhoto, resetOCRProgress, params]);
+
+  /**
+   * Handle confirming the extracted date and navigating to manual entry
+   */
+  const handleConfirmDate = useCallback(() => {
+    if (extractedDate) {
+      navigateToManualEntry(extractedDate);
+    }
+  }, [extractedDate, navigateToManualEntry]);
+
+  /**
+   * Handle editing the extracted date
+   * Navigate to manual entry with the date pre-filled
+   */
+  const handleEditDate = useCallback(() => {
+    if (extractedDate) {
+      navigateToManualEntry(extractedDate);
+    }
+  }, [extractedDate, navigateToManualEntry]);
 
   /**
    * Handle retaking the photo
    */
   const handleRetakePhoto = useCallback(() => {
     setCapturedImage(null);
-  }, []);
+    setExtractedDate(null);
+    setShowDateConfirmation(false);
+    resetOCRProgress();
+  }, [resetOCRProgress]);
 
   /**
    * Handle canceling OCR and returning to camera
@@ -100,6 +170,8 @@ const PhotoCaptureScreen: React.FC = memo(() => {
   const handleCancelOCR = useCallback(() => {
     resetOCRProgress();
     setCapturedImage(null);
+    setExtractedDate(null);
+    setShowDateConfirmation(false);
   }, [resetOCRProgress]);
 
   /**
@@ -109,6 +181,8 @@ const PhotoCaptureScreen: React.FC = memo(() => {
   const handleBackPress = useCallback(() => {
     if (capturedImage) {
       setCapturedImage(null);
+      setExtractedDate(null);
+      setShowDateConfirmation(false);
       return true;
     }
     router.back();
@@ -163,6 +237,11 @@ const PhotoCaptureScreen: React.FC = memo(() => {
           onRetake={handleRetakePhoto}
           onConfirm={handleConfirmPhoto}
           onCancelOCR={handleCancelOCR}
+          extractedDate={extractedDate}
+          showDateConfirmation={showDateConfirmation}
+          onConfirmDate={handleConfirmDate}
+          onEditDate={handleEditDate}
+          captureMode={captureMode}
         />
       </SafeAreaView>
     );

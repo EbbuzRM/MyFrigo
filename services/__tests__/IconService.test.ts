@@ -1859,8 +1859,14 @@ describe('IconService', () => {
 
   // Test getFallbackIcon
   describe('getFallbackIcon', () => {
-    it('should return null', () => {
-      expect(IconService.getFallbackIcon('any category')).toBeNull();
+    it('should return default food emoji for unknown category', () => {
+      expect(IconService.getFallbackIcon('any category')).toBe('🥫');
+    });
+
+    it('should return specific emoji for known categories', () => {
+      expect(IconService.getFallbackIcon('food')).toBe('🍽️');
+      expect(IconService.getFallbackIcon('cibo')).toBe('🍽️');
+      expect(IconService.getFallbackIcon('bevande')).toBe('🥤');
     });
   });
 
@@ -1895,13 +1901,13 @@ describe('IconService', () => {
       (IconService.getLocalProductIcon as jest.Mock).mockReturnValue(null);
       (IconService as any).loadIconCache.mockResolvedValue({}); // No cache hit
       const icon = await IconService.fetchIconForCategory('Cane'); // 'Cane' translates to 'dog'
-      // The function might return null if no matching icon is found in the local data
-      expect(icon).toBeNull();
+      // If no icon is found, it should return the fallback emoji
+      expect(icon).toBeDefined();
       // The logging message might be different, so let's just check that some info logging occurred
       expect(LoggingService.info).toHaveBeenCalled();
     });
 
-    it('should return null fallback if no icon is found anywhere', async () => {
+    it('should return fallback emoji if no icon is found anywhere', async () => {
       (IconService.getLocalProductIcon as jest.Mock).mockReturnValue(null);
       (IconService as any).iconCache = {};
       // Mock searchInLocalData to return empty
@@ -1909,9 +1915,10 @@ describe('IconService', () => {
       (IconService as any).searchInLocalData = jest.fn().mockReturnValue([]);
       
       const icon = await IconService.fetchIconForCategory('NonExistentCategory');
-      expect(icon).toBeNull();
+      // Should return the default food emoji fallback
+      expect(icon).toBe('🥫');
       // The actual implementation logs with the fallback value included
-      expect(LoggingService.warning).toHaveBeenCalledWith('IconService', 'No icon found for NonExistentCategory, using fallback: null');
+      expect(LoggingService.warning).toHaveBeenCalledWith('IconService', 'No icon found for NonExistentCategory, using fallback: 🥫');
 
       // Restore original searchInLocalData
       (IconService as any).searchInLocalData = originalSearchInLocalData;

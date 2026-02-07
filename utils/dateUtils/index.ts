@@ -3,8 +3,6 @@
  * @module dateUtils
  *
  * This module provides comprehensive date parsing, validation, and formatting utilities.
- * The implementation has been refactored from a single monolithic file (247 lines)
- * into focused modules for better maintainability.
  *
  * @example
  * ```typescript
@@ -48,19 +46,6 @@ export {
   parseMonthYearDate,
 } from './parsers';
 
-// Re-export registry parsers
-export {
-  parseWithRegistry,
-  parserRegistry,
-} from './registry-parsers';
-
-// Re-export registry utilities
-export {
-  DateParserRegistry,
-  createDateParser,
-  globalParserRegistry,
-} from './registry/index';
-
 // Re-export formatters
 export {
   isDateInFuture,
@@ -69,3 +54,4 @@ export {
   isDateWith31InShortMonth,
   sortDatesAscending,
 } from './formatters';
+

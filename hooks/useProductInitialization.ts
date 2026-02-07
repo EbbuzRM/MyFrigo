@@ -35,6 +35,8 @@ export const useProductInitialization = ({
     setIsInitialized,
     initializeForm,
     setImageUrl,
+    expirationDate,
+    setExpirationDate,
   } = useManualEntry();
 
   const productId = useMemo(() =>
@@ -97,6 +99,17 @@ export const useProductInitialization = ({
     LoggingService.info('useProductInitialization', 'useEffect triggered for loadData');
     loadData();
   }, [loadData]);
+
+  // Effect for handling expiration date passed from photo capture
+  useEffect(() => {
+    if (params.fromPhotoCapture === 'true' && params.expirationDate && expirationDate !== params.expirationDate) {
+      const expirationDateParam = Array.isArray(params.expirationDate) ? params.expirationDate[0] : params.expirationDate;
+      if (expirationDateParam) {
+        LoggingService.info('useProductInitialization', `Setting expirationDate from photo capture: ${expirationDateParam}`);
+        setExpirationDate(expirationDateParam);
+      }
+    }
+  }, [params.fromPhotoCapture, params.expirationDate, expirationDate, setExpirationDate]);
 
   // Effect for handling photo capture image URL
   useEffect(() => {

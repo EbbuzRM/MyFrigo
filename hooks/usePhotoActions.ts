@@ -17,13 +17,20 @@ interface RouterParams {
 }
 
 /**
+ * Result of confirming a photo
+ */
+export type ConfirmPhotoResult = 'success' | 'retry';
+
+/**
  * Interface for photo actions hook return values
  */
 interface UsePhotoActionsReturn {
   /** Confirm the captured photo and process based on capture mode */
-  confirmPhoto: (capturedImage: string | null, captureMode: CaptureMode) => Promise<void>;
-  /** Extract expiration date using OCR */
+  confirmPhoto: (capturedImage: string | null, captureMode: CaptureMode) => Promise<ConfirmPhotoResult>;
+  /** Extract expiration date using OCR and return result for UI display */
   extractExpirationDate: (imageUri: string) => Promise<OCRResult>;
+  /** Navigate to manual entry with extracted date */
+  navigateToManualEntry: (expirationDate: string) => void;
   /** Current OCR progress state */
   ocrProgress: {
     isProcessing: boolean;
@@ -70,69 +77,29 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
   }, []);
 
   /**
-   * Handle expiration date extraction and navigation
+   * Handle expiration date extraction
    * @param imageUri - The captured image URI
-   * @param productId - Optional product ID for edit mode
+   * @returns OCR result with extracted date or error info
    */
   const handleExpirationDateExtraction = useCallback(async (
-    imageUri: string,
-    productId?: string
-  ): Promise<void> => {
+    imageUri: string
+  ): Promise<OCRResult> => {
     try {
       const ocrResult = await extractOCRDate(imageUri);
 
       if (ocrResult.success && ocrResult.extractedDate) {
         setExpirationDate(ocrResult.extractedDate);
-        
-        const returnParams = {
-          ...params,
-          expirationDate: ocrResult.extractedDate,
-          fromPhotoCapture: 'true',
-          // Force edit mode if coming from existing product
-          isEditMode: productId ? 'true' : (params.isEditMode || 'false')
-        };
-
-        Alert.alert(
-          "Data Rilevata",
-          `Data di scadenza rilevata: ${ocrResult.extractedDate}`,
-          [{ 
-            text: 'OK', 
-            onPress: () => router.replace({ pathname: '/manual-entry', params: returnParams }) 
-          }]
-        );
-        
         LoggingService.info('usePhotoActions', `Expiration date extracted: ${ocrResult.extractedDate}`);
       } else {
-        // No date detected - show options to retry or enter manually
-        Alert.alert(
-          "Data Non Rilevata",
-          ocrResult.error || "Non è stato possibile trovare una data di scadenza nell'immagine.",
-          [
-            {
-              text: 'Inserisci manualmente',
-              onPress: () => router.replace({ 
-                pathname: '/manual-entry', 
-                params: { ...params, isEditMode: 'false' } 
-              }),
-              style: 'cancel'
-            },
-            {
-              text: 'Riprova',
-              onPress: () => {
-                // Reset will be handled by caller
-                resetProgress();
-              }
-            }
-          ]
-        );
-        
         LoggingService.warning('usePhotoActions', 'No expiration date detected in image');
       }
+
+      return ocrResult;
     } catch (error) {
       LoggingService.error('usePhotoActions', 'Error extracting expiration date', error);
       throw error;
     }
-  }, [extractOCRDate, setExpirationDate, params, resetProgress]);
+  }, [extractOCRDate, setExpirationDate]);
 
   /**
    * Handle product photo capture (default mode)
@@ -151,17 +118,32 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
   }, [setImageUrl]);
 
   /**
+   * Navigate to manual entry with extracted date
+   * @param expirationDate - The extracted expiration date
+   */
+  const navigateToManualEntry = useCallback((expirationDate: string) => {
+    const returnParams = {
+      ...params,
+      expirationDate,
+      fromPhotoCapture: 'true',
+      isEditMode: params.isEditMode || 'false'
+    };
+    router.replace({ pathname: '/manual-entry', params: returnParams });
+  }, [params]);
+
+  /**
    * Confirm the captured photo and process based on capture mode
    * @param capturedImage - The captured image URI
    * @param captureMode - The mode determining how to process the photo
+   * @returns 'success' if photo was processed successfully
    */
   const confirmPhoto = useCallback(async (
     capturedImage: string | null, 
     captureMode: CaptureMode
-  ): Promise<void> => {
+  ): Promise<ConfirmPhotoResult> => {
     if (!capturedImage) {
       LoggingService.warning('usePhotoActions', 'Confirm photo called with null image');
-      return;
+      return 'success';
     }
 
     const productId = params.productId;
@@ -175,16 +157,17 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
             LoggingService.error('usePhotoActions', 'updateProductPhoto mode without productId');
             Alert.alert("Errore", "ID prodotto mancante per l'aggiornamento.", [{ text: 'OK' }]);
           }
-          break;
+          return 'success';
 
         case 'expirationDateOnly':
-          await handleExpirationDateExtraction(capturedImage, productId);
-          break;
+          // For expiration date mode, we return success immediately
+          // The actual OCR and date display is handled separately by the component
+          return 'success';
 
         case 'productPhoto':
         default:
           await handleProductPhotoCapture(capturedImage);
-          break;
+          return 'success';
       }
     } catch (error) {
       LoggingService.error('usePhotoActions', 'Error in confirmPhoto', error);
@@ -193,17 +176,18 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
         "Si è verificato un errore durante l'elaborazione dell'immagine.",
         [{ text: 'OK' }]
       );
+      return 'success';
     }
   }, [
     params.productId, 
     handleUpdateProductPhoto, 
-    handleExpirationDateExtraction, 
     handleProductPhotoCapture
   ]);
 
   return {
     confirmPhoto,
-    extractExpirationDate: extractOCRDate,
+    extractExpirationDate: handleExpirationDateExtraction,
+    navigateToManualEntry,
     ocrProgress,
     resetOCRProgress: resetProgress,
   };

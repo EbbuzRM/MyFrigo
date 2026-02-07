@@ -19,7 +19,8 @@ export function parseDateFromString(dateString: string): DateParseResult {
     return { success: false, date: null, formattedDate: null, error: 'Invalid input' };
   }
 
-  const trimmedInput = dateString.trim();
+  // Normalize backslashes to slashes for consistent parsing
+  const trimmedInput = dateString.trim().replace(/\\/g, '/');
 
   for (const dateFormat of DATE_FORMATS) {
     const parsedDate = parse(trimmedInput, dateFormat, new Date());
