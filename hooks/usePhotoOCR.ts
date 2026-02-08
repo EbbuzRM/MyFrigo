@@ -28,6 +28,13 @@ import {
   calculateConfidence,
   hasExpirationKeyword,
 } from '@/utils/ocrConfidence';
+import {
+  calculateDistance,
+  isRightOf,
+  isBelow,
+  isAbove,
+} from '@/utils/ocrGeometry';
+import { isExpirationAnchor } from '@/utils/ocrKeywords';
 
 export interface OCRResult {
   success: boolean;
@@ -108,104 +115,157 @@ export const usePhotoOCR = () => {
 
       setOcrProgress(prev => ({ ...prev, progress: 50, currentStep: 'Pulizia e analisi testo...' }));
 
-      const rawText = textRecognitionResult.blocks.map((block: TextBlock) => block.text).join(' ').replace(/\n/g, ' ');
-      const rawUpperText = rawText.toUpperCase();
+      // --- SPATIAL ANALYSIS START ---
 
-      LoggingService.debug(TAG, 'Testo grezzo:', rawText);
+      const allMatches: {
+        value: string,
+        isSequence: boolean,
+        isMonthYear: boolean,
+        isTextual: boolean,
+        isDerived: boolean,
+        frame?: TextBlock['frame']
+      }[] = [];
 
-      const allMatches: { value: string, isSequence: boolean, isMonthYear: boolean, isTextual: boolean }[] = [];
+      const anchors: TextBlock[] = [];
 
-      // IMPORTANT: Extract textual dates FIRST from raw text (before OCR character substitution)
-      // This preserves month names like "OTT", "SET", "FEB" that would be destroyed by O→0, S→5, B→8
-      const textualMatches = rawUpperText.match(textualMonthPattern);
-      if (textualMatches) {
-        allMatches.push(...textualMatches.map(m => ({ value: m, isSequence: false, isMonthYear: false, isTextual: true })));
-        LoggingService.debug(TAG, 'Date testuali trovate (pre-cleaning):', textualMatches);
-      }
+      // Iterate over blocks to preserve spatial context (Frame)
+      for (const block of textRecognitionResult.blocks) {
+        const blockText = block.text.replace(/\n/g, ' ');
+        const blockUpper = blockText.toUpperCase();
 
-      // Apply OCR character substitution only in numeric contexts
-      // This fixes common OCR errors where 0→O, 5→S, 8→B without breaking month names
-      const cleanedText = rawUpperText
-        .replace(/(?<=\d)O(?=\d)|(?<=\d)O\b|\bO(?=\d)/g, '0')  // O→0 only adjacent to digits
-        .replace(/(?<=\d)S(?=\d)|(?<=\d)S\b|\bS(?=\d)/g, '5')  // S→5 only adjacent to digits
-        .replace(/(?<=\d)B(?=\d)|(?<=\d)B\b|\bB(?=\d)/g, '8'); // B→8 only adjacent to digits
-
-      LoggingService.debug(TAG, 'Testo pulito (OCR fix):', cleanedText);
-
-      for (const pattern of datePatterns) {
-        const matches = cleanedText.match(pattern);
-        if (matches) {
-          allMatches.push(...matches.map(m => ({ value: m, isSequence: false, isMonthYear: false, isTextual: false })));
+        // 1. Check for Anchors
+        if (isExpirationAnchor(blockUpper)) {
+          anchors.push(block);
+          LoggingService.debug(TAG, `Anchor found: "${blockText}" at ${JSON.stringify(block.frame)}`);
         }
-      }
 
-      const monthYearMatches = cleanedText.match(monthYearPattern);
-      if (monthYearMatches) {
-        allMatches.push(...monthYearMatches.map(m => ({ value: m, isSequence: false, isMonthYear: true, isTextual: false })));
-      }
+        // 2. Clean Text (OCR Fixes) - applied per block
+        const cleanedBlockText = blockUpper
+          .replace(/(?<=\d)O(?=\d)|(?<=\d)O\b|\bO(?=\d)/g, '0')
+          .replace(/(?<=\d)S(?=\d)|(?<=\d)S\b|\bS(?=\d)/g, '5')
+          .replace(/(?<=\d)B(?=\d)|(?<=\d)B\b|\bB(?=\d)/g, '8');
 
-      // Match month/year with space separator (e.g., "FINE: 08 2026" or "08 26")
-      const monthYearSpaceMatches = cleanedText.match(monthYearSpacePattern);
-      if (monthYearSpaceMatches) {
-        // Convert space-separated to slash-separated for consistent parsing
-        const normalizedMatches = monthYearSpaceMatches.map(m => {
-          const parts = m.replace(/FINE[:\s]*/gi, '').trim().split(/\s+/);
-          if (parts.length === 2) {
-            return `${parts[0]}/${parts[1]}`;
-          }
-          return m;
-        });
-        allMatches.push(...normalizedMatches.map(m => ({ value: m, isSequence: false, isMonthYear: true, isTextual: false })));
-        LoggingService.debug(TAG, `Month/year con spazio trovate: ${monthYearSpaceMatches.join(', ')} -> ${normalizedMatches.join(', ')}`);
-      }
+        // 3. Extract Dates from Block
 
-      // Gestione date con punto mancante (es: "14.012027" -> "14.01.2027")
-      const fuzzyMatches = cleanedText.match(fuzzyDatePattern);
-      if (fuzzyMatches) {
-        for (const match of fuzzyMatches) {
-          const fuzzyRegex = /(\d{1,2})[./-](\d{1,2})(\d{4})/;
-          const fuzzyResult = match.match(fuzzyRegex);
-          if (fuzzyResult) {
-            const [, day, month, year] = fuzzyResult;
-            const reconstructedDate = `${day}.${month}.${year}`;
-            allMatches.push({ value: reconstructedDate, isSequence: false, isMonthYear: false, isTextual: false });
-            LoggingService.debug(TAG, `Data fuzzy ricostruita: ${match} -> ${reconstructedDate}`);
+        // Textual Matches
+        const textualMatches = cleanedBlockText.match(textualMonthPattern);
+        if (textualMatches) {
+          allMatches.push(...textualMatches.map(m => ({
+            value: m, isSequence: false, isMonthYear: false, isTextual: true, isDerived: false, frame: block.frame
+          })));
+        }
+
+        // Standard Patterns
+        for (const pattern of datePatterns) {
+          const matches = cleanedBlockText.match(pattern);
+          if (matches) {
+            allMatches.push(...matches.map(m => ({
+              value: m, isSequence: false, isMonthYear: false, isTextual: false, isDerived: false, frame: block.frame
+            })));
           }
         }
-      }
 
-      // Gestione date parziali (es: "30/08" senza anno) - generate only likely dates
-      const partialMatches = cleanedText.match(partialDatePattern);
-      if (partialMatches) {
-        const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth() + 1;
+        // Month/Year Patterns
+        const monthYearMatches = cleanedBlockText.match(monthYearPattern);
+        if (monthYearMatches) {
+          allMatches.push(...monthYearMatches.map(m => ({
+            value: m, isSequence: false, isMonthYear: true, isTextual: false, isDerived: false, frame: block.frame
+          })));
+        }
 
-        for (const match of partialMatches) {
-          const partialRegex = /(\d{1,2})[/\-.](0?[1-9]|1[0-2])/;
-          const partialResult = match.match(partialRegex);
-          if (partialResult) {
-            const [, dayStr, monthStr] = partialResult;
-            const day = parseInt(dayStr, 10);
-            const month = parseInt(monthStr, 10);
+        // Month/Year Space
+        const monthYearSpaceMatches = cleanedBlockText.match(monthYearSpacePattern);
+        if (monthYearSpaceMatches) {
+          const normalizedMatches = monthYearSpaceMatches.map(m => {
+            const parts = m.replace(/FINE[:\s]*/gi, '').trim().split(/\s+/);
+            return parts.length === 2 ? `${parts[0]}/${parts[1]}` : m;
+          });
+          allMatches.push(...normalizedMatches.map(m => ({
+            value: m, isSequence: false, isMonthYear: true, isTextual: false, isDerived: false, frame: block.frame
+          })));
+        }
 
-            // Only valid day/month combinations
-            if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
-              // Add date for current year and next year (expiration dates are typically in the future)
-              for (const year of [currentYear, currentYear + 1]) {
-                const testDate = `${day}.${month.toString().padStart(2, '0')}.${year}`;
-                allMatches.push({ value: testDate, isSequence: false, isMonthYear: false, isTextual: false });
+        // Fuzzy Dates
+        const fuzzyMatches = cleanedBlockText.match(fuzzyDatePattern);
+        if (fuzzyMatches) {
+          for (const match of fuzzyMatches) {
+            const fuzzyRegex = /(\d{1,2})[./-](\d{1,2})(\d{4})/;
+            const fuzzyResult = match.match(fuzzyRegex);
+            if (fuzzyResult) {
+              const [, day, month, year] = fuzzyResult;
+              allMatches.push({
+                value: `${day}.${month}.${year}`, isSequence: false, isMonthYear: false, isTextual: false, isDerived: true, frame: block.frame
+              });
+            }
+          }
+        }
+
+        // Partial Dates
+        const partialMatches = cleanedBlockText.match(partialDatePattern);
+        if (partialMatches) {
+          const currentYear = new Date().getFullYear();
+          for (const match of partialMatches) {
+            const partialRegex = /(\d{1,2})\s*[/\\\-.]\s*(1[0-2]|0?[1-9])/i;
+            const partialResult = match.match(partialRegex);
+            if (partialResult) {
+              const [, dayStr, monthStr] = partialResult;
+              const day = parseInt(dayStr, 10);
+              const month = parseInt(monthStr, 10);
+              if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+                for (const year of [currentYear, currentYear + 1]) {
+                  const testDate = `${day}.${month.toString().padStart(2, '0')}.${year}`;
+                  allMatches.push({
+                    value: testDate, isSequence: false, isMonthYear: false, isTextual: false, isDerived: true, frame: block.frame
+                  });
+                }
               }
-              LoggingService.debug(TAG, `Data parziale: ${match} (provando ${currentYear} e ${currentYear + 1})`);
+            }
+          }
+        }
+
+        // Numeric Sequences
+        const spacelessText = cleanedBlockText.replace(/[\s.\-/]/g, '');
+        let seqMatch;
+        const currentSeqPattern = new RegExp(sequencePattern.source, sequencePattern.flags);
+        while ((seqMatch = currentSeqPattern.exec(spacelessText)) !== null) { // Apply to spaceless for sequence check
+          // Note: sequence detection on spaceless text loses accurate frame association if we use block.frame
+          // but it's acceptable for now as sequences are usually self-contained.
+          const [full, d, m, y] = seqMatch;
+          allMatches.push({
+            value: `${d}.${m}.${y}`, isSequence: true, isMonthYear: false, isTextual: false, isDerived: false, frame: block.frame
+          });
+        }
+      }
+
+      // --- SPATIAL LINKING ---
+
+      const spatiallyAnchoredMatches = new Set<string>(); // Set of match values that are anchored
+
+      for (const match of allMatches) {
+        if (!match.frame) continue;
+
+        for (const anchor of anchors) {
+          if (!anchor.frame) continue;
+
+          // Check spatial relationship: Right, Below, or Above
+          // We use a relatively generous tolerance for "nearby"
+          // Distance < 150 (approx pixels, adjustable)
+          const dist = calculateDistance(match.frame, anchor.frame);
+
+          if (dist < 200) { // Within reasonable proximity
+            const right = isRightOf(anchor.frame, match.frame);
+            const below = isBelow(anchor.frame, match.frame);
+            const above = isAbove(anchor.frame, match.frame); // As requested by user
+
+            if (right || below || above) {
+              LoggingService.debug(TAG, `SPATIAL MATCH: Date ${match.value} linked to Anchor "${anchor.text}" (Dist: ${dist.toFixed(0)}, R:${right} B:${below} A:${above})`);
+              spatiallyAnchoredMatches.add(match.value);
             }
           }
         }
       }
 
-      const spacelessText = cleanedText.replace(/[\s.\-/]/g, '');
-      const sequenceMatches = spacelessText.match(sequencePattern);
-      if (sequenceMatches) {
-        allMatches.push(...sequenceMatches.map(m => ({ value: m, isSequence: true, isMonthYear: false, isTextual: false })));
-      }
+      const rawText = textRecognitionResult.blocks.map(b => b.text).join(' '); // Reconstruct for legacy return
 
       if (allMatches.length === 0) {
         return { success: false, extractedDate: null, confidence: 0, rawText, error: 'Nessuna data rilevata' };
@@ -215,19 +275,23 @@ export const usePhotoOCR = () => {
 
       const validDates: string[] = [];
       const rejectedDates: string[] = [];
+      const matchingContexts = new Map<string, boolean>(); // Store if a valid date was spatially anchored
 
       for (const match of allMatches) {
         const normalized = normalizeDate(match.value, match.isSequence, match.isMonthYear, match.isTextual);
         if (normalized) {
           validDates.push(normalized);
+          // If this match was spatially anchored, record it for the normalized date
+          if (spatiallyAnchoredMatches.has(match.value)) {
+            matchingContexts.set(normalized, true);
+          }
           LoggingService.debug(TAG, `Data valida trovata: ${match.value} -> ${normalized}`);
         } else {
           rejectedDates.push(match.value);
-          LoggingService.debug(TAG, `Data scartata: ${match.value}`);
         }
       }
 
-      LoggingService.info(TAG, `Trovate ${validDates.length} date valide, scartate ${rejectedDates.length} date non valide`);
+      LoggingService.info(TAG, `Trovate ${validDates.length} date valide`);
 
       if (validDates.length === 0) {
         return { success: false, extractedDate: null, confidence: 0, rawText, error: 'Nessuna data valida trovata' };
@@ -241,22 +305,66 @@ export const usePhotoOCR = () => {
         return { success: false, extractedDate: null, confidence: 0, rawText, error: 'Nessuna data futura trovata' };
       }
 
-      const filteredDates = futureDates.filter(date => {
-        if (isDateWith31InShortMonth(date)) {
-          LoggingService.debug(TAG, `Filtrata data impossibile: ${toLocalISOString(date)}`);
-          return false;
+      const filteredDates = futureDates.filter(date => !isDateWith31InShortMonth(date));
+
+      // Prioritize dates with Spatial Intelligence
+
+      const prioritizedDates = filteredDates.length > 0 ? filteredDates : futureDates;
+
+      const scoredDates = prioritizedDates.map(date => {
+        const dateStr = toLocalISOString(date);
+        let score = 0;
+
+        const match = allMatches.find(m => {
+          const norm = normalizeDate(m.value, m.isSequence, m.isMonthYear, m.isTextual);
+          return norm === dateStr;
+        });
+
+        // 1. SPATIAL BOOST (The Game Changer)
+        // If this date is geometrically linked to "SCAD", "EXP", etc.
+        if (matchingContexts.get(dateStr)) {
+          score += 200; // Massive boost, practically guarantees selection
+          LoggingService.debug(TAG, `Spatial Boost (+200) for ${dateStr}`);
         }
-        return true;
+
+        // 2. 4-Digit Year Boost
+        if (match && /\d{4}/.test(match.value) && !match.isDerived) {
+          score += 100;
+        }
+
+        // 3. Authentic vs Derived
+        if (match) {
+          if (match.isDerived) {
+            score -= 100;
+          } else if (!match.isSequence) {
+            score += 50;
+          }
+        }
+
+        // 4. Textual Month
+        if (match?.isTextual) {
+          score += 30;
+        }
+
+        return { date, score };
       });
 
-      const sortedDates = sortDatesAscending(filteredDates.length > 0 ? filteredDates : futureDates);
-      const chosenDate = sortedDates[0];
+      // Sort by score (descending) then by date (ascending)
+      const finalSorted = scoredDates.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return a.date.getTime() - b.date.getTime();
+      });
+
+      const chosenDate = finalSorted[0].date;
       const finalDate = toLocalISOString(chosenDate);
+      const finalScore = finalSorted[0].score;
 
       setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'Completato!' }));
-      LoggingService.info(TAG, `Data di scadenza estratta: ${finalDate}`);
+      LoggingService.info(TAG, `Data scelta (punteggio ${finalScore}): ${finalDate}`);
 
-      // Calculate dynamic confidence based on match quality
+      // Calculate dynamic confidence
       const winningMatch = allMatches.find(m => {
         const normalized = normalizeDate(m.value, m.isSequence, m.isMonthYear, m.isTextual);
         return normalized === finalDate;
@@ -272,19 +380,18 @@ export const usePhotoOCR = () => {
         validDatesCount: validDates.length,
         rejectedDatesCount: rejectedDates.length,
         wasReconstructed: false,
-        hasKeywordContext: hasExpirationKeyword(rawText),
+        hasKeywordContext: matchingContexts.get(finalDate) || hasExpirationKeyword(rawText), // Use spatial anchor or text fallback
       });
 
       const ocrResult = {
         success: true,
         extractedDate: finalDate,
-        confidence: dynamicConfidence,
+        confidence: Math.min(1, dynamicConfidence + (matchingContexts.get(finalDate) ? 0.1 : 0)), // Bonus confidence for spatial link
         rawText,
       };
 
-      LoggingService.info(TAG, `OCR extraction completed (confidence: ${dynamicConfidence})`);
+      LoggingService.info(TAG, `OCR extraction completed (confidence: ${ocrResult.confidence})`);
       return ocrResult;
-
     } catch (error) {
       LoggingService.error(TAG, 'Errore OCR:', error);
       setOcrProgress({ isProcessing: false, progress: 0, currentStep: '' });

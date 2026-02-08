@@ -5,18 +5,19 @@
 
 /**
  * Standard date patterns (dd/mm/yyyy, dd-mm-yyyy, etc.)
+ * Allows optional spaces around separators.
  */
 export const STANDARD_DATE_PATTERNS = [
-    /\b(\d{1,2}[/\\\-.]\d{1,2}[/\\\-.](\d{4}|\d{2}))\b/g,
-    /(?:scad|exp|best before|use by|expires?|valido fino)[\s:]*(\d{1,2}[/\\\-.]\d{1,2}[/\\\-.](\d{4}|\d{2}))/gi,
-    /\b(\d{1,2}\s+\d{1,2}\s+\d{4})\b/g,
-    /\b(\d{1,2})\s+(\d{1,2})\s*[^0-9]*(\d{4})\b/g,
+    /\b(\d{1,2}\s*[/\\\-.]\s*\d{1,2}\s*[/\\\-.]\s*(\d{4}|\d{2}))\b/g,
+    /(?:scad|exp|best before|use by|expires?|valido fino)[\s:]*(\d{1,2}\s*[/\\\-.]\s*\d{1,2}\s*[/\\\-.]\s*(\d{4}|\d{2}))/gi,
+    /\b(\d{1,2})\s+(\d{1,2})\s+(\d{4}|\d{2})\b/g,
+    /\b(\d{1,2})\s*[/\\\-.]\s*(\d{1,2})\s*[/\\\-.]\s*(\d{4}|\d{2})\b/g,
 ] as const;
 
 /**
  * Month/Year pattern (MM/yyyy or MM/yy with separators)
  */
-export const MONTH_YEAR_PATTERN = /\b(0?[1-9]|1[0-2])[/\\\-.](\d{4}|\d{2})\b/g;
+export const MONTH_YEAR_PATTERN = /\b(0?[1-9]|1[0-2])\s*[/\\\-.]\s*(\d{4}|\d{2})\b/g;
 
 /**
  * Month/Year with space separator (e.g., "08 2026", "08 26")
@@ -26,8 +27,9 @@ export const MONTH_YEAR_SPACE_PATTERN = /(?:FINE[:\s]*)?(?:\b)(0?[1-9]|1[0-2])\s
 
 /**
  * Numeric sequence pattern (6 or 8 digits like 150125 or 15012025)
+ * Also supports spaces (e.g., "2911 2038")
  */
-export const SEQUENCE_PATTERN = /\b(\d{8}|\d{6})\b/g;
+export const SEQUENCE_PATTERN = /\b(\d{2})\s*(\d{2})\s*(\d{4}|\d{2})\b/g;
 
 /**
  * Textual month pattern (DD MMM YYYY like "15 GEN 2025" or "15 OTT 26")
@@ -42,7 +44,7 @@ export const FUZZY_DATE_PATTERN = /\b(\d{1,2})[./-](\d{1,2})(\d{4})\b/g;
 /**
  * Partial date pattern (e.g., "30/08" without year)
  */
-export const PARTIAL_DATE_PATTERN = /\b(\d{1,2})[/\\\-.](\d{1,2})\b/g;
+export const PARTIAL_DATE_PATTERN = /\b(\d{1,2})\s*[/\\\-.]\s*(1[0-2]|0?[1-9])\b/g;
 
 /**
  * Type for match type categories
