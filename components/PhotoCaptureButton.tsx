@@ -13,6 +13,7 @@ interface ExpirationPhotoButtonProps extends AccessibilityProps {
   mode?: 'expirationDateOnly' | 'full';
   accessible?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 /**
@@ -25,6 +26,7 @@ export const ExpirationPhotoButton = React.memo(({
   mode = 'expirationDateOnly',
   accessible = true,
   accessibilityLabel = 'Capture expiration date with camera',
+  testID = 'capture-expiration-date-button',
 }: ExpirationPhotoButtonProps) => {
   const styles = getButtonStyles(isDarkMode);
   const { navigateToPhotoCapture } = usePhotoNavigation();
@@ -41,6 +43,7 @@ export const ExpirationPhotoButton = React.memo(({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityHint="Opens camera to capture expiration date"
+      testID={testID}
     >
       <Text style={styles.photoButtonText}>
         {mode === 'expirationDateOnly' ? 'Fotografa la scadenza' : 'Scatta Foto'}
@@ -123,8 +126,8 @@ export const ProductPhotoButton = React.memo(({
         <Text style={styles.imageLabel}>
           Immagine Prodotto (clicca per modificare)
         </Text>
-        <Image 
-          source={{ uri: imageUrl }} 
+        <Image
+          source={{ uri: imageUrl }}
           style={styles.productImage}
           resizeMode="contain"
           accessibilityIgnoresInvertColors={true}

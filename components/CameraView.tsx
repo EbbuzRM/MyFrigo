@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Text } from 'react-native';
 import { CameraView as ExpoCameraView } from 'expo-camera';
 import { Camera as CameraIcon, Image as ImageIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { PhotoCaptureStyles } from '@/app/photo-capture.styles';
+import { PhotoCaptureStyles } from '@/app/_photo-capture.styles';
 import { CaptureMode } from '@/hooks/useCamera';
 
 /**
@@ -49,7 +49,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
           autoFocus: 'on',
         })}
       />
-      
+
       {/* Focus frame positioned absolutely over the camera */}
       {isExpirationDateMode && (
         <View style={styles.macroFocusFrame}>
@@ -65,6 +65,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
           onPress={onPickImage}
           accessibilityLabel="Seleziona dalla galleria"
           accessibilityRole="button"
+          testID="pick-image-button"
         >
           <ImageIcon size={24} color="#fff" />
         </TouchableOpacity>
@@ -74,6 +75,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
           onPress={onTakePicture}
           accessibilityLabel="Scatta foto"
           accessibilityRole="button"
+          testID="capture-button"
         >
           <CameraIcon size={32} color="#fff" />
         </TouchableOpacity>

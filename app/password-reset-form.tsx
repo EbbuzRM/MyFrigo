@@ -186,6 +186,7 @@ export default function PasswordResetForm() {
 
       <View style={styles.inputContainer}>
         <TextInput
+          testID="new-password-input"
           style={styles.input}
           placeholder="Nuova password"
           secureTextEntry={!isPasswordVisible}
@@ -200,6 +201,7 @@ export default function PasswordResetForm() {
 
       <View style={styles.inputContainer}>
         <TextInput
+          testID="confirm-password-input"
           style={styles.input}
           placeholder="Conferma password"
           secureTextEntry={!isConfirmPasswordVisible}
@@ -221,6 +223,7 @@ export default function PasswordResetForm() {
       </View>
 
       <TouchableOpacity
+        testID="confirm-reset-button"
         style={[
           styles.button,
           isButtonDisabled ? styles.buttonDisabled : styles.buttonEnabled
