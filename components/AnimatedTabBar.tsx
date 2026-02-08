@@ -31,13 +31,13 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
 
         const onPress = () => {
           LoggingService.info('AnimatedTabBar', `Tab pressed -> name: ${route.name}, index: ${index}`);
-    
+
           const event = navigation.emit({
             type: 'tabPress' as const,
             target: route.key,
             canPreventDefault: true,
           });
-    
+
           if (!isFocused && !(event as any).defaultPrevented) {
             try {
               // Prefer jumpTo for tab navigators when available to ensure tab switch behavior
@@ -74,7 +74,7 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
             onLongPress={onLongPress}
             tabBarIcon={descriptor.options.tabBarIcon}
             tabBarAccessibilityLabel={descriptor.options.tabBarAccessibilityLabel}
-            tabBarTestID={undefined}
+            tabBarTestID={`${route.name}-tab`}
           />
         );
       })}

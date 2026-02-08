@@ -236,7 +236,7 @@ export default function ManualEntryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="manual-entry-screen">
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
         <ProductFormHeader
           productData={{

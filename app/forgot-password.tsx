@@ -131,6 +131,7 @@ export default function ForgotPassword() {
 
       {/* Input email */}
       <TextInput
+        testID="forgot-password-email-input"
         style={styles.input}
         placeholder="Inserisci la tua email"
         keyboardType="email-address"
@@ -145,7 +146,9 @@ export default function ForgotPassword() {
           <Text style={styles.infoText}>
             Ti invieremo un codice OTP alla tua email per reimpostare la password.
           </Text>
-          <Button title="Invia Codice OTP" onPress={handleReset} disabled={loading} />
+          <View testID="send-otp-button">
+            <Button title="Invia Codice OTP" onPress={handleReset} disabled={loading} />
+          </View>
         </>
       )}
 
@@ -156,6 +159,7 @@ export default function ForgotPassword() {
             <Text style={styles.otpInfoText}>Controlla la tua email per il codice di verifica a 6 cifre.</Text>
 
             <TextInput
+              testID="otp-input"
               style={styles.input}
               placeholder="Codice a 6 cifre"
               keyboardType="number-pad"
@@ -163,7 +167,9 @@ export default function ForgotPassword() {
               onChangeText={setOtp}
               maxLength={6}
             />
-            <Button title="Verifica Codice" onPress={handleVerifyOTP} disabled={loading} />
+            <View testID="verify-otp-button">
+              <Button title="Verifica Codice" onPress={handleVerifyOTP} disabled={loading} />
+            </View>
             <View style={{ marginTop: 20 }}>
               <Button
                 title="Torna all'email"

@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { View, Image, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { Check, RefreshCw, Calendar, Edit2 } from 'lucide-react-native';
-import { PhotoCaptureStyles } from '@/app/photo-capture.styles';
+import { PhotoCaptureStyles } from '@/app/_photo-capture.styles';
 import { OCRProgressOverlay } from './OCRProgressOverlay';
 import { CaptureMode } from '@/hooks/useCamera';
 
@@ -68,6 +68,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
         style={styles.previewImage}
         accessibilityLabel="Immagine scattata del prodotto"
         accessibilityHint="Tocca conferma per procedere o riprova per scattare una nuova foto"
+        testID="preview-image"
       />
 
       {/* OCR Progress Overlay */}
@@ -85,7 +86,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
               <Calendar size={32} color="#4CAF50" />
             </View>
             <Text style={styles.dateConfirmationTitle}>Data Rilevata</Text>
-            <Text style={styles.dateConfirmationDate}>{extractedDate}</Text>
+            <Text style={styles.dateConfirmationDate} testID="expiration-date-display">{extractedDate}</Text>
             <Text style={styles.dateConfirmationSubtitle}>
               Verifica che la data sia corretta
             </Text>
@@ -96,6 +97,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
                 onPress={onConfirmDate}
                 accessibilityLabel="Conferma data"
                 accessibilityRole="button"
+                testID="confirm-date-button"
               >
                 <Check size={20} color="#fff" />
                 <Text style={styles.dateButtonText}>Conferma</Text>
@@ -106,6 +108,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
                 onPress={onEditDate}
                 accessibilityLabel="Modifica data"
                 accessibilityRole="button"
+                testID="edit-date-button"
               >
                 <Edit2 size={20} color="#fff" />
                 <Text style={styles.dateButtonText}>Modifica</Text>
