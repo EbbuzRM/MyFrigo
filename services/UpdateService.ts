@@ -429,10 +429,11 @@ export class UpdateService {
       // Aggiorna il timestamp dell'ultimo check (clonato per evitare race condition)
       const updatedSettings = { ...settings, lastCheckTime: Date.now() };
 
-      // Se c'è un aggiornamento e l'auto-install è abilitata, scaricalo
+      // Se c'è un aggiornamento e l'auto-install è abilitata, scaricalo e riavvia
       if (updateInfo.isAvailable && settings.autoInstallEnabled) {
-        LoggingService.info('UpdateService', 'Aggiornamento disponibile, inizio download automatico...');
+        LoggingService.info('UpdateService', 'Aggiornamento disponibile, inizio download automatico + riavvio...');
         await this.downloadUpdate();
+        await this.restartApp();
       }
 
       return updateInfo;

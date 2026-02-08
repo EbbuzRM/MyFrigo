@@ -19,6 +19,17 @@ export const UpdateActions: React.FC<UpdateActionsProps> = React.memo(({
 }) => {
   const showButtons = updateStatus === 'idle' || updateStatus === 'completed' || updateStatus === 'error';
   const showRestart = updateStatus === 'completed' && !autoInstall;
+  const isInProgress = updateStatus === 'downloading' || updateStatus === 'installing';
+  
+  // Durante download/installazione, mostra un placeholder per mantenere il layout
+  if (isInProgress) {
+    return (
+      <View style={styles.actions}>
+        <View style={[styles.button, { backgroundColor: 'transparent' }]} />
+      </View>
+    );
+  }
+  
   if (!showButtons) return null;
 
   const PrimaryButton: React.FC<{ onPress: () => void; label: string }> = ({ onPress, label }) => (

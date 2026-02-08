@@ -35,7 +35,19 @@ const colors = {
 export const createUpdateModalStyles = (isDarkMode: boolean): Styles => {
   const c = isDarkMode ? colors.dark : colors.light;
   return StyleSheet.create({
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+    modalOverlay: { 
+      position: 'absolute', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0, 
+      backgroundColor: 'rgba(0,0,0,0.7)', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      paddingHorizontal: 20,
+      zIndex: 999999,
+      elevation: 999999,
+    },
     modalContainer: { backgroundColor: c.bg, borderRadius: 16, width: Math.min(screenWidth - 40, 400), maxWidth: '100%', borderColor: c.border, borderWidth: 1 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: c.border },
     iconContainer: { width: 48, height: 48, borderRadius: 24, backgroundColor: c.surface, justifyContent: 'center', alignItems: 'center' },
