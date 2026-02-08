@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Modal } from 'react-native';
+import { View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { LoggingService } from '@/services/LoggingService';
 import { UpdateService, UpdateInfo, DownloadProgress } from '@/services/UpdateService';
@@ -36,9 +36,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
   useEffect(() => {
     if (visible && updateInfo?.isAvailable) {
       setUpdateStatus('idle'); setDownloadProgress(0); setIsDownloading(false); setIsInstalling(false);
-      resetAnimations(); animateFadeIn();
+      resetAnimations();
     }
-  }, [visible, updateInfo, resetAnimations, animateFadeIn]);
+  }, [visible, updateInfo, resetAnimations]);
 
   const handleDownloadAndInstall = useCallback(async () => {
     try {
@@ -70,22 +70,17 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
   const handleRestart = useCallback(async () => { setUpdateStatus('installing'); await UpdateService.restartApp(); }, []);
 
   return (
-    <Modal transparent animationType="fade" visible={visible} onRequestClose={isClosable ? onClose : undefined}
-      accessible accessibilityLabel="Modal aggiornamento">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <UpdateModalHeader styles={styles} updateStatus={updateStatus} isDarkMode={isDarkMode}
-            onClose={handleLater} isClosable={isClosable} />
-          <UpdateStatusMessage styles={styles} updateStatus={updateStatus} downloadProgress={downloadProgress}
-            updateInfo={updateInfo} autoInstall={autoInstall} />
-          <UpdateProgressBar styles={styles} progressAnimation={progressAnimation}
-            downloadProgress={downloadProgress} isVisible={showProgress} />
-          <UpdateActions styles={styles} updateStatus={updateStatus} isDownloading={isDownloading}
-            isInstalling={isInstalling} autoInstall={autoInstall} onLater={handleLater}
-            onInstall={handleDownloadAndInstall} onRestart={handleRestart} />
-        </View>
-      </View>
-    </Modal>
+    <View style={styles.modalContainer}>
+      <UpdateModalHeader styles={styles} updateStatus={updateStatus} isDarkMode={isDarkMode}
+        onClose={handleLater} isClosable={isClosable} />
+      <UpdateStatusMessage styles={styles} updateStatus={updateStatus} downloadProgress={downloadProgress}
+        updateInfo={updateInfo} autoInstall={autoInstall} />
+      <UpdateProgressBar styles={styles} progressAnimation={progressAnimation}
+        downloadProgress={downloadProgress} isVisible={showProgress} />
+      <UpdateActions styles={styles} updateStatus={updateStatus} isDownloading={isDownloading}
+        isInstalling={isInstalling} autoInstall={autoInstall} onLater={handleLater}
+        onInstall={handleDownloadAndInstall} onRestart={handleRestart} />
+    </View>
   );
 });
 

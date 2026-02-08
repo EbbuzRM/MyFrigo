@@ -74,8 +74,8 @@ export default function Settings(): React.ReactElement {
   const [daysInput, setDaysInput] = React.useState(settings?.notificationDays?.toString() ?? '3');
   const [isSaving, setIsSaving] = React.useState(false);
 
-  // Toast state
-  const [toast, setToast] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  // Toast state rimosso perché ora è gestito globalmente nel contesto degli aggiornamenti
+  const { showToast: showGlobalToast } = useUpdate();
 
   // Diagnostic panel state
   const [showDiagnosticPanel, setShowDiagnosticPanel] = React.useState(false);
@@ -88,37 +88,27 @@ export default function Settings(): React.ReactElement {
   }, [settings?.notificationDays]);
 
   /**
-   * Show toast notification
-   */
-  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    setToast(null);
-    setTimeout(() => {
-      setToast({ message, type });
-    }, 100);
-  }, []);
-
-  /**
    * Handle notification days save
    */
   const handleSaveNotificationDays = useCallback(async () => {
     const days = parseInt(daysInput, 10);
     if (isNaN(days) || days < 1 || days > 30) {
-      showToast('Inserisci un numero di giorni valido (1-30).', 'error');
+      showGlobalToast('Inserisci un numero di giorni valido (1-30).', 'error');
       return;
     }
 
     try {
       setIsSaving(true);
       await updateSettings({ notificationDays: days });
-      showToast(`Giorni di preavviso impostati a ${days}.`);
+      showGlobalToast(`Giorni di preavviso impostati a ${days}.`);
       setIsDaysModalVisible(false);
     } catch (error) {
       LoggingService.error('Settings', 'Errore durante il salvataggio delle impostazioni:', error);
-      showToast('Errore durante il salvataggio.', 'error');
+      showGlobalToast('Errore durante il salvataggio.', 'error');
     } finally {
       setIsSaving(false);
     }
-  }, [daysInput, updateSettings, showToast]);
+  }, [daysInput, updateSettings, showGlobalToast]);
 
   /**
    * Handle clear data action with confirmation
@@ -137,12 +127,12 @@ export default function Settings(): React.ReactElement {
               'Funzionalità temporaneamente non disponibile',
               'La cancellazione di tutti i dati sarà disponibile nei prossimi aggiornamenti.'
             );
-            showToast('Tutti i dati sono stati eliminati.');
+            showGlobalToast('Tutti i dati sono stati eliminati.');
           },
         },
       ]
     );
-  }, [showToast]);
+  }, [showGlobalToast]);
 
   /**
    * Handle manual update check
@@ -151,15 +141,17 @@ export default function Settings(): React.ReactElement {
     try {
       const updateInfo = await checkForUpdates();
       if (updateInfo.isAvailable) {
-        showToast(`Aggiornamento disponibile: v${updateInfo.availableVersion}`, 'success');
+        showGlobalToast(`Aggiornamento disponibile: v${updateInfo.availableVersion}`, 'success');
+        // Apre automaticamente il modal se viene trovato un aggiornamento manuale
+        openUpdateModal();
       } else {
-        showToast("L'app è aggiornata all'ultima versione", 'success');
+        showGlobalToast("L'app è aggiornata all'ultima versione", 'success');
       }
     } catch (error) {
       LoggingService.error('Settings', 'Errore durante controllo aggiornamenti:', error);
-      showToast('Errore durante il controllo aggiornamenti', 'error');
+      showGlobalToast('Errore durante il controllo aggiornamenti', 'error');
     }
-  }, [checkForUpdates, showToast]);
+  }, [checkForUpdates, showGlobalToast, openUpdateModal]);
 
   /**
    * Handle version info display
@@ -233,17 +225,6 @@ export default function Settings(): React.ReactElement {
         onCancel={() => setIsDaysModalVisible(false)}
         isSaving={isSaving}
       />
-
-      {/* Toast */}
-      {toast && (
-        <Toast
-          testID="toast-message"
-          message={toast.message}
-          visible={!!toast}
-          onDismiss={() => setToast(null)}
-          type={toast.type}
-        />
-      )}
 
       {/* Diagnostic Panel */}
       <Modal

@@ -63,6 +63,8 @@ const getStyles = (isDarkMode: boolean) =>
       borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'center',
+      zIndex: 1000000,
+      elevation: 1000000,
     },
     success: {
       backgroundColor: isDarkMode ? '#10B981' : '#D1FAE5',
