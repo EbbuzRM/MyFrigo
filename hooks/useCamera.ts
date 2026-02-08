@@ -45,7 +45,7 @@ interface UseCameraReturn {
 export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
   const cameraRef = useRef<CameraView>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
-  
+
   const [cameraPermission, requestCameraPermissionRaw] = useCameraPermissions();
   const [galleryPermission, requestGalleryPermissionRaw] = ImagePicker.useMediaLibraryPermissions();
 
@@ -93,8 +93,8 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
    * @returns Cropped image URI
    */
   const cropImageForExpirationDate = useCallback(async (
-    photoUri: string, 
-    width: number, 
+    photoUri: string,
+    width: number,
     height: number
   ): Promise<string> => {
     // Crop the image to the focus frame - larger area for better date capture
@@ -137,12 +137,12 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
 
     try {
       setIsProcessingImage(true);
-      
-      const photo = await cameraRef.current.takePictureAsync({ 
-        quality: 0.8, 
-        exif: false 
+
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        exif: false
       });
-      
+
       if (!photo || !photo.uri) {
         LoggingService.warning('useCamera', 'Photo capture returned no image');
         return null;
@@ -151,11 +151,11 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
       // Only for expirationDateOnly mode do we crop and prepare for OCR
       if (captureMode === 'expirationDateOnly') {
         const croppedUri = await cropImageForExpirationDate(
-          photo.uri, 
-          photo.width, 
+          photo.uri,
+          photo.width,
           photo.height
         );
-        
+
         LoggingService.info('useCamera', 'Photo taken and cropped successfully for OCR');
         return croppedUri;
       } else {
@@ -166,7 +166,7 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
 
     } catch (error) {
       LoggingService.error('useCamera', 'Error during photo capture', error);
-      
+
       Alert.alert(
         "Errore Fotocamera",
         `Si è verificato un problema: ${(error as Error).message}`,
@@ -175,7 +175,7 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
           { text: 'Annulla', style: 'cancel', onPress: () => router.back() }
         ]
       );
-      
+
       return null;
     } finally {
       setIsProcessingImage(false);
@@ -186,18 +186,56 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
    * Pick an image from the gallery
    * @returns Selected image URI or null if cancelled/failed
    */
+  /**
+   * Process gallery image to ensure standard format and size for OCR
+   */
+  const processGalleryImage = useCallback(async (uri: string): Promise<string> => {
+    LoggingService.info('useCamera', `Processing gallery image: ${uri}`);
+    try {
+      // Normalize: 
+      // 1. Bake EXIF orientation (rotate: 0 does this in expo-image-manipulator)
+      // 2. Resize to optimal width for OCR (1000px is usually a sweet spot)
+      // 3. Ensure JPEG format
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [
+          { rotate: 0 }, // Critical: bakes the EXIF orientation into the pixels
+          { resize: { width: 1000 } }
+        ],
+        {
+          compress: 0.9,
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: false
+        }
+      );
+
+      LoggingService.info('useCamera', `Image processed: ${result.uri} (${result.width}x${result.height})`);
+      return result.uri;
+    } catch (error) {
+      LoggingService.error('useCamera', 'Error processing gallery image', error);
+      return uri; // Fallback to original if manipulation fails
+    }
+  }, []);
+
+  /**
+   * Pick an image from the gallery
+   * @returns Selected image URI or null if cancelled/failed
+   */
   const pickImage = useCallback(async (): Promise<string | null> => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         quality: 1,
       });
-      
+
       if (!result.canceled && result.assets.length > 0) {
-        LoggingService.info('useCamera', 'Image selected from gallery');
-        return result.assets[0].uri;
+        const asset = result.assets[0];
+        LoggingService.info('useCamera', `Image selected from gallery: ${asset.uri} (${asset.width}x${asset.height})`);
+
+        const normalizedUri = await processGalleryImage(asset.uri);
+        return normalizedUri;
       }
-      
+
       return null;
     } catch (error) {
       LoggingService.error('useCamera', 'Error picking image from gallery', error);
@@ -208,7 +246,7 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
       );
       return null;
     }
-  }, []);
+  }, [processGalleryImage]);
 
   const hasCameraPermission = cameraPermission?.granted ?? false;
   const hasGalleryPermission = galleryPermission?.granted ?? false;

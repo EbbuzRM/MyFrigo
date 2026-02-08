@@ -4,7 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
-import { getStyles } from './photo-capture.styles';
+import { getStyles } from './_photo-capture.styles';
 import { useCamera, CaptureMode } from '@/hooks/useCamera';
 import { usePhotoActions } from '@/hooks/usePhotoActions';
 import { CameraView } from '@/components/CameraView';
@@ -92,7 +92,7 @@ const PhotoCaptureScreen: React.FC = memo(() => {
     if (captureMode === 'expirationDateOnly' && capturedImage) {
       try {
         const ocrResult = await extractExpirationDate(capturedImage);
-        
+
         if (ocrResult.success && ocrResult.extractedDate) {
           // Show date confirmation UI
           setExtractedDate(ocrResult.extractedDate);
@@ -105,9 +105,9 @@ const PhotoCaptureScreen: React.FC = memo(() => {
             [
               {
                 text: 'Inserisci manualmente',
-                onPress: () => router.replace({ 
-                  pathname: '/manual-entry', 
-                  params: { ...params, isEditMode: 'false' } 
+                onPress: () => router.replace({
+                  pathname: '/manual-entry',
+                  params: { ...params, isEditMode: 'false' }
                 }),
                 style: 'cancel'
               },
