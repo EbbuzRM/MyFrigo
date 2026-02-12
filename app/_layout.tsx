@@ -9,6 +9,7 @@ import { AppProviders } from '@/components/AppProviders';
 import { GlobalUpdateModal } from '@/components/GlobalUpdateModal';
 import { Toast } from '@/components/Toast';
 import { UpdateInfo, UpdateSettings } from '@/services/UpdateService';
+import { useUpdate } from '@/context/UpdateContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -106,7 +107,7 @@ function UpdateUIPropsProvider({
     settings,
     toast,
     hideToast
-  } = require('@/context/UpdateContext').useUpdate();
+  } = useUpdate();
 
   useEffect(() => {
     setGlobalUIProps({

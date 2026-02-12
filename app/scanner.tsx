@@ -17,6 +17,19 @@ interface FrameLayout {
   height: number;
 }
 
+interface ManualEntryParams {
+  barcode?: string;
+  barcodeType?: string;
+  addedMethod?: string;
+  fromScannerError?: string;
+  isEditMode?: string;
+  resetForm?: string;
+  name?: string;
+  brand?: string;
+  categoryId?: string;
+  [key: string]: string | undefined;
+}
+
 export default function BarcodeScannerScreen() {
   const [frameLayout, setFrameLayout] = useState<FrameLayout | null>(null);
   const isFocused = useIsFocused();
@@ -29,7 +42,7 @@ export default function BarcodeScannerScreen() {
           text: 'Continua',
           onPress: () => {
             LoggingService.info('Scanner', `Navigating to manual-entry with params: ${JSON.stringify(result.params)}`);
-            router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as any });
+            router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
           }
         },
         {
@@ -39,12 +52,13 @@ export default function BarcodeScannerScreen() {
         },
       ]);
     } else if (result.type === 'online' && result.data) {
-      Alert.alert('Prodotto Trovato!', `Trovato online: ${result.data.product_name || barcode}`, [
+      const displayName = 'product_name' in result.data ? result.data.product_name : result.data.name;
+      Alert.alert('Prodotto Trovato!', `Trovato online: ${displayName || barcode}`, [
         {
           text: 'Continua',
           onPress: () => {
             LoggingService.info('Scanner', `Navigating to manual-entry with online params: ${JSON.stringify(result.params)}`);
-            router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as any });
+            router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
           }
         },
         {
@@ -62,7 +76,7 @@ export default function BarcodeScannerScreen() {
             text: 'Sì, Aggiungi',
             onPress: () => {
               LoggingService.info('Scanner', `Navigating to manual-entry for manual entry: ${JSON.stringify(result.params)}`);
-              router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as any });
+              router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
             }
           },
           {
@@ -140,7 +154,7 @@ export default function BarcodeScannerScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.manualButton} onPress={() => {
           LoggingService.info('Scanner', `Manual entry button pressed, navigating with barcode: ${currentBarcode}`);
-          router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true', isEditMode: 'false', resetForm: 'true' } as any })
+          router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true', isEditMode: 'false', resetForm: 'true' } as ManualEntryParams })
         }}>
           <Text style={styles.manualButtonText}>Inserisci Manualmente</Text>
         </TouchableOpacity>

@@ -7,7 +7,7 @@ import { LoggingService } from '@/services/LoggingService';
 interface TabBarRoute {
   key: string;
   name: string;
-  params?: Record<string, any>;
+  params?: object;
 }
 
 interface TabItemProps {
