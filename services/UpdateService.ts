@@ -17,7 +17,16 @@ export interface ExpoUpdatesManifest {
 }
 
 /**
- * Interfaccia per il risultato del check di aggiornamento
+ * Interfaccia per il risultato di Updates.checkForUpdateAsync()
+ */
+interface ExpoUpdateCheckResult {
+  isAvailable: boolean;
+  isPending?: boolean;
+  manifest?: ExpoUpdatesManifest;
+}
+
+/**
+ * Interfaccia per il risultato del check di aggiornamento (interno)
  */
 interface UpdateCheckResult {
   isAvailable: boolean;
@@ -182,14 +191,15 @@ export class UpdateService {
       this.isChecking = true;
       LoggingService.info('UpdateService', 'Inizio check aggiornamenti...');
 
-      const updateResult = await Updates.checkForUpdateAsync();
+      const updateResult = await Updates.checkForUpdateAsync() as ExpoUpdateCheckResult;
+      const manifest = updateResult.manifest;
 
       const updateInfo: UpdateInfo = {
         isAvailable: updateResult.isAvailable,
-        isUpdatePending: this._isUpdatePending, // Usa lo stato interno
+        isUpdatePending: this._isUpdatePending,
         currentVersion: Constants.expoConfig?.version || '1.0.0',
-        availableVersion: (updateResult.manifest as any)?.extra?.version || (updateResult.manifest as any)?.runtimeVersion,
-        manifest: updateResult.manifest as ExpoUpdatesManifest,
+        availableVersion: manifest?.extra?.version || manifest?.runtimeVersion,
+        manifest: manifest,
       };
 
       LoggingService.info('UpdateService', `Risultato check: disponibile=${updateInfo.isAvailable}, pending=${updateInfo.isUpdatePending}`);

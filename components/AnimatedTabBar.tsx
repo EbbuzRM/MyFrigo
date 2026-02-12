@@ -4,8 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
 import AnimatedTabItem from './AnimatedTabItem';
-import { NavigationState, Route } from '@react-navigation/native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Route } from '@react-navigation/native';
+import { BottomTabBarProps, BottomTabNavigationEventMap } from '@react-navigation/bottom-tabs';
+import { NavigationHelpers, ParamListBase } from '@react-navigation/native';
+
+interface TabPressEvent {
+  defaultPrevented: boolean;
+}
 
 const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
   const { isDarkMode } = useTheme();
@@ -38,11 +43,11 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
             canPreventDefault: true,
           });
 
-          if (!isFocused && !(event as any).defaultPrevented) {
+          if (!isFocused && !(event as TabPressEvent).defaultPrevented) {
             try {
-              // Prefer jumpTo for tab navigators when available to ensure tab switch behavior
-              if ((navigation as any).jumpTo) {
-                (navigation as any).jumpTo(route.name);
+              const tabNavigation = navigation as unknown as NavigationHelpers<ParamListBase, BottomTabNavigationEventMap> & { jumpTo?: (name: string) => void };
+              if (tabNavigation.jumpTo) {
+                tabNavigation.jumpTo(route.name);
                 LoggingService.info('AnimatedTabBar', `navigation.jumpTo called for ${route.name}`);
               } else {
                 navigation.navigate(route.name);
@@ -52,7 +57,7 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
               LoggingService.error('AnimatedTabBar', `Navigation error for ${route.name}`, navError);
             }
           } else {
-            LoggingService.info('AnimatedTabBar', `Tab press ignored (isFocused=${isFocused}, defaultPrevented=${(event as any).defaultPrevented}) for ${route.name}`);
+            LoggingService.info('AnimatedTabBar', `Tab press ignored (isFocused=${isFocused}, defaultPrevented=${(event as TabPressEvent).defaultPrevented}) for ${route.name}`);
           }
         };
 

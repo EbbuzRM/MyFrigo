@@ -3,6 +3,8 @@ import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { LoggingService } from '@/services/LoggingService';
 import { DATE_CONSTANTS } from '@/utils/dateUtils';
 import { OCRResult, OCRProgress } from '@/utils/ocr/types';
+
+export type { OCRResult, OCRProgress };
 import { findAllMatches } from '@/utils/ocr/parsing';
 import { findSpatiallyAnchoredMatches } from '@/utils/ocr/spatial';
 import { selectBestDate } from '@/utils/ocr/scoring';

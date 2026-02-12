@@ -179,3 +179,7 @@ opencode.json
 *.md
 !README.md
 directives/
+
+# New ignore patterns
+.gsd/templates/config.json
+.kilocodemodes

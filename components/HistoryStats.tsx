@@ -14,8 +14,8 @@ interface HistoryStatsProps {
   allProducts: Product[];
 }
 
-export function HistoryStats({ totalProducts, expiredProducts, consumedProducts, allProducts }: HistoryStatsProps) {
-  const { } = useTheme();
+export function HistoryStats({ totalProducts, expiredProducts, consumedProducts, allProducts: _allProducts }: HistoryStatsProps) {
+  const theme = useTheme();
   const wastePercentage = totalProducts > 0 ? Math.round((expiredProducts / totalProducts) * 100) : 0;
 
   const handlePress = (type: 'consumed' | 'expired' | 'all', title: string) => {

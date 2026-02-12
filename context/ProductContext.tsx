@@ -32,6 +32,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading] = useState(false);
   const prevProducts = usePrevious(products);
   const productsRef = useRef(products);
+  const isFetchingRef = useRef(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     productsRef.current = products;
@@ -42,9 +44,13 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setProducts([]);
       return;
     }
+    if (isFetchingRef.current) {
+      LoggingService.info("ProductContext", "fetchProducts already in progress, skipping");
+      return;
+    }
+    isFetchingRef.current = true;
     setLoading(true);
     try {
-      // Tipizzazione più specifica per i risultati delle operazioni
       const { data, error } = await ProductStorage.getProducts() as {
         data: Product[] | null;
         error: { message: string } | null;
@@ -60,6 +66,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setProducts([]);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [user?.id]);
 
@@ -126,15 +133,18 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       });
 
-      // Imposta il listener per i prodotti
+      // Imposta il listener per i prodotti con debounce
       try {
         productsUnsubscribe = ProductStorage.listenToProducts(() => {
-          // Re-enable real-time updates to keep data synchronized across devices
-          // The UI interruption issue should be handled at component level, not by disabling real-time
-          LoggingService.info("ProductContext", "Products listener triggered, fetching updated products");
-          fetchProducts().catch(error => {
-            LoggingService.error("ProductContext", "Error fetching products from listener", error);
-          });
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+          }
+          debounceTimerRef.current = setTimeout(() => {
+            LoggingService.info("ProductContext", "Products listener triggered (debounced), fetching updated products");
+            fetchProducts().catch(error => {
+              LoggingService.error("ProductContext", "Error fetching products from listener", error);
+            });
+          }, 300);
         });
         LoggingService.info("ProductContext", "Products listener registered successfully");
       } catch (error) {
@@ -160,6 +170,12 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Funzione di cleanup
       return () => {
         isMounted = false;
+
+        // Clear debounce timer
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
 
         // Rimuovi il listener dei prodotti
         if (productsUnsubscribe) {

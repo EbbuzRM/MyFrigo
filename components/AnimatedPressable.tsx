@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, PressableProps, Animated } from 'react-native';
+import { Pressable, PressableProps, Animated, GestureResponderEvent } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
 import { AccessibilityAttributes } from '@/utils/accessibility';
 
@@ -20,18 +20,18 @@ export function AnimatedPressable({
 }: AnimatedPressableProps) {
   const animatedValue = new Animated.Value(1);
 
-  const handlePressIn = (_event: any) => {
+  const handlePressIn = (_event: GestureResponderEvent) => {
     Animated.timing(animatedValue, {
       toValue: 0.96,
-      duration: 100, // Molto più veloce
+      duration: 100,
       useNativeDriver: true,
     }).start();
   };
 
-  const handlePressOut = (_event: any) => {
+  const handlePressOut = (_event: GestureResponderEvent) => {
     Animated.timing(animatedValue, {
       toValue: 1,
-      duration: 100, // Molto più veloce
+      duration: 100,
       useNativeDriver: true,
     }).start();
   };

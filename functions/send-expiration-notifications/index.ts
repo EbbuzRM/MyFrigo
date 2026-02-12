@@ -1,18 +1,52 @@
-// @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-import { LoggingService } from 'https://esm.sh/@myfrigo/ logging-service@1.0.0';
+import { LoggingService } from 'https://esm.sh/@myfrigo/logging-service@1.0.0';
+
+type LogLevel = 'error' | 'info' | 'warning';
 
 interface PushNotificationData {
   productId?: string;
   productName?: string;
   daysUntilExpiration?: number;
+  productIds?: string[];
   [key: string]: unknown;
 }
 
-// Funzione di logging che usa LoggingService
-const log = (level, message, data = {}) => {
+interface ExpiringProduct {
+  user_id: string;
+  product_id: string;
+  product_name: string;
+  notification_type: 'expired' | 'pre_warning';
+  notification_days: number;
+}
+
+interface UserNotifications {
+  expired: ExpiringProduct[];
+  preWarning: ExpiringProduct[];
+}
+
+interface UserDevice {
+  device_id: string;
+}
+
+interface OneSignalResponse {
+  errors?: string[];
+  id?: string;
+  recipients?: number;
+}
+
+interface SuccessResponse {
+  message: string;
+  productsProcessed: number;
+  usersNotified: number;
+}
+
+interface ErrorResponse {
+  error: string;
+}
+
+const log = (level: LogLevel, message: string, data: Record<string, unknown> = {}): void => {
   const logMessage = JSON.stringify({ level, message, ...data, timestamp: new Date().toISOString() });
   if (level === 'error') {
     LoggingService.error('SendExpirationNotifications', logMessage);
@@ -34,7 +68,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !ONESIGNAL_APP_ID || !ONESIGN
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-async function sendPushNotification(playerIds: string[], title: string, body: string, data: PushNotificationData = {}) {
+async function sendPushNotification(playerIds: string[], title: string, body: string, data: PushNotificationData = {}): Promise<void> {
   if (!playerIds || playerIds.length === 0) return;
   
   const message = {
@@ -55,14 +89,15 @@ async function sendPushNotification(playerIds: string[], title: string, body: st
       body: JSON.stringify(message),
     });
 
-    const responseData = await response.json();
+    const responseData: OneSignalResponse = await response.json();
     if (responseData.errors) {
         log('error', 'OneSignal API Error', { errors: responseData.errors });
     } else {
         log('info', `OneSignal notification sent to ${playerIds.length} devices.`);
     }
-  } catch (error) {
-    log('error', 'Error sending push notification', { error: error.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', 'Error sending push notification', { error: errorMessage });
   }
 }
 
@@ -79,7 +114,9 @@ serve(async () => {
 
     if (!expiringProducts || expiringProducts.length === 0) {
       log('info', 'No products requiring notifications.');
-      return new Response(JSON.stringify({ message: 'No products to process.' }), {
+    return new Response(JSON.stringify({
+      message: 'No products to process.'
+    } as SuccessResponse), {
         headers: { 'Content-Type': 'application/json' },
         status: 200,
       });
@@ -87,7 +124,7 @@ serve(async () => {
 
     log('info', `Found ${expiringProducts.length} products requiring notifications.`);
 
-    const notificationsByUser = new Map();
+    const notificationsByUser = new Map<string, UserNotifications>();
     
     for (const product of expiringProducts) {
       const key = product.user_id;
@@ -98,7 +135,7 @@ serve(async () => {
         });
       }
       
-      const userNotifications = notificationsByUser.get(key);
+      const userNotifications = notificationsByUser.get(key)!;
       if (product.notification_type === 'expired') {
         userNotifications.expired.push(product);
       } else {
@@ -120,7 +157,7 @@ serve(async () => {
         continue; // Salta questo utente se non riusciamo a recuperare i dispositivi
       }
 
-      const playerIds = devices.map(d => d.device_id);
+      const playerIds = devices.map((d: UserDevice) => d.device_id);
 
       if (playerIds.length === 0) {
         log('warning', `No devices found for user ${userId}, skipping notifications.`);
@@ -153,14 +190,15 @@ serve(async () => {
       message: 'Notification checks completed.',
       productsProcessed: expiringProducts.length,
       usersNotified: notificationsByUser.size
-    }), {
+    } as SuccessResponse), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,
     });
 
-  } catch (error) {
-    log('error', 'Function caught an error', { error: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', 'Function caught an error', { error: errorMessage });
+    return new Response(JSON.stringify({ error: errorMessage } as ErrorResponse), {
       headers: { 'Content-Type': 'application/json' },
       status: 500,
     });

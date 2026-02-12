@@ -7,7 +7,21 @@ import { LoggingService } from '@/services/LoggingService';
 
 const API_TIMEOUT = 10000;
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+const CACHE_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const MIN_OVERLAP_PERCENTAGE = 0.1; // 10% of barcode must be visible
+
+interface OpenFoodFactsProduct {
+  product_name?: string;
+  brands?: string;
+  image_url?: string;
+  categories_tags?: string[];
+  [key: string]: unknown;
+}
+
+interface OpenFoodFactsResponse {
+  status: number;
+  product?: OpenFoodFactsProduct;
+}
 
 interface BarcodeBounds {
   origin: { x: number; y: number };
@@ -23,7 +37,7 @@ interface FrameLayout {
 
 export interface ScanResult {
   type: 'template' | 'online' | 'not_found';
-  data?: any;
+  data?: Partial<Product> | OpenFoodFactsProduct;
   params: Partial<Product> & { barcodeType?: string; addedMethod?: string };
   error?: string;
 }
@@ -114,7 +128,7 @@ export function useBarcodeScanner(
     }
   }, []);
 
-  const fetchProductFromOpenFoodFacts = useCallback((barcode: string): Promise<unknown> => {
+  const fetchProductFromOpenFoodFacts = useCallback((barcode: string): Promise<OpenFoodFactsProduct> => {
     setLoadingProgress('Cercando prodotto online...');
 
     return new Promise((resolve, reject) => {
@@ -134,9 +148,12 @@ export function useBarcodeScanner(
               reject(new Error(`Errore HTTP: ${response.status}`));
               return;
             }
-            return response.json();
+            return response.json() as Promise<OpenFoodFactsResponse>;
           })
           .then(jsonResponse => {
+            if (!jsonResponse) {
+              return;
+            }
             if (jsonResponse.status !== 1 || !jsonResponse.product) {
               reject(new Error('Prodotto non trovato nel database online'));
               return;
@@ -210,7 +227,7 @@ export function useBarcodeScanner(
 
       // Check Open Food Facts result
       if (offResult.status === 'fulfilled') {
-        const productInfo = offResult.value as any;
+        const productInfo = offResult.value;
         if (productInfo && typeof productInfo === 'object') {
           const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
 
@@ -291,6 +308,31 @@ export function useBarcodeScanner(
       clearApiTimeout();
     };
   }, [clearApiTimeout]);
+
+  // Periodic cache cleanup to prevent memory leaks
+  useEffect(() => {
+    const cleanupCache = () => {
+      const now = Date.now();
+      let removedCount = 0;
+      
+      barcodeCache.current.forEach((entry, key) => {
+        if (now - entry.timestamp >= CACHE_DURATION) {
+          barcodeCache.current.delete(key);
+          removedCount++;
+        }
+      });
+      
+      if (removedCount > 0) {
+        LoggingService.debug('Scanner', `Cache cleanup: removed ${removedCount} expired entries`);
+      }
+    };
+
+    const intervalId = setInterval(cleanupCache, CACHE_CLEANUP_INTERVAL);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
 
   return {
     permission,

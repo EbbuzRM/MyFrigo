@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { AnimatedPressable } from './AnimatedPressable';
@@ -13,6 +13,10 @@ interface AddMethodCardProps {
   onPress: () => void;
   variant: 'barcode' | 'manual';
   testID?: string;
+}
+
+interface IconWithStyle {
+  style?: StyleProp<ViewStyle>;
 }
 
 const getColors = (isDarkMode: boolean, variant: 'barcode' | 'manual') => {
@@ -52,7 +56,7 @@ export function AddMethodCard({
       )}
     >
       <View style={styles.iconContainer}>
-        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ style?: any }>, { style: { color: colors.icon } }) : icon}
+        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<IconWithStyle>, { color: colors.icon } as Partial<IconWithStyle>) : icon}
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>

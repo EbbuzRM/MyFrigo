@@ -137,8 +137,9 @@ export default function PasswordResetForm() {
       try {
         await Promise.race([updatePromise, timeoutPromise]);
         LoggingService.info('PasswordResetForm', 'Atomic update request resolved normally');
-      } catch (err: any) {
-        if (err.message === 'TIMEOUT' && serverConfirmed.current) {
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (errorMessage === 'TIMEOUT' && serverConfirmed.current) {
           LoggingService.info('PasswordResetForm', 'Request timed out locally but server confirmed success via event. Both password and flag updated.');
         } else {
           throw err;
