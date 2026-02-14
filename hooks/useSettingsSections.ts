@@ -210,7 +210,7 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
           handleCheckUpdates();
           break;
         default:
-          console.warn(`[Settings] Unknown card ID: ${cardId}`);
+          LoggingService.warning('useSettingsSections', `Unknown card ID: ${cardId}`);
       }
     },
     [handleClearData]

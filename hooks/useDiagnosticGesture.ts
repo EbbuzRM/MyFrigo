@@ -77,8 +77,8 @@ export function useDiagnosticGesture(
   const [isActive, setIsActive] = useState(false);
 
   // Use a ref to store the timer and interval IDs to properly clean them up
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Cleanup function to clear all timers

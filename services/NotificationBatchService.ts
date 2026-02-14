@@ -1,9 +1,9 @@
 /**
- * Notification Batch Service
+ * Servizio Notifiche Batch
  * 
- * Handles batch operations for notifications including:
- * - Scheduling multiple notifications efficiently in batches
- * - Processing large product lists with controlled concurrency
+ * Gestisce le operazioni batch per le notifiche incluse:
+ * - Pianificazione di più notifiche in modo efficiente in batch
+ * - Elaborazione di liste grandi di prodotti con concorrenza controllata
  */
 
 import { Platform } from 'react-native';
@@ -14,46 +14,46 @@ import { NotificationCoreService } from './NotificationCoreService';
 import { NotificationPermissionService } from './NotificationPermissionService';
 
 /**
- * Constants for batch processing
+ * Costanti per l'elaborazione batch
  */
 const DEFAULT_BATCH_SIZE = 5;
 
 /**
- * Interface for batch processing options
+ * Interfaccia per le opzioni di elaborazione batch
  */
 interface BatchOptions {
-  /** Number of items to process in parallel (default: 5) */
+  /** Numero di elementi da elaborare in parallelo (default: 5) */
   batchSize?: number;
-  /** Number of days before expiration to send pre-warning */
+  /** Numero di giorni prima della scadenza per inviare il pre-avviso */
   notificationDays: number;
 }
 
 /**
- * Interface for batch processing results
+ * Interfaccia per i risultati dell'elaborazione batch
  */
 interface BatchResult {
-  /** Total number of products processed */
+  /** Numero totale di prodotti elaborati */
   totalProcessed: number;
-  /** Number of successful notifications scheduled */
+  /** Numero di notifiche pianificate con successo */
   successCount: number;
-  /** Number of failed notifications */
+  /** Numero di notifiche fallite */
   failureCount: number;
-  /** Number of batches created */
+  /** Numero di batch creati */
   batchCount: number;
 }
 
 /**
- * Service for batch notification operations
+ * Servizio per le operazioni batch delle notifiche
  */
 export class NotificationBatchService {
   /**
-   * Schedule notifications for multiple products in optimized batches.
-   * Processes products in parallel within each batch to improve performance
-   * while avoiding overwhelming the native notification system.
+   * Pianifica le notifiche per più prodotti in batch ottimizzati.
+   * Elabora i prodotti in parallelo all'interno di ogni batch per migliorare le performance
+   * evitando di sovraccaricare il sistema di notifiche nativo.
    * 
-   * @param products - Array of products to schedule notifications for
-   * @param settings - App settings containing notificationDays configuration
-   * @returns Promise resolving when all batches are processed
+   * @param products - Array di prodotti per cui pianificare le notifiche
+   * @param settings - Impostazioni app contenenti la configurazione notificationDays
+   * @returns Promise che si risolve quando tutti i batch sono elaborati
    * 
    * @example
    * ```typescript
@@ -80,7 +80,7 @@ export class NotificationBatchService {
       return;
     }
 
-    // Validate input
+    // Valida input
     if (!products || products.length === 0) {
       LoggingService.info('NotificationBatchService', 'No products to schedule notifications for');
       return;
@@ -97,17 +97,17 @@ export class NotificationBatchService {
     const batchSize = DEFAULT_BATCH_SIZE;
     const batches: Product[][] = [];
 
-    // Split products into batches
+    // Dividi i prodotti in batch
     for (let i = 0; i < products.length; i += batchSize) {
       batches.push(products.slice(i, i + batchSize));
     }
 
     LoggingService.info(
       'NotificationBatchService',
-      `Scheduling notifications for ${products.length} products in ${batches.length} batches (size: ${batchSize})`
+      `Pianificazione notifiche per ${products.length} prodotti in ${batches.length} batch (dimensione: ${batchSize})`
     );
 
-    // Process batches sequentially, but process items within each batch in parallel
+    // Elabora i batch sequenzialmente, ma elabora gli elementi all'interno di ogni batch in parallelo
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
       
@@ -120,7 +120,7 @@ export class NotificationBatchService {
             ).catch((error: unknown) => {
               LoggingService.error(
                 'NotificationBatchService',
-                `Error scheduling notification for product ${product.id} in batch ${batchIndex + 1}:`,
+                `Errore pianificazione notifica per prodotto ${product.id} nel batch ${batchIndex + 1}:`,
                 error
               );
             })
@@ -129,13 +129,13 @@ export class NotificationBatchService {
 
         LoggingService.info(
           'NotificationBatchService',
-          `Completed batch ${batchIndex + 1}/${batches.length} (${batch.length} products)`
+          `Completato batch ${batchIndex + 1}/${batches.length} (${batch.length} prodotti)`
         );
       } catch (error: unknown) {
-        // This shouldn't happen due to individual catches, but handle just in case
+        // Questo non dovrebbe accadere per i catch individuali, ma gestisci comunque
         LoggingService.error(
           'NotificationBatchService',
-          `Unexpected error processing batch ${batchIndex + 1}:`,
+          `Errore imprevisto elaborazione batch ${batchIndex + 1}:`,
           error
         );
       }
@@ -143,15 +143,15 @@ export class NotificationBatchService {
 
     LoggingService.info(
       'NotificationBatchService',
-      `Finished scheduling notifications for ${products.length} products in ${batches.length} batches`
+      `Terminata pianificazione notifiche per ${products.length} prodotti in ${batches.length} batch`
     );
   }
 
   /**
-   * Cancel notifications for multiple products
+   * Cancella le notifiche per più prodotti
    * 
-   * @param productIds - Array of product IDs to cancel notifications for
-   * @returns Promise resolving when all cancellations are complete
+   * @param productIds - Array di ID prodotti per cui cancellare le notifiche
+   * @returns Promise che si risolve quando tutte le cancellazioni sono completate
    */
   static async cancelMultipleNotifications(productIds: string[]): Promise<void> {
     if (Platform.OS === 'web') {
@@ -162,27 +162,27 @@ export class NotificationBatchService {
       return;
     }
 
-    // Check availability (uses cache)
+    // Verifica disponibilità (usa cache)
     if (!NotificationPermissionService.checkExpoNotificationsAvailability()) {
       LoggingService.error(
         'NotificationBatchService',
-        'Cannot cancel multiple notifications: Expo Notifications not available'
+        'Impossibile cancellare notifiche multiple: Expo Notifications non disponibile'
       );
       return;
     }
 
     LoggingService.info(
       'NotificationBatchService',
-      `Cancelling notifications for ${productIds.length} products`
+      `Cancellazione notifiche per ${productIds.length} prodotti`
     );
 
-    // Cancel all notifications in parallel
+    // Cancella tutte le notifiche in parallelo
     await Promise.all(
       productIds.map(productId =>
         NotificationCoreService.cancelNotification(productId).catch((error: unknown) => {
           LoggingService.error(
             'NotificationBatchService',
-            `Error cancelling notification for product ${productId}:`,
+            `Errore cancellazione notifica per prodotto ${productId}:`,
             error
           );
         })
@@ -191,7 +191,7 @@ export class NotificationBatchService {
 
     LoggingService.info(
       'NotificationBatchService',
-      `Finished cancelling notifications for ${productIds.length} products`
+      `Terminata cancellazione notifiche per ${productIds.length} prodotti`
     );
   }
 }

@@ -1846,7 +1846,7 @@ describe('IconService', () => {
     it('should return empty array if no icons are found', () => {
       const icons = IconService.searchInLocalData('nonexistentterm');
       expect(icons).toEqual([]);
-      expect(LoggingService.warning).toHaveBeenCalledWith('IconService', 'No local icons found for "nonexistentterm"');
+      expect(LoggingService.warning).toHaveBeenCalledWith('IconService', 'Nessuna icona locale trovata per "nonexistentterm"');
     });
 
     it('should handle empty search term', () => {
@@ -1894,7 +1894,7 @@ describe('IconService', () => {
       (IconService as any).iconCache = { 'cibo': 'http://cached.svg' };
       const icon = await IconService.fetchIconForCategory('Cibo');
       expect(icon).toBe('http://cached.svg');
-      expect(LoggingService.info).toHaveBeenCalledWith('IconService', 'Using cached icon for category: Cibo');
+      expect(LoggingService.info).toHaveBeenCalledWith('IconService', 'Uso icona in cache per categoria: Cibo');
     });
 
     it('should search local OpenMoji data if no local product icon or cache hit', async () => {
@@ -1918,7 +1918,7 @@ describe('IconService', () => {
       // Should return the default food emoji fallback
       expect(icon).toBe('🥫');
       // The actual implementation logs with the fallback value included
-      expect(LoggingService.warning).toHaveBeenCalledWith('IconService', 'No icon found for NonExistentCategory, using fallback: 🥫');
+      expect(LoggingService.warning).toHaveBeenCalledWith('IconService', 'Nessuna icona trovata per NonExistentCategory, uso fallback: 🥫');
 
       // Restore original searchInLocalData
       (IconService as any).searchInLocalData = originalSearchInLocalData;

@@ -1,30 +1,30 @@
 import { IconLoader, IconData } from './IconLoader';
 import { IconMapper } from './IconMapper';
 import { LoggingService } from './LoggingService';
-// Basic interface for OpenMoji data structure
+// Interfaccia base per la struttura dati OpenMoji
 interface OpenMojiIcon {
   annotation: string;
   hexcode: string;
-  tags: string[]; // Some tags might be comma separated strings in raw data but usually arrays in processed
+  tags: string[]; // Alcuni tag potrebbero essere stringhe separate da virgola nei dati grezzi ma solitamente array nei dati elaborati
   svg?: string;
   url?: string;
 }
 
 const openmojiData = require('../assets/data/openmoji.json') as OpenMojiIcon[];
 
-// Translation map for Italian to English categories
+// Mappa di traduzione da categorie italiane a inglesi
 const TRANSLATION_MAP: Record<string, string> = {
   'Latticini': 'dairy',
   'Cibo per animali': 'pet food',
-  // Add more from test or common categories (e.g., from PRODUCT_CATEGORIES)
+  // Aggiungi altre categorie comuni (es. da PRODUCT_CATEGORIES)
   'Brioches': 'bread',
   'Cibo': 'food',
   'Cane': 'dog',
-  // Extend as needed based on your app's categories
+  // Estendi secondo le necessità dell'app
 };
 
 export const IconService = {
-  // Existing method
+  // Metodo esistente
   async getIconsForCategory(userId: string, categoryId: string): Promise<IconData> {
     try {
       const icons = await IconLoader.loadIconsFromSupabase(userId);
@@ -44,7 +44,7 @@ export const IconService = {
 
   validate: IconMapper.validateIconUrl,
 
-  // Restored methods for compatibility
+  // Metodi ripristinati per compatibilità
   translateToEnglish(name: string): string {
     LoggingService.info('IconService', `Translating "${name}"`);
     const upperName = name.toLowerCase();
@@ -64,16 +64,16 @@ export const IconService = {
   },
 
   /**
-   * Converts a hexcode (e.g., "1FAD2") to its Unicode emoji character (e.g., "🫒")
+   * Converte un hexcode (es. "1FAD2") nel carattere emoji Unicode corrispondente (es. "🫒")
    */
   hexcodeToEmoji(hexcode: string): string {
     try {
-      // Handle multiple codepoints separated by hyphen (e.g., "1F468-200D-1F373")
+      // Gestisce codepoint multipli separati da trattino (es. "1F468-200D-1F373")
       const codepoints = hexcode.split('-').map(code => parseInt(code, 16));
       return String.fromCodePoint(...codepoints);
     } catch (error) {
-      LoggingService.error('IconService', `Error converting hexcode ${hexcode} to emoji`, error);
-      return '❓'; // Fallback emoji
+      LoggingService.error('IconService', `Errore nella conversione hexcode ${hexcode} in emoji`, error);
+      return '❓'; // Emoji di fallback
     }
   },
 
@@ -96,11 +96,11 @@ export const IconService = {
       })
       .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 10); // Top 10
+      .slice(0, 10); // Top 10 risultati
 
     // Se non ha trovato risultati con la traduzione, prova con il nome originale
     if (results.length === 0 && name.toLowerCase() !== translated.toLowerCase()) {
-      LoggingService.info('IconService', `No results with translation, trying direct search for "${name}"`);
+      LoggingService.info('IconService', `Nessun risultato con traduzione, provo ricerca diretta per "${name}"`);
       const directKeywords = name.toLowerCase().split(' ').filter(k => k.length > 0);
 
       results = data
@@ -118,9 +118,9 @@ export const IconService = {
     }
 
     if (results.length === 0) {
-      LoggingService.warning('IconService', `No local icons found for "${name}"`);
+      LoggingService.warning('IconService', `Nessuna icona locale trovata per "${name}"`);
     } else {
-      LoggingService.info('IconService', `Found ${results.length} icons for "${name}"`);
+      LoggingService.info('IconService', `Trovate ${results.length} icone per "${name}"`);
     }
 
     return results;
@@ -135,54 +135,54 @@ export const IconService = {
         return Promise.resolve(localIcon);
       }
 
-      // Check cache (simple in-memory for now; expand if needed)
+      // Verifica cache (semplice cache in memoria per ora; espandi se necessario)
       const cacheKey = categoryName.toLowerCase();
       const cached = this.iconCache?.[cacheKey];
       if (cached) {
-        LoggingService.info('IconService', `Using cached icon for category: ${categoryName}`);
+        LoggingService.info('IconService', `Uso icona in cache per categoria: ${categoryName}`);
         return Promise.resolve(cached);
       }
 
-      // Search local data
+      // Cerca nei dati locali
       const icons = this.searchInLocalData(categoryName);
       if (icons.length > 0) {
-        // Convert hexcode to emoji Unicode instead of SVG URL (React Native doesn't support SVG in Image)
+        // Converti hexcode in emoji Unicode invece di URL SVG (React Native non supporta SVG in Image)
         const hexcode = icons[0].hexcode;
         const emoji = this.hexcodeToEmoji(hexcode);
 
-        // Cache it
+        // Salva in cache
         if (this.iconCache && emoji) this.iconCache[cacheKey] = emoji;
         LoggingService.info('IconService', `Found local icon for ${categoryName}: ${emoji} (${hexcode})`);
         return Promise.resolve(emoji);
       }
 
       const fallback = this.getFallbackIcon(categoryName);
-      LoggingService.warning('IconService', `No icon found for ${categoryName}, using fallback: ${fallback}`);
+      LoggingService.warning('IconService', `Nessuna icona trovata per ${categoryName}, uso fallback: ${fallback}`);
       return Promise.resolve(fallback);
     } catch (error) {
-      LoggingService.error('IconService', `Error fetching icon for ${categoryName}`, error);
+      LoggingService.error('IconService', `Errore nel recupero icona per ${categoryName}`, error);
       return Promise.resolve(null);
     }
   },
 
   getLocalProductIcon(categoryName: string): string | null {
-    // Placeholder based on test; implement logic for local IDs (e.g., from app assets or Supabase)
-    // For example, if categoryName === 'Brioches', return 123 (as in test mock)
+    // Placeholder basato su test; implementa logica per ID locali (es. da asset app o Supabase)
+    // Ad esempio, se categoryName === 'Brioches', restituisci 123 (come nel mock del test)
     const localMap: Record<string, string> = {
-      'Brioches': 'local_brioches_icon', // Example from test
-      // Add more based on your app
+      'Brioches': 'local_brioches_icon', // Esempio dal test
+      // Aggiungi altri in base alla tua app
     };
     return localMap[categoryName] || null;
   },
 
   convertToLocalIcon(iconPath: string): { uri: string } | undefined {
     if (!iconPath) return undefined;
-    // Logic to convert global URL to local path (e.g., replace base URL)
-    // Example: From test, replace 'icon_products/' to 'assets/icon_products/'
+    // Logica per convertire URL globale in percorso locale (es. sostituisci URL base)
+    // Esempio: dal test, sostituisci 'icon_products/' con 'assets/icon_products/'
     const localPath = iconPath.startsWith('icon_products/')
       ? iconPath.replace('icon_products/', 'assets/icon_products/')
       : iconPath;
-    LoggingService.info('IconService', `Converted icon path: ${iconPath} -> ${localPath}`);
+    LoggingService.info('IconService', `Percorso icona convertito: ${iconPath} -> ${localPath}`);
     // Restituisce un oggetto { uri } se il path locale è diverso dall'originale
     return localPath !== iconPath ? { uri: localPath } : undefined;
   },
@@ -218,12 +218,12 @@ export const IconService = {
     return '🥫';
   },
 
-  // Cache property (for internal use)
+  // Proprietà cache (per uso interno)
   iconCache: {} as Record<string, string>,
 
-  // Methods for cache save/load (placeholders)
+  // Metodi per salvare/caricare cache (placeholder)
   async saveIconCache() {
-    // Implement AsyncStorage if needed
+    // Implementa AsyncStorage se necessario
   },
 
   async loadIconCache() {

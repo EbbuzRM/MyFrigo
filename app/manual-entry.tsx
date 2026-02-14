@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Modal,
-  FlatList,
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
   TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@/context/ThemeContext';
 import { useProductForm } from '@/hooks/useProductForm';
 import ProductFormHeader from '@/components/ProductFormHeader';
@@ -263,12 +263,11 @@ export default function ManualEntryScreen() {
           isFrozen={isFrozen}
           setIsFrozen={setIsFrozen}
         />
-        <FlatList
+        <FlashList
           data={categoryData}
           renderItem={renderCategoryItem}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           numColumns={4}
-          columnWrapperStyle={styles.rowStyle}
           scrollEnabled={false}
         />
         <ProductFormFooter

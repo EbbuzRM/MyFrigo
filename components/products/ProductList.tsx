@@ -1,5 +1,6 @@
 import React from 'react';
-import { FlatList, RefreshControl, StyleSheet, ListRenderItem } from 'react-native';
+import { RefreshControl, StyleSheet } from 'react-native';
+import { FlashList, ListRenderItem } from '@shopify/flash-list';
 import { Product, ProductCategory } from '@/types/Product';
 import { ProductCard } from '@/components/ProductCard';
 import { useTheme } from '@/context/ThemeContext';
@@ -33,7 +34,7 @@ interface ProductListProps {
 
 /**
  * Product list component
- * Renders FlatList of ProductCard components with pull-to-refresh
+ * Renders FlashList of ProductCard components with pull-to-refresh
  * 
  * @param props - Component props
  * @returns ProductList component
@@ -87,7 +88,7 @@ export function ProductList({
   const keyExtractor = (item: Product): string => item.id;
 
   return (
-    <FlatList
+    <FlashList
       testID={testID}
       data={products}
       keyExtractor={keyExtractor}

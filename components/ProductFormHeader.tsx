@@ -116,10 +116,11 @@ const ProductFormHeader = React.memo(({
     );
 
     navigatingToPhotoCapture.current = true;
+    const captureMode = isEditMode ? 'updateProductPhoto' : 'productPhoto';
     router.push({
       pathname: '/photo-capture',
       params: {
-        captureMode: 'updateProductPhoto',
+        captureMode,
         ...currentFormData,
       },
     });
@@ -135,6 +136,7 @@ const ProductFormHeader = React.memo(({
     expirationDate,
     notes,
     barcode,
+    isEditMode,
     navigatingToPhotoCapture,
   ]);
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlashList } from '@shopify/flash-list';
 import { PRODUCT_CATEGORIES } from '@/types/Product';
 import { router } from 'expo-router';
 import { X, Plus, Edit2 } from 'lucide-react-native';
@@ -106,10 +107,10 @@ export default function ManageCategoriesScreen() {
         <Plus size={20} color="white" />
         <Text style={styles.createButtonText}>Crea Nuova Categoria</Text>
       </TouchableOpacity>
-      <FlatList
+      <FlashList
         data={customCategories}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         ListEmptyComponent={<Text style={styles.emptyText}>Nessuna categoria personalizzata.</Text>}
       />
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

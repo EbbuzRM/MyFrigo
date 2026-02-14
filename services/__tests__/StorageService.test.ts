@@ -44,7 +44,8 @@ describe('ProductStorage', () => {
       const mockProducts = [{ id: '1', name: 'Latte', user_id: 'test-user-id' }];
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({
           data: mockProducts,
           error: null,
         }),
