@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlashList } from '@shopify/flash-list';
 import { ProductStorage } from '@/services/ProductStorage';
 import { HistoryCard } from '@/components/HistoryCard';
 import { useFocusEffect, router } from 'expo-router';
@@ -73,7 +74,7 @@ export default function ConsumedListScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>Prodotti Consumati</Text>
       </View>
-      <FlatList
+      <FlashList
         data={consumedProducts}
         renderItem={renderHistoryItem}
         keyExtractor={(item) => item.id}

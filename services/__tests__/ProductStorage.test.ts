@@ -47,11 +47,12 @@ describe('ProductStorage', () => {
   });
 
   describe('getProducts', () => {
-    it('should fetch products for authenticated user', async () => {
+it('should fetch products for authenticated user', async () => {
       const mockData = [mockProductSnakeCase];
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: mockData, error: null }),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: mockData, error: null }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
       (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue([mockProduct]);
@@ -72,15 +73,16 @@ describe('ProductStorage', () => {
 
       const result = await ProductStorage.getProducts();
 
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('User not authenticated');
+expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Utente non autenticato');
     });
 
-    it('should handle database errors gracefully', async () => {
+it('should handle database errors gracefully', async () => {
       const mockError = new Error('Database error');
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: null, error: mockError }),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: null, error: mockError }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 
@@ -94,21 +96,23 @@ describe('ProductStorage', () => {
       expect(LoggingService.error).toHaveBeenCalled();
     });
 
-    it('should sort products by expiration date', async () => {
+it('should sort products by expiration date', async () => {
       const product1 = { ...mockProductSnakeCase, expiration_date: '2025-12-31' };
       const product2 = { ...mockProductSnakeCase, id: 'id-2', expiration_date: '2025-01-15' };
       const product3 = { ...mockProductSnakeCase, id: 'id-3', expiration_date: '2025-06-15' };
 
+      // Mock returns data sorted by supabase (ascending order)
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [product1, product2, product3], error: null }),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [product2, product3, product1], error: null }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 
       const camelCaseProducts = [
-        { ...mockProduct, expirationDate: '2025-12-31' },
-        { ...mockProduct, id: 'id-2', expirationDate: '2025-01-15' },
-        { ...mockProduct, id: 'id-3', expirationDate: '2025-06-15' },
+        { ...mockProduct, expirationDate: '2025-01-15' },
+        { ...mockProduct, id: 'id-2', expirationDate: '2025-06-15' },
+        { ...mockProduct, id: 'id-3', expirationDate: '2025-12-31' },
       ];
       (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue(camelCaseProducts);
 
@@ -206,8 +210,8 @@ describe('ProductStorage', () => {
       });
 
       const result = await ProductStorage.saveProduct(mockProduct as any);
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('User not authenticated');
+expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Utente non autenticato');
     });
   });
 

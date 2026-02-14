@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  FlatList,
   Modal,
   Pressable,
   Alert,
@@ -14,6 +13,7 @@ import {
   AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlashList } from '@shopify/flash-list';
 import { Plus, ScanBarcode, Package, AlertTriangle, User, Settings, LogOut, Bell, BellOff } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { ExpirationCard } from '@/components/ExpirationCard';
@@ -183,7 +183,7 @@ function Dashboard() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>In Scadenza a Breve</Text>
         {expiringProducts.length > 0 ? (
-          <FlatList
+          <FlashList
             data={expiringProducts}
             renderItem={({ item }) => (
               <View style={{ width: 300, marginRight: 16 }}>
@@ -193,7 +193,7 @@ function Dashboard() {
                 />
               </View>
             )}
-            keyExtractor={item => item.id.toString()}
+            keyExtractor={(item) => item.id.toString()}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingLeft: 20 }}

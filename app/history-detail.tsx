@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { HistoryCard } from '@/components/HistoryCard';
@@ -120,7 +121,7 @@ export default function HistoryDetailScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={sortedProducts}
           renderItem={({ item, index }) => (
             <HistoryCard

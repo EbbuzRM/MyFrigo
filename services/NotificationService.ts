@@ -1,14 +1,14 @@
 /**
- * Notification Service (Facade)
+ * Servizio Notifiche (Facade)
  * 
- * This is a facade/composite service that provides a unified interface
- * to all notification functionality. It delegates to specialized services:
- * - NotificationPermissionService: Permission handling
- * - NotificationCoreService: Core scheduling and canceling
- * - NotificationBatchService: Batch operations
- * - EventEmitter: Event system (re-exported)
+ * Questo è un servizio facade/composite che fornisce un'interfaccia unificata
+ * a tutte le funzionalità di notifica. Delega a servizi specializzati:
+ * - NotificationPermissionService: Gestione permessi
+ * - NotificationCoreService: Pianificazione e cancellazione core
+ * - NotificationBatchService: Operazioni batch
+ * - EventEmitter: Sistema eventi (ri-esportato)
  * 
- * All public methods maintain backward compatibility with the original API.
+ * Tutti i metodi pubblici mantengono la compatibilità con l'API originale.
  */
 
 import { Platform } from 'react-native';
@@ -24,7 +24,7 @@ import { NotificationCoreService } from './NotificationCoreService';
 import { NotificationBatchService } from './NotificationBatchService';
 
 /**
- * Configure notification handler for Expo Notifications
+ * Configura il gestore notifiche per Expo Notifications
  */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -36,17 +36,17 @@ Notifications.setNotificationHandler({
 });
 
 /**
- * Notification Service - Facade for all notification operations
+ * Servizio Notifiche - Facade per tutte le operazioni di notifica
  * 
- * This class provides backward-compatible access to all notification
- * functionality while delegating to specialized internal services.
+ * Questa classe fornisce accesso compatibile a tutte le funzionalità
+ * di notifica delegando ai servizi interni specializzati.
  */
 export class NotificationService {
   private static isInitialized = false;
 
   /**
-   * Initialize the notification system.
-   * Sets up OneSignal for push notifications and creates Android notification channels.
+   * Inizializza il sistema di notifiche.
+   * Configura OneSignal per le notifiche push e crea i canali di notifica Android.
    */
   static initialize(): void {
     if (this.isInitialized || Platform.OS === 'web') {
@@ -67,7 +67,7 @@ export class NotificationService {
     LoggingService.info('NotificationService', 'Initializing OneSignal...');
 
     try {
-      // Create notification channel for Android
+      // Crea canale di notifica per Android
       if (Platform.OS === 'android') {
         Notifications.setNotificationChannelAsync('default', {
           name: 'Default',
@@ -88,31 +88,31 @@ export class NotificationService {
   }
 
   /**
-   * Check if Expo Notifications is available.
-   * Uses cached result for performance.
+   * Verifica se Expo Notifications è disponibile.
+   * Usa il risultato in cache per le performance.
    * 
-   * @returns true if Expo Notifications is available
-   * @deprecated Use NotificationPermissionService.checkExpoNotificationsAvailability() instead
+   * @returns true se Expo Notifications è disponibile
+   * @deprecated Usa NotificationPermissionService.checkExpoNotificationsAvailability() invece
    */
   static checkExpoNotificationsAvailability(): boolean {
     return NotificationPermissionService.checkExpoNotificationsAvailability();
   }
 
   /**
-   * Cancel all notifications for a specific product.
-   * Cancels both the expiration notification and pre-warning notification.
+   * Cancella tutte le notifiche per un prodotto specifico.
+   * Cancella sia la notifica di scadenza che quella di pre-avviso.
    * 
-   * @param productId - ID of the product
+   * @param productId - ID del prodotto
    */
   static async cancelNotification(productId: string): Promise<void> {
     return NotificationCoreService.cancelNotification(productId);
   }
 
   /**
-   * Schedule expiration and pre-warning notifications for a product.
+   * Pianifica le notifiche di scadenza e pre-avviso per un prodotto.
    * 
-   * @param product - Product to schedule notifications for
-   * @param notificationDays - Days before expiration to send pre-warning (0 for none)
+   * @param product - Prodotto per cui pianificare le notifiche
+   * @param notificationDays - Giorni prima della scadenza per inviare il pre-avviso (0 per nessuno)
    */
   static async scheduleExpirationNotification(
     product: Product,
@@ -122,37 +122,37 @@ export class NotificationService {
   }
 
   /**
-   * Get current permissions or request them if not granted.
+   * Ottiene i permessi correnti o li richiede se non concessi.
    * 
-   * @returns Promise resolving to true if permissions are granted
+   * @returns Promise che restituisce true se i permessi sono concessi
    */
   static async getOrRequestPermissionsAsync(): Promise<boolean> {
     return NotificationPermissionService.getOrRequestPermissionsAsync();
   }
 
   /**
-   * Schedule a test notification that will trigger after 10 seconds.
-   * Useful for verifying notification setup is working.
+   * Pianifica una notifica di test che verrà attivata dopo 10 secondi.
+   * Utile per verificare che la configurazione delle notifiche funzioni.
    */
   static async scheduleTestNotification(): Promise<void> {
     return NotificationCoreService.scheduleTestNotification();
   }
 
   /**
-   * Check if notifications are scheduled for a product.
+   * Verifica se le notifiche sono pianificate per un prodotto.
    * 
-   * @param productId - ID of the product to check
-   * @returns Promise resolving to true if notifications are scheduled
+   * @param productId - ID del prodotto da verificare
+   * @returns Promise che restituisce true se le notifiche sono pianificate
    */
   static async isNotificationScheduled(productId: string): Promise<boolean> {
     return NotificationCoreService.isNotificationScheduled(productId);
   }
 
   /**
-   * Schedule notifications for multiple products in batches.
+   * Pianifica le notifiche per più prodotti in batch.
    * 
-   * @param products - Array of products to schedule
-   * @param settings - App settings with notificationDays configuration
+   * @param products - Array di prodotti da pianificare
+   * @param settings - Impostazioni app con configurazione notificationDays
    */
   static async scheduleMultipleNotifications(
     products: Product[],
@@ -163,7 +163,7 @@ export class NotificationService {
 }
 
 /**
- * Re-export EventEmitter for backward compatibility
- * @deprecated Import directly from './EventEmitter' instead
+ * Ri-esporta EventEmitter per compatibilità con le versioni precedenti
+ * @deprecated Importa direttamente da './EventEmitter' invece
  */
 export { EventEmitter, eventEmitter };

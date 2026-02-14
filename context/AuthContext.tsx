@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchUserProfile = async (user: User | null) => {
+  const fetchUserProfile = useCallback(async (user: User | null) => {
     if (!user) {
       setProfile(null);
       return;
@@ -74,13 +74,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       LoggingService.error('AuthProvider', 'Unexpected error fetching profile', error);
       setProfile(null);
     }
-  };
+  }, []);
 
-  const refreshUserProfile = async () => {
+  const refreshUserProfile = useCallback(async () => {
     await fetchUserProfile(user);
-  };
+  }, [user, fetchUserProfile]);
 
-  const updateProfile = async (firstName: string, lastName: string) => {
+  const updateProfile = useCallback(async (firstName: string, lastName: string) => {
     if (!user) {
       throw new Error('User not authenticated');
     }
@@ -100,14 +100,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
 
-      // Refresh the profile in state
       await refreshUserProfile();
       LoggingService.info('AuthProvider', 'User profile updated successfully');
     } catch (error) {
       LoggingService.error('AuthProvider', 'Unexpected error updating profile', error);
       throw error;
     }
-  };
+  }, [user, refreshUserProfile]);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -176,7 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [router]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       LoggingService.info('AuthProvider', 'Signing out user initiated');
       setLoading(true);
@@ -185,10 +184,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         LoggingService.error('AuthProvider', 'Error during supabase.auth.signOut', error);
-        // We continue anyway to clear local state
       }
 
-      // Explicitly clear local state
       setSession(null);
       setUser(null);
       setProfile(null);
@@ -198,12 +195,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     } catch (error) {
       LoggingService.error('AuthProvider', 'Unexpected error during sign out', error);
-      // Force redirect anyway
       router.replace('/login');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
   const contextValue = useMemo(() => ({
     session,
@@ -213,7 +209,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signOut,
     refreshUserProfile,
     updateProfile
-  }), [session, user, profile, loading]);
+  }), [session, user, profile, loading, signOut, refreshUserProfile, updateProfile]);
 
   return (
     <AuthContext.Provider value={contextValue}>

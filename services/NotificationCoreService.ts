@@ -1,11 +1,11 @@
 /**
- * Notification Core Service
+ * Servizio Notifiche Core
  * 
- * Handles core notification operations including:
- * - Scheduling expiration notifications for products
- * - Canceling scheduled notifications
- * - Scheduling test notifications
- * - Checking notification status
+ * Gestisce le operazioni di notifica core incluse:
+ * - Pianificazione notifiche di scadenza per i prodotti
+ * - Cancellazione notifiche pianificate
+ * - Pianificazione notifiche di test
+ * - Verifica stato notifiche
  */
 
 import { Platform } from 'react-native';
@@ -16,14 +16,14 @@ import { LoggingService } from './LoggingService';
 import { NotificationPermissionService } from './NotificationPermissionService';
 
 /**
- * Constants for notification configuration
+ * Costanti per la configurazione delle notifiche
  */
-const NOTIFICATION_HOUR = 9; // Hour to trigger notifications (9 AM)
+const NOTIFICATION_HOUR = 9; // Ora di attivazione notifiche (9:00)
 const NOTIFICATION_MINUTE = 0;
 const NOTIFICATION_SECOND = 0;
 
 /**
- * Interface for scheduled notification content
+ * Interfaccia per il contenuto della notifica pianificata
  */
 interface NotificationContent {
   title: string;
@@ -32,17 +32,17 @@ interface NotificationContent {
 }
 
 /**
- * Validates if a product has a valid expiration date
+ * Verifica se un prodotto ha una data di scadenza valida
  * 
- * @param product - Product to validate
- * @returns true if product has a valid expiration date
+ * @param product - Prodotto da validare
+ * @returns true se il prodotto ha una data di scadenza valida
  */
 function hasValidExpirationDate(product: Product): boolean {
   if (!product.expirationDate) {
     return false;
   }
 
-  // Check date format (YYYY-MM-DD)
+  // Verifica formato data (YYYY-MM-DD)
   if (!/^\d{4}-\d{2}-\d{2}/.test(product.expirationDate)) {
       LoggingService.warning(
         'NotificationCoreService',
@@ -55,11 +55,11 @@ function hasValidExpirationDate(product: Product): boolean {
 }
 
 /**
- * Parses and validates an expiration date string
+ * Analizza e valida una stringa di data di scadenza
  * 
- * @param dateString - Date string in YYYY-MM-DD format
- * @param productId - Product ID for logging
- * @returns Date object set to notification time (9 AM local), or null if invalid
+ * @param dateString - Stringa data in formato YYYY-MM-DD
+ * @param productId - ID prodotto per il logging
+ * @returns Oggetto Date impostato all'ora di notifica (9:00 locali), o null se non valido
  */
 function parseExpirationDate(dateString: string, productId: string): Date | null {
   try {
@@ -67,34 +67,34 @@ function parseExpirationDate(dateString: string, productId: string): Date | null
     const parts = datePart.split('-');
 
     if (parts.length !== 3) {
-      throw new Error(`Invalid date parts: ${datePart}`);
+      throw new Error(`Parti data non valide: ${datePart}`);
     }
 
     const [year, month, day] = parts.map(Number);
 
-    // Validate numeric components
+    // Valida componenti numerici
     if (isNaN(year) || isNaN(month) || isNaN(day)) {
-      throw new Error(`Invalid date components: year=${year}, month=${month}, day=${day}`);
+      throw new Error(`Componenti data non validi: anno=${year}, mese=${month}, giorno=${day}`);
     }
 
-    // Validate reasonable ranges
+    // Valita intervalli ragionevoli
     if (year < 2000 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
-      throw new Error(`Date values out of range: year=${year}, month=${month}, day=${day}`);
+      throw new Error(`Valori data fuori intervallo: anno=${year}, mese=${month}, giorno=${day}`);
     }
 
-    // Create date at notification time (9 AM local)
+    // Crea data all'ora di notifica (9:00 locali)
     const expirationDate = new Date(year, month - 1, day, NOTIFICATION_HOUR, NOTIFICATION_MINUTE, NOTIFICATION_SECOND);
 
-    // Verify the date is valid
+    // Verifica che la data sia valida
     if (isNaN(expirationDate.getTime())) {
-      throw new Error(`Resulting date is invalid: ${expirationDate}`);
+      throw new Error(`La data risultante non è valida: ${expirationDate}`);
     }
 
     return expirationDate;
   } catch (error: unknown) {
     LoggingService.error(
       'NotificationCoreService', 
-      `Error parsing expiration date for product ${productId}:`, 
+      `Errore analisi data scadenza per prodotto ${productId}:`, 
       error
     );
     return null;
@@ -102,72 +102,72 @@ function parseExpirationDate(dateString: string, productId: string): Date | null
 }
 
 /**
- * Service for core notification operations
+ * Servizio per le operazioni di notifica core
  */
 export class NotificationCoreService {
   /**
-   * Cancel all notifications for a specific product
-   * Cancels both the main expiration notification and the pre-warning notification.
+   * Cancella tutte le notifiche per un prodotto specifico
+   * Cancella sia la notifica di scadenza principale che quella di pre-avviso.
    * 
-   * @param productId - ID of the product whose notifications should be canceled
+   * @param productId - ID del prodotto di cui cancellare le notifiche
    */
   static async cancelNotification(productId: string): Promise<void> {
     if (Platform.OS === 'web') {
       return;
     }
 
-    // Check availability (uses cache)
+    // Verifica disponibilità (usa cache)
     if (!NotificationPermissionService.checkExpoNotificationsAvailability()) {
       LoggingService.error(
         'NotificationCoreService', 
-        'Cannot cancel notification: Expo Notifications not available'
+        'Impossibile cancellare notifica: Expo Notifications non disponibile'
       );
       return;
     }
 
     LoggingService.info(
       'NotificationCoreService', 
-      `Received cancellation request for product ID: ${productId}`
+      `Ricevuta richiesta cancellazione per ID prodotto: ${productId}`
     );
 
     const notificationId = productId;
     const preWarningNotificationId = `${productId}-pre`;
 
-    // Cancel main notification
+    // Cancella notifica principale
     try {
       await Notifications.cancelScheduledNotificationAsync(notificationId);
       LoggingService.info(
         'NotificationCoreService', 
-        `SUCCESS: Main notification ${notificationId} cancelled.`
+        `SUCCESSO: Notifica principale ${notificationId} cancellata.`
       );
     } catch (error: unknown) {
-      // Not an error - notification may not exist
+      // Non è un errore - la notifica potrebbe non esistere
       LoggingService.info(
         'NotificationCoreService', 
-        `INFO: Could not cancel main notification ${notificationId} (may not exist).`
+        `INFO: Impossibile cancellare notifica principale ${notificationId} (potrebbe non esistere).`
       );
     }
 
-    // Cancel pre-warning notification
+    // Cancella notifica di pre-avviso
     try {
       await Notifications.cancelScheduledNotificationAsync(preWarningNotificationId);
       LoggingService.info(
         'NotificationCoreService', 
-        `SUCCESS: Pre-warning notification ${preWarningNotificationId} cancelled.`
+        `SUCCESSO: Notifica pre-avviso ${preWarningNotificationId} cancellata.`
       );
     } catch (error: unknown) {
       LoggingService.info(
         'NotificationCoreService', 
-        `INFO: Could not cancel pre-warning notification ${preWarningNotificationId} (may not exist).`
+        `INFO: Impossibile cancellare notifica pre-avviso ${preWarningNotificationId} (potrebbe non esistere).`
       );
     }
   }
 
   /**
-   * Schedule expiration and pre-warning notifications for a product
+   * Pianifica le notifiche di scadenza e pre-avviso per un prodotto
    * 
-   * @param product - Product to schedule notifications for
-   * @param notificationDays - Number of days before expiration to send pre-warning (0 for no pre-warning)
+   * @param product - Prodotto per cui pianificare le notifiche
+   * @param notificationDays - Numero di giorni prima della scadenza per inviare il pre-avviso (0 per nessun pre-avviso)
    */
   static async scheduleExpirationNotification(
     product: Product, 
@@ -177,20 +177,20 @@ export class NotificationCoreService {
       return;
     }
 
-    // Validate product has expiration date
+    // Valida che il prodotto abbia una data di scadenza
     if (!hasValidExpirationDate(product)) {
       LoggingService.info(
         'NotificationCoreService', 
-        `SKIPPING notification for "${product.name}" (ID: ${product.id}) because it has no expiration date.`
+        `SALTO notifica per "${product.name}" (ID: ${product.id}) perché non ha data di scadenza.`
       );
       return;
     }
 
-    // Check availability (uses cache)
+    // Verifica disponibilità (usa cache)
     if (!NotificationPermissionService.checkExpoNotificationsAvailability()) {
       LoggingService.error(
         'NotificationCoreService', 
-        'Cannot schedule notification: Expo Notifications not available'
+        'Impossibile pianificare notifica: Expo Notifications non disponibile'
       );
       return;
     }
@@ -205,7 +205,7 @@ export class NotificationCoreService {
     const now = new Date();
     LoggingService.info('NotificationCoreService', `Current time is: ${now.toISOString()}`);
 
-    // Parse and validate expiration date
+    // Analizza e valida la data di scadenza
     const expirationDate = parseExpirationDate(product.expirationDate!, product.id!);
     if (!expirationDate) {
       return;
@@ -213,10 +213,10 @@ export class NotificationCoreService {
 
     LoggingService.info(
       'NotificationCoreService', 
-      `Constructed expiration date (local ${NOTIFICATION_HOUR} AM): ${expirationDate.toISOString()}`
+      `Costruita data scadenza (locale ${NOTIFICATION_HOUR}:00): ${expirationDate.toISOString()}`
     );
 
-    // Schedule expiration day notification
+    // Pianifica notifica giorno di scadenza
     if (expirationDate > now) {
       await this.scheduleSingleNotification({
         identifier: product.id!,
@@ -230,18 +230,18 @@ export class NotificationCoreService {
     } else {
       LoggingService.info(
         'NotificationCoreService', 
-        `SKIPPING expiration notification because the target time ${expirationDate.toISOString()} is in the past.`
+        `SALTO notifica scadenza perché l'ora target ${expirationDate.toISOString()} è nel passato.`
       );
     }
 
-    // Schedule pre-warning notification
+    // Pianifica notifica di pre-avviso
     if (notificationDays > 0) {
       const preWarningDate = new Date(expirationDate);
       preWarningDate.setDate(preWarningDate.getDate() - notificationDays);
       
       LoggingService.info(
         'NotificationCoreService', 
-        `Constructed pre-warning date: ${preWarningDate.toISOString()}`
+        `Costruita data pre-avviso: ${preWarningDate.toISOString()}`
       );
 
       if (preWarningDate > now) {
@@ -257,21 +257,21 @@ export class NotificationCoreService {
       } else {
         LoggingService.info(
           'NotificationCoreService', 
-          `SKIPPING pre-warning notification because the target time ${preWarningDate.toISOString()} is in the past.`
+          `SALTO notifica pre-avviso perché l'ora target ${preWarningDate.toISOString()} è nel passato.`
         );
       }
     }
 
     LoggingService.info(
       'NotificationCoreService', 
-      `--- Finished scheduling for product: "${product.name}" ---`
+      `--- Terminata pianificazione per prodotto: "${product.name}" ---`
     );
   }
 
   /**
-   * Schedule a single notification
+   * Pianifica una singola notifica
    * 
-   * @param options - Notification scheduling options
+   * @param options - Opzioni di pianificazione notifica
    */
   private static async scheduleSingleNotification(options: {
     identifier: string;

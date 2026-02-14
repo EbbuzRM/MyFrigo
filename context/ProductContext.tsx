@@ -33,7 +33,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const prevProducts = usePrevious(products);
   const productsRef = useRef(products);
   const isFetchingRef = useRef(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     productsRef.current = products;
