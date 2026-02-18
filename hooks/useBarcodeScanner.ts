@@ -12,8 +12,15 @@ const MIN_OVERLAP_PERCENTAGE = 0.1; // 10% of barcode must be visible
 
 interface OpenFoodFactsProduct {
   product_name?: string;
+  product_name_it?: string;
+  generic_name?: string;
+  generic_name_it?: string;
+  abbreviated_product_name?: string;
   brands?: string;
+  brands_tags?: string[];
   image_url?: string;
+  image_front_url?: string;
+  image_front_small_url?: string;
   categories_tags?: string[];
   [key: string]: unknown;
 }
@@ -61,6 +68,41 @@ const mapOffCategoryToAppCategory = (
   return CategoryMatcher.mapOpenFoodFactsCategories(offCategories, appCategories);
 };
 
+/**
+ * Estrae il nome del prodotto con fallback alla versione localizzata italiana.
+ * Molti prodotti su OFF hanno `product_name` vuoto ma `product_name_it` popolato.
+ */
+export const extractProductName = (product: OpenFoodFactsProduct): string => {
+  const name = product.product_name || product.product_name_it || product.generic_name_it || product.generic_name || product.abbreviated_product_name || '';
+  if (!product.product_name && (product.product_name_it || product.generic_name_it || product.generic_name || product.abbreviated_product_name)) {
+    LoggingService.info('Scanner', `Fallback: recuperato nome alternativo: "${name}"`);
+  }
+  return name;
+};
+
+/**
+ * Estrae la marca con fallback a brands_tags.
+ */
+export const extractBrand = (product: OpenFoodFactsProduct): string => {
+  if (product.brands) return product.brands;
+  if (product.brands_tags?.length) {
+    LoggingService.info('Scanner', `Fallback: usando brands_tags[0]: "${product.brands_tags[0]}"`);
+    return product.brands_tags[0];
+  }
+  return '';
+};
+
+/**
+ * Estrae l'URL dell'immagine con fallback ai campi alternativi.
+ */
+export const extractImageUrl = (product: OpenFoodFactsProduct): string => {
+  const url = product.image_url || product.image_front_url || product.image_front_small_url || '';
+  if (!product.image_url && (product.image_front_url || product.image_front_small_url)) {
+    LoggingService.info('Scanner', `Fallback: usando immagine alternativa`);
+  }
+  return url;
+};
+
 const isBarcodeInFrame = (
   bounds: BarcodeBounds,
   frameLayout: FrameLayout
@@ -94,14 +136,14 @@ export function useBarcodeScanner(
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<string>('Inizializzazione...');
   const [currentBarcode, setCurrentBarcode] = useState<string | null>(null);
-  
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   interface CachedEntry {
     timestamp: number;
     result: ScanResult;
   }
-  
+
   const barcodeCache = useRef<Map<string, CachedEntry>>(new Map());
 
   const clearApiTimeout = useCallback(() => {
@@ -178,7 +220,7 @@ export function useBarcodeScanner(
     if (!frameLayout) return;
 
     const now = Date.now();
-    
+
     // Check cache first
     const cacheEntry = barcodeCache.current.get(data);
     if (cacheEntry && (now - cacheEntry.timestamp) < CACHE_DURATION) {
@@ -198,10 +240,10 @@ export function useBarcodeScanner(
     setCurrentBarcode(data);
     setLoadingProgress('Inizializzazione scansione...');
 
-    let paramsForManualEntry: Partial<Product> & { barcodeType?: string; addedMethod?: string } = { 
-      barcode: data, 
-      barcodeType: type, 
-      addedMethod: 'barcode' 
+    let paramsForManualEntry: Partial<Product> & { barcodeType?: string; addedMethod?: string } = {
+      barcode: data,
+      barcodeType: type,
+      addedMethod: 'barcode'
     };
 
     try {
@@ -219,7 +261,7 @@ export function useBarcodeScanner(
           data: supabaseResult.value,
           params: paramsForManualEntry
         };
-        
+
         barcodeCache.current.set(data, { timestamp: now, result });
         onProductFound(result, data);
         return;
@@ -231,11 +273,17 @@ export function useBarcodeScanner(
         if (productInfo && typeof productInfo === 'object') {
           const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
 
+          const extractedName = extractProductName(productInfo);
+          const extractedBrand = extractBrand(productInfo);
+          const extractedImage = extractImageUrl(productInfo);
+
+          LoggingService.info('Scanner', `OFF dati estratti - nome: "${extractedName}", marca: "${extractedBrand}", immagine: ${extractedImage ? 'presente' : 'assente'}`);
+
           paramsForManualEntry = {
             ...paramsForManualEntry,
-            name: productInfo.product_name || '',
-            brand: productInfo.brands || '',
-            imageUrl: productInfo.image_url || '',
+            name: extractedName,
+            brand: extractedBrand,
+            imageUrl: extractedImage,
             category: suggestedCategoryId || '',
           };
 
@@ -275,7 +323,7 @@ export function useBarcodeScanner(
           type: 'not_found',
           params: paramsForManualEntry
         };
-        
+
         barcodeCache.current.set(data, { timestamp: now, result });
         onProductFound(result, data);
       } else {
@@ -314,14 +362,14 @@ export function useBarcodeScanner(
     const cleanupCache = () => {
       const now = Date.now();
       let removedCount = 0;
-      
+
       barcodeCache.current.forEach((entry, key) => {
         if (now - entry.timestamp >= CACHE_DURATION) {
           barcodeCache.current.delete(key);
           removedCount++;
         }
       });
-      
+
       if (removedCount > 0) {
         LoggingService.debug('Scanner', `Cache cleanup: removed ${removedCount} expired entries`);
       }
