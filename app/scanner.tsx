@@ -52,7 +52,11 @@ export default function BarcodeScannerScreen() {
         },
       ]);
     } else if (result.type === 'online' && result.data) {
-      const displayName = 'product_name' in result.data ? result.data.product_name : result.data.name;
+      // Usa il nome estratto dai parametri (che include la logica di fallback)
+      // Se params non esiste (caso strano), tenta di accedere a data.product_name
+      const extractedName = result.params?.name;
+      const rawName = 'product_name' in result.data ? (result.data as any).product_name : (result.data as any).name;
+      const displayName = extractedName || rawName;
       Alert.alert('Prodotto Trovato!', `Trovato online: ${displayName || barcode}`, [
         {
           text: 'Continua',
@@ -106,10 +110,10 @@ export default function BarcodeScannerScreen() {
     setFrameLayout({ x, y, width, height });
   };
 
-  const onBarcodeScanned = useCallback(({ type, data, bounds }: { 
-    type: string; 
-    data: string; 
-    bounds: { origin: { x: number, y: number }, size: { width: number, height: number } } 
+  const onBarcodeScanned = useCallback(({ type, data, bounds }: {
+    type: string;
+    data: string;
+    bounds: { origin: { x: number, y: number }, size: { width: number, height: number } }
   }) => {
     handleBarCodeScanned(data, type, bounds, frameLayout);
   }, [handleBarCodeScanned, frameLayout]);

@@ -8,10 +8,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
-  TextInput
+  TextInput,
+  FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@/context/ThemeContext';
 import { useProductForm } from '@/hooks/useProductForm';
 import ProductFormHeader from '@/components/ProductFormHeader';
@@ -263,7 +263,7 @@ export default function ManualEntryScreen() {
           isFrozen={isFrozen}
           setIsFrozen={setIsFrozen}
         />
-        <FlashList
+        <FlatList
           data={categoryData}
           renderItem={renderCategoryItem}
           keyExtractor={(item) => item.id}
