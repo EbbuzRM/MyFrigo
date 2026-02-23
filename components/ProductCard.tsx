@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
@@ -65,14 +65,6 @@ export const ProductCard = React.memo(({
 
   const styles = useMemo(() => getProductCardStyles(isDarkMode, colors), [isDarkMode, colors]);
 
-  const handleDelete = useCallback(() => {
-    onDelete();
-  }, [onDelete]);
-
-  const handleConsume = useCallback(() => {
-    onConsume();
-  }, [onConsume]);
-
   const cardBackgroundColor = expirationInfo.backgroundColor;
   const cardBorderColor = `${expirationInfo.color}${BORDER_OPACITY_SUFFIX}`;
 
@@ -103,8 +95,8 @@ export const ProductCard = React.memo(({
             product={product}
             categoryInfo={categoryInfo}
             colors={colors}
-            onConsume={handleConsume}
-            onDelete={handleDelete}
+            onConsume={onConsume}
+            onDelete={onDelete}
             onPress={onPress}
             index={index}
           />

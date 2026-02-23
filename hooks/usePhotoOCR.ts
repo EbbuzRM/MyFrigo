@@ -28,7 +28,6 @@ export const usePhotoOCR = () => {
 
     try {
       setOcrProgress(prev => ({ ...prev, progress: 25, currentStep: 'Riconoscimento testo...' }));
-      LoggingService.info(TAG, 'Starting text recognition');
 
       const textRecognitionResult = await TextRecognition.recognize(imageUri);
 
@@ -37,7 +36,6 @@ export const usePhotoOCR = () => {
         return { success: false, extractedDate: null, confidence: 0, rawText: '', error: 'Nessun testo rilevato' };
       }
 
-      LoggingService.info(TAG, 'Text recognition completed');
       setOcrProgress(prev => ({ ...prev, progress: 50, currentStep: 'Pulizia e analisi testo...' }));
 
       // 1. Parsing: Find all potential dates and anchors
@@ -67,7 +65,6 @@ export const usePhotoOCR = () => {
       clearTimeout(timeoutId);
       setTimeout(() => {
         setOcrProgress({ isProcessing: false, progress: 0, currentStep: '' });
-        LoggingService.info(TAG, 'OCR progress reset');
       }, 500);
     }
   }, []);

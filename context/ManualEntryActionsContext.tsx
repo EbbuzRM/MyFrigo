@@ -83,27 +83,45 @@ export const ManualEntryActionsProvider = ({ children }: { children: ReactNode }
   }, [dispatch]);
   const setQuantities = useCallback((quantities: Quantity[]) => dispatch({ type: 'SET_QUANTITIES', quantities }), [dispatch]);
 
-  const initializeForm = useCallback((initialData: InitializeFormData = {}) => {
-    LoggingService.debug('ManualEntryActions', 'Initializing form');
-    const hasProductData = !!initialData.product;
-    const hasScannedData = !!(initialData.barcode || initialData.name || initialData.productName);
-    if (!hasProductData && !hasScannedData) {
-      dispatch({ type: 'CLEAR' });
-      setEditMode(false);
-      setOriginalProductId(null);
-      setManuallySelectedCategory(false);
-      setInitialized(true);
-      return;
-    }
-    let newState: Partial<FormState> = {};
-    if (hasProductData && initialData.product) newState = processProductData(initialData.product);
-    else if (hasScannedData) newState = processScannedData(initialData);
-    dispatch({ type: 'INITIALIZE', state: newState });
-    setEditMode(String(initialData.isEditMode) === 'true');
-    setOriginalProductId(initialData.originalProductId || null);
-    setManuallySelectedCategory(String(initialData.hasManuallySelectedCategory) === 'true');
+  const resetMetaState = useCallback((editMode = false, originalId: string | null = null, manuallySelected = false) => {
+    setEditMode(editMode);
+    setOriginalProductId(originalId);
+    setManuallySelectedCategory(manuallySelected);
     setInitialized(true);
-  }, [dispatch, setEditMode, setOriginalProductId, setManuallySelectedCategory, setInitialized]);
+  }, [setEditMode, setOriginalProductId, setManuallySelectedCategory, setInitialized]);
+
+  const determineFormState = (data: InitializeFormData): Partial<FormState> => {
+    if (data.product) return processProductData(data.product);
+    return processScannedData(data);
+  };
+
+  const initializeForm = useCallback((initialData: InitializeFormData = {}) => {
+    try {
+      LoggingService.debug('ManualEntryActions', 'Initializing form');
+
+      const hasProductData = !!initialData.product;
+      const hasScannedData = !!(initialData.barcode || initialData.name || initialData.productName);
+
+      if (!hasProductData && !hasScannedData) {
+        dispatch({ type: 'CLEAR' });
+        resetMetaState();
+        return;
+      }
+
+      const newState = determineFormState(initialData);
+      dispatch({ type: 'INITIALIZE', state: newState });
+
+      const editMode = String(initialData.isEditMode) === 'true';
+      const originalId = initialData.originalProductId || null;
+      const manuallySelected = String(initialData.hasManuallySelectedCategory) === 'true';
+
+      resetMetaState(editMode, originalId, manuallySelected);
+    } catch (error) {
+      LoggingService.error('ManualEntryActions', 'Error initializing form', { error });
+      dispatch({ type: 'CLEAR' });
+      resetMetaState();
+    }
+  }, [dispatch, resetMetaState]);
 
   const clearForm = useCallback(() => {
     dispatch({ type: 'CLEAR' });

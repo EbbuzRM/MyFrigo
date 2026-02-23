@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
@@ -53,21 +53,23 @@ export const useProductInitialization = ({
     return CategoryMatcher.guessCategory(productName, productBrand, allCategories);
   }, []);
 
+  // Ref per tracciare se l'effect per expirationDate è già stato eseguito
+  const hasSetExpirationDateRef = useRef(false);
+
   const loadData = useCallback(async () => {
     // Capture current params at this moment
     const currentParams = { ...params };
 
-    LoggingService.info('useProductInitialization', `Loading data. productId: ${productId}`);
-    LoggingService.info('useProductInitialization', `Params: ${JSON.stringify(currentParams)}`);
-    LoggingService.info('useProductInitialization', `isInitialized: ${isInitialized}, categoriesLoading: ${categoriesLoading}, scannerKey: ${scannerDataKey}`);
+    LoggingService.info('useProductInitialization', `Loading data. productId: ${productId}, fromPhotoCapture: ${currentParams.fromPhotoCapture || 'false'}`);
+
+    // Reset the ref when starting a new load (new photo capture or new product)
+    hasSetExpirationDateRef.current = false;
 
     setIsLoading(true);
     try {
       if (productId) {
-        LoggingService.info('useProductInitialization', `Loading product for edit with ID: ${productId}`);
         const { data: productToEdit, success } = await ProductStorage.getProductById(productId);
         if (success && productToEdit) {
-          LoggingService.info('useProductInitialization', `Product loaded successfully: ${productToEdit.name}`);
           initializeForm({
             product: productToEdit,
             isEditMode: true,
@@ -78,44 +80,46 @@ export const useProductInitialization = ({
           LoggingService.error('useProductInitialization', `Product with ID ${productId} not found`);
         }
       } else {
-        LoggingService.info('useProductInitialization', 'Initializing form for new product or from params.');
         const initialData = { ...currentParams };
         delete initialData.productId;
-        LoggingService.info('useProductInitialization', `Initializing form with data: ${JSON.stringify(initialData)}`);
+
+        // IMPORTANT: If fromPhotoCapture, don't pass expirationDate to initializeForm
+        // We'll handle it separately in the dedicated effect to avoid race conditions
+        if (currentParams.fromPhotoCapture === 'true') {
+          delete initialData.expirationDate;
+        }
+
         initializeForm(initialData as Partial<ManualEntryFormData>);
       }
       setIsInitialized(true);
-      LoggingService.info('useProductInitialization', 'Data loading completed successfully');
     } catch (error) {
       LoggingService.error('useProductInitialization', 'Error during data loading:', error);
     } finally {
       setIsLoading(false);
-      LoggingService.info('useProductInitialization', 'Setting isLoading to false');
     }
   }, [productId, initializeForm, isInitialized, categoriesLoading, scannerDataKey, setIsLoading, setIsInitialized]);
 
   // Effect for loading data on mount
   useEffect(() => {
-    LoggingService.info('useProductInitialization', 'useEffect triggered for loadData');
     loadData();
   }, [loadData]);
 
   // Effect for handling expiration date passed from photo capture
+  // EXECUTE ONLY ONCE when returning from photo capture, not on every date change
   useEffect(() => {
-    if (params.fromPhotoCapture === 'true' && params.expirationDate && expirationDate !== params.expirationDate) {
+    if (params.fromPhotoCapture === 'true' && params.expirationDate && !hasSetExpirationDateRef.current) {
       const expirationDateParam = Array.isArray(params.expirationDate) ? params.expirationDate[0] : params.expirationDate;
       if (expirationDateParam) {
-        LoggingService.info('useProductInitialization', `Setting expirationDate from photo capture: ${expirationDateParam}`);
         setExpirationDate(expirationDateParam);
+        hasSetExpirationDateRef.current = true;
       }
     }
-  }, [params.fromPhotoCapture, params.expirationDate, expirationDate, setExpirationDate]);
+  }, [params.fromPhotoCapture, params.expirationDate, setExpirationDate]);
 
   // Effect for handling photo capture image URL
   useEffect(() => {
     if (params.fromPhotoCapture && params.imageUrl) {
       const url = Array.isArray(params.imageUrl) ? params.imageUrl[0] : params.imageUrl;
-      LoggingService.info('useProductInitialization', `Setting imageUrl from photo capture: ${url}`);
       if (url) setImageUrl(url);
     }
   }, [params.fromPhotoCapture, params.imageUrl, setImageUrl]);
@@ -123,14 +127,9 @@ export const useProductInitialization = ({
   // Effect for auto-guessing category
   useEffect(() => {
     if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
-      const guessedCategoryId = guessCategory(name, brand, categories);
-      if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
-        LoggingService.info('useProductInitialization', `Guessed category: ${guessedCategoryId} for name: ${name}, brand: ${brand}`);
-        // Note: We return the guessed category but don't set it here to avoid circular dependency
-        // The parent hook will handle setting it
-      }
+      guessCategory(name, brand, categories);
     }
-  }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory, selectedCategory]);
+  }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory]);
 
   return {
     productId,

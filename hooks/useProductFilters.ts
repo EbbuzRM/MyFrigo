@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Product } from '@/types/Product';
-import { LoggingService } from '@/services/LoggingService';
 import { ProductStatusFilter, DEFAULT_NOTIFICATION_DAYS } from '@/constants/productFilters';
 
 /**
@@ -140,14 +139,14 @@ export function useProductFilters({
   selectedStatus,
   notificationDays = DEFAULT_NOTIFICATION_DAYS,
 }: UseProductFiltersParams): UseProductFiltersResult {
-  const filteredProducts = useMemo(() => {
+  const { filteredProducts, activeProductsCount } = useMemo(() => {
     // Start with only active products
     let filtered = allProducts.filter(p => p.status === 'active');
     const activeProductsCount = filtered.length;
 
     // Apply status filter
     if (selectedStatus !== 'all') {
-      filtered = filtered.filter(product => 
+      filtered = filtered.filter(product =>
         matchesStatusFilter(product, selectedStatus, notificationDays)
       );
     }
@@ -161,15 +160,12 @@ export function useProductFilters({
     // Sort by expiration date
     filtered = sortByExpirationDate(filtered);
 
-    LoggingService.info('useProductFilters', 
-      `Filtering complete. ${filtered.length} of ${activeProductsCount} active products displayed.`);
-
-    return filtered;
+    return { filteredProducts: filtered, activeProductsCount };
   }, [allProducts, selectedCategories, searchQuery, selectedStatus, notificationDays]);
 
   return {
     filteredProducts,
     filteredCount: filteredProducts.length,
-    activeProductsCount: allProducts.filter(p => p.status === 'active').length,
+    activeProductsCount,
   };
 }

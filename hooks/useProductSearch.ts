@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 
 /**
@@ -27,6 +27,10 @@ export interface UseProductSearchResult {
  */
 export function useProductSearch(): UseProductSearchResult {
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const searchQueryRef = useRef(searchQuery);
+
+  // Keep ref in sync with state
+  searchQueryRef.current = searchQuery;
 
   /**
    * Clears the current search query
@@ -40,11 +44,11 @@ export function useProductSearch(): UseProductSearchResult {
    * Handler for search query changes with logging
    */
   const handleSearchChange = useCallback((query: string) => {
-    if (query !== searchQuery) {
+    if (query !== searchQueryRef.current) {
       LoggingService.debug('useProductSearch', `Search query changed: "${query}"`);
     }
     setSearchQuery(query);
-  }, [searchQuery]);
+  }, []);
 
   const hasSearchQuery = searchQuery.length > 0;
 

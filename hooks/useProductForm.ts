@@ -1,6 +1,5 @@
 import { useManualEntry } from '@/context/ManualEntryContext';
 import { useCategories } from '@/context/CategoryContext';
-import { LoggingService } from '@/services/LoggingService';
 import { useProductFormData } from './useProductFormData';
 import { useProductInitialization } from './useProductInitialization';
 import { useCategorySelection } from './useCategorySelection';
@@ -24,8 +23,6 @@ export const useProductForm = () => {
   } = useManualEntry();
 
   const { categories, loading: categoriesLoading } = useCategories();
-
-  LoggingService.info('useProductForm_RENDER', `Hook rendering. isEditMode from context: ${isEditMode}`);
 
   // Hook 1: Form field state management (date pickers, modals, loading)
   const {
