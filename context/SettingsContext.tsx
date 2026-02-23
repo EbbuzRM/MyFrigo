@@ -1,5 +1,5 @@
 import { convertSettingsToCamelCase } from '../utils/caseConverter';
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { SettingsService, AppSettings } from '@/services/SettingsService';
 import { useAuth } from './AuthContext';
 import { eventEmitter } from '@/services/NotificationService';
@@ -109,8 +109,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const contextValue = useMemo(
+    () => ({
+      settings,
+      loading,
+      permissionStatus,
+      updateSettings,
+      refreshPermissions,
+    }),
+    [settings, loading, permissionStatus, updateSettings, refreshPermissions]
+  );
+
   return (
-    <SettingsContext.Provider value={{ settings, loading, permissionStatus, updateSettings, refreshPermissions }}>
+    <SettingsContext.Provider value={contextValue}>
       {children}
     </SettingsContext.Provider>
   );

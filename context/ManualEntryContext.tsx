@@ -47,6 +47,9 @@ const ManualEntryCompositeProvider = ({ children }: { children: ReactNode }) => 
   const { setField, addQuantity, removeQuantity, updateQuantity, setQuantities, initializeForm, clearForm } = useManualEntryActions();
   const metaState = useManualEntryMeta();
 
+  // Destruttura metaState per evitare cambi di riferimento nell'useMemo
+  const { isEditMode, originalProductId, hasManuallySelectedCategory, isInitialized, setEditMode, setOriginalProductId, setManuallySelectedCategory, setInitialized } = metaState;
+
   const setters = useMemo(() => ({
     setName: (name: string) => setField('name', name),
     setBrand: (brand: string) => setField('brand', brand),
@@ -58,11 +61,11 @@ const ManualEntryCompositeProvider = ({ children }: { children: ReactNode }) => 
     setImageUrl: (url: string | null) => setField('imageUrl', url),
     setIsFrozen: (frozen: boolean) => setField('isFrozen', frozen),
     setQuantities,
-    setIsEditMode: metaState.setEditMode,
-    setOriginalProductId: metaState.setOriginalProductId,
-    setHasManuallySelectedCategory: metaState.setManuallySelectedCategory,
-    setIsInitialized: metaState.setInitialized,
-  }), [setField, setQuantities, metaState.setEditMode, metaState.setOriginalProductId, metaState.setManuallySelectedCategory, metaState.setInitialized]);
+    setIsEditMode: setEditMode,
+    setOriginalProductId: setOriginalProductId,
+    setHasManuallySelectedCategory: setManuallySelectedCategory,
+    setIsInitialized: setInitialized,
+  }), [setField, setQuantities, setEditMode, setOriginalProductId, setManuallySelectedCategory, setInitialized]);
 
   const actions = useMemo(() => ({
     addQuantity,
@@ -74,15 +77,13 @@ const ManualEntryCompositeProvider = ({ children }: { children: ReactNode }) => 
 
   const value = useMemo<ManualEntryContextType>(() => ({
     ...formState,
-    isEditMode: metaState.isEditMode,
-    originalProductId: metaState.originalProductId,
-    hasManuallySelectedCategory: metaState.hasManuallySelectedCategory,
-    isInitialized: metaState.isInitialized,
+    isEditMode,
+    originalProductId,
+    hasManuallySelectedCategory,
+    isInitialized,
     ...setters,
     ...actions,
-  }), [formState, metaState, setters, actions]);
-
-  LoggingService.debug('ManualEntryContext', 'Context value updated');
+  }), [formState, isEditMode, originalProductId, hasManuallySelectedCategory, isInitialized, setters, actions]);
 
   return (
     <ManualEntryContext.Provider value={value}>

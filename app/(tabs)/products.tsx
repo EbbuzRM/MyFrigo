@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -121,7 +121,7 @@ export default function ProductsScreen(): React.ReactElement {
     }, [isFirstLoad, refreshProductsFromContext, shouldAutoRefresh, moveExpiredToHistory])
   );
 
-  const activeProducts = allProducts.filter(p => p.status === 'active');
+  const activeProducts = useMemo(() => allProducts.filter(p => p.status === 'active'), [allProducts]);
 
   return (
     <SafeAreaView style={styles.container}>

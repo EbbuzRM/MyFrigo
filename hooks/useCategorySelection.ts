@@ -6,6 +6,37 @@ import { LoggingService } from '@/services/LoggingService';
 import { CategoryMatcher } from '@/services/CategoryMatcher';
 import { ProductCategory } from '@/types/Product';
 
+/**
+ * Formats category data for grid display with "Add New" button and spacers
+ */
+const formatCategoryData = (
+  data: ProductCategory[],
+  columns: number,
+  addNewCategoryId: string
+): (ProductCategory & { spacer?: boolean })[] => {
+  // Create new array with "Add New" button
+  const dataWithButton: (ProductCategory & { spacer?: boolean })[] = [
+    ...data,
+    { id: addNewCategoryId, name: 'Aggiungi', icon: '+', color: '#808080' },
+  ];
+
+  // Calculate how many spacers are needed to fill the last row
+  const remainder = dataWithButton.length % columns;
+  if (remainder !== 0) {
+    const spacersNeeded = columns - remainder;
+    for (let i = 0; i < spacersNeeded; i++) {
+      dataWithButton.push({
+        id: `spacer-${i}`,
+        name: '',
+        color: 'transparent',
+        spacer: true,
+      });
+    }
+  }
+
+  return dataWithButton;
+};
+
 export interface UseCategorySelectionProps {
   categories: ProductCategory[];
   categoriesLoading: boolean;
@@ -100,19 +131,10 @@ export const useCategorySelection = ({
     }
   }, [ADD_NEW_CATEGORY_ID, setIsCategoryModalVisible, setNewCategoryNameInput, setSelectedCategory, setHasManuallySelectedCategory]);
 
-  const categoryData = useMemo(() => {
-    const formatData = (data: ProductCategory[], columns: number) => {
-      const dataWithButton = [...data, { id: ADD_NEW_CATEGORY_ID, name: 'Aggiungi', icon: '+', color: '#808080' }];
-      const numberOfFullRows = Math.floor(dataWithButton.length / columns);
-      let numberOfElementsLastRow = dataWithButton.length - (numberOfFullRows * columns);
-      while (numberOfElementsLastRow !== columns && numberOfElementsLastRow !== 0) {
-        dataWithButton.push({ id: `spacer-${numberOfElementsLastRow}`, name: '', color: 'transparent', spacer: true } as ProductCategory & { spacer: boolean });
-        numberOfElementsLastRow++;
-      }
-      return dataWithButton;
-    };
-    return formatData(categories, 4);
-  }, [categories, ADD_NEW_CATEGORY_ID]);
+  const categoryData = useMemo(
+    () => formatCategoryData(categories, 4, ADD_NEW_CATEGORY_ID),
+    [categories]
+  );
 
   return {
     categoryData,

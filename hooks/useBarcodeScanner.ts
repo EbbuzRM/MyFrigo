@@ -5,10 +5,11 @@ import { CategoryMatcher } from '@/services/CategoryMatcher';
 import { ProductCategory, Product } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
 
-const API_TIMEOUT = 10000;
+const API_TIMEOUT = 15000; // Aumentato da 10 a 15 secondi per connessioni lente
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 const CACHE_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const MIN_OVERLAP_PERCENTAGE = 0.1; // 10% of barcode must be visible
+const DEBUG_SCANNER = __DEV__; // Abilita log dettagliati solo in sviluppo
 
 interface OpenFoodFactsProduct {
   product_name?: string;
@@ -73,34 +74,21 @@ const mapOffCategoryToAppCategory = (
  * Molti prodotti su OFF hanno `product_name` vuoto ma `product_name_it` popolato.
  */
 export const extractProductName = (product: OpenFoodFactsProduct): string => {
-  const name = product.product_name || product.product_name_it || product.generic_name_it || product.generic_name || product.abbreviated_product_name || '';
-  if (!product.product_name && (product.product_name_it || product.generic_name_it || product.generic_name || product.abbreviated_product_name)) {
-    LoggingService.info('Scanner', `Fallback: recuperato nome alternativo: "${name}"`);
-  }
-  return name;
+  return product.product_name || product.product_name_it || product.generic_name_it || product.generic_name || product.abbreviated_product_name || '';
 };
 
 /**
  * Estrae la marca con fallback a brands_tags.
  */
 export const extractBrand = (product: OpenFoodFactsProduct): string => {
-  if (product.brands) return product.brands;
-  if (product.brands_tags?.length) {
-    LoggingService.info('Scanner', `Fallback: usando brands_tags[0]: "${product.brands_tags[0]}"`);
-    return product.brands_tags[0];
-  }
-  return '';
+  return product.brands || (product.brands_tags?.length ? product.brands_tags[0] : '');
 };
 
 /**
  * Estrae l'URL dell'immagine con fallback ai campi alternativi.
  */
 export const extractImageUrl = (product: OpenFoodFactsProduct): string => {
-  const url = product.image_url || product.image_front_url || product.image_front_small_url || '';
-  if (!product.image_url && (product.image_front_url || product.image_front_small_url)) {
-    LoggingService.info('Scanner', `Fallback: usando immagine alternativa`);
-  }
-  return url;
+  return product.image_url || product.image_front_url || product.image_front_small_url || '';
 };
 
 const isBarcodeInFrame = (
@@ -163,9 +151,15 @@ export function useBarcodeScanner(
 
       const templatePromise = TemplateService.getProductTemplate(barcode);
       const template = await Promise.race([templatePromise, timeoutPromise]);
+      
+      if (DEBUG_SCANNER && template) {
+        LoggingService.debug('BarcodeScanner', `Template found: ${template.name}`);
+      }
       return template;
     } catch (error) {
-      LoggingService.error('Scanner', 'Errore nel database locale:', error);
+      if (DEBUG_SCANNER) {
+        LoggingService.debug('BarcodeScanner', `Local DB error: ${error instanceof Error ? error.message : 'Unknown'}`);
+      }
       return null;
     }
   }, []);
@@ -194,15 +188,24 @@ export function useBarcodeScanner(
           })
           .then(jsonResponse => {
             if (!jsonResponse) {
+              reject(new Error('Risposta API vuota'));
               return;
             }
             if (jsonResponse.status !== 1 || !jsonResponse.product) {
               reject(new Error('Prodotto non trovato nel database online'));
               return;
             }
+            
+            if (DEBUG_SCANNER) {
+              const productName = jsonResponse.product.product_name || jsonResponse.product.product_name_it || 'N/D';
+              LoggingService.debug('BarcodeScanner', `Product found on OFF: ${productName}`);
+            }
             resolve(jsonResponse.product);
           })
           .catch(error => {
+            if (DEBUG_SCANNER) {
+              LoggingService.debug('BarcodeScanner', `OFF request error: ${error.message}`);
+            }
             reject(error);
           });
       } catch (error) {
@@ -217,22 +220,36 @@ export function useBarcodeScanner(
     bounds: BarcodeBounds,
     frameLayout: FrameLayout | null
   ) => {
-    if (!frameLayout) return;
+    if (!frameLayout) {
+      LoggingService.warning('BarcodeScanner', '⚠️ frameLayout è null, salto scansione');
+      return;
+    }
 
+    const startTime = Date.now();
     const now = Date.now();
+
+    // Log essenziale di inizio scansione
+    LoggingService.info('BarcodeScanner', `Scanning barcode: ${data}`);
 
     // Check cache first
     const cacheEntry = barcodeCache.current.get(data);
     if (cacheEntry && (now - cacheEntry.timestamp) < CACHE_DURATION) {
-      LoggingService.info('Scanner', `Using cached result for barcode: ${data}`);
+      if (DEBUG_SCANNER) {
+        LoggingService.debug('BarcodeScanner', `Cache hit for ${data} (${now - cacheEntry.timestamp}ms)`);
+      }
       onProductFound(cacheEntry.result, data);
       return;
+    } else if (DEBUG_SCANNER && cacheEntry) {
+      LoggingService.debug('BarcodeScanner', `Cache expired for ${data}`);
     }
 
     // Validate barcode is within frame
     if (!isBarcodeInFrame(bounds, frameLayout)) {
+      LoggingService.warning('BarcodeScanner', '⚠️ Barcode fuori dal frame, ignoro scansione');
       return;
     }
+
+    LoggingService.info('BarcodeScanner', '✅ Barcode valido e nel frame, procedo...');
 
     setScanned(true);
     setIsLoading(true);
@@ -254,8 +271,23 @@ export function useBarcodeScanner(
         fetchProductFromOpenFoodFacts(data)
       ]);
 
+      const totalTime = Date.now() - startTime;
+
       // Check Supabase result first (preferred)
       if (supabaseResult.status === 'fulfilled' && supabaseResult.value) {
+        if (DEBUG_SCANNER) {
+          LoggingService.debug('BarcodeScanner', `Template found: ${supabaseResult.value.name}`);
+        }
+        
+        // Unisci i dati del template nei parametri per il form
+        paramsForManualEntry = {
+          ...paramsForManualEntry,
+          name: supabaseResult.value.name || '',
+          brand: supabaseResult.value.brand || '',
+          category: supabaseResult.value.category || '',
+          imageUrl: supabaseResult.value.imageUrl || '',
+        };
+
         const result: ScanResult = {
           type: 'template',
           data: supabaseResult.value,
@@ -263,8 +295,11 @@ export function useBarcodeScanner(
         };
 
         barcodeCache.current.set(data, { timestamp: now, result });
+        LoggingService.info('BarcodeScanner', `Found template: ${supabaseResult.value.name} (${totalTime}ms)`);
         onProductFound(result, data);
         return;
+      } else if (DEBUG_SCANNER && supabaseResult.status === 'rejected') {
+        LoggingService.debug('BarcodeScanner', `Supabase error: ${supabaseResult.reason?.message}`);
       }
 
       // Check Open Food Facts result
@@ -272,12 +307,9 @@ export function useBarcodeScanner(
         const productInfo = offResult.value;
         if (productInfo && typeof productInfo === 'object') {
           const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
-
           const extractedName = extractProductName(productInfo);
           const extractedBrand = extractBrand(productInfo);
           const extractedImage = extractImageUrl(productInfo);
-
-          LoggingService.info('Scanner', `OFF dati estratti - nome: "${extractedName}", marca: "${extractedBrand}", immagine: ${extractedImage ? 'presente' : 'assente'}`);
 
           paramsForManualEntry = {
             ...paramsForManualEntry,
@@ -294,14 +326,17 @@ export function useBarcodeScanner(
           };
 
           barcodeCache.current.set(data, { timestamp: now, result });
+          LoggingService.info('BarcodeScanner', `Found online: ${extractedName} (${totalTime}ms)`);
           onProductFound(result, data);
           return;
         }
+      } else if (DEBUG_SCANNER) {
+        LoggingService.debug('BarcodeScanner', `OpenFoodFacts error: ${offResult.reason?.message}`);
       }
 
       // Both searches failed
       const supabaseError = supabaseResult.status === 'rejected' ? supabaseResult.reason?.message : null;
-      const offError = offResult.status === 'rejected' ? 'Prodotto non trovato online' : null;
+      const offError = offResult.status === 'rejected' ? offResult.reason?.message : null;
 
       if (supabaseError?.includes('Timeout database locale') && !offError) {
         throw new Error(offError || 'Entrambe le ricerche hanno fallito');
@@ -315,7 +350,7 @@ export function useBarcodeScanner(
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-      LoggingService.error('Scanner', "Errore durante la ricerca del prodotto:", errorMessage);
+      LoggingService.error('BarcodeScanner', `Scan error: ${errorMessage}`, error);
 
       // Handle "not found" case
       if (errorMessage.includes('Prodotto non trovato') || errorMessage.includes('Errore HTTP: 404')) {
@@ -331,6 +366,10 @@ export function useBarcodeScanner(
         setLoadingError(`Errore: ${errorMessage}. Riprova o inserisci manualmente.`);
       }
     } finally {
+      const finalTime = Date.now() - startTime;
+      if (DEBUG_SCANNER) {
+        LoggingService.debug('BarcodeScanner', `Scan completed in ${finalTime}ms`);
+      }
       setIsLoading(false);
       clearApiTimeout();
     }

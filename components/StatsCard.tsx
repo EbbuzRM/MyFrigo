@@ -14,7 +14,7 @@ interface StatsCardProps {
   onPress?: () => void;
 }
 
-export function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgroundColor, onPress }: StatsCardProps) {
+export const StatsCard = React.memo(function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgroundColor, onPress }: StatsCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const CardComponent = onPress ? TouchableOpacity : View;
@@ -37,7 +37,7 @@ export function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgr
       </View>
     </CardComponent>
   );
-}
+});
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   card: {

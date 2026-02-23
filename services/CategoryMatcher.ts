@@ -1,4 +1,5 @@
 import { ProductCategory } from '@/types/Product';
+import { LoggingService } from '@/services/LoggingService';
 
 /**
  * Centralized service for category matching and guessing.
@@ -49,7 +50,7 @@ export class CategoryMatcher {
     // Cheese (Formaggi)
     'cheese': ['formaggio', 'grana', 'parmigiano', 'pecorino', 'fontina', 'asiago', 'taleggio', 'robiola', 'stracchino', 'scamorza', 'provola', 'gorgonzola'],
     // Legumes (Legumi)
-    'legumes': ['legumi', 'fagioli', 'lenticchie', 'ceci', 'piselli secchi', 'fave', 'soia'],
+    'legumes': ['legumi', 'fagioli', 'lenticchie', 'ceci', 'piselli', 'piselli secchi', 'fave', 'soia', 'ceci', 'fagioli'],
     // Jam (Marmellate)
     'jam': ['marmellata', 'confettura', 'composta'],
     // Honey (Miele)
@@ -106,7 +107,7 @@ export class CategoryMatcher {
     // Cheese
     'cheese': ['cheeses', 'parmesan', 'pecorino', 'gorgonzola', 'mozzarella', 'grana', 'fontina'],
     // Legumes
-    'legumes': ['pulses', 'beans', 'lentils', 'chickpeas', 'soy', 'legumes'],
+    'legumes': ['pulses', 'beans', 'lentils', 'chickpeas', 'soy', 'legumes', 'peas', 'green-peas', 'canned-peas'],
     // Jam
     'jam': ['jams', 'confiture', 'fruit-spreads'],
     // Honey
@@ -132,21 +133,46 @@ export class CategoryMatcher {
     availableCategories: ProductCategory[]
   ): string | null {
     const fullText = `${name.toLowerCase()} ${brand.toLowerCase()}`;
+    
+    LoggingService.info('CategoryMatcher', `🔍 Guess category per: "${name}" (${brand})`);
 
+    // Priorità alle categorie più specifiche (ordinamento manuale per importanza)
+    const categoryPriority = [
+      'legumes', 'cheese', 'dairy', 'meat', 'fish', 'fruits', 'vegetables',
+      'pasta', 'rice', 'flour', 'grains', 'frozen', 'beverages', 'canned',
+      'snacks', 'sweets', 'condiments', 'sauces', 'eggs', 'jam', 'honey',
+      'ice_cream', 'pomodoro', 'vegan', 'milk'
+    ];
+
+    // Cerca match seguendo l'ordine di priorità
+    for (const categoryId of categoryPriority) {
+      if (this.italianKeywordMap[categoryId]) {
+        if (this.italianKeywordMap[categoryId].some(keyword => fullText.includes(keyword))) {
+          if (availableCategories.some(cat => cat.id === categoryId)) {
+            LoggingService.info('CategoryMatcher', `✅ Match trovato: "${categoryId}"`);
+            return categoryId;
+          }
+        }
+      }
+    }
+
+    // Fallback: iterazione normale se nessun match con priorità
     for (const categoryId in this.italianKeywordMap) {
       if (this.italianKeywordMap[categoryId].some(keyword => fullText.includes(keyword))) {
-        // Validate that the category exists in the available categories
         if (availableCategories.some(cat => cat.id === categoryId)) {
+          LoggingService.info('CategoryMatcher', `⚠️ Match fallback: "${categoryId}"`);
           return categoryId;
         }
       }
     }
 
+    LoggingService.info('CategoryMatcher', '❌ Nessun match trovato');
     return null;
   }
 
   /**
    * Map OpenFoodFacts categories to app categories using English keywords.
+   * Prioritizes specific categories over generic ones to avoid false positives.
    * @param offCategories Array of OpenFoodFacts category strings
    * @param availableCategories List of available categories to validate against
    * @returns Category ID or null if no match found
@@ -160,19 +186,73 @@ export class CategoryMatcher {
     }
 
     const lowerCaseOffCategories = offCategories.map(c => c.toLowerCase());
+    
+    LoggingService.info('CategoryMatcher', '📋 Categorie OFF ricevute:', offCategories);
 
+    // Categorie OFF troppo generiche da ignorare (causano falsi positivi)
+    const genericCategoriesToIgnore = [
+      'plant-based-foods-and-beverages',
+      'plant-based-foods',
+      'fruits-and-vegetables-based-foods',  // Ignora: contiene "fruits" ma è troppo generica
+      'vegetables-based-foods',
+      'canned-plant-based-foods',
+      'foods-and-beverages',
+      'processed-foods',
+      'unknown'
+    ];
+    
+    // Filtra categorie generiche
+    const filteredCategories = lowerCaseOffCategories.filter(cat =>
+      !genericCategoriesToIgnore.some(generic => cat.includes(generic))
+    );
+    
+    LoggingService.info('CategoryMatcher', '✅ Categorie dopo filtro generiche:', filteredCategories);
+
+    // Ordina le categorie per specificità (più specifiche = più parole = priorità)
+    const sortedCategories = [...filteredCategories].sort((a, b) => {
+      const aWords = a.split('-').length;
+      const bWords = b.split('-').length;
+      return bWords - aWords; // Più parole = più specifico = prima
+    });
+    
+    LoggingService.info('CategoryMatcher', '📊 Categorie ordinate per specificità:', sortedCategories);
+
+    // Cerca match partendo dalle categorie più specifiche
+    for (const offCat of sortedCategories) {
+      for (const categoryId in this.offKeywordMap) {
+        const keywords = this.offKeywordMap[categoryId];
+        
+        // Match più preciso: keyword come parola intera o con prefisso/suffisso
+        if (keywords.some(keyword => 
+          offCat === keyword || 
+          offCat.includes(`-${keyword}`) || 
+          offCat.includes(`${keyword}-`) ||
+          offCat.endsWith(`-${keyword}`)
+        )) {
+          if (availableCategories.some(cat => cat.id === categoryId)) {
+            LoggingService.info('CategoryMatcher', `✅ Match specifico trovato: "${offCat}" → "${categoryId}"`);
+            return categoryId;
+          }
+        }
+      }
+    }
+
+    // Fallback: cerca generica su tutte le categorie originali (solo se nessun match specifico)
+    LoggingService.info('CategoryMatcher', '⚠️ Nessun match specifico, provo fallback generico...');
+    
     for (const categoryId in this.offKeywordMap) {
       const keywords = this.offKeywordMap[categoryId];
-      if (keywords.some(keyword => 
+      if (keywords.some(keyword =>
         lowerCaseOffCategories.some(offCat => offCat.includes(keyword))
       )) {
-        // Validate that the category exists in the available categories
         if (availableCategories.some(cat => cat.id === categoryId)) {
+          LoggingService.info('CategoryMatcher', `⚠️ Match generico trovato: "${categoryId}"`);
           return categoryId;
         }
       }
     }
 
+    LoggingService.warning('CategoryMatcher', '❌ Nessun match trovato per le categorie:', offCategories);
     return null;
   }
 

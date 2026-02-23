@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
 import { Product, ProductCategory } from '@/types/Product';
@@ -55,16 +55,25 @@ export function ProductList({
   const styles = getStyles(isDarkMode);
 
   /**
-   * Get category info for a product
+   * Memoized category map for O(1) lookup
+   */
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, ProductCategory>();
+    categories.forEach(cat => map.set(cat.id, cat));
+    return map;
+  }, [categories]);
+
+  /**
+   * Get category info for a product (O(1) lookup)
    */
   const getCategoryInfo = (categoryId: string): ProductCategory | undefined => {
-    return categories.find(cat => cat.id === categoryId);
+    return categoryMap.get(categoryId);
   };
 
   /**
    * Render individual product item
    */
-  const renderItem: ListRenderItem<Product> = ({ item, index }) => (
+  const renderItem: ListRenderItem<Product> = useCallback(({ item, index }) => (
     <ProductCard
       product={item}
       categoryInfo={getCategoryInfo(item.category)}
@@ -73,7 +82,7 @@ export function ProductList({
       onDelete={() => onDelete(item)}
       index={index}
     />
-  );
+  ), [onProductPress, onConsume, onDelete]);
 
   /**
    * Render empty state when no products

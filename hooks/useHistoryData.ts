@@ -35,6 +35,7 @@ export function useHistoryData(): UseHistoryDataReturn {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
   const dataLoadedRef = useRef<boolean>(false);
+  const isLoadingRef = useRef<boolean>(false);
 
   /**
    * Carica i dati della cronologia dai servizi
@@ -50,6 +51,13 @@ export function useHistoryData(): UseHistoryDataReturn {
       return;
     }
 
+    // Evita chiamate concorrenti usando ref invece di stato
+    if (isLoadingRef.current) {
+      LoggingService.info('History', 'Load already in progress - skipped');
+      return;
+    }
+
+    isLoadingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -60,8 +68,9 @@ export function useHistoryData(): UseHistoryDataReturn {
 
     // Imposta timeout per evitare caricamenti infiniti
     timeoutRef.current = setTimeout(() => {
-      if (loading) {
+      if (isLoadingRef.current) {
         LoggingService.error('History', 'Loading timeout reached');
+        isLoadingRef.current = false;
         setLoading(false);
         setError('Caricamento troppo lungo, riprova più tardi');
         setRefreshing(false);
@@ -107,10 +116,11 @@ export function useHistoryData(): UseHistoryDataReturn {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      isLoadingRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }
-  }, [loading]);
+  }, []);
 
   /**
    * Cleanup function per pulire il timeout

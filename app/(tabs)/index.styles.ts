@@ -1,0 +1,168 @@
+import { StyleSheet } from 'react-native';
+
+export const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+    header: {
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    profileButton: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: isDarkMode ? '#161b22' : '#e2e8f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    profileButtonText: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+        paddingTop: 80,
+        paddingRight: 20,
+    },
+    menuContainer: {
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
+        borderRadius: 12,
+        padding: 10,
+        width: 250,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    menuEmail: {
+        fontSize: 14,
+        fontFamily: 'Inter-Medium',
+        color: isDarkMode ? '#8b949e' : '#64748B',
+        padding: 10,
+        textAlign: 'center',
+    },
+    menuDivider: {
+        height: 1,
+        backgroundColor: isDarkMode ? '#30363d' : '#e2e8f0',
+        marginVertical: 5,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+    },
+    menuItemText: {
+        fontSize: 16,
+        fontFamily: 'Inter-Regular',
+        color: isDarkMode ? '#c9d1d9' : '#1e293b',
+        marginLeft: 15,
+    },
+    container: {
+        flex: 1,
+        backgroundColor: isDarkMode ? '#0d1117' : '#f8f9fa',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        fontSize: 16,
+        fontFamily: 'Inter-Medium',
+        color: isDarkMode ? '#c9d1d9' : '#64748B',
+    },
+    title: {
+        fontSize: 28,
+        fontFamily: 'Inter-Bold',
+        color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    notificationIconContainer: {
+        marginTop: 4,
+    },
+    notificationIcon: {
+    },
+    subtitle: {
+        fontSize: 16,
+        fontFamily: 'Inter-Regular',
+        color: isDarkMode ? '#8b949e' : '#64748B',
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+    },
+    ctaContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        marginBottom: 24,
+    },
+    ctaButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#2563EB',
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginRight: 8,
+    },
+    ctaSecondaryButton: {
+        backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
+        marginLeft: 8,
+        marginRight: 0,
+    },
+    ctaButtonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontFamily: 'Inter-SemiBold',
+        marginLeft: 8,
+    },
+    ctaSecondaryButtonText: {
+        color: isDarkMode ? '#ffffff' : '#3b82f6',
+    },
+    section: {
+        marginBottom: 24,
+    },
+    sectionTitle: {
+        fontSize: 22,
+        fontFamily: 'Inter-Bold',
+        color: isDarkMode ? '#c9d1d9' : '#1e293b',
+        marginBottom: 16,
+        paddingHorizontal: 20,
+    },
+    statsContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+    },
+    emptyState: {
+        backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
+        padding: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginHorizontal: 20,
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#30363d' : '#f1f5f9',
+    },
+    emptyStateText: {
+        fontSize: 16,
+        fontFamily: 'Inter-Regular',
+        color: isDarkMode ? '#8b949e' : '#64748B',
+        textAlign: 'center',
+    },
+});

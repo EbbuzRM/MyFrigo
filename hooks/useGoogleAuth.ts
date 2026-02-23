@@ -41,11 +41,6 @@ export const useGoogleAuth = () => {
           throw new Error("Google Web Client ID not found in app.json's extra config");
         }
 
-        LoggingService.info('useGoogleAuth', 'Google Sign-In configuration', {
-          webClientId: webClientId ? 'Present' : 'Missing',
-          platform: Platform.OS
-        });
-
         GoogleSignin.configure({
           webClientId,
           offlineAccess: true,
@@ -54,10 +49,7 @@ export const useGoogleAuth = () => {
           iosClientId: '',
           googleServicePlistPath: ''
         });
-
-        LoggingService.info('useGoogleAuth', 'Google Sign-In configured successfully');
       } catch (error) {
-        LoggingService.error('useGoogleAuth', 'Failed to configure Google Sign-In', error);
         setConfigError('Errore di configurazione Google Sign-In');
       }
     };
@@ -71,19 +63,11 @@ export const useGoogleAuth = () => {
       if (!session || !user || !profile || !googleRetryInProgress) return;
 
       try {
-        LoggingService.info('useGoogleAuth', 'Controllo retry Google necessario', {
-          userId: user.id,
-          email: user.email,
-          profile
-        });
-
         const retryResult = await retryManager.analyzeRetryNeed(
           user.id,
           user.email || '',
           { first_name: profile?.first_name || null, last_name: profile?.last_name || null }
         );
-
-        LoggingService.info('useGoogleAuth', 'Risultato analisi retry', retryResult);
 
         if (retryResult.shouldRetry) {
           setRetryAttemptNumber(retryResult.attemptNumber);
@@ -94,7 +78,6 @@ export const useGoogleAuth = () => {
 
           // Attendi un momento prima del retry
           setTimeout(async () => {
-            LoggingService.info('useGoogleAuth', `Esecuzione retry automatico ${retryResult.attemptNumber}/3`);
             await performGoogleSignIn(true); // true indica che è un retry
           }, 2000);
 
@@ -107,13 +90,9 @@ export const useGoogleAuth = () => {
           // Successo o non necessario
           setGoogleRetryInProgress(false);
           setRetryAttemptNumber(0);
-          if (retryResult.isExistingUser) {
-            LoggingService.info('useGoogleAuth', 'Profilo Google recuperato con successo');
-          }
         }
 
       } catch (error) {
-        LoggingService.error('useGoogleAuth', 'Errore durante il controllo retry Google', error);
         setGoogleRetryInProgress(false);
         setRetryAttemptNumber(0);
       }
@@ -127,6 +106,7 @@ export const useGoogleAuth = () => {
       if (!isRetry) {
         setConfigError(null);
         authLogger.startAuth();
+        LoggingService.info('useGoogleAuth', 'Google auth started');
       }
 
       authLogger.startStep('GOOGLE_LOGIN_VALIDATION');
