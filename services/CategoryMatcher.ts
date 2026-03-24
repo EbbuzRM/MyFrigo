@@ -16,7 +16,9 @@ export class CategoryMatcher {
     // Milk (Latte)
     'milk': ['latte', 'latte intero', 'latte scremato', 'latte parzialmente scremato'],
     // Meat (Carne)
-    'meat': ['pollo', 'manzo', 'maiale', 'salsiccia', 'prosciutto', 'salame', 'tacchino', 'agnello', 'wurstel', 'bistecca', 'hamburger', 'speck', 'mortadella', 'bresaola'],
+    'meat': ['pollo', 'manzo', 'maiale', 'tacchino', 'agnello', 'bistecca', 'hamburger'],
+    // Salumi
+    'salumi': ['prosciutto', 'salame', 'salsiccia', 'wurstel', 'speck', 'mortadella', 'bresaola', 'pancetta', 'coppa', 'culatello', 'guanciale', 'nduja', 'capocollo', 'salumi', 'affettato'],
     // Fish (Pesce)
     'fish': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola', 'pesce', 'acciughe', 'sardine'],
     // Fruits (Frutta)
@@ -73,7 +75,9 @@ export class CategoryMatcher {
     // Milk
     'milk': ['milk', 'milks', 'whole-milk', 'skimmed-milk', 'semi-skimmed-milk'],
     // Meat
-    'meat': ['meats', 'poultry', 'beef', 'pork', 'sausages', 'hams', 'salami', 'turkey', 'lamb', 'chicken', 'steak', 'burger', 'bacon', 'ham', 'meat'],
+    'meat': ['meats', 'poultry', 'beef', 'pork', 'turkey', 'lamb', 'chicken', 'steak', 'burger', 'meat'],
+    // Salumi
+    'salumi': ['sausages', 'hams', 'salami', 'bacon', 'ham', 'cold-cuts', 'prosciutto', 'charcuterie'],
     // Fish
     'fish': ['seafood', 'fishes', 'tuna', 'salmon', 'cod', 'shrimps', 'clams', 'mussels', 'fish', 'anchovies', 'sardines', 'prawns', 'lobster'],
     // Fruits
@@ -133,12 +137,12 @@ export class CategoryMatcher {
     availableCategories: ProductCategory[]
   ): string | null {
     const fullText = `${name.toLowerCase()} ${brand.toLowerCase()}`;
-    
+
     LoggingService.info('CategoryMatcher', `🔍 Guess category per: "${name}" (${brand})`);
 
     // Priorità alle categorie più specifiche (ordinamento manuale per importanza)
     const categoryPriority = [
-      'legumes', 'cheese', 'dairy', 'meat', 'fish', 'fruits', 'vegetables',
+      'legumes', 'cheese', 'dairy', 'salumi', 'meat', 'fish', 'fruits', 'vegetables',
       'pasta', 'rice', 'flour', 'grains', 'frozen', 'beverages', 'canned',
       'snacks', 'sweets', 'condiments', 'sauces', 'eggs', 'jam', 'honey',
       'ice_cream', 'pomodoro', 'vegan', 'milk'
@@ -186,7 +190,7 @@ export class CategoryMatcher {
     }
 
     const lowerCaseOffCategories = offCategories.map(c => c.toLowerCase());
-    
+
     LoggingService.info('CategoryMatcher', '📋 Categorie OFF ricevute:', offCategories);
 
     // Categorie OFF troppo generiche da ignorare (causano falsi positivi)
@@ -200,12 +204,12 @@ export class CategoryMatcher {
       'processed-foods',
       'unknown'
     ];
-    
+
     // Filtra categorie generiche
     const filteredCategories = lowerCaseOffCategories.filter(cat =>
       !genericCategoriesToIgnore.some(generic => cat.includes(generic))
     );
-    
+
     LoggingService.info('CategoryMatcher', '✅ Categorie dopo filtro generiche:', filteredCategories);
 
     // Ordina le categorie per specificità (più specifiche = più parole = priorità)
@@ -214,18 +218,18 @@ export class CategoryMatcher {
       const bWords = b.split('-').length;
       return bWords - aWords; // Più parole = più specifico = prima
     });
-    
+
     LoggingService.info('CategoryMatcher', '📊 Categorie ordinate per specificità:', sortedCategories);
 
     // Cerca match partendo dalle categorie più specifiche
     for (const offCat of sortedCategories) {
       for (const categoryId in this.offKeywordMap) {
         const keywords = this.offKeywordMap[categoryId];
-        
+
         // Match più preciso: keyword come parola intera o con prefisso/suffisso
-        if (keywords.some(keyword => 
-          offCat === keyword || 
-          offCat.includes(`-${keyword}`) || 
+        if (keywords.some(keyword =>
+          offCat === keyword ||
+          offCat.includes(`-${keyword}`) ||
           offCat.includes(`${keyword}-`) ||
           offCat.endsWith(`-${keyword}`)
         )) {
@@ -239,7 +243,7 @@ export class CategoryMatcher {
 
     // Fallback: cerca generica su tutte le categorie originali (solo se nessun match specifico)
     LoggingService.info('CategoryMatcher', '⚠️ Nessun match specifico, provo fallback generico...');
-    
+
     for (const categoryId in this.offKeywordMap) {
       const keywords = this.offKeywordMap[categoryId];
       if (keywords.some(keyword =>

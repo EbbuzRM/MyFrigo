@@ -41,7 +41,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     marginBottom: 10,
   },
   categoryItem: {
-    width: '23%',
+    flex: 1,
+    margin: 4,
     aspectRatio: 1,
     padding: 4,
     borderRadius: 8,
@@ -52,7 +53,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     justifyContent: 'center',
   },
   categoryItemSpacer: {
-    width: '23%',
+    flex: 1,
+    margin: 4,
     aspectRatio: 1,
   },
   categoryItemSelected: {
@@ -60,18 +62,18 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     backgroundColor: isDarkMode ? '#0d419d' : '#dbeafe',
   },
   iconContainer: {
-    width: 50,
-    height: 50,
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
   categoryIcon: {
-    fontSize: 32,
+    fontSize: 36,
   },
   categoryImage: {
-    width: 50,
-    height: 50,
+    width: '55%',
+    height: '55%',
+    resizeMode: 'contain',
     borderRadius: 8,
   },
   categoryName: {
