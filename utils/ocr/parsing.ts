@@ -25,6 +25,12 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
         const blockText = block.text.replace(/\n/g, ' ');
         const blockUpper = blockText.toUpperCase();
 
+        // Skip blocks containing "LOTTO" as they often contain incorrect date information
+        if (blockUpper.includes('LOTTO')) {
+            LoggingService.debug(TAG, `Skipping block with LOTTO: "${blockText}"`);
+            continue;
+        }
+
         // 1. Check for Anchors
         if (isExpirationAnchor(blockUpper)) {
             anchors.push(block);
