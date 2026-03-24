@@ -5,9 +5,7 @@ import {
   convertSettingsToSnakeCase
 } from '../utils/caseConverter';
 import { LoggingService } from './LoggingService';
-import { NotificationService } from './NotificationService';
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { UserNotificationSettingsService } from './UserNotificationSettingsService';
 
 /**
  * Interfaccia per le impostazioni dell'app
@@ -17,9 +15,11 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'auto';
 }
 
-
 /**
- * Servizio per la gestione delle impostazioni dell'app
+ * Servizio per la gestione delle impostazioni dell'app.
+ *
+ * app_settings: impostazioni globali/tema (tabella con singola riga id=1)
+ * user_notification_settings: impostazioni notifiche per-utente (gestite da UserNotificationSettingsService)
  */
 export class SettingsService {
 
@@ -45,7 +45,7 @@ export class SettingsService {
   }
 
   /**
-   * Recupera le impostazioni dell'app
+   * Recupera le impostazioni dell'app dalla tabella globale app_settings.
    * @returns Promise con le impostazioni dell'app
    */
   static async getSettings(): Promise<AppSettings> {
@@ -91,10 +91,15 @@ export class SettingsService {
   }
 
   /**
-   * Aggiorna le impostazioni dell'app
+   * Aggiorna le impostazioni dell'app.
+   *
+   * Se notificationDays cambia, aggiorna anche user_notification_settings
+   * per l'utente corrente (il cron server-side userà quel valore).
+   * La ripianificazione locale delle notifiche è stata rimossa — le notifiche
+   * vengono ora gestite dalla Edge Function send-expiration-notifications.
+   *
    * @param newSettings Nuove impostazioni da applicare
    * @returns Promise con le impostazioni aggiornate o null in caso di errore
-   * @throws Error se si verifica un errore durante l'aggiornamento
    */
   static async updateSettings(newSettings: Partial<AppSettings>): Promise<AppSettings | null> {
     try {
@@ -108,19 +113,19 @@ export class SettingsService {
 
       const updatedSettings = convertSettingsToCamelCase(data);
 
-      if (Platform.OS !== 'web') {
-        if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
-          // Import ProductStorage dynamically to avoid circular dependency
-          const { ProductStorage } = await import('./ProductStorage');
-          const productsResult = await ProductStorage.getProducts();
-          if (productsResult.success && productsResult.data) {
-            const products = productsResult.data;
-            const activeProducts = products.filter(p => p.status === 'active');
-            await Notifications.cancelAllScheduledNotificationsAsync();
-            await NotificationService.scheduleMultipleNotifications(activeProducts, updatedSettings);
-          }
+      // Sincronizza notification_days anche nella tabella per-utente
+      if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await UserNotificationSettingsService.updateSettings(user.id, {
+            notificationDays: newSettings.notificationDays,
+          });
+          LoggingService.info('SettingsService', 'User notification settings synced', { userId: user.id });
+        } else {
+          LoggingService.warning('SettingsService', 'No authenticated user found, skipping user_notification_settings sync');
         }
       }
+
       return updatedSettings;
     } catch (error: unknown) {
       LoggingService.error('SettingsService', 'Error updating settings in Supabase', error);
