@@ -42,7 +42,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   categoryItem: {
     flex: 1,
-    margin: 4,
+    margin: 5,
     aspectRatio: 1,
     padding: 4,
     borderRadius: 8,
@@ -54,8 +54,9 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   },
   categoryItemSpacer: {
     flex: 1,
-    margin: 4,
+    margin: 5,
     aspectRatio: 1,
+    backgroundColor: 'transparent',
   },
   categoryItemSelected: {
     borderColor: isDarkMode ? '#58a6ff' : '#3b82f6',
@@ -271,6 +272,7 @@ export default function ManualEntryScreen() {
           keyExtractor={(item) => item.id}
           numColumns={4}
           scrollEnabled={false}
+          contentContainerStyle={{ paddingHorizontal: 4 }}
         />
         <ProductFormFooter
           formData={{
