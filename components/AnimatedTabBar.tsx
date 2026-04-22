@@ -31,6 +31,13 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
     >
       {state.routes.map((route: Route<string>, index: number) => {
         const descriptor = descriptors[route.key];
+        
+        // Salta il rendering se href è esplicitamente null (standard Expo Router)
+        // @ts-ignore - href non è tipizzato in BottomTabNavigationOptions ma è usato da Expo Router
+        if (descriptor.options.href === null) {
+          return null;
+        }
+
         const label = descriptor.options.title !== undefined ? descriptor.options.title : route.name;
         const isFocused = state.index === index;
 

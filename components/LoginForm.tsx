@@ -38,9 +38,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   // Controlla se l'utente arriva da una conferma email
   useEffect(() => {
     const checkEmailVerificationSuccess = () => {
-      // In React Native, i parametri URL vengono gestiti diversamente
-      // Per ora disabilitiamo questa funzionalità
-      // TODO: Implementare con react-navigation o linking
+      // In React Native, i parametri URL vengono gestiti tramite linking configuration
+      // o tramite l'uso di expo-linking per intercettare l'URL di apertura.
+      // Poiché il LoginForm è tipicamente una vista di accesso, l'utente 
+      // che ha già verificato l'email dovrebbe essere reindirizzato automaticamente 
+      // alla home o a una pagina di successo se l'auth state è già attivo.
       setShowVerificationSuccess(false);
     };
 
@@ -96,6 +98,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           secureTextEntry={!isPasswordVisible}
         />
         <TouchableOpacity
+          accessibilityLabel="Mostra password"
+          accessibilityRole="button"
           style={styles.eyeIcon}
           onPress={() => setIsPasswordVisible(!isPasswordVisible)}
         >
@@ -114,6 +118,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
       <TouchableOpacity
         testID="login-button"
+        accessibilityLabel="Accedi"
+        accessibilityRole="button"
         style={[styles.button, emailAuth.loading && styles.buttonDisabled]}
         onPress={handleLogin}
         disabled={emailAuth.loading}
@@ -122,6 +128,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </TouchableOpacity>
 
       <TouchableOpacity
+        accessibilityLabel="Registrati"
+        accessibilityRole="button"
         style={[styles.button, styles.secondaryButton]}
         onPress={onRegisterPress}
         disabled={emailAuth.loading}
@@ -129,7 +137,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <Text style={styles.secondaryButtonText}>Registrati</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onForgotPasswordPress}>
+      <TouchableOpacity accessibilityLabel="Hai dimenticato la password?" accessibilityRole="link" onPress={onForgotPasswordPress}>
         <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
       </TouchableOpacity>
     </View>

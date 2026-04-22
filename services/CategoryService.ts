@@ -27,7 +27,7 @@ export class CategoryService {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('id, name, icon, local_icon, color, is_default')
         .eq('is_default', false);
       if (error) throw error;
       if (!data) return [];
@@ -67,10 +67,9 @@ export class CategoryService {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         // Se l'utente non è loggato, restituisce solo le categorie predefinite
-        // @ts-ignore - Supabase type inference issue
         const { data, error } = await supabase
           .from('categories')
-          .select('*')
+          .select('id, name, icon, local_icon, color, is_default')
           .eq('is_default', true);
         if (error) throw error;
         return data ? convertCategoriesToCamelCase(data) : [];
@@ -79,7 +78,7 @@ export class CategoryService {
       const userId = session.user.id;
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('id, name, icon, local_icon, color, is_default')
         .or(`is_default.eq.true,user_id.eq.${userId}`);
 
       if (error) throw error;

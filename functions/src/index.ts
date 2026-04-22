@@ -235,7 +235,7 @@ async function sendFeedbackEmail(data: FeedbackEmailData) {
     // Configura l'invio email tramite Resend
     const resendApiKey = functions.config().resend.api_key;
     if (!resendApiKey) {
-      throw new Error('Resend API key non configurata');
+      throw new functions.https.HttpsError('failed-precondition', 'Email service not configured');
     }
 
     const response = await fetch('https://api.resend.com/emails', {
@@ -254,7 +254,9 @@ async function sendFeedbackEmail(data: FeedbackEmailData) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Resend API error: ${errorData.message || response.statusText}`);
+      // Log interno per debugging (NON esporre al client)
+      console.error('Resend API error:', errorData);
+      throw new functions.https.HttpsError('internal', 'Failed to send email');
     }
 
     const result = await response.json();

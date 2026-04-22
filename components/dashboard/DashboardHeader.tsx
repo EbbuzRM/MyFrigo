@@ -23,6 +23,8 @@ export const DashboardHeader = React.memo(function DashboardHeader({
     return (
         <View style={styles.header}>
             <TouchableOpacity
+                accessibilityLabel="Notifiche"
+                accessibilityRole="button"
                 style={styles.titleContainer}
                 onPress={onBellPress}
                 disabled={permissionStatus !== 'denied'}
@@ -38,6 +40,8 @@ export const DashboardHeader = React.memo(function DashboardHeader({
             </TouchableOpacity>
 
             <TouchableOpacity
+                accessibilityLabel="Profilo"
+                accessibilityRole="button"
                 style={styles.profileButton}
                 onPress={onProfilePress}
                 testID="profile-button"

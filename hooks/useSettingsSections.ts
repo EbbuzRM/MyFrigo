@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useRef } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -105,6 +105,7 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update days input when settings change
   useMemo(() => {
@@ -117,9 +118,14 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
    * Show toast notification
    */
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    // Pulisci timer precedente se esiste
+    if (showToastTimeoutRef.current) {
+      clearTimeout(showToastTimeoutRef.current);
+      showToastTimeoutRef.current = null;
+    }
     setToast(null);
     // Small delay to ensure state reset triggers re-render
-    setTimeout(() => {
+    showToastTimeoutRef.current = setTimeout(() => {
       setToast({ message, type });
       Haptics.notificationAsync(
         type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
@@ -132,6 +138,10 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
    */
   const clearToast = useCallback(() => {
     setToast(null);
+    if (showToastTimeoutRef.current) {
+      clearTimeout(showToastTimeoutRef.current);
+      showToastTimeoutRef.current = null;
+    }
   }, []);
 
   /**
@@ -209,8 +219,10 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
         case 'check-updates':
           handleCheckUpdates();
           break;
-        default:
-          LoggingService.warning('useSettingsSections', `Unknown card ID: ${cardId}`);
+          default:
+            // Rimosso LoggingService.warning per evitare rumore nei log di produzione
+            // per ID di card non riconosciuti che potrebbero essere temporanei o in fase di sviluppo.
+            break;
       }
     },
     [handleClearData]

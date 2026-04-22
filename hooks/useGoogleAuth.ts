@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Alert, Platform, BackHandler } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
@@ -31,6 +31,34 @@ export const useGoogleAuth = () => {
 
   // Create feedback handler
   const feedback = useGoogleAuthFeedback();
+
+  // Ref to track if component is still mounted
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Refs for timer cleanup
+  const backHandlerRef = useRef<{ remove: () => void } | null>(null);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (backHandlerRef.current) {
+        backHandlerRef.current.remove();
+        backHandlerRef.current = null;
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Configura Google Sign-In all'inizializzazione
   useEffect(() => {
@@ -69,12 +97,21 @@ export const useGoogleAuth = () => {
           { first_name: profile?.first_name || null, last_name: profile?.last_name || null }
         );
 
-        if (retryResult.shouldRetry) {
+if (retryResult.shouldRetry) {
           setRetryAttemptNumber(retryResult.attemptNumber);
 
           if (retryResult.message) {
             feedback.showRetryFeedback(retryResult.attemptNumber, DEFAULT_RETRY_CONFIG.maxRetryAttempts, retryResult.message);
           }
+
+          // Attendi un momento prima del retry - con cleanup appropriato
+          retryTimeoutRef.current = setTimeout(async () => {
+            if (isMountedRef.current) {
+              await performGoogleSignIn(true); // true indica che è un retry
+            }
+          }, 2000);
+
+        }
 
           // Attendi un momento prima del retry
           setTimeout(async () => {
@@ -155,15 +192,12 @@ export const useGoogleAuth = () => {
 
       if (authResult.success) {
         if (!isRetry) {
-          // Aggiungiamo un listener per il pulsante indietro
-          const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+          // Aggiungiamo un listener per il pulsante indietro - con cleanup appropriato
+          backHandlerRef.current = BackHandler.addEventListener('hardwareBackPress', () => {
             return true;
           });
 
-          setTimeout(() => {
-            backHandler.remove();
-          }, 3000);
-
+          // Il backHandler viene rimosso nel cleanup del useEffect in alto
           // Inizia il processo di retry se necessario
           setGoogleRetryInProgress(true);
         }

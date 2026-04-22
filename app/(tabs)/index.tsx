@@ -17,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useProducts } from '@/context/ProductContext';
 import { LoggingService } from '@/services/LoggingService';
-import { getStyles } from './index.styles';
+import { getStyles } from '@/styles/dashboard.styles';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ProfileMenu } from '@/components/dashboard/ProfileMenu';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';

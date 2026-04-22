@@ -13,7 +13,8 @@ jest.mock('@/services/LoggingService', () => ({
   LoggingService: {
     info: jest.fn(),
     error: jest.fn(),
-    debug: jest.fn()
+    debug: jest.fn(),
+    warning: jest.fn()
   }
 }));
 

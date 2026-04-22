@@ -199,6 +199,8 @@ export default function ManualEntryScreen() {
 
     return (
       <TouchableOpacity
+        accessibilityLabel="Seleziona categoria"
+        accessibilityRole="button"
         style={[
           styles.categoryItem,
           selectedCategory === item.id && styles.categoryItemSelected,
@@ -318,10 +320,10 @@ export default function ManualEntryScreen() {
               placeholderTextColor={styles.placeholder.color}
             />
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setIsCategoryModalVisible(false)}>
+              <TouchableOpacity accessibilityLabel="Annulla creazione categoria" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setIsCategoryModalVisible(false)}>
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleAddNewCategory}>
+              <TouchableOpacity accessibilityLabel="Conferma creazione categoria" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleAddNewCategory}>
                 <Text style={styles.modalButtonTextConfirm}>OK</Text>
               </TouchableOpacity>
             </View>

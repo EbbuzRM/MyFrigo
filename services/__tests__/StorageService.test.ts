@@ -57,7 +57,7 @@ describe('ProductStorage', () => {
 
       // Asserzioni: Verifica che le funzioni corrette siano state chiamate
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'test-user-id');
 
       // Asserzioni: Verifica che i dati restituiti siano corretti

@@ -85,10 +85,10 @@ export default function ManageCategoriesScreen() {
     <View style={styles.itemContainer}>
       <Text style={styles.categoryName}>{item.name}</Text>
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity onPress={() => handleEdit(item.id, item.name)} style={styles.button}>
+        <TouchableOpacity accessibilityLabel="Modifica categoria" accessibilityRole="button" onPress={() => handleEdit(item.id, item.name)} style={styles.button}>
           <Edit2 size={20} color={isDarkMode ? '#58a6ff' : '#3b82f6'} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.button}>
+        <TouchableOpacity accessibilityLabel="Elimina categoria" accessibilityRole="button" onPress={() => handleDelete(item.id)} style={styles.button}>
           <X size={20} color={isDarkMode ? '#EF4444' : 'red'} />
         </TouchableOpacity>
       </View>
@@ -103,7 +103,7 @@ export default function ManageCategoriesScreen() {
       <Text style={styles.infoText}>
         Qui puoi creare, modificare o eliminare le categorie personalizzate. Le categorie predefinite non sono modificabili.
       </Text>
-      <TouchableOpacity style={styles.createButton} onPress={() => setCreateModalVisible(true)}>
+      <TouchableOpacity accessibilityLabel="Crea nuova categoria" accessibilityRole="button" style={styles.createButton} onPress={() => setCreateModalVisible(true)}>
         <Plus size={20} color="white" />
         <Text style={styles.createButtonText}>Crea Nuova Categoria</Text>
       </TouchableOpacity>
@@ -113,7 +113,7 @@ export default function ManageCategoriesScreen() {
         keyExtractor={(item) => item.id}
         ListEmptyComponent={<Text style={styles.emptyText}>Nessuna categoria personalizzata.</Text>}
       />
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+      <TouchableOpacity accessibilityLabel="Torna indietro" accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
         <Text style={styles.backButtonText}>Indietro</Text>
       </TouchableOpacity>
 
@@ -135,10 +135,10 @@ export default function ManageCategoriesScreen() {
               placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
             />
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setCreateModalVisible(false)}>
+              <TouchableOpacity accessibilityLabel="Annulla" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setCreateModalVisible(false)}>
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleCreate}>
+              <TouchableOpacity accessibilityLabel="Conferma creazione" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleCreate}>
                 <Text style={styles.modalButtonTextConfirm}>Crea</Text>
               </TouchableOpacity>
             </View>
@@ -164,10 +164,10 @@ export default function ManageCategoriesScreen() {
               placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
             />
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setEditModalVisible(false)}>
+              <TouchableOpacity accessibilityLabel="Annulla modifica" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setEditModalVisible(false)}>
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleUpdateCategory}>
+              <TouchableOpacity accessibilityLabel="Salva modifica" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleUpdateCategory}>
                 <Text style={styles.modalButtonTextConfirm}>Salva</Text>
               </TouchableOpacity>
             </View>
