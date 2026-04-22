@@ -141,7 +141,7 @@ export class ProductStorage {
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
     twoDaysAgo.setHours(0, 0, 0, 0);
     try {
-      const { data, error } = await supabase.from('products').select('*').eq('user_id', userResult.data!).eq('status', 'active').lt('expiration_date', twoDaysAgo.toISOString()).order('expiration_date', { ascending: true });
+      const { data, error } = await supabase.from('products').select('*').eq('user_id', userResult.data!).eq('status', 'active').eq('is_frozen', false).lt('expiration_date', twoDaysAgo.toISOString()).order('expiration_date', { ascending: true });
       if (error) throw error;
       return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
     } catch (error) {
