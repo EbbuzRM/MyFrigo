@@ -299,6 +299,7 @@ expect(result.success).toBe(false);
       expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(2, 'status', 'active');
+      expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(3, 'is_frozen', false);
       expect(mockQueryBuilder.lt).toHaveBeenCalledWith('expiration_date', expect.any(String));
       expect(mockQueryBuilder.order).toHaveBeenCalledWith('expiration_date', { ascending: true });
     });
