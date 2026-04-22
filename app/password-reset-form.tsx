@@ -195,7 +195,7 @@ export default function PasswordResetForm() {
           onChangeText={setNewPassword}
           editable={!loading}
         />
-        <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon}>
+        <TouchableOpacity accessibilityLabel="Mostra password" accessibilityRole="button" onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon}>
           <FontAwesome name={isPasswordVisible ? 'eye-slash' : 'eye'} size={20} color="#666" />
         </TouchableOpacity>
       </View>
@@ -210,7 +210,7 @@ export default function PasswordResetForm() {
           onChangeText={setConfirmPassword}
           editable={!loading}
         />
-        <TouchableOpacity onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)} style={styles.eyeIcon}>
+        <TouchableOpacity accessibilityLabel="Mostra conferma password" accessibilityRole="button" onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)} style={styles.eyeIcon}>
           <FontAwesome name={isConfirmPasswordVisible ? 'eye-slash' : 'eye'} size={20} color="#666" />
         </TouchableOpacity>
       </View>
@@ -225,6 +225,8 @@ export default function PasswordResetForm() {
 
       <TouchableOpacity
         testID="confirm-reset-button"
+        accessibilityLabel="Aggiorna password"
+        accessibilityRole="button"
         style={[
           styles.button,
           isButtonDisabled ? styles.buttonDisabled : styles.buttonEnabled

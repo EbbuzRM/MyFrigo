@@ -30,6 +30,17 @@ interface ManualEntryParams {
   [key: string]: string | undefined;
 }
 
+// Tipo per i dati del prodotto (template o online)
+type ProductData = {
+  product_name?: string;
+  name?: string;
+  brand?: string;
+  category?: string;
+  categoryId?: string;
+  barcode?: string;
+  imageUrl?: string;
+};
+
 export default function BarcodeScannerScreen() {
   const [frameLayout, setFrameLayout] = useState<FrameLayout | null>(null);
   const isFocused = useIsFocused();
@@ -55,7 +66,7 @@ export default function BarcodeScannerScreen() {
       // Usa il nome estratto dai parametri (che include la logica di fallback)
       // Se params non esiste (caso strano), tenta di accedere a data.product_name
       const extractedName = result.params?.name;
-      const rawName = 'product_name' in result.data ? (result.data as any).product_name : (result.data as any).name;
+      const rawName = 'product_name' in result.data ? (result.data as ProductData).product_name : (result.data as ProductData).name;
       const displayName = extractedName || rawName;
       Alert.alert('Prodotto Trovato!', `Trovato online: ${displayName || barcode}`, [
         {
@@ -140,6 +151,8 @@ export default function BarcodeScannerScreen() {
         <Text style={styles.loadingText}>{loadingProgress}</Text>
         {loadingProgress.includes('velocissima') && (
           <TouchableOpacity
+            accessibilityLabel="Salta ricerca e aggiungi manualmente"
+            accessibilityRole="button"
             style={styles.skipButton}
             onPress={() => resetScanner()}
           >
@@ -152,17 +165,17 @@ export default function BarcodeScannerScreen() {
     content = (
       <SafeAreaView style={[styles.container, styles.errorContainer]}>
         <Text style={styles.errorText}>{loadingError}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => resetScanner()}>
+        <TouchableOpacity accessibilityLabel="Riprova scansione" accessibilityRole="button" style={styles.retryButton} onPress={() => resetScanner()}>
           <RefreshCw size={20} color="#fff" />
           <Text style={styles.retryButtonText}>Riprova</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.manualButton} onPress={() => {
+        <TouchableOpacity accessibilityLabel="Inserisci manualmente" accessibilityRole="button" style={styles.manualButton} onPress={() => {
           LoggingService.info('Scanner', `Manual entry button pressed, navigating with barcode: ${currentBarcode}`);
           router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true', isEditMode: 'false', resetForm: 'true' } as ManualEntryParams })
         }}>
           <Text style={styles.manualButtonText}>Inserisci Manualmente</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity accessibilityLabel="Torna indietro" accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Torna Indietro</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -184,11 +197,11 @@ export default function BarcodeScannerScreen() {
           <Text style={styles.scanFrameText}>Inquadra il codice a barre</Text>
         </View>
         {scanned && !isLoading && (
-          <TouchableOpacity style={styles.rescanButtonContainer} onPress={() => resetScanner()}>
+          <TouchableOpacity accessibilityLabel="Scansiona di nuovo" accessibilityRole="button" style={styles.rescanButtonContainer} onPress={() => resetScanner()}>
             <Text style={styles.rescanButtonText}>Tocca per Scansionare di Nuovo</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButtonContainer}>
+        <TouchableOpacity accessibilityLabel="Torna alla schermata precedente" accessibilityRole="button" onPress={() => router.back()} style={styles.backButtonContainer}>
           <ArrowLeft size={28} color="#fff" />
         </TouchableOpacity>
       </SafeAreaView>

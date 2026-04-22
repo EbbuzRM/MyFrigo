@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UpdateService, UpdateInfo, UpdateSettings, UpdateEventEmitter } from '@/services/UpdateService';
 import { UpdateModal } from '@/components/UpdateModal';
@@ -53,9 +53,18 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
   const [modalUpdateInfo, setModalUpdateInfo] = useState<UpdateInfo | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
+  // Refs per timer cleanup
+  const showToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initAutoCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast(null);
-    setTimeout(() => {
+    // Pulisci timer precedente se esiste
+    if (showToastTimeoutRef.current) {
+      clearTimeout(showToastTimeoutRef.current);
+      showToastTimeoutRef.current = null;
+    }
+    showToastTimeoutRef.current = setTimeout(() => {
       setToast({ message, type });
     }, 100);
   };
@@ -76,7 +85,7 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
   const [justRestarted, setJustRestarted] = useState(true);
   const appStartTime = useState(() => Date.now())[0];
 
-  // Inizializza il servizio e carica le impostazioni
+  // Inizializza il servizio e carica impostazioni
   useEffect(() => {
     const initializeUpdateService = async () => {
       try {
@@ -84,8 +93,8 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
         await loadSettings();
         setupEventListeners();
 
-        // Attendi 3 secondi prima di eseguire il check automatico
-        setTimeout(async () => {
+        // Attendi 3 secondi prima di eseguire il check automatico - con cleanup
+        initAutoCheckTimeoutRef.current = setTimeout(async () => {
           setJustRestarted(false);
           await performAutoCheck();
         }, 3000);
@@ -103,6 +112,14 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
       UpdateEventEmitter.removeAllListeners('downloadError');
       UpdateEventEmitter.removeAllListeners('appRestarting');
       UpdateEventEmitter.removeAllListeners('restartError');
+      // Cleanup timer toast
+      if (showToastTimeoutRef.current) {
+        clearTimeout(showToastTimeoutRef.current);
+      }
+      // Cleanup init auto-check timer
+      if (initAutoCheckTimeoutRef.current) {
+        clearTimeout(initAutoCheckTimeoutRef.current);
+      }
     };
   }, []);
 

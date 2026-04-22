@@ -4,6 +4,7 @@ import { useProductFormData } from './useProductFormData';
 import { useProductInitialization } from './useProductInitialization';
 import { useCategorySelection } from './useCategorySelection';
 import { useProductSave } from './useProductSave';
+import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 export const useProductForm = () => {
   const {
@@ -70,14 +71,14 @@ export const useProductForm = () => {
   } = useProductSave();
 
   // Wrapper for date handlers to integrate with ManualEntryContext
-  const onChangePurchaseDate = (event: any, selectedDate?: Date) => {
+  const onChangePurchaseDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const dateString = onChangePurchaseDateBase(event, selectedDate);
     if (dateString) {
       setPurchaseDate(dateString);
     }
   };
 
-  const onChangeExpirationDate = (event: any, selectedDate?: Date) => {
+  const onChangeExpirationDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const dateString = onChangeExpirationDateBase(event, selectedDate);
     if (dateString) {
       setExpirationDate(dateString);

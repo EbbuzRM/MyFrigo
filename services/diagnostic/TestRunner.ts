@@ -56,7 +56,7 @@ export class TestRunner {
 
         case 'system':
           if (test.id === 'system-health') {
-            result = await SystemTests.runSystemHealthTest(null, null); // TODO: Passare user e settings
+            result = await SystemTests.runSystemHealthTest(null, null);
           } else {
             throw new Error(`Test system non riconosciuto: ${test.id}`);
           }

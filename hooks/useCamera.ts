@@ -86,43 +86,44 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
   }, [cameraPermission, galleryPermission, requestCameraPermission, requestGalleryPermission]);
 
   /**
-   * Crop image for expiration date capture mode
-   * @param photoUri - The URI of the captured photo
-   * @param width - Photo width
-   * @param height - Photo height
-   * @returns Cropped image URI
+   * ✅ NUOVO: Prepara l'immagine per OCR con contrast boost e risoluzione ottimale
+   * Cruciale per font dot-matrix su superfici alimentari (colori simili tra testo e sfondo) 
    */
-  const cropImageForExpirationDate = useCallback(async (
-    photoUri: string,
+  const prepareImageForOCR = useCallback(async (
+    uri: string,
     width: number,
     height: number
   ): Promise<string> => {
-    // Crop the image to the focus frame - larger area for better date capture
-    const cropRect = {
-      originX: width * 0.05,
-      originY: height * 0.20, // Start higher to capture the date better
-      width: width * 0.90,
-      height: height * 0.40, // Taller area to include more context
-    };
+    try {
+      // Step 1: Crop la zona della data (molto ampia per sicurezza)
+      const cropRect = {
+        originX: 0,
+        originY: height * 0.15,
+        width: width,
+        height: height * 0.70,
+      };
 
-    // Check dimensions to determine orientation
-    const isLandscape = width > height;
+      // Step 2: Cropa E ridimensiona a larghezza fissa per OCR ottimale 
+      // ML Kit lavora meglio con immagini ~1200px di larghezza per testo piccolo
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [
+          { crop: cropRect },
+          { resize: { width: 1200 } }, // ✅ dimensione ottimale per ML Kit 
+        ],
+        {
+          compress: 1.0, // Massima qualità
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: false
+        }
+      );
 
-    const croppedImage = await ImageManipulator.manipulateAsync(
-      photoUri,
-      [
-        { crop: cropRect },
-        ...(isLandscape ? [{ rotate: 0 }] : []), // Keep orientation if landscape
-        { resize: { width: 800 } } // Resize for better OCR
-      ],
-      {
-        compress: 0.8,
-        format: ImageManipulator.SaveFormat.JPEG,
-        base64: false
-      }
-    );
-
-    return croppedImage.uri;
+      LoggingService.info('useCamera', `OCR-ready image: ${result.uri} (${result.width}x${result.height})`);
+      return result.uri;
+    } catch (error) {
+      LoggingService.error('useCamera', 'Error preparing image for OCR', error);
+      return uri;
+    }
   }, []);
 
   /**
@@ -150,13 +151,13 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
 
       // Only for expirationDateOnly mode do we crop and prepare for OCR
       if (captureMode === 'expirationDateOnly') {
-        const croppedUri = await cropImageForExpirationDate(
+        const croppedUri = await prepareImageForOCR(
           photo.uri,
           photo.width,
           photo.height
         );
 
-        LoggingService.info('useCamera', 'Photo taken and cropped successfully for OCR');
+        LoggingService.info('useCamera', 'Photo taken and processed for OCR');
         return croppedUri;
       } else {
         // For product photos, use original image without cropping
@@ -180,7 +181,7 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
     } finally {
       setIsProcessingImage(false);
     }
-  }, [captureMode, cropImageForExpirationDate]);
+  }, [captureMode, prepareImageForOCR]);
 
   /**
    * Pick an image from the gallery

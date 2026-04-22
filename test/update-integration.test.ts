@@ -86,6 +86,3 @@ describe('UpdateService Integration Test', () => {
     UpdateService.checkForUpdate();
   });
 });
-
-console.log('✅ UpdateService integration test ready!');
-console.log('🚀 Run with: npm test -- UpdateService.test.ts');

@@ -62,7 +62,7 @@ it('should fetch products for authenticated user', async () => {
       expect(result.data).toEqual([mockProduct]);
       expect(result.error).toBeNull();
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
     });
 
@@ -91,7 +91,7 @@ it('should handle database errors gracefully', async () => {
       expect(result.data).toBeNull();
       expect(result.error).toEqual(mockError);
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
       expect(LoggingService.error).toHaveBeenCalled();
     });
@@ -122,7 +122,7 @@ it('should sort products by expiration date', async () => {
       expect(result.data?.[1].expirationDate).toBe('2025-06-15');
       expect(result.data?.[2].expirationDate).toBe('2025-12-31');
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
     });
   });
@@ -141,7 +141,7 @@ it('should sort products by expiration date', async () => {
 
       expect(result.data).toEqual(mockProduct);
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'test-id');
       expect(mockQueryBuilder.single).toHaveBeenCalled();
     });
@@ -296,7 +296,7 @@ expect(result.success).toBe(false);
 
       expect(result.data).toEqual([mockProduct]);
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(2, 'status', 'active');
       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(3, 'is_frozen', false);
@@ -344,7 +344,7 @@ expect(result.success).toBe(false);
 
       expect(result.data).toEqual([mockProduct]);
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
       expect(eqMock).toHaveBeenNthCalledWith(2, 'status', 'expired');
     });
@@ -429,7 +429,7 @@ expect(result.success).toBe(false);
 
       expect(result.data).toEqual([mockProduct]);
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
       expect(eqMock).toHaveBeenNthCalledWith(2, 'status', 'consumed');
       expect(mockQueryBuilder.order).toHaveBeenCalledWith('consumed_date', { ascending: false });
@@ -493,7 +493,7 @@ expect(result.success).toBe(false);
 
       expect(LoggingService.error).toHaveBeenCalled();
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
     });
 

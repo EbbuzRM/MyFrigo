@@ -21,6 +21,109 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
     const anchors: TextBlock[] = [];
     const TAG = 'OCR_Parsing';
 
+    // 1. Join all text from all blocks to find dates split across blocks
+    const fullText = blocks.map(b => b.text).join(' \n ');
+    const fullTextUpper = fullText.toUpperCase();
+    
+    LoggingService.debug(TAG, `RAW Combined text: "${fullTextUpper.replace(/\n/g, ' ')}"`);
+    
+    const fullTextCleaned = cleanBlockText(fullTextUpper);
+    LoggingService.debug(TAG, `CLEANED Combined text: "${fullTextCleaned.replace(/\n/g, ' ')}"`);
+    
+    // Helper to add matches from text and origin block
+    const addMatchesFromText = (text: string, frame: any) => {
+        // Textual Matches
+        const textualMatches = text.match(new RegExp(TEXTUAL_MONTH_PATTERN.source, TEXTUAL_MONTH_PATTERN.flags));
+        if (textualMatches) {
+            matches.push(...textualMatches.map(m => ({
+                value: m, isSequence: false, isMonthYear: false, isTextual: true, isDerived: false, frame
+            })));
+        }
+
+        // Standard Patterns
+        for (const pattern of STANDARD_DATE_PATTERNS) {
+            const regex = new RegExp(pattern.source, pattern.flags);
+            const patMatches = text.match(regex);
+            if (patMatches) {
+                matches.push(...patMatches.map(m => ({
+                    value: m, isSequence: false, isMonthYear: false, isTextual: false, isDerived: false, frame
+                })));
+            }
+        }
+
+        // Month/Year Patterns
+        const monthYearMatches = text.match(new RegExp(MONTH_YEAR_PATTERN.source, MONTH_YEAR_PATTERN.flags));
+        if (monthYearMatches) {
+            matches.push(...monthYearMatches.map(m => ({
+                value: m, isSequence: false, isMonthYear: true, isTextual: false, isDerived: false, frame
+            })));
+        }
+
+        // Numeric Sequences
+        const spacelessText = text.replace(/[\s.\-/]/g, '');
+        const seq6 = spacelessText.match(/(\d{2})(0[1-9]|1[0-2])(\d{2})/g);
+        if (seq6) {
+            for (const s of seq6) {
+                const d = s.substring(0, 2);
+                const m = s.substring(2, 4);
+                const y = s.substring(4, 6);
+                matches.push({
+                    value: `${d}.${m}.${y}`, isSequence: true, isMonthYear: false, isTextual: false, isDerived: false, frame
+                });
+            }
+        }
+    };
+
+    // ✅ FIX: Cerca date nel testo combinato ma senza frame (frame = undefined) 
+    // così la spatial analysis non le penalizza con coordinate sbagliate 
+    const addMatchesFromFullText = (text: string) => {
+        // Textual Matches
+        const textualMatches = text.match(new RegExp(TEXTUAL_MONTH_PATTERN.source, TEXTUAL_MONTH_PATTERN.flags));
+        if (textualMatches) {
+            matches.push(...textualMatches.map(m => ({
+                value: m, isSequence: false, isMonthYear: false, isTextual: true, isDerived: false, frame: undefined
+            })));
+        }
+
+        // Standard Patterns
+        for (const pattern of STANDARD_DATE_PATTERNS) {
+            const regex = new RegExp(pattern.source, pattern.flags);
+            const patMatches = text.match(regex);
+            if (patMatches) {
+                matches.push(...patMatches.map(m => ({
+                    value: m, isSequence: false, isMonthYear: false, isTextual: false, isDerived: false, frame: undefined
+                })));
+            }
+        }
+
+        // Month/Year Patterns
+        const monthYearMatches = text.match(new RegExp(MONTH_YEAR_PATTERN.source, MONTH_YEAR_PATTERN.flags));
+        if (monthYearMatches) {
+            matches.push(...monthYearMatches.map(m => ({
+                value: m, isSequence: false, isMonthYear: true, isTextual: false, isDerived: false, frame: undefined
+            })));
+        }
+
+        // Numeric Sequences
+        const spacelessText = text.replace(/[\s.\-/]/g, '');
+        const seq6 = spacelessText.match(/(\d{2})(0[1-9]|1[0-2])(\d{2})/g);
+        if (seq6) {
+            for (const s of seq6) {
+                const d = s.substring(0, 2);
+                const m = s.substring(2, 4);
+                const y = s.substring(4, 6);
+                matches.push({
+                    value: `${d}.${m}.${y}`, isSequence: true, isMonthYear: false, isTextual: false, isDerived: false, frame: undefined
+                });
+            }
+        }
+    };
+
+    // Process the full combined text first
+    addMatchesFromFullText(fullTextCleaned);
+    LoggingService.debug(TAG, `Matches after combined text: ${matches.length}`);
+
+    // Process individual blocks as before
     for (const block of blocks) {
         const blockText = block.text.replace(/\n/g, ' ');
         const blockUpper = blockText.toUpperCase();
@@ -40,36 +143,10 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
         // 2. Clean Text
         const cleanedText = cleanBlockText(blockUpper);
 
-        // 3. Extract Dates
+        // 3. Extract Dates from individual blocks
+        addMatchesFromText(cleanedText, block.frame);
 
-        // Textual Matches
-        const textualMatches = cleanedText.match(new RegExp(TEXTUAL_MONTH_PATTERN.source, TEXTUAL_MONTH_PATTERN.flags));
-        if (textualMatches) {
-            matches.push(...textualMatches.map(m => ({
-                value: m, isSequence: false, isMonthYear: false, isTextual: true, isDerived: false, frame: block.frame
-            })));
-        }
-
-        // Standard Patterns
-        for (const pattern of STANDARD_DATE_PATTERNS) {
-            const regex = new RegExp(pattern.source, pattern.flags);
-            const patMatches = cleanedText.match(regex);
-            if (patMatches) {
-                matches.push(...patMatches.map(m => ({
-                    value: m, isSequence: false, isMonthYear: false, isTextual: false, isDerived: false, frame: block.frame
-                })));
-            }
-        }
-
-        // Month/Year Patterns
-        const monthYearMatches = cleanedText.match(new RegExp(MONTH_YEAR_PATTERN.source, MONTH_YEAR_PATTERN.flags));
-        if (monthYearMatches) {
-            matches.push(...monthYearMatches.map(m => ({
-                value: m, isSequence: false, isMonthYear: true, isTextual: false, isDerived: false, frame: block.frame
-            })));
-        }
-
-        // Month/Year Space
+        // Month/Year Space (special case because of normalization)
         const monthYearSpaceMatches = cleanedText.match(new RegExp(MONTH_YEAR_SPACE_PATTERN.source, MONTH_YEAR_SPACE_PATTERN.flags));
         if (monthYearSpaceMatches) {
             const normalizedMatches = monthYearSpaceMatches.map(m => {
@@ -81,7 +158,7 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
             })));
         }
 
-        // Fuzzy Dates
+        // Fuzzy Dates (special case because of normalization)
         const fuzzyMatches = cleanedText.match(new RegExp(FUZZY_DATE_PATTERN.source, FUZZY_DATE_PATTERN.flags));
         if (fuzzyMatches) {
             for (const match of fuzzyMatches) {
@@ -96,7 +173,7 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
             }
         }
 
-        // Partial Dates
+        // Partial Dates (special case because of year guessing)
         const partialMatches = cleanedText.match(new RegExp(PARTIAL_DATE_PATTERN.source, PARTIAL_DATE_PATTERN.flags));
         if (partialMatches) {
             const currentYear = new Date().getFullYear();
@@ -117,17 +194,6 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
                     }
                 }
             }
-        }
-
-        // Numeric Sequences
-        const spacelessText = cleanedText.replace(/[\s.\-/]/g, '');
-        let seqMatch;
-        const seqPattern = new RegExp(SEQUENCE_PATTERN.source, SEQUENCE_PATTERN.flags);
-        while ((seqMatch = seqPattern.exec(spacelessText)) !== null) {
-            const [full, d, m, y] = seqMatch;
-            matches.push({
-                value: `${d}.${m}.${y}`, isSequence: true, isMonthYear: false, isTextual: false, isDerived: false, frame: block.frame
-            });
         }
     }
 

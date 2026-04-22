@@ -24,11 +24,13 @@ export const ProfileMenu = React.memo(function ProfileMenu({ isVisible, onClose,
             onRequestClose={onClose}
             testID="profile-modal"
         >
-            <Pressable style={styles.modalOverlay} onPress={onClose}>
+            <Pressable accessibilityLabel="Chiudi menu" accessibilityRole="button" style={styles.modalOverlay} onPress={onClose}>
                 <View style={styles.menuContainer}>
                     <Text style={styles.menuEmail}>{userName}</Text>
                     <View style={styles.menuDivider} />
                     <TouchableOpacity
+                        accessibilityLabel="Impostazioni"
+                        accessibilityRole="button"
                         style={styles.menuItem}
                         onPress={() => { router.push('/(tabs)/settings'); onClose(); }}
                     >
@@ -36,6 +38,8 @@ export const ProfileMenu = React.memo(function ProfileMenu({ isVisible, onClose,
                         <Text style={styles.menuItemText}>{DASHBOARD_CONTENT.MENU_SETTINGS}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
+                        accessibilityLabel="Esci"
+                        accessibilityRole="button"
                         style={styles.menuItem}
                         onPress={onLogout}
                         testID="logout-button"

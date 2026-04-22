@@ -94,7 +94,6 @@ describe('OCR Engine Refactoring Tests', () => {
                 { value: '15/05/26', isSequence: false, isMonthYear: false, isTextual: false, isDerived: false },
                 { value: '15/05/2026', isSequence: false, isMonthYear: false, isTextual: false, isDerived: false } // +100
             ];
-            // @ts-ignore
             const result = selectBestDate(matches, new Set(), 'raw text');
             expect(result.extractedDate?.indexOf('2026-05-15') !== -1).toBe(true);
         });
@@ -106,9 +105,7 @@ describe('OCR Engine Refactoring Tests', () => {
             ];
 
             const anchored = new Set(['31/12/2026']);
-            // @ts-ignore
             const result = selectBestDate(matches, anchored, 'raw text');
-
             expect(result.extractedDate?.indexOf('2026-12-31') !== -1).toBe(true);
         });
 
@@ -117,7 +114,6 @@ describe('OCR Engine Refactoring Tests', () => {
                 { value: '10.10.2026', isSequence: false, isMonthYear: false, isTextual: false, isDerived: true }, // Derived (-100)
                 { value: '10/10/2026', isSequence: false, isMonthYear: false, isTextual: false, isDerived: false }  // Standard
             ];
-            // @ts-ignore
             const result = selectBestDate(matches, new Set(), 'raw text');
             expect(result.extractedDate?.indexOf('2026-10-10') !== -1).toBe(true);
         });

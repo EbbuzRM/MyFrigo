@@ -87,7 +87,7 @@ export default function HistoryDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityLabel="Torna indietro" accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
         </TouchableOpacity>
         <Text style={styles.title}>{title || 'Dettaglio Storico'}</Text>
@@ -102,6 +102,8 @@ export default function HistoryDetailScreen() {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity
+            accessibilityLabel="Riprova caricamento"
+            accessibilityRole="button"
             style={styles.retryButton}
             onPress={() => {
               setError(null);
