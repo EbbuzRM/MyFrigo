@@ -98,19 +98,27 @@ export const useGoogleAuth = () => {
         );
 
 if (retryResult.shouldRetry) {
-           setRetryAttemptNumber(retryResult.attemptNumber);
+          setRetryAttemptNumber(retryResult.attemptNumber);
 
-           if (retryResult.message) {
-             feedback.showRetryFeedback(retryResult.attemptNumber, DEFAULT_RETRY_CONFIG.maxRetryAttempts, retryResult.message);
-           }
+          if (retryResult.message) {
+            feedback.showRetryFeedback(retryResult.attemptNumber, DEFAULT_RETRY_CONFIG.maxRetryAttempts, retryResult.message);
+          }
 
-           // Attendi un momento prima del retry - con cleanup appropriato
-           retryTimeoutRef.current = setTimeout(async () => {
-             if (isMountedRef.current) {
-               await performGoogleSignIn(true); // true indica che è un retry
-             }
-           }, 2000);
-         } else if (retryResult.shouldShowError) {
+          // Attendi un momento prima del retry - con cleanup appropriato
+          retryTimeoutRef.current = setTimeout(async () => {
+            if (isMountedRef.current) {
+              await performGoogleSignIn(true); // true indica che è un retry
+            }
+          }, 2000);
+
+        }
+
+          // Attendi un momento prima del retry
+          setTimeout(async () => {
+            await performGoogleSignIn(true); // true indica che è un retry
+          }, 2000);
+
+        } else if (retryResult.shouldShowError) {
           setGoogleRetryInProgress(false);
           setRetryAttemptNumber(0);
           feedback.showMaxAttemptsError();

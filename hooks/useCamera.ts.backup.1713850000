@@ -105,25 +105,20 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
 
       // Step 2: Cropa E ridimensiona a larghezza fissa per OCR ottimale 
       // ML Kit lavora meglio con immagini ~1200px di larghezza per testo piccolo
-       const result = await ImageManipulator.manipulateAsync(
-         uri,
-         [
-           { crop: cropRect },
-           { resize: { width: 1200 } }, // ✅ dimensione ottimale per ML Kit 
-         ],
-         {
-           compress: 1.0, // Massima qualità
-           format: ImageManipulator.SaveFormat.JPEG,
-           base64: false
-         }
-       );
- 
-        if (result.width < 800) {
-          LoggingService.warning('useCamera', 'OCR: Image quality too low (width < 800px)');
-          throw new Error("Immagine troppo piccola per il riconoscimento. Si prega di avvicinarsi al testo.");
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [
+          { crop: cropRect },
+          { resize: { width: 1200 } }, // ✅ dimensione ottimale per ML Kit 
+        ],
+        {
+          compress: 1.0, // Massima qualità
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: false
         }
- 
-       LoggingService.info('useCamera', `OCR-ready image: ${result.uri} (${result.width}x${result.height})`);
+      );
+
+      LoggingService.info('useCamera', `OCR-ready image: ${result.uri} (${result.width}x${result.height})`);
       return result.uri;
     } catch (error) {
       LoggingService.error('useCamera', 'Error preparing image for OCR', error);
@@ -269,4 +264,3 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
     setIsProcessingImage,
   };
 };
-

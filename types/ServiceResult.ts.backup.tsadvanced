@@ -15,8 +15,8 @@
  * ```
  */
 export type ServiceResult<T> = 
-  | { success: true; data: T; error: null }
-  | { success: false; data: null; error: string };
+  | { success: true; data: T } 
+  | { success: false; error: string };
 
 /**
  * Helper function to create a successful ServiceResult.
@@ -25,7 +25,6 @@ export function createSuccessResult<T>(data: T): ServiceResult<T> {
   return {
     success: true,
     data,
-    error: null,
   };
 }
 
@@ -35,7 +34,6 @@ export function createSuccessResult<T>(data: T): ServiceResult<T> {
 export function createErrorResult<T>(error: Error | string): ServiceResult<T> {
   return {
     success: false,
-    data: null,
     error: error instanceof Error ? error.message : error,
   };
 }

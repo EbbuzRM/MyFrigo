@@ -185,3 +185,22 @@ directives/
 .kilocodemodes
 *.sisyphus/
 nul
+
+# ── GSD baseline (auto-generated) ──
+.gsd
+.gsd-id
+.mcp.json
+.bg-shell/
+*~
+*.code-workspace
+.env.*
+!.env.example
+build/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+vendor/
+coverage/
+.cache/

@@ -3,16 +3,22 @@
  * Based on the official API response structure.
  */
 export interface OpenFoodFactsProduct {
-  product: {
-    barcode: string;
-    product_name?: string;
-    brands?: string;
-    image_url?: string;
-    categories?: string;
-    categories_v2?: string[];
-    nutriscore_grade?: string;
-    ingredients_text?: string;
-  };
+  barcode: string;
+  product_name?: string;
+  product_name_it?: string;
+  generic_name?: string;
+  generic_name_it?: string;
+  abbreviated_product_name?: string;
+  brands?: string;
+  brands_tags?: string[];
+  image_url?: string;
+  image_front_url?: string;
+  image_front_small_url?: string;
+  categories?: string;
+  categories_tags?: string[];
+  categories_v2?: string[];
+  nutriscore_grade?: string;
+  ingredients_text?: string;
 }
 
 /**
