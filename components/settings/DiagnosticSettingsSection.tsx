@@ -106,6 +106,7 @@ export function DiagnosticSettingsSection({
                 trackColor={{ false: '#e5e7eb', true: '#818cf8' }}
                 thumbColor={isDarkMode ? '#6366f1' : '#f1f5f9'}
                 accessibilityLabel={card.accessibilityLabel}
+                accessibilityState={{ checked: isDarkMode }}
               />
             }
           />

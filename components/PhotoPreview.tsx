@@ -137,6 +137,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
             accessibilityLabel="Scatta una nuova foto"
             accessibilityRole="button"
             disabled={isProcessingImage}
+            accessibilityState={{ disabled: isProcessingImage }}
           >
             <RefreshCw size={20} color="#fff" />
             <Text style={styles.controlButtonText}>Riprova</Text>
@@ -152,6 +153,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
             accessibilityLabel="Conferma e procedi"
             accessibilityRole="button"
             disabled={isProcessingImage}
+            accessibilityState={{ disabled: isProcessingImage }}
           >
             {isProcessingImage ? (
               <ActivityIndicator size="small" color="#fff" />

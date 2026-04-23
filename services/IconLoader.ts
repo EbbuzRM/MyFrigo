@@ -1,6 +1,9 @@
 import { supabase } from './supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { Database } from '@/types/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export interface IconData {
 
 export interface IconData {
   id: string;
@@ -22,6 +25,17 @@ interface OpenMojiEmoji {
 
 export const IconLoader = {
   async loadIconsFromSupabase(userId: string): Promise<IconData[]> {
+    const cacheKey = `icons_cache_${userId}`;
+    
+    try {
+      const cachedIcons = await AsyncStorage.getItem(cacheKey);
+      if (cachedIcons) {
+        return JSON.parse(cachedIcons);
+      }
+    } catch (e) {
+      LoggingService.error('IconLoader', 'Errore lettura cache icone', e);
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .select('id, icon_url')
@@ -32,12 +46,20 @@ export const IconLoader = {
       return [];
     }
 
-    return (data as SupabaseCategoryRow[]).map((item): IconData => ({
+    const icons = (data as SupabaseCategoryRow[]).map((item): IconData => ({
       id: item.id,
       url: item.icon_url || '',
       categoryId: item.id,
       isValid: true,
     }));
+
+    try {
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(icons));
+    } catch (e) {
+      LoggingService.error('IconLoader', 'Errore salvataggio cache icone', e);
+    }
+
+    return icons;
   },
 
   async loadFromOpenMoji(category: string): Promise<IconData[]> {

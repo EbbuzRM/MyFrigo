@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, TouchableOpacity, ViewStyle } from 'react-native';
 import { UpdateModal } from './UpdateModal';
 import { UpdateInfo, UpdateSettings } from '@/services/UpdateService';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface GlobalUpdateModalProps {
   showModal: boolean;
@@ -21,25 +22,35 @@ export const GlobalUpdateModal: React.FC<GlobalUpdateModalProps> = ({
   lastUpdateInfo,
   settings,
 }) => {
+  const reducedMotion = useReducedMotion();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [isVisible, setIsVisible] = React.useState(showModal);
 
   useEffect(() => {
     if (showModal) {
       setIsVisible(true);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      if (reducedMotion) {
+        fadeAnim.setValue(1);
+      } else {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
     } else {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setIsVisible(false));
+      if (reducedMotion) {
+        fadeAnim.setValue(0);
+        setIsVisible(false);
+      } else {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => setIsVisible(false));
+      }
     }
-  }, [showModal]);
+  }, [showModal, reducedMotion]);
 
   if (!isVisible && !showModal) return null;
 

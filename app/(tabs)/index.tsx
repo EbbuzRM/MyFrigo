@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -40,6 +40,10 @@ function Dashboard() {
     setRefreshing(false);
   }, [refreshProducts]);
 
+  const handleCloseMenu = useCallback(() => {
+    setMenuVisible(false);
+  }, []);
+
   // Aggiunto listener per l'AppState tramite hook custom
   useAppLifecycle(refreshPermissions);
 
@@ -49,10 +53,10 @@ function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setMenuVisible(false);
     await supabase.auth.signOut();
-  };
+  }, []);
 
   // Usa l'hook per la logica sulle date
   const { expiringProducts, expiredCount } = useDashboardStats({
@@ -60,7 +64,12 @@ function Dashboard() {
     notificationDays: settings?.notificationDays
   });
 
-  const styles = getStyles(isDarkMode);
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
+
+  const activeProductsCount = useMemo(() => 
+    allProducts.filter(p => p.status === 'active').length, 
+    [allProducts]
+  );
 
   const displayName = profile?.first_name && profile?.last_name
     ? `${profile.first_name} ${profile.last_name}`
@@ -85,7 +94,7 @@ function Dashboard() {
     >
       <ProfileMenu
         isVisible={menuVisible}
-        onClose={() => setMenuVisible(false)}
+        onClose={handleCloseMenu}
         onLogout={handleLogout}
         userName={displayName || ''}
       />
@@ -131,7 +140,7 @@ function Dashboard() {
         <View style={styles.statsContainer}>
           <StatsCard
             title={DASHBOARD_CONTENT.STATS_ACTIVE}
-            value={allProducts.filter(p => p.status === 'active').length.toString()}
+            value={activeProductsCount.toString()}
             icon={<Package size={24} color="#2563EB" />}
             lightBackgroundColor="#EFF6FF"
             darkBackgroundColor="#1e293b"
@@ -153,7 +162,7 @@ function Dashboard() {
 
 export default function DashboardScreen() {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
   return (
     <SafeAreaView style={styles.container} testID="index-screen">
       <Dashboard />

@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, Session } from '@supabase/supabase-js';
 import { LoggingService } from './LoggingService';
 import { Database } from '@/types/supabase';
 
@@ -9,6 +9,11 @@ const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 let supabase: ReturnType<typeof createClient<Database>>;
+
+// Session cache
+let cachedSession: Session | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // In test environment, provide mock values to avoid initialization errors
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -69,12 +74,29 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 }
 
+/**
+ * Returns the current session, using a 5-minute cache to reduce API calls.
+ */
+export const getCachedSession = async () => {
+  const now = Date.now();
+  if (cachedSession && (now - cacheTimestamp < CACHE_DURATION)) {
+    return { data: { session: cachedSession }, error: null };
+  }
+
+  const { data, error } = await supabase.auth.getSession();
+  if (!error) {
+    cachedSession = data.session;
+    cacheTimestamp = now;
+  }
+  return { data, error };
+};
+
 export { supabase };
 
 // Funzioni per la gestione dei token nei test
 export const refreshAuthSession = async () => {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { session }, error } = await getCachedSession();
     if (error) {
       LoggingService.error('SupabaseClient', 'Error getting session for refresh', error);
       return null;
@@ -92,6 +114,8 @@ export const refreshAuthSession = async () => {
  */
 export const clearSession = async () => {
   try {
+    cachedSession = null;
+    cacheTimestamp = 0;
     const { error } = await supabase.auth.signOut();
     if (error) {
       // Ignoriamo l'errore "Auth session not found" perché è l'obiettivo della pulizia.
@@ -112,6 +136,9 @@ export const forceRefreshToken = async () => {
       LoggingService.error('SupabaseClient', 'Error refreshing session', error);
       return null;
     }
+    // Update cache after forced refresh
+    cachedSession = session;
+    cacheTimestamp = Date.now();
     LoggingService.info('SupabaseClient', 'Session refreshed successfully');
     return session;
   } catch (error) {

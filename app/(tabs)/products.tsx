@@ -31,7 +31,7 @@ import { ConsumeQuantityModal } from '@/components/ConsumeQuantityModal';
  */
 export default function ProductsScreen(): React.ReactElement {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
 
   // Context data
   const { products: allProducts, refreshProducts: refreshProductsFromContext } = useProducts();

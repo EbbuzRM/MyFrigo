@@ -28,7 +28,8 @@ export class CategoryService {
       const { data, error } = await supabase
         .from('categories')
         .select('id, name, icon, local_icon, color, is_default')
-        .eq('is_default', false);
+        .eq('is_default', false)
+        .order('name', { ascending: true });
       if (error) throw error;
       if (!data) return [];
 
@@ -79,7 +80,8 @@ export class CategoryService {
       const { data, error } = await supabase
         .from('categories')
         .select('id, name, icon, local_icon, color, is_default')
-        .or(`is_default.eq.true,user_id.eq.${userId}`);
+        .or(`is_default.eq.true,user_id.eq.${userId}`)
+        .order('name', { ascending: true });
 
       if (error) throw error;
       if (!data) return [];

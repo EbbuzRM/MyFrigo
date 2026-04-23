@@ -102,6 +102,7 @@ export function UpdateSettingsSection({
               trackColor={{ false: '#e5e7eb', true: '#4ade80' }}
               thumbColor={autoCheckEnabled ? '#16a34a' : '#f1f5f9'}
               accessibilityLabel={card.accessibilityLabel}
+              accessibilityState={{ checked: autoCheckEnabled }}
             />
           );
         case 'auto-install':
@@ -113,6 +114,7 @@ export function UpdateSettingsSection({
               trackColor={{ false: '#e5e7eb', true: '#3b82f6' }}
               thumbColor={autoInstallEnabled ? '#2563eb' : '#f1f5f9'}
               accessibilityLabel={card.accessibilityLabel}
+              accessibilityState={{ checked: autoInstallEnabled }}
             />
           );
         case 'check-updates':

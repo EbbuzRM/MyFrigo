@@ -113,6 +113,7 @@ export function NotificationDaysModal({
               disabled={isSaving}
               accessibilityLabel="Annulla modifica"
               accessibilityRole="button"
+              accessibilityState={{ disabled: isSaving }}
             >
               <Text style={styles.modalButtonTextCancel}>Annulla</Text>
             </TouchableOpacity>

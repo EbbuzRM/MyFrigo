@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ import { ChevronLeft } from 'lucide-react-native';
 
 const FeedbackScreen = () => {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
   const router = useRouter();
   const [feedbackText, setFeedbackText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -191,6 +191,9 @@ const FeedbackScreen = () => {
                 style={[styles.screenshotButton, screenshotLoading && styles.screenshotButtonDisabled]}
                 onPress={handleChooseScreenshot}
                 disabled={loading || screenshotLoading}
+                accessibilityLabel="Aggiungi Screenshot"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: loading || screenshotLoading }}
               >
                 {screenshotLoading ? (
                   <ActivityIndicator color="#ffffff" size="small" />
@@ -204,6 +207,9 @@ const FeedbackScreen = () => {
                   style={styles.removeScreenshotButton}
                   onPress={removeScreenshot}
                   disabled={loading}
+                  accessibilityLabel="Rimuovi screenshot"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: loading }}
                 >
                   <Text style={styles.removeScreenshotButtonText}>Rimuovi</Text>
                 </TouchableOpacity>
@@ -225,6 +231,9 @@ const FeedbackScreen = () => {
             style={[styles.feedbackButton, loading && styles.feedbackButtonDisabled]}
             onPress={handleSendFeedback}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Invia Feedback"
+            accessibilityState={{ disabled: loading }}
           >
             {loading ? (
               <ActivityIndicator color="#ffffff" />

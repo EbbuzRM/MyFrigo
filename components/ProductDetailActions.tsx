@@ -30,6 +30,7 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
         accessibilityLabel="Modifica prodotto"
         accessibilityRole="button"
         accessibilityHint="Apri la schermata di modifica del prodotto"
+        accessibilityState={{ disabled }}
       >
         <Edit size={20} color="#ffffff" />
         <Text style={styles.editButtonText}>Modifica Prodotto</Text>
@@ -43,6 +44,7 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
           accessibilityLabel="Segna come consumato"
           accessibilityRole="button"
           accessibilityHint="Segna il prodotto come consumato o apri la schermata per scegliere la quantità"
+          accessibilityState={{ disabled }}
         >
           <CheckCircle size={20} color="#ffffff" />
           <Text style={styles.consumeButtonText}>Segna come Consumato</Text>
@@ -56,6 +58,7 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
         accessibilityLabel="Elimina prodotto"
         accessibilityRole="button"
         accessibilityHint="Elimina definitivamente il prodotto"
+        accessibilityState={{ disabled }}
       >
         <Trash2 size={20} color="#ffffff" />
         <Text style={styles.deleteButtonText}>Elimina Prodotto</Text>

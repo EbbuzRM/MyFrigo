@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback, use
 import { ProductStorage } from '@/services/ProductStorage';
 import { Product } from '@/types/Product';
 import { useAuth } from './AuthContext';
+import { supabase, getCachedSession } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
 interface ProductContextType {
@@ -63,7 +64,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
 
-    // Listener realtime prodotti con debounce
+    // Ensure session is fresh for the listener if needed, but getCachedSession handles it.
+    // We just need to use the logic in ProductStorage.
     try {
       productsUnsubscribe = ProductStorage.listenToProducts(() => {
         if (debounceTimerRef.current) {

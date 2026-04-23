@@ -112,6 +112,9 @@ export default function ConfirmEmailScreen() {
           style={[styles.button, (loading || otp.length < 6) && styles.buttonDisabled]}
           onPress={handleVerifyOtp}
           disabled={loading || otp.length < 6}
+          accessibilityRole="button"
+          accessibilityLabel="Verifica e Accedi"
+          accessibilityState={{ disabled: loading || otp.length < 6 }}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -120,7 +123,7 @@ export default function ConfirmEmailScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.resendButton} onPress={handleResendOtp} disabled={loading}>
+        <TouchableOpacity style={styles.resendButton} onPress={handleResendOtp} disabled={loading} accessibilityRole="button" accessibilityLabel="Invia di nuovo il codice" accessibilityState={{ disabled: loading }}>
           <Text style={styles.resendButtonText}>Invia di nuovo il codice</Text>
         </TouchableOpacity>
       </View>

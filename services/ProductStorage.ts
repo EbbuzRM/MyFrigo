@@ -1,6 +1,6 @@
 import { Product } from '@/types/Product';
 import { ServiceResult, createSuccessResult, createErrorResult } from '@/types/ServiceResult';
-import { supabase } from './supabaseClient';
+import { supabase, getCachedSession } from './supabaseClient';
 import { TablesInsert, TablesUpdate } from '@/types/supabase';
 import { convertProductToCamelCase, convertProductToSnakeCase, convertProductsToCamelCase } from '../utils/caseConverter';
 import { randomUUID } from 'expo-crypto';
@@ -17,7 +17,7 @@ export class ProductStorage {
   /** Ottiene l'ID utente corrente o restituisce errore se non autenticato. */
   private static async getCurrentUserId(): Promise<ServiceResult<string>> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await getCachedSession();
       return session?.user ? createSuccessResult(session.user.id) : createErrorResult(new Error('Utente non autenticato'));
     } catch (error) {
       return createErrorResult(error instanceof Error ? error : new Error('Impossibile ottenere la sessione'));

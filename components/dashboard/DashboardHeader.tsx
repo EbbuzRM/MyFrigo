@@ -25,6 +25,7 @@ export const DashboardHeader = React.memo(function DashboardHeader({
             <TouchableOpacity
                 accessibilityLabel="Notifiche"
                 accessibilityRole="button"
+                accessibilityState={{ disabled: permissionStatus !== 'denied' }}
                 style={styles.titleContainer}
                 onPress={onBellPress}
                 disabled={permissionStatus !== 'denied'}

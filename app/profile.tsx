@@ -118,6 +118,9 @@ export default function ProfileScreen() {
         style={[styles.button, saving && styles.buttonDisabled]}
         onPress={handleUpdateProfile}
         disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel="Salva Modifiche"
+        accessibilityState={{ disabled: saving }}
       >
         {saving ? (
           <ActivityIndicator color="#fff" />
@@ -129,6 +132,9 @@ export default function ProfileScreen() {
         style={[styles.button, styles.logoutButton, saving && styles.buttonDisabled]}
         onPress={handleLogout}
         disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel="Logout"
+        accessibilityState={{ disabled: saving }}
       >
         <Text style={styles.buttonText}>Logout</Text>
       </TouchableOpacity>
