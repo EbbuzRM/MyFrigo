@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -17,6 +17,8 @@ export default function ManageCategoriesScreen() {
   const [createCategoryName, setCreateCategoryName] = useState('');
   const [editCategoryNameInput, setEditCategoryNameInput] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const createInputRef = useRef<TextInput>(null);
+  const editInputRef = useRef<TextInput>(null);
 
   const customCategories = categories.filter(sc => !PRODUCT_CATEGORIES.some(dc => dc.id === sc.id));
 
@@ -117,23 +119,25 @@ export default function ManageCategoriesScreen() {
         <Text style={styles.backButtonText}>Indietro</Text>
       </TouchableOpacity>
 
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={isCreateModalVisible}
-        onRequestClose={() => setCreateModalVisible(false)}
-      >
+       <Modal
+         transparent={true}
+         animationType="fade"
+         visible={isCreateModalVisible}
+         onRequestClose={() => setCreateModalVisible(false)}
+         onShow={() => createInputRef.current?.focus()}
+       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Crea Nuova Categoria</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Nome della categoria"
-              value={createCategoryName}
-              onChangeText={setCreateCategoryName}
-              autoFocus
-              placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
-            />
+             <TextInput
+               ref={createInputRef}
+               style={styles.modalInput}
+               placeholder="Nome della categoria"
+               value={createCategoryName}
+               onChangeText={setCreateCategoryName}
+               autoFocus
+               placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
+             />
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity accessibilityLabel="Annulla" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setCreateModalVisible(false)}>
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>
@@ -146,23 +150,25 @@ export default function ManageCategoriesScreen() {
         </View>
       </Modal>
 
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={isEditModalVisible}
-        onRequestClose={() => setEditModalVisible(false)}
-      >
+       <Modal
+         transparent={true}
+         animationType="fade"
+         visible={isEditModalVisible}
+         onRequestClose={() => setEditModalVisible(false)}
+         onShow={() => editInputRef.current?.focus()}
+       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Modifica Nome Categoria</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Nuovo nome della categoria"
-              value={editCategoryNameInput}
-              onChangeText={setEditCategoryNameInput}
-              autoFocus
-              placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
-            />
+             <TextInput
+               ref={editInputRef}
+               style={styles.modalInput}
+               placeholder="Nuovo nome della categoria"
+               value={editCategoryNameInput}
+               onChangeText={setEditCategoryNameInput}
+               autoFocus
+               placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
+             />
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity accessibilityLabel="Annulla modifica" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setEditModalVisible(false)}>
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>
@@ -248,10 +254,14 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   buttonsContainer: {
     flexDirection: 'row',
   },
-  button: {
-    marginLeft: 10,
-    padding: 5,
-  },
+   button: {
+     marginLeft: 10,
+     padding: 12,
+     minWidth: 44,
+     minHeight: 44,
+     justifyContent: 'center',
+     alignItems: 'center',
+   },
   emptyText: {
     textAlign: 'center',
     marginTop: 20,
