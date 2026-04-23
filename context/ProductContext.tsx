@@ -76,7 +76,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
           fetchProducts().catch(error => {
             LoggingService.error('ProductContext', 'Error fetching products from listener', error);
           });
-        }, 300);
+        }, 100);
       });
       LoggingService.info('ProductContext', 'Products listener registered successfully');
     } catch (error) {

@@ -3,12 +3,16 @@ import { NotificationService } from '@/services/NotificationService';
 import { Alert, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
+export interface DiagnosticData {
+  [key: string]: unknown;
+}
+
 export interface NotificationTestResult {
     testId: string;
     success: boolean;
     duration: number;
     error?: string;
-    data?: any;
+    data?: DiagnosticData;
 }
 
 export class NotificationTests {

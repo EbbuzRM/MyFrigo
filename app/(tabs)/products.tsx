@@ -101,25 +101,23 @@ export default function ProductsScreen(): React.ReactElement {
   }, []);
 
   // Screen focus effect - auto-refresh and move expired products
-  useFocusEffect(
-    useCallback(() => {
-      const handleScreenFocus = async (): Promise<void> => {
-        LoggingService.info('ProductsScreen', 'Screen focused');
+  useFocusEffect(() => {
+    const handleScreenFocus = async (): Promise<void> => {
+      LoggingService.info('ProductsScreen', 'Screen focused');
 
-        if (isFirstLoad) {
-          LoggingService.info('ProductsScreen', 'First load - performing full setup');
-          await moveExpiredToHistory();
-          await refreshProductsFromContext();
-          setIsFirstLoad(false);
-        } else if (shouldAutoRefresh()) {
-          LoggingService.info('ProductsScreen', 'Auto-refresh triggered');
-          await refreshProductsFromContext();
-        }
-      };
+      if (isFirstLoad) {
+        LoggingService.info('ProductsScreen', 'First load - performing full setup');
+        await moveExpiredToHistory();
+        await refreshProductsFromContext();
+        setIsFirstLoad(false);
+      } else if (shouldAutoRefresh()) {
+        LoggingService.info('ProductsScreen', 'Auto-refresh triggered');
+        await refreshProductsFromContext();
+      }
+    };
 
-      handleScreenFocus();
-    }, [isFirstLoad, refreshProductsFromContext, shouldAutoRefresh, moveExpiredToHistory])
-  );
+    handleScreenFocus();
+  });
 
   const activeProducts = useMemo(() => allProducts.filter(p => p.status === 'active'), [allProducts]);
 

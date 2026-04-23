@@ -4,12 +4,16 @@ import { SettingsService } from '@/services/SettingsService';
 import { CategoryService } from '@/services/CategoryService';
 import { Alert } from 'react-native';
 
+export interface DiagnosticData {
+  [key: string]: unknown;
+}
+
 export interface PerformanceTestResult {
   testId: string;
   success: boolean;
   duration: number;
   error?: string;
-  data?: any;
+  data?: DiagnosticData;
 }
 
 export class PerformanceTests {
