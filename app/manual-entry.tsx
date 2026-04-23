@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -190,6 +190,8 @@ export default function ManualEntryScreen() {
     isFrozen, setIsFrozen,
   } = useProductForm();
 
+  const categoryInputRef = useRef<TextInput>(null);
+
   const renderCategoryItem = useCallback(({ item }: { item: ProductCategory & { spacer?: boolean } }) => {
     if (item.spacer) {
       return <View style={styles.categoryItemSpacer} />;
@@ -307,18 +309,25 @@ export default function ManualEntryScreen() {
           loading={categoriesLoading}
         />
       </ScrollView>
-      <Modal transparent={true} animationType="fade" visible={isCategoryModalVisible} onRequestClose={() => setIsCategoryModalVisible(false)}>
+      <Modal 
+        transparent={true} 
+        animationType="fade" 
+        visible={isCategoryModalVisible} 
+        onRequestClose={() => setIsCategoryModalVisible(false)}
+        onShow={() => categoryInputRef.current?.focus()}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Aggiungi Nuova Categoria</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Nome della nuova categoria"
-              value={newCategoryNameInput}
-              onChangeText={setNewCategoryNameInput}
-              autoFocus
-              placeholderTextColor={styles.placeholder.color}
-            />
+             <TextInput
+               ref={categoryInputRef}
+               style={styles.modalInput}
+               placeholder="Nome della nuova categoria"
+               value={newCategoryNameInput}
+               onChangeText={setNewCategoryNameInput}
+               autoFocus
+               placeholderTextColor={styles.placeholder.color}
+             />
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity accessibilityLabel="Annulla creazione categoria" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setIsCategoryModalVisible(false)}>
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>

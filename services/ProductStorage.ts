@@ -18,9 +18,9 @@ export class ProductStorage {
   private static async getCurrentUserId(): Promise<ServiceResult<string>> {
     try {
       const { data: { session } } = await getCachedSession();
-      return session?.user ? createSuccessResult(session.user.id) : createErrorResult(new Error('Utente non autenticato'));
+      return session?.user ? createSuccessResult(session.user.id) : createErrorResult('Utente non autenticato');
     } catch (error) {
-      return createErrorResult(error instanceof Error ? error : new Error('Impossibile ottenere la sessione'));
+      return createErrorResult(error instanceof Error ? error : 'Impossibile ottenere la sessione');
     }
   }
 
@@ -39,27 +39,27 @@ export class ProductStorage {
   /** Recupera tutti i prodotti per l'utente corrente, ordinati per data di scadenza. */
   static async getProducts(): Promise<ServiceResult<Product[]>> {
     const userResult = await this.getCurrentUserId();
-    if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
+    if (!userResult.success) return userResult as ServiceResult<Product[]>;
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).order('expiration_date', { ascending: true });
+      const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data).order('expiration_date', { ascending: true });
       if (error) throw error;
       const products = data ? convertProductsToCamelCase(data) : [];
       return createSuccessResult(products);
     } catch (error) {
-      return createErrorResult(this.handleError('Errore in getProducts', error));
+      return createErrorResult(this.handleError('Errore in getProducts', error).message);
     }
   }
 
   /** Ottiene un singolo prodotto per ID. */
   static async getProductById(productId: string): Promise<ServiceResult<Product | null>> {
     const validationError = this.validateId(productId, 'ID Prodotto');
-    if (validationError) return createErrorResult(validationError);
+    if (validationError) return createErrorResult(validationError.message);
     try {
       const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url').eq('id', productId).single();
       if (error) throw error;
       return createSuccessResult(data ? convertProductToCamelCase(data) : null);
     } catch (error) {
-      return createErrorResult(this.handleError(`Errore nel recupero prodotto con ID ${productId}`, error));
+      return createErrorResult(this.handleError(`Errore nel recupero prodotto con ID ${productId}`, error).message);
     }
   }
 
@@ -78,10 +78,10 @@ export class ProductStorage {
     if (!userResult.success) return userResult as ServiceResult<void>;
     try {
       const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout durante salvataggio prodotto')), this.TIMEOUT_MS));
-      await Promise.race([this.performUpsert(product, userResult.data!), timeoutPromise]);
+      await Promise.race([this.performUpsert(product, userResult.data), timeoutPromise]);
       return createSuccessResult(undefined);
     } catch (error) {
-      return createErrorResult(this.handleError('Errore nel salvataggio prodotto', error));
+      return createErrorResult(this.handleError('Errore nel salvataggio prodotto', error).message);
     }
   }
 
@@ -108,20 +108,20 @@ export class ProductStorage {
   /** Elimina un prodotto per ID. */
   static async deleteProduct(productId: string): Promise<ServiceResult<void>> {
     const validationError = this.validateId(productId, 'ID Prodotto');
-    if (validationError) return createErrorResult(validationError);
+    if (validationError) return createErrorResult(validationError.message);
     try {
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
       return createSuccessResult(undefined);
     } catch (error) {
-      return createErrorResult(this.handleError('Errore nell\'eliminazione prodotto', error));
+      return createErrorResult(this.handleError('Errore nell\'eliminazione prodotto', error).message);
     }
   }
 
   /** Aggiorna lo stato del prodotto e opzionalmente imposta la data di consumo. */
   static async updateProductStatus(productId: string, status: Product['status']): Promise<ServiceResult<void>> {
     const idError = this.validateId(productId, 'ID Prodotto');
-    if (idError) return createErrorResult(idError);
+    if (idError) return createErrorResult(idError.message);
     try {
       const updatedFields: Partial<Product> = { status };
       if (status === 'consumed') updatedFields.consumedDate = new Date().toISOString();
@@ -129,7 +129,7 @@ export class ProductStorage {
       if (error) throw error;
       return createSuccessResult(undefined);
     } catch (error) {
-      return createErrorResult(this.handleError('Errore nell\'aggiornamento stato prodotto', error));
+      return createErrorResult(this.handleError('Errore nell\'aggiornamento stato prodotto', error).message);
     }
   }
 
