@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/services/supabaseClient';
+import { supabase, getCachedSession } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
 
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       try {
         LoggingService.info('AuthProvider', 'Attempting to get session...');
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await getCachedSession();
         LoggingService.info('AuthProvider', 'Finished getSession call.');
 
         if (error) {

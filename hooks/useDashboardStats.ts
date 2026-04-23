@@ -12,11 +12,12 @@ interface DashboardStats {
 }
 
 export function useDashboardStats({ allProducts, notificationDays = 7 }: UseDashboardStatsParams): DashboardStats {
-    return useMemo(() => {
+    const startOfTodayUTC = useMemo(() => {
         const today = new Date();
-        // Calcoliamo la mezzanotte di oggi (UTC) per il confronto UTC-based
-        const startOfTodayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+        return Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    }, []);
 
+    return useMemo(() => {
         // Calcoliamo la mezzanotte di oggi in formato locale per i prodotti scaduti
         const startOfTodayLocal = new Date();
         startOfTodayLocal.setHours(0, 0, 0, 0);
@@ -49,5 +50,5 @@ export function useDashboardStats({ allProducts, notificationDays = 7 }: UseDash
             expiringProducts,
             expiredCount
         };
-    }, [allProducts, notificationDays]);
+    }, [allProducts, notificationDays, startOfTodayUTC]);
 }

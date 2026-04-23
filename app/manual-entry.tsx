@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -161,7 +161,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
 
 export default function ManualEntryScreen() {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
   const {
     name, setName,
     brand, setBrand,

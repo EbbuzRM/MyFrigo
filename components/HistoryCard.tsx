@@ -8,6 +8,7 @@ import { HistoryCardHeader } from './HistoryCardHeader';
 import { HistoryCardDetails } from './HistoryCardDetails';
 import { useStatusInfo, formatHistoryDate, HistoryStatus } from './HistoryCardStatus';
 import { getHistoryCardStyles } from './HistoryCard.styles';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface HistoryCardProps {
   /** Product data to display */
@@ -43,15 +44,17 @@ export const HistoryCard = React.memo(({
 }: HistoryCardProps) => {
   const { isDarkMode } = useTheme();
   const { getCategoryById } = useCategories();
+  const reducedMotion = useReducedMotion();
   const styles = getHistoryCardStyles(isDarkMode);
 
   const categoryInfo = getCategoryById(product.category);
 
   // Animation setup
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(20);
+  const opacity = useSharedValue(reducedMotion ? 1 : 0);
+  const translateY = useSharedValue(reducedMotion ? 0 : 20);
 
   React.useEffect(() => {
+    if (reducedMotion) return;
     opacity.value = withDelay(
       index * ANIMATION_DELAY_PER_ITEM,
       withTiming(1, { duration: ANIMATION_DURATION })
@@ -60,12 +63,17 @@ export const HistoryCard = React.memo(({
       index * ANIMATION_DELAY_PER_ITEM,
       withTiming(0, { duration: ANIMATION_DURATION })
     );
-  }, [index, opacity, translateY]);
+  }, [index, opacity, translateY, reducedMotion]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    if (reducedMotion) {
+      return {};
+    }
+    return {
+      opacity: opacity.value,
+      transform: [{ translateY: translateY.value }],
+    };
+  });
 
   // Status info with memoization
   const date = type === 'consumed' ? product.consumedDate : product.expirationDate;

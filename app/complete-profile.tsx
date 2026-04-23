@@ -62,6 +62,9 @@ export default function CompleteProfileScreen() {
         style={[styles.button, saving && styles.buttonDisabled]}
         onPress={handleCompleteProfile}
         disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel="Salva e Continua"
+        accessibilityState={{ disabled: saving }}
       >
         {saving ? (
           <ActivityIndicator color="#fff" />

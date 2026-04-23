@@ -3,6 +3,7 @@ import { View, Pressable, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface TabBarRoute {
   key: string;
@@ -34,11 +35,15 @@ const AnimatedTabItem: React.FC<TabItemProps> = ({
   tabBarTestID,
 }) => {
   const { isDarkMode } = useTheme();
+  const reducedMotion = useReducedMotion();
 
   // Hook chiamato sempre allo stesso livello - rispetta le Rules of Hooks
   const scale = useSharedValue(isFocused ? 1.1 : 1);
 
   const animatedStyle = useAnimatedStyle(() => {
+    if (reducedMotion) {
+      return { transform: [{ scale: 1 }] };
+    }
     return {
       transform: [{ scale: scale.value }],
     };
@@ -46,18 +51,28 @@ const AnimatedTabItem: React.FC<TabItemProps> = ({
 
   // Aggiorna l'animazione quando cambia isFocused
   React.useEffect(() => {
-    scale.value = withSpring(isFocused ? 1.1 : 1, { duration: 100, dampingRatio: 1 });
-  }, [isFocused]);
+    if (!reducedMotion) {
+      scale.value = withSpring(isFocused ? 1.1 : 1, { duration: 100, dampingRatio: 1 });
+    }
+  }, [isFocused, reducedMotion]);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={isFocused ? { selected: true } : {}}
+      accessibilityState={{ selected: isFocused }}
       accessibilityLabel={tabBarAccessibilityLabel}
       testID={tabBarTestID}
       hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
-      onPressIn={() => (scale.value = withSpring(1.1, { duration: 100, dampingRatio: 1 }))}
-      onPressOut={() => (scale.value = withSpring(isFocused ? 1.1 : 1, { duration: 100, dampingRatio: 1 }))}
+      onPressIn={() => {
+        if (!reducedMotion) {
+          scale.value = withSpring(1.1, { duration: 100, dampingRatio: 1 });
+        }
+      }}
+      onPressOut={() => {
+        if (!reducedMotion) {
+          scale.value = withSpring(isFocused ? 1.1 : 1, { duration: 100, dampingRatio: 1 });
+        }
+      }}
       onPress={onPress}
       onLongPress={onLongPress}
       style={styles.tabItem}

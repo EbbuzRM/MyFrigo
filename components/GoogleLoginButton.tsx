@@ -54,6 +54,9 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
       ]}
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel="Accedi con Google"
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
     >
       {getButtonContent()}
     </TouchableOpacity>

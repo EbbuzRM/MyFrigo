@@ -69,10 +69,12 @@ class Logger {
   }
 
   public info(tag: string, message: string, data?: unknown): void {
+    if (!__DEV__) return;
     this.log(LogLevel.INFO, tag, message, data);
   }
 
   public warning(tag: string, message: string, data?: unknown): void {
+    if (!__DEV__) return;
     this.log(LogLevel.WARNING, tag, message, data);
   }
 

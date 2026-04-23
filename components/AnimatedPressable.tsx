@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, PressableProps, Animated, GestureResponderEvent } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
 import { AccessibilityAttributes } from '@/utils/accessibility';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface AnimatedPressableProps extends PressableProps {
   children: React.ReactNode;
@@ -18,9 +19,11 @@ export function AnimatedPressable({
   accessibilityHint,
   ...props
 }: AnimatedPressableProps) {
+  const reducedMotion = useReducedMotion();
   const animatedValue = new Animated.Value(1);
 
   const handlePressIn = (_event: GestureResponderEvent) => {
+    if (reducedMotion) return;
     Animated.timing(animatedValue, {
       toValue: 0.96,
       duration: 100,
@@ -29,6 +32,7 @@ export function AnimatedPressable({
   };
 
   const handlePressOut = (_event: GestureResponderEvent) => {
+    if (reducedMotion) return;
     Animated.timing(animatedValue, {
       toValue: 1,
       duration: 100,
@@ -36,9 +40,9 @@ export function AnimatedPressable({
     }).start();
   };
 
-  const animatedStyle = {
-    transform: [{ scale: animatedValue }],
-  };
+  const animatedStyle = reducedMotion
+    ? {}
+    : { transform: [{ scale: animatedValue }] };
 
   // Combina le proprietà di accessibilità passate direttamente con quelle in accessibilityProps
   const combinedAccessibilityProps = {

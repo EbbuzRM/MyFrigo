@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 
 /**
@@ -12,6 +12,8 @@ export type ProductStatusFilter = 'all' | 'fresh' | 'expiring' | 'expired';
 export interface UseProductSearchResult {
   /** Current search query string */
   searchQuery: string;
+  /** Debounced search query for filtering */
+  debouncedQuery: string;
   /** Setter for search query */
   setSearchQuery: (query: string) => void;
   /** Callback to clear search */
@@ -27,7 +29,16 @@ export interface UseProductSearchResult {
  */
 export function useProductSearch(): UseProductSearchResult {
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedQuery, setDebouncedQuery] = useState<string>('');
   const searchQueryRef = useRef(searchQuery);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Keep ref in sync with state
   searchQueryRef.current = searchQuery;
@@ -54,6 +65,7 @@ export function useProductSearch(): UseProductSearchResult {
 
   return {
     searchQuery,
+    debouncedQuery,
     setSearchQuery: handleSearchChange,
     clearSearch,
     hasSearchQuery,

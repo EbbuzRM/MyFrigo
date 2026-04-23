@@ -66,7 +66,7 @@ export default function SignupScreen() {
       <Text style={styles.label}>{UI_LABELS.PASSWORD}</Text>
       <View style={styles.passwordContainer}>
         <TextInput style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_PASSWORD} value={formData.password} onChangeText={(t) => updateField('password', t)} secureTextEntry={!isPasswordVisible} editable={!isLoading} />
-        <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)} disabled={isLoading}>
+        <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)} disabled={isLoading} accessibilityLabel="Mostra/Nascondi password" accessibilityRole="button" accessibilityState={{ disabled: isLoading }}>
           <FontAwesome name={isPasswordVisible ? 'eye' : 'eye-slash'} size={20} color="#6c757d" />
         </TouchableOpacity>
       </View>
@@ -79,7 +79,7 @@ export default function SignupScreen() {
         </View>
       )}
       {error && <Text style={styles.errorText}>{error}</Text>}
-      <TouchableOpacity style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled}>
+      <TouchableOpacity style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled} accessibilityRole="button" accessibilityLabel="Registrati" accessibilityState={{ disabled: isDisabled }}>
         {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{UI_LABELS.SIGNUP_BUTTON}</Text>}
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()}>

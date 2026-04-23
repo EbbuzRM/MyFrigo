@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -67,7 +67,7 @@ export default function Settings(): React.ReactElement {
     updateSettings: updateAppUpdateSettings,
     openModal: openUpdateModal,
   } = useUpdate();
-  const styles = getStyles(isDarkMode);
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
 
   // Modal state
   const [isDaysModalVisible, setIsDaysModalVisible] = React.useState(false);

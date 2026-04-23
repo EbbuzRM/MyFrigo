@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface ToastProps {
   message: string;
@@ -13,11 +14,21 @@ interface ToastProps {
 
 export function Toast({ message, visible, onDismiss, type = 'success', testID }: ToastProps) {
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const reducedMotion = useReducedMotion();
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
   const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
     if (visible) {
+      if (reducedMotion) {
+        // Skip animation, show instantly and dismiss after timeout
+        fadeAnim.setValue(1);
+        const timer = setTimeout(() => {
+          fadeAnim.setValue(0);
+          onDismiss();
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
@@ -32,7 +43,7 @@ export function Toast({ message, visible, onDismiss, type = 'success', testID }:
         }, 2000);
       });
     }
-  }, [visible]);
+  }, [visible, reducedMotion]);
 
   if (!visible) {
     return null;
