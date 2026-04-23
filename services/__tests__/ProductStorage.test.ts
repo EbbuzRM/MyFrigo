@@ -74,7 +74,7 @@ it('should fetch products for authenticated user', async () => {
       const result = await ProductStorage.getProducts();
 
 expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Utente non autenticato');
+      expect(result.error).toBe('Utente non autenticato');
     });
 
 it('should handle database errors gracefully', async () => {
@@ -201,7 +201,7 @@ it('should sort products by expiration date', async () => {
 
       const result = await ProductStorage.saveProduct(mockProduct as any);
       expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Save failed');
+       expect(result.error).toBe('Save failed');
     });
 
     it('should throw error when user is not authenticated', async () => {
@@ -211,7 +211,7 @@ it('should sort products by expiration date', async () => {
 
       const result = await ProductStorage.saveProduct(mockProduct as any);
 expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Utente non autenticato');
+      expect(result.error).toBe('Utente non autenticato');
     });
   });
 
@@ -240,7 +240,7 @@ expect(result.success).toBe(false);
 
       const result = await ProductStorage.deleteProduct('test-id');
       expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Delete failed');
+       expect(result.error).toBe('Delete failed');
     });
   });
 
@@ -276,7 +276,7 @@ expect(result.success).toBe(false);
 
       const result = await ProductStorage.updateProductStatus('test-id', 'consumed');
       expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Update failed');
+       expect(result.error).toBe('Update failed');
     });
   });
 

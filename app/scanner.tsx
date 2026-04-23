@@ -48,7 +48,7 @@ export default function BarcodeScannerScreen() {
 
   const handleProductFound = useCallback((result: ScanResult, barcode: string) => {
     if (result.type === 'template' && result.data) {
-      Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${result.data.name}`, [
+      Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${(result.data as Partial<Product>).name}`, [
         {
           text: 'Continua',
           onPress: () => {
@@ -66,7 +66,8 @@ export default function BarcodeScannerScreen() {
       // Usa il nome estratto dai parametri (che include la logica di fallback)
       // Se params non esiste (caso strano), tenta di accedere a data.product_name
       const extractedName = result.params?.name;
-      const rawName = 'product_name' in result.data ? (result.data as ProductData).product_name : (result.data as ProductData).name;
+      const rawData = result.data as ProductData;
+      const rawName = 'product_name' in rawData ? rawData.product_name : rawData.name;
       const displayName = extractedName || rawName;
       Alert.alert('Prodotto Trovato!', `Trovato online: ${displayName || barcode}`, [
         {

@@ -25,7 +25,7 @@ export class UserNotificationSettingsService {
    */
   static async getSettings(userId: string): Promise<UserNotificationSettings> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_notification_settings')
         .select('notifications_enabled, notification_days')
         .eq('user_id', userId)
@@ -65,7 +65,7 @@ export class UserNotificationSettingsService {
         updatePayload.notification_days = settings.notificationDays;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_notification_settings')
         .upsert({ user_id: userId, ...updatePayload })
         .select('notifications_enabled, notification_days')
@@ -101,18 +101,18 @@ export class UserNotificationSettingsService {
 
       const defaultDays = globalSettings?.notification_days ?? DEFAULT_SETTINGS.notificationDays;
 
-      const { data, error } = await supabase
-        .from('user_notification_settings')
-        .upsert(
-          {
-            user_id:              userId,
-            notifications_enabled: DEFAULT_SETTINGS.notificationsEnabled,
-            notification_days:    defaultDays,
-          },
-          { onConflict: 'user_id' }
-        )
-        .select('notifications_enabled, notification_days')
-        .single();
+       const { data, error } = await (supabase as any)
+         .from('user_notification_settings')
+         .upsert(
+           {
+             user_id:              userId,
+             notifications_enabled: DEFAULT_SETTINGS.notificationsEnabled,
+             notification_days:    defaultDays,
+           },
+           { onConflict: 'user_id' }
+         )
+         .select('notifications_enabled, notification_days')
+         .single();
 
       if (error) throw error;
 

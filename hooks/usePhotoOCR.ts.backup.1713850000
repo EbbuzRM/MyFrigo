@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import TextRecognition, { TextRecognitionScript } from '@react-native-ml-kit/text-recognition';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { LoggingService } from '@/services/LoggingService';
 import { DATE_CONSTANTS } from '@/utils/dateUtils';
 import { OCRResult, OCRProgress } from '@/utils/ocr/types';
@@ -45,7 +45,7 @@ export const usePhotoOCR = () => {
     try {
       setOcrProgress(prev => ({ ...prev, progress: 25, currentStep: 'Riconoscimento testo...' }));
 
-       const textRecognitionResult = await TextRecognition.recognize(imageUri, { script: TextRecognitionScript.LATIN });
+      const textRecognitionResult = await TextRecognition.recognize(imageUri);
 
       if (!textRecognitionResult || !textRecognitionResult.blocks || textRecognitionResult.blocks.length === 0) {
         LoggingService.warning(TAG, 'No text blocks found - OCR returned empty result');
@@ -110,4 +110,3 @@ export const usePhotoOCR = () => {
     resetProgress
   };
 };
-

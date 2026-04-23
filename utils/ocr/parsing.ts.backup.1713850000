@@ -17,22 +17,12 @@ import { LoggingService } from '@/services/LoggingService';
  * Parses OCR blocks to find date matches and expiration anchors.
  */
 export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anchors: TextBlock[] } => {
-    const TAG = 'OCR_Parsing';
-    const MIN_CONFIDENCE_THRESHOLD = 0.5;
-    const validBlocks = blocks.filter(block => {
-        const isLowConfidence = (block as any).confidence !== undefined && (block as any).confidence < MIN_CONFIDENCE_THRESHOLD;
-        return !isLowConfidence;
-    });
-    const filteredCount = blocks.length - validBlocks.length;
-    if (filteredCount > 0) {
-        LoggingService.debug(TAG, `OCR: Filtered ${filteredCount} blocks with low confidence`);
-    }
     const matches: DateMatch[] = [];
     const anchors: TextBlock[] = [];
+    const TAG = 'OCR_Parsing';
 
-    // 1. Join all text from all valid blocks to find dates split across blocks
-    const fullText = validBlocks.map(b => b.text).join(' \n ');
-
+    // 1. Join all text from all blocks to find dates split across blocks
+    const fullText = blocks.map(b => b.text).join(' \n ');
     const fullTextUpper = fullText.toUpperCase();
     
     LoggingService.debug(TAG, `RAW Combined text: "${fullTextUpper.replace(/\n/g, ' ')}"`);
@@ -133,9 +123,8 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
     addMatchesFromFullText(fullTextCleaned);
     LoggingService.debug(TAG, `Matches after combined text: ${matches.length}`);
 
-    // Process individual valid blocks as before
-    for (const block of validBlocks) {
-
+    // Process individual blocks as before
+    for (const block of blocks) {
         const blockText = block.text.replace(/\n/g, ' ');
         const blockUpper = blockText.toUpperCase();
 
@@ -210,4 +199,3 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
 
     return { matches, anchors };
 };
-

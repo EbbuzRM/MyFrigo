@@ -4,6 +4,8 @@ import { Database } from '@/types/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface IconData {
+
+export interface IconData {
   id: string;
   url: string;
   categoryId?: string;
