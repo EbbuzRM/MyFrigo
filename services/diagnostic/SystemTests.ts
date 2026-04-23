@@ -4,12 +4,16 @@ import { SettingsService } from '@/services/SettingsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 
+export interface DiagnosticData {
+  [key: string]: unknown;
+}
+
 export interface SystemTestResult {
   testId: string;
   success: boolean;
   duration: number;
   error?: string;
-  data?: any;
+  data?: DiagnosticData;
 }
 
 interface HealthTest {
@@ -19,7 +23,7 @@ interface HealthTest {
 }
 
 export class SystemTests {
-  static async runSystemHealthTest(user: any, settings: any): Promise<SystemTestResult> {
+  static async runSystemHealthTest(user: unknown, settings: unknown): Promise<SystemTestResult> {
     const startTime = Date.now();
 
     try {

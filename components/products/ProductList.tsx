@@ -55,19 +55,17 @@ export function ProductList({
   const styles = getStyles(isDarkMode);
 
   /**
-   * Memoized category map for O(1) lookup
+   * Memoized category map for O(1) lookup using plain object
    */
   const categoryMap = useMemo(() => {
-    const map = new Map<string, ProductCategory>();
-    categories.forEach(cat => map.set(cat.id, cat));
-    return map;
+    return categories.reduce((acc, cat) => ({ ...acc, [cat.id]: cat }), {} as Record<string, ProductCategory>);
   }, [categories]);
 
   /**
-   * Get category info for a product (O(1) lookup)
+   * Get category info for a product (O(1) lookup using object bracket notation)
    */
   const getCategoryInfo = (categoryId: string): ProductCategory | undefined => {
-    return categoryMap.get(categoryId);
+    return categoryMap[categoryId];
   };
 
   /**

@@ -3,12 +3,16 @@ import { authLogger } from '@/utils/AuthLogger';
 import { formStateLogger } from '@/utils/FormStateLogger';
 import { Alert } from 'react-native';
 
+export interface DiagnosticData {
+  [key: string]: unknown;
+}
+
 export interface AuthTestResult {
   testId: string;
   success: boolean;
   duration: number;
   error?: string;
-  data?: any;
+  data?: DiagnosticData;
 }
 
 export class AuthTests {

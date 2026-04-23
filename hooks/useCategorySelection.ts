@@ -94,7 +94,7 @@ export const useCategorySelection = ({
         setSelectedCategory(guessedCategoryId);
       }
     }
-  }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory, selectedCategory, setSelectedCategory]);
+  }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory, selectedCategory]);
 
   const handleAddNewCategory = useCallback(async () => {
     LoggingService.info('useCategorySelection', `handleAddNewCategory called with name: ${newCategoryNameInput}`);
