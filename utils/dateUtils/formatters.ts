@@ -61,3 +61,13 @@ export function isDateWith31InShortMonth(date: Date): boolean {
 export function sortDatesAscending(dates: Date[]): Date[] {
   return [...dates].sort((a, b) => a.getTime() - b.getTime());
 }
+
+/**
+ * Get current date in local ISO string format (yyyy-MM-dd).
+ * Useful for getting today's date without time/timezone issues.
+ *
+ * @returns Today's date formatted as yyyy-MM-dd
+ */
+export function getLocalISODate(): string {
+  return toLocalISOString(new Date());
+}
