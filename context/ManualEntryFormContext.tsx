@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode, useReducer, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import 'react-native-get-random-values';
+import { toLocalISOString, getLocalISODate } from '@/utils/dateUtils';
 
 /**
  * Represents a single quantity entry
@@ -44,7 +45,7 @@ const getInitialState = (): FormState => ({
   brand: '',
   selectedCategory: '',
   quantities: [{ id: uuidv4(), quantity: '1', unit: 'pz' }],
-  purchaseDate: new Date().toISOString().split('T')[0],
+  purchaseDate: getLocalISODate(),
   expirationDate: '',
   notes: '',
   barcode: '',
