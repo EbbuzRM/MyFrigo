@@ -6,6 +6,7 @@ import { convertProductToCamelCase, convertProductToSnakeCase, convertProductsTo
 import { randomUUID } from 'expo-crypto';
 import { LoggingService } from './LoggingService';
 import { TemplateService } from './TemplateService';
+import { toLocalISOString, getLocalISODate } from '@/utils/dateUtils';
 
 /**
  * Servizio per la gestione dei prodotti nel database Supabase.
@@ -41,7 +42,7 @@ export class ProductStorage {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return userResult as ServiceResult<Product[]>;
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data).order('expiration_date', { ascending: true });
+      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data).order('expiration_date', { ascending: true });
       if (error) throw error;
       const products = data ? convertProductsToCamelCase(data) : [];
       return createSuccessResult(products);
@@ -55,7 +56,7 @@ export class ProductStorage {
     const validationError = this.validateId(productId, 'ID Prodotto');
     if (validationError) return createErrorResult(validationError.message);
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url').eq('id', productId).single();
+      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url').eq('id', productId).single();
       if (error) throw error;
       return createSuccessResult(data ? convertProductToCamelCase(data) : null);
     } catch (error) {
@@ -124,7 +125,7 @@ export class ProductStorage {
     if (idError) return createErrorResult(idError.message);
     try {
       const updatedFields: Partial<Product> = { status };
-      if (status === 'consumed') updatedFields.consumedDate = new Date().toISOString();
+      if (status === 'consumed') updatedFields.consumedDate = getLocalISODate();
       const { error } = await supabase.from('products').update(convertProductToSnakeCase(updatedFields) as TablesUpdate<'products'>).eq('id', productId);
       if (error) throw error;
       return createSuccessResult(undefined);
@@ -141,7 +142,7 @@ export class ProductStorage {
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
     twoDaysAgo.setHours(0, 0, 0, 0);
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'active').eq('is_frozen', false).lt('expiration_date', twoDaysAgo.toISOString()).order('expiration_date', { ascending: true });
+      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'active').eq('is_frozen', false).lt('expiration_date', toLocalISOString(twoDaysAgo)).order('expiration_date', { ascending: true });
       if (error) throw error;
       return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
     } catch (error) {
@@ -154,7 +155,7 @@ export class ProductStorage {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'expired');
+      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'expired');
       if (error) throw error;
       return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
     } catch (error) {
@@ -194,7 +195,7 @@ export class ProductStorage {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'consumed').order('consumed_date', { ascending: false });
+      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'consumed').order('consumed_date', { ascending: false });
       if (error) throw error;
       return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
     } catch (error) {

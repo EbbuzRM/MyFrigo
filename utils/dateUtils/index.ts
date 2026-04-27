@@ -51,6 +51,7 @@ export {
   isDateInFuture,
   isDateTooOld,
   toLocalISOString,
+  getLocalISODate,
   isDateWith31InShortMonth,
   sortDatesAscending,
 } from './formatters';
