@@ -4,6 +4,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Calendar } from 'react-native-calendars';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
+import { toLocalISOString } from '@/utils/dateUtils';
 
 interface CustomDatePickerProps {
   value: Date;
@@ -24,12 +25,12 @@ export function CustomDatePicker({ value, onChange, onClose, minimumDate, maximu
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Select Date</Text>
             <Calendar
-              current={value.toISOString().split('T')[0]}
+              current={toLocalISOString(value)}
 onDayPress={(day) => {
   onChange({ type: 'set' } as DateTimePickerEvent, new Date(day.dateString));
 }}
-              minDate={minimumDate?.toISOString().split('T')[0]}
-              maxDate={maximumDate?.toISOString().split('T')[0]}
+              minDate={minimumDate ? toLocalISOString(minimumDate) : undefined}
+              maxDate={maximumDate ? toLocalISOString(maximumDate) : undefined}
               theme={{
                 backgroundColor: isDarkMode ? '#161b22' : '#ffffff',
                 calendarBackground: isDarkMode ? '#161b22' : '#ffffff',
