@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Product } from '@/types/Product';
-import { getLocalISODate } from '@/utils/dateUtils';
+import { getLocalISODate } from '@/utils/dateUtils/formatters';
 
 interface UseDashboardStatsParams {
     allProducts: Product[];
