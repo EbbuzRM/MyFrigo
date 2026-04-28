@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Product } from '@/types/Product';
+import { getLocalISODate } from '@/utils/dateUtils';
 
 interface UseDashboardStatsParams {
     allProducts: Product[];
@@ -11,44 +12,49 @@ interface DashboardStats {
     expiredCount: number;
 }
 
+/**
+ * Calculate dashboard statistics for products.
+ * Uses local dates consistently to avoid timezone issues.
+ */
 export function useDashboardStats({ allProducts, notificationDays = 7 }: UseDashboardStatsParams): DashboardStats {
-    const startOfTodayUTC = useMemo(() => {
-        const today = new Date();
-        return Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-    }, []);
-
     return useMemo(() => {
-        // Calcoliamo la mezzanotte di oggi in formato locale per i prodotti scaduti
-        const startOfTodayLocal = new Date();
-        startOfTodayLocal.setHours(0, 0, 0, 0);
+        // Get today's date in local timezone (YYYY-MM-DD format)
+        const todayStr = getLocalISODate();
+        const today = new Date(todayStr + 'T00:00:00');
+        const msPerDay = 1000 * 60 * 60 * 24;
 
         // 1. Array ordinato dei prodotti in scadenza
         const expiringProducts = allProducts
             .filter(p => {
                 if (!p.expirationDate) return false;
 
-                const expirationParts = p.expirationDate.split('-').map(Number);
-                // Costruiamo la data di scadenza a mezzanotte in UTC
-                const startOfExpirationUTC = Date.UTC(expirationParts[0], expirationParts[1] - 1, expirationParts[2]);
+                // Parse expiration date in local timezone (append time to avoid UTC shift)
+                const expirationDate = new Date(p.expirationDate + 'T00:00:00');
 
-                // Calcola differenza in giorni
-                const diffDays = (startOfExpirationUTC - startOfTodayUTC) / (1000 * 60 * 60 * 24);
+                // Calculate days until expiration using local dates
+                const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / msPerDay);
 
-                return diffDays >= 0 && diffDays <= notificationDays && !p.consumedDate && !p.isFrozen;
+                return daysUntilExpiration >= 0 && daysUntilExpiration <= notificationDays && !p.consumedDate && !p.isFrozen;
             })
-            .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
+            .sort((a, b) => {
+                const dateA = new Date(a.expirationDate + 'T00:00:00');
+                const dateB = new Date(b.expirationDate + 'T00:00:00');
+                return dateA.getTime() - dateB.getTime();
+            });
 
         // 2. Conteggio dei prodotti già scaduti
         const expiredCount = allProducts.filter(p => {
             if (!p.expirationDate) return false;
-            const expirationDate = new Date(p.expirationDate);
-            expirationDate.setHours(0, 0, 0, 0);
-            return p.status === 'active' && expirationDate < startOfTodayLocal && !p.isFrozen;
+            
+            // Parse expiration date in local timezone
+            const expirationDate = new Date(p.expirationDate + 'T00:00:00');
+            
+            return p.status === 'active' && expirationDate < today && !p.isFrozen;
         }).length;
 
         return {
             expiringProducts,
             expiredCount
         };
-    }, [allProducts, notificationDays, startOfTodayUTC]);
+    }, [allProducts, notificationDays]);
 }
