@@ -10,11 +10,6 @@ export interface IconData {
   isValid: boolean;
 }
 
-interface SupabaseCategoryRow {
-  id: string;
-  icon_url: string | null;
-}
-
 interface OpenMojiEmoji {
   id: string;
   url: string;
@@ -34,9 +29,11 @@ export const IconLoader = {
       LoggingService.error('IconLoader', 'Errore lettura cache icone', e);
     }
 
+    // FIX RADICE: La tabella categories ha 'icon', non 'icon_url' (vedi types/supabase.ts)
+    // Cambiamo la query per usare la colonna corretta
     const { data, error } = await supabase
       .from('categories')
-      .select('id, icon_url')
+      .select('id, icon')
       .eq('user_id', userId);
 
     if (error) {
@@ -44,9 +41,11 @@ export const IconLoader = {
       return [];
     }
 
-    const icons = (data as SupabaseCategoryRow[]).map((item): IconData => ({
+    // FIX RADICE: Gestiamo correttamente il tipo senza cast unsafe
+    // data è di tipo Tables<'categories'>[] | null secondo il tipo Supabase
+    const icons = (data || []).map((item): IconData => ({
       id: item.id,
-      url: item.icon_url || '',
+      url: item.icon || '',  // Usiamo 'icon' invece di 'icon_url'
       categoryId: item.id,
       isValid: true,
     }));

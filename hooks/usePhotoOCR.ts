@@ -45,7 +45,7 @@ export const usePhotoOCR = () => {
     try {
       setOcrProgress(prev => ({ ...prev, progress: 25, currentStep: 'Riconoscimento testo...' }));
 
-       const textRecognitionResult = await TextRecognition.recognize(imageUri, { script: TextRecognitionScript.LATIN });
+        const textRecognitionResult = await TextRecognition.recognize(imageUri, TextRecognitionScript.LATIN);
 
       if (!textRecognitionResult || !textRecognitionResult.blocks || textRecognitionResult.blocks.length === 0) {
         LoggingService.warning(TAG, 'No text blocks found - OCR returned empty result');

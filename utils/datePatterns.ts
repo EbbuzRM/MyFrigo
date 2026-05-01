@@ -8,9 +8,10 @@
  * Allows optional spaces around separators.
  */
 export const STANDARD_DATE_PATTERNS = [
-    /\b(\d{1,2})\s*[./\\\-]\s*(\d{1,2})\s*[./\\\-]\s*(\d{4}|\d{2})\b/g,
-    /(?:scad|exp|best before|use by|expires?|valido fino)[\s:]*(\d{1,2})\s*[./\\\-]\s*(\d{1,2})\s*[./\\\-]\s*(\d{4}|\d{2})/gi,
+    /\b(\d{1,2}\s*[/\\\-.]\s*\d{1,2}\s*[/\\\-.]\s*(\d{4}|\d{2}))\b/g,
+    /(?:scad|exp|best before|use by|expires?|valido fino)[\s:]*(\d{1,2}\s*[/\\\-.]\s*\d{1,2}\s*[/\\\-.]\s*(\d{4}|\d{2}))/gi,
     /\b(\d{1,2})\s+(\d{1,2})\s+(\d{4}|\d{2})\b/g,
+    /\b(\d{1,2})\s*[/\\\-.]\s*(\d{1,2})\s*[/\\\-.]\s*(\d{4}|\d{2})\b/g,
 ] as const;
 
 /**

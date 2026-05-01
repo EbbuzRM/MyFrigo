@@ -4,7 +4,7 @@
 
 import { renderHook, act } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
-import { useReducedMotion } from '../useReducedMotion';
+import { useReducedMotion } from './useReducedMotion';
 
 // Mock di AccessibilityInfo
 jest.mock('react-native', () => {
