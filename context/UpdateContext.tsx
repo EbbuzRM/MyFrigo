@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUpdates, reloadAsync } from 'expo-updates';
+import { useUpdates, reloadAsync, fetchUpdateAsync } from 'expo-updates';
 import { UpdateService, UpdateInfo, UpdateSettings, UpdateEventEmitter } from '@/services/UpdateService';
 import { UpdateModal } from '@/components/UpdateModal';
 import { LoggingService } from '@/services/LoggingService';
@@ -111,27 +111,44 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     };
   }, []);
 
-  // FIX RADICE: Monitora lo stato di useUpdates() invece di usare addListener deprecato
-  useEffect(() => {
-    const { isUpdatePending, availableUpdate, currentlyRunning } = updates;
+  // FIX RADICE: Monitora lo stato di useUpdates() — gestisce sia il download che l'installazione
+  // FLUSSO CORRETTO:
+  //   1. checkAutomatically: "ON_LOAD" → expo-updates fa checkForUpdateAsync() all'avvio
+  //   2. isUpdateAvailable diventa true → chiamiamo fetchUpdateAsync() per scaricare
+  //   3. isUpdatePending diventa true → auto-reload o mostra modal
+  const fetchAttemptedRef = useRef(false);
 
+  useEffect(() => {
+    const { isUpdateAvailable, isUpdatePending, availableUpdate, currentlyRunning } = updates;
+
+    // STEP 1: Aggiornamento disponibile ma non ancora scaricato → scaricalo
+    if (isUpdateAvailable && !isUpdatePending && !fetchAttemptedRef.current) {
+      fetchAttemptedRef.current = true;
+      LoggingService.info('UpdateProvider', 'Aggiornamento disponibile, avvio download automatico...');
+      fetchUpdateAsync().catch((error) => {
+        LoggingService.error('UpdateProvider', 'Errore durante fetchUpdateAsync:', error);
+        fetchAttemptedRef.current = false; // Riprova al prossimo ciclo
+      });
+      return;
+    }
+
+    // STEP 2: Aggiornamento scaricato e pronto per l'installazione
     if (isUpdatePending && availableUpdate) {
       LoggingService.info('UpdateProvider', 'Aggiornamento scaricato, pronto per l\'installazione');
-      
-      // Fix accesso sicuro alle proprietà del manifest (il tipo esatto dipende dalla versione expo-updates)
-      const manifestAny = availableUpdate.manifest as any;
-      
+
+      const manifestAny = availableUpdate.manifest as Record<string, unknown> | undefined;
+
       const updateInfo: UpdateInfo = {
         isAvailable: true,
         isUpdatePending: true,
         currentVersion: currentlyRunning.updateId || 'unknown',
-        availableVersion: manifestAny?.extra?.version || manifestAny?.runtimeVersion || 'unknown',
+        availableVersion: (manifestAny?.extra as Record<string, unknown> | undefined)?.version as string || (manifestAny?.runtimeVersion as string) || 'unknown',
         manifest: availableUpdate.manifest as UpdateInfo['manifest'],
       };
-      
+
       setLastUpdateInfo(updateInfo);
       setIsDownloading(false);
-      
+
       if (settingsRef.current.autoInstallEnabled) {
         LoggingService.info('UpdateProvider', 'Auto-install abilitato, riavvio dell\'app...');
         reloadAsync();
@@ -139,7 +156,7 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
         setShowUpdateModal(true);
       }
     }
-  }, [updates.isUpdatePending, updates.availableUpdate, updates.currentlyRunning]);
+  }, [updates.isUpdateAvailable, updates.isUpdatePending, updates.availableUpdate, updates.currentlyRunning]);
 
   const loadSettings = async () => {
     try {
@@ -212,6 +229,12 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     try {
       const updateInfo = await UpdateService.checkForUpdate();
       setLastUpdateInfo(updateInfo);
+
+      // Se in modalità sviluppo, mostra un messaggio chiaro all'utente
+      if (updateInfo.isDevMode) {
+        showToast('Aggiornamenti non disponibili in modalità sviluppo', 'error');
+      }
+
       return updateInfo;
     } catch (error) {
       LoggingService.error('UpdateProvider', 'Errore durante check aggiornamenti:', error);
@@ -225,8 +248,15 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
    * Apre il modal degli aggiornamenti.
    * Se c'è già un update rilevato lo mostra, altrimenti esegue un check.
    * Essendo un'azione manuale, mostra sempre il modal se c'è un update disponibile.
+   * In modalità sviluppo, mostra un messaggio esplicito.
    */
   const openModal = async () => {
+    // Se in DEV mode, dai feedback immediato senza tentare il check
+    if (__DEV__) {
+      showToast('Aggiornamenti OTA non disponibili in modalità sviluppo. Usa una build di produzione.', 'error');
+      return;
+    }
+
     if (lastUpdateInfo?.isAvailable) {
       setShowUpdateModal(true);
     } else {

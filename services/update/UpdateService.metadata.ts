@@ -24,6 +24,8 @@ export interface UpdateInfo {
   currentVersion: string;
   availableVersion?: string;
   manifest?: ExpoUpdatesManifest;
+  /** True quando l'app è in modalità sviluppo (__DEV__) e gli aggiornamenti OTA non sono disponibili */
+  isDevMode?: boolean;
 }
 
 export interface UpdateSettings {
@@ -46,6 +48,7 @@ export class UpdateMetadataService {
         isAvailable: false,
         isUpdatePending: false,
         currentVersion: Constants.expoConfig?.version || '1.0.0',
+        isDevMode: true,
       };
     }
 
