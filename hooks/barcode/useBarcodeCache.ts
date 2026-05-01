@@ -23,12 +23,15 @@ export function useBarcodeCache() {
   }, []);
 
   const set = useCallback((barcode: string, result: ScanResult) => {
-    // Rimuovi il più vecchio se il limite è stato raggiunto
-    if (barcodeCache.current.size >= MAX_CACHE_SIZE) {
-      const firstKey = barcodeCache.current.keys().next().value;
-      barcodeCache.current.delete(firstKey);
-      LoggingService.debug('BarcodeScanner', `Cache limit reached, removed oldest entry: ${firstKey}`);
-    }
+     // Rimuovi il più vecchio se il limite è stato raggiunto
+     if (barcodeCache.current.size >= MAX_CACHE_SIZE) {
+       const iterator = barcodeCache.current.keys();
+       const firstEntry = iterator.next();
+       if (!firstEntry.done) {
+         barcodeCache.current.delete(firstEntry.value);
+         LoggingService.debug('BarcodeScanner', `Cache limit reached, removed oldest entry: ${firstEntry.value}`);
+       }
+     }
 
     barcodeCache.current.set(barcode, {
       timestamp: Date.now(),

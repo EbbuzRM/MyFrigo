@@ -24,10 +24,15 @@ interface FrameLayout {
 }
 
 export interface ScanResult {
-  type: 'template' | 'online' | 'not_found';
+  type?: 'template' | 'online' | 'not_found';
   data?: Partial<Product> | OpenFoodFactsProduct;
-  params: Partial<Product> & { barcodeType?: string; addedMethod?: string };
+  params?: Partial<Product> & { barcodeType?: string; addedMethod?: string };
   error?: string;
+  // Proprietà comuni per accesso rapido (derivate da data)
+  barcode?: string;
+  product_name?: string;
+  brand_name?: string;
+  image_url?: string;
 }
 
 export interface UseBarcodeScannerReturn {

@@ -39,7 +39,12 @@ export function useOpenFoodFactsApi() {
               reject(new Error('Prodotto non trovato nel database online'));
               return;
             }
-            resolve(jsonResponse.product);
+            // Aggiungi il barcode al product (l'API lo restituisce come 'code' nella response principale)
+            const productWithBarcode: OpenFoodFactsProduct = {
+              ...jsonResponse.product,
+              barcode: barcode, // Il barcode è il parametro della funzione
+            };
+            resolve(productWithBarcode);
           })
           .catch(error => {
             reject(error);
