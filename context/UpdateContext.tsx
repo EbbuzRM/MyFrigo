@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUpdates, reloadAsync } from 'expo-updates';
 import { UpdateService, UpdateInfo, UpdateSettings, UpdateEventEmitter } from '@/services/UpdateService';
 import { UpdateModal } from '@/components/UpdateModal';
 import { LoggingService } from '@/services/LoggingService';
@@ -50,12 +51,13 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
   const [lastUpdateInfo, setLastUpdateInfo] = useState<UpdateInfo | null>(null);
   const [settings, setSettings] = useState<UpdateSettings>(defaultSettings);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [modalUpdateInfo, setModalUpdateInfo] = useState<UpdateInfo | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
-  // Refs per timer cleanup
+  // FIX RADICE: Usa useUpdates() hook invece di addListener (deprecato in SDK 51+)
+  const updates = useUpdates();
+
+   // Refs per timer cleanup
   const showToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initAutoCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast(null);
@@ -81,10 +83,6 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     settingsRef.current = settings;
   }, [settings]);
 
-  // Traccia se l'app è stata riavviata di recente (per evitare check immediati)
-  const [justRestarted, setJustRestarted] = useState(true);
-  const appStartTime = useState(() => Date.now())[0];
-
   // Inizializza il servizio e carica impostazioni
   useEffect(() => {
     const initializeUpdateService = async () => {
@@ -92,12 +90,6 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
         await UpdateService.initialize();
         await loadSettings();
         setupEventListeners();
-
-        // Attendi 3 secondi prima di eseguire il check automatico - con cleanup
-        initAutoCheckTimeoutRef.current = setTimeout(async () => {
-          setJustRestarted(false);
-          await performAutoCheck();
-        }, 3000);
       } catch (error) {
         LoggingService.error('UpdateProvider', 'Errore durante l\'inizializzazione:', error);
       }
@@ -116,12 +108,38 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
       if (showToastTimeoutRef.current) {
         clearTimeout(showToastTimeoutRef.current);
       }
-      // Cleanup init auto-check timer
-      if (initAutoCheckTimeoutRef.current) {
-        clearTimeout(initAutoCheckTimeoutRef.current);
-      }
     };
   }, []);
+
+  // FIX RADICE: Monitora lo stato di useUpdates() invece di usare addListener deprecato
+  useEffect(() => {
+    const { isUpdatePending, availableUpdate, currentlyRunning } = updates;
+
+    if (isUpdatePending && availableUpdate) {
+      LoggingService.info('UpdateProvider', 'Aggiornamento scaricato, pronto per l\'installazione');
+      
+      // Fix accesso sicuro alle proprietà del manifest (il tipo esatto dipende dalla versione expo-updates)
+      const manifestAny = availableUpdate.manifest as any;
+      
+      const updateInfo: UpdateInfo = {
+        isAvailable: true,
+        isUpdatePending: true,
+        currentVersion: currentlyRunning.updateId || 'unknown',
+        availableVersion: manifestAny?.extra?.version || manifestAny?.runtimeVersion || 'unknown',
+        manifest: availableUpdate.manifest as UpdateInfo['manifest'],
+      };
+      
+      setLastUpdateInfo(updateInfo);
+      setIsDownloading(false);
+      
+      if (settingsRef.current.autoInstallEnabled) {
+        LoggingService.info('UpdateProvider', 'Auto-install abilitato, riavvio dell\'app...');
+        reloadAsync();
+      } else {
+        setShowUpdateModal(true);
+      }
+    }
+  }, [updates.isUpdatePending, updates.availableUpdate, updates.currentlyRunning]);
 
   const loadSettings = async () => {
     try {
@@ -160,7 +178,6 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
         // Usa il ref per evitare stale closure!
         const currentSettings = settingsRef.current;
         if (updateInfo.isAvailable && !currentSettings.autoInstallEnabled) {
-          setModalUpdateInfo(updateInfo);
           setShowUpdateModal(true);
         }
       }
@@ -204,31 +221,6 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     }
   };
 
-  const performAutoCheck = async () => {
-    const timeSinceStart = Date.now() - appStartTime;
-    if (timeSinceStart < 5000) return;
-
-    const currentSettings = settingsRef.current;
-    if (UpdateService.shouldCheckForUpdates(currentSettings)) {
-      try {
-        LoggingService.info('UpdateProvider', 'Esecuzione check automatico aggiornamenti...');
-        const updateInfo = await UpdateService.performAutoCheck(currentSettings);
-
-        if (updateInfo && updateInfo.isAvailable) {
-          setLastUpdateInfo(updateInfo);
-          if (!currentSettings.autoInstallEnabled) {
-            setModalUpdateInfo(updateInfo);
-            setShowUpdateModal(true);
-          }
-        } else {
-          setLastUpdateInfo(null);
-        }
-      } catch (error) {
-        LoggingService.error('UpdateProvider', 'Errore durante check automatico:', error);
-      }
-    }
-  };
-
   /**
    * Apre il modal degli aggiornamenti.
    * Se c'è già un update rilevato lo mostra, altrimenti esegue un check.
@@ -236,13 +228,11 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
    */
   const openModal = async () => {
     if (lastUpdateInfo?.isAvailable) {
-      setModalUpdateInfo(lastUpdateInfo);
       setShowUpdateModal(true);
     } else {
       try {
         const updateInfo = await checkForUpdates();
         if (updateInfo.isAvailable) {
-          setModalUpdateInfo(updateInfo);
           setShowUpdateModal(true);
         }
       } catch (error) {
@@ -253,12 +243,10 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
 
   const hideModal = () => {
     setShowUpdateModal(false);
-    setModalUpdateInfo(null);
   };
 
   const resetUpdateState = () => {
     setLastUpdateInfo(null);
-    setModalUpdateInfo(null);
     setShowUpdateModal(false);
   };
 
