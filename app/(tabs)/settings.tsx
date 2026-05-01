@@ -10,7 +10,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Toast } from '@/components/Toast';
 import { DiagnosticPanel } from '@/components/DiagnosticPanel';
 import { NotificationDaysModal } from '@/components/settings/NotificationDaysModal';
 import { VersionPressHandler } from '@/components/settings/VersionPressHandler';
