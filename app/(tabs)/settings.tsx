@@ -140,6 +140,10 @@ export default function Settings(): React.ReactElement {
   const handleCheckUpdates = useCallback(async () => {
     try {
       const updateInfo = await checkForUpdates();
+      if (updateInfo.isDevMode) {
+        // Il toast è già mostrato dal UpdateContext.checkForUpdates()
+        return;
+      }
       if (updateInfo.isAvailable) {
         showGlobalToast(`Aggiornamento disponibile: v${updateInfo.availableVersion}`, 'success');
         // Apre automaticamente il modal se viene trovato un aggiornamento manuale
