@@ -15,7 +15,7 @@ jest.mock('@/services/LoggingService', () => ({
 // Import dopo i mock per catturare il valore di MAX_CACHE_SIZE
 import { useBarcodeCache } from '../useBarcodeCache';
 import { renderHook, act } from '@testing-library/react-native';
-import { ScanResult } from '../useBarcodeScanner';
+import { ScanResult } from '../../useBarcodeScanner';
 
 // Costanti testabili (devono coincidere con il modulo)
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minuti
