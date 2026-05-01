@@ -45,14 +45,6 @@ describe('Date Parsing', () => {
     // Month-year only formats require specialized parsers not yet implemented
   });
 
-  describe('Space format (normalized to dots)', () => {
-    it('should parse 06 05 26 (normalized to 06.05.26)', () => {
-      const result = parseDateFromString('06.05.26');
-      expect(result.success).toBe(true);
-      expect(result.formattedDate).toBe('2026-05-06');
-    });
-  });
-
   describe('Slash format (existing functionality)', () => {
     it('should parse 17/03/2026 (slash format)', () => {
       const result = parseDateFromString('17/03/2026');

@@ -396,7 +396,7 @@ expect(result.success).toBe(false);
 
       const result = await ProductStorage.moveProductsToHistory(['id-1']);
       expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Move failed');
+      expect(result.error).toBe('Move failed');
     });
   });
 
@@ -476,7 +476,7 @@ expect(result.success).toBe(false);
 
       const result = await ProductStorage.restoreConsumedProduct('test-id');
       expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Restore failed');
+      expect(result.error).toBe('Restore failed');
     });
   });
 

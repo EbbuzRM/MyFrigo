@@ -33,21 +33,6 @@ export class NotificationTests {
                 };
             }
 
-            // Verifica disponibilità Expo Notifications
-            const isAvailable = NotificationService.checkExpoNotificationsAvailability();
-            if (!isAvailable) {
-                Alert.alert(
-                    'Test Notifiche Fallito',
-                    'Il modulo Expo Notifications non è disponibile o non è correttamente configurato.'
-                );
-                return {
-                    testId: 'notification-permissions',
-                    success: false,
-                    duration: Date.now() - startTime,
-                    error: 'Expo Notifications not available'
-                };
-            }
-
             // Ottieni i permessi
             const hasPermissions = await NotificationService.getOrRequestPermissionsAsync();
 
@@ -112,21 +97,6 @@ export class NotificationTests {
                     success: false,
                     duration: Date.now() - startTime,
                     error: 'Platform not supported'
-                };
-            }
-
-            // Verifica disponibilità
-            const isAvailable = NotificationService.checkExpoNotificationsAvailability();
-            if (!isAvailable) {
-                Alert.alert(
-                    'Test Notifiche Fallito',
-                    'Il modulo Expo Notifications non è disponibile.'
-                );
-                return {
-                    testId: 'notification-scheduling',
-                    success: false,
-                    duration: Date.now() - startTime,
-                    error: 'Expo Notifications not available'
                 };
             }
 

@@ -20,8 +20,10 @@ describe('useDashboardStats', () => {
             category: 'dairy',
             status: 'active',
             expirationDate: '2024-01-12', // Expires in 2 days -> expiring
+            purchaseDate: '2024-01-01',
+            addedMethod: 'manual',
             isFrozen: false,
-            quantities: { default: 1 }
+            quantities: [{ quantity: 1, unit: 'default' }]
         },
         {
             id: '2',
@@ -29,8 +31,10 @@ describe('useDashboardStats', () => {
             category: 'dairy',
             status: 'active',
             expirationDate: '2024-01-20', // Expires in 10 days -> not expiring (if limit is 7)
+            purchaseDate: '2024-01-01',
+            addedMethod: 'manual',
             isFrozen: false,
-            quantities: { default: 1 }
+            quantities: [{ quantity: 1, unit: 'default' }]
         },
         {
             id: '3',
@@ -38,8 +42,10 @@ describe('useDashboardStats', () => {
             category: 'dairy',
             status: 'active',
             expirationDate: '2024-01-08', // Expired 2 days ago
+            purchaseDate: '2024-01-01',
+            addedMethod: 'manual',
             isFrozen: false,
-            quantities: { default: 1 }
+            quantities: [{ quantity: 1, unit: 'default' }]
         },
         {
             id: '4',
@@ -47,8 +53,10 @@ describe('useDashboardStats', () => {
             category: 'vegetables',
             status: 'active',
             expirationDate: '2024-01-12', // Expires in 2 days but frozen
+            purchaseDate: '2024-01-01',
+            addedMethod: 'manual',
             isFrozen: true,
-            quantities: { default: 1 }
+            quantities: [{ quantity: 1, unit: 'default' }]
         },
         {
             id: '5',
@@ -57,8 +65,10 @@ describe('useDashboardStats', () => {
             status: 'consumed',
             expirationDate: '2024-01-12', // Expires in 2 days but consumed
             consumedDate: '2024-01-09',
+            purchaseDate: '2024-01-01',
+            addedMethod: 'manual',
             isFrozen: false,
-            quantities: { default: 1 }
+            quantities: [{ quantity: 1, unit: 'default' }]
         }
     ];
 
