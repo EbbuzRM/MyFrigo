@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { AppProviders } from '@/components/AppProviders';
 import { GlobalUpdateModal } from '@/components/GlobalUpdateModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Toast } from '@/components/Toast';
 import { useUpdate } from '@/context/UpdateContext';
 import { LoggingService } from '@/services/LoggingService';
 
@@ -25,6 +26,24 @@ function UpdateModalManager() {
       hideModal={hideModal}
       lastUpdateInfo={lastUpdateInfo}
       settings={settings}
+    />
+  );
+}
+
+/**
+ * Componente interno che gestisce il Toast globale.
+ * Deve essere renderizzato dentro <AppProviders> (dove si trova UpdateProvider)
+ * per poter chiamare useUpdate() correttamente.
+ */
+function ToastManager() {
+  const { toast, hideToast } = useUpdate();
+
+  return (
+    <Toast
+      message={toast?.message ?? ''}
+      visible={!!toast}
+      onDismiss={hideToast}
+      type={toast?.type ?? 'success'}
     />
   );
 }
@@ -75,6 +94,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="auto" />
           <UpdateModalManager />
+          <ToastManager />
         </AppProviders>
       </ErrorBoundary>
     </ThemeProvider>

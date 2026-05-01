@@ -56,19 +56,8 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
   // FIX RADICE: Usa useUpdates() hook invece di addListener (deprecato in SDK 51+)
   const updates = useUpdates();
 
-   // Refs per timer cleanup
-  const showToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast(null);
-    // Pulisci timer precedente se esiste
-    if (showToastTimeoutRef.current) {
-      clearTimeout(showToastTimeoutRef.current);
-      showToastTimeoutRef.current = null;
-    }
-    showToastTimeoutRef.current = setTimeout(() => {
-      setToast({ message, type });
-    }, 100);
+    setToast({ message, type });
   };
 
   const hideToast = () => {
@@ -104,10 +93,6 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
       UpdateEventEmitter.removeAllListeners('downloadError');
       UpdateEventEmitter.removeAllListeners('appRestarting');
       UpdateEventEmitter.removeAllListeners('restartError');
-      // Cleanup timer toast
-      if (showToastTimeoutRef.current) {
-        clearTimeout(showToastTimeoutRef.current);
-      }
     };
   }, []);
 
