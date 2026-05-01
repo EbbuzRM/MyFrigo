@@ -1,2 +1,0 @@
-{"v":2,"cmd":"plan-milestone","params":{"milestoneId":"M001"},"ts":"2026-04-23T17:07:56.490Z","actor":"agent","hash":"e7646f64e62daa33","session_id":"95c54089-054a-433c-af12-fb23f364e43e"}
-{"v":2,"cmd":"plan-slice","params":{"milestoneId":"M001","sliceId":"S01"},"ts":"2026-04-23T17:11:40.242Z","actor":"agent","hash":"b4e65a48e7b42f57","session_id":"95c54089-054a-433c-af12-fb23f364e43e"}
