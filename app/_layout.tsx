@@ -7,11 +7,27 @@ import SpaceMono from '../assets/fonts/SpaceMono-Regular.ttf';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AppProviders } from '@/components/AppProviders';
 import { GlobalUpdateModal } from '@/components/GlobalUpdateModal';
-import { Toast } from '@/components/Toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { UpdateInfo, UpdateSettings } from '@/services/UpdateService';
 import { useUpdate } from '@/context/UpdateContext';
 import { LoggingService } from '@/services/LoggingService';
+
+/**
+ * Componente interno che gestisce il modal degli aggiornamenti.
+ * Deve essere renderizzato dentro <AppProviders> (dove si trova UpdateProvider)
+ * per poter chiamare useUpdate() correttamente.
+ */
+function UpdateModalManager() {
+  const { showModal, hideModal, lastUpdateInfo, settings } = useUpdate();
+  
+  return (
+    <GlobalUpdateModal
+      showModal={showModal}
+      hideModal={hideModal}
+      lastUpdateInfo={lastUpdateInfo}
+      settings={settings}
+    />
+  );
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,6 +74,7 @@ export default function RootLayout() {
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
+          <UpdateModalManager />
         </AppProviders>
       </ErrorBoundary>
     </ThemeProvider>

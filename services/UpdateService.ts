@@ -5,12 +5,14 @@ import {
   UpdateMetadataService, 
   UpdateInfo, 
   UpdateSettings, 
-  ExpoUpdatesManifest 
+  ExpoUpdatesManifest,
+  DownloadProgress 
 } from './update/UpdateService.metadata';
-import { UpdateDownloadService, DownloadProgress } from './update/UpdateService.download';
+import { UpdateDownloadService } from './update/UpdateService.download';
 import { UpdateNotificationService, UpdateEventEmitter } from './update/UpdateService.notifications';
 
-export { ExpoUpdatesManifest, UpdateInfo, UpdateSettings, DownloadProgress, UpdateEventEmitter };
+export type { ExpoUpdatesManifest, UpdateInfo, UpdateSettings, DownloadProgress };
+export { UpdateEventEmitter };
 
 export class UpdateService {
   private static isInitialized = false;
@@ -52,12 +54,6 @@ export class UpdateService {
   static async checkForUpdate(forceCheck: boolean = false): Promise<UpdateInfo> {
     if (!this.isInitialized) await this.initialize();
 
-    const result = await UpdateMetadataService.checkAvailability(
-      this._isUpdatePending, 
-      this.isChecking, 
-      forceCheck
-    );
-
     if (Platform.OS !== 'web' && !__DEV__) {
       try {
         this.isChecking = true;
@@ -74,18 +70,25 @@ export class UpdateService {
         }
         return info;
       } catch (error) {
+        LoggingService.error('UpdateService', 'Errore durante checkForUpdate:', error);
         const errorInfo = {
           isAvailable: false,
           isUpdatePending: this._isUpdatePending,
-          currentVersion: (await UpdateMetadataService.checkAvailability(this._isUpdatePending, this.isChecking, forceCheck)).currentVersion,
+          currentVersion: 'unknown', // Non possiamo saperlo se il check è fallito
         };
         UpdateNotificationService.notifyUpdateError(errorInfo);
         return errorInfo;
       } finally {
         this.isChecking = false;
       }
+    } else {
+      // Web o DEV mode: chiama checkAvailability senza gestire stato/notifiche
+      return await UpdateMetadataService.checkAvailability(
+        this._isUpdatePending, 
+        this.isChecking, 
+        forceCheck
+      );
     }
-    return result;
   }
 
   static async downloadUpdate(onProgress?: (progress: DownloadProgress) => void): Promise<boolean> {
