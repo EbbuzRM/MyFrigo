@@ -1,5 +1,13 @@
+// usePhotoOCR.ts — usePhotoOCR module.
+//
+// exports: OCRResult | OCRProgress | usePhotoOCR
+// used_by: hooks\usePhotoActions.ts
+// rules:   Cannot call hooks outside of React component functions or custom hooks; `usePhotoOCR` return type and internal `parseBlocksForDate` signature must remain unchanged as they are consumed by `usePhotoActions`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback, useRef } from 'react';
-import TextRecognition, { TextRecognitionScript } from '@react-native-ml-kit/text-recognition';
+import TextRecognition, { TextRecognitionScript, TextBlock } from '@react-native-ml-kit/text-recognition';
 import { LoggingService } from '@/services/LoggingService';
 import { DATE_CONSTANTS } from '@/utils/dateUtils';
 import { OCRResult, OCRProgress } from '@/utils/ocr/types';
@@ -8,6 +16,7 @@ export type { OCRResult, OCRProgress };
 import { findAllMatches } from '@/utils/ocr/parsing';
 import { findSpatiallyAnchoredMatches } from '@/utils/ocr/spatial';
 import { selectBestDate } from '@/utils/ocr/scoring';
+import { ocrSpaceRecognize, convertOcrSpaceToTextBlocks } from '@/utils/ocr/ocrSpaceService';
 
 export const usePhotoOCR = () => {
   const [ocrProgress, setOcrProgress] = useState<OCRProgress>({
@@ -32,6 +41,32 @@ export const usePhotoOCR = () => {
     }
   }, []);
 
+  /**
+   * Runs the full parsing pipeline on TextBlocks: findAllMatches → spatial → scoring.
+   * Returns null if no valid date is found.
+   */
+  const parseBlocksForDate = useCallback((blocks: TextBlock[], rawText: string): OCRResult | null => {
+    const TAG = 'PhotoOCR';
+
+    const { matches, anchors } = findAllMatches(blocks);
+
+    if (matches.length === 0) {
+      LoggingService.info(TAG, 'No date matches found in blocks');
+      return null;
+    }
+
+    LoggingService.info(TAG, `Found ${matches.length} potential date matches`);
+
+    const anchoredValues = findSpatiallyAnchoredMatches(matches, anchors);
+    const result = selectBestDate(matches, anchoredValues, rawText);
+
+    if (result.success && result.extractedDate) {
+      return result;
+    }
+
+    return null;
+  }, []);
+
   const extractExpirationDate = useCallback(async (imageUri: string): Promise<OCRResult> => {
     const TAG = 'PhotoOCR';
     LoggingService.info(TAG, 'Starting OCR extraction');
@@ -48,44 +83,63 @@ export const usePhotoOCR = () => {
         const textRecognitionResult = await TextRecognition.recognize(imageUri, TextRecognitionScript.LATIN);
 
       if (!textRecognitionResult || !textRecognitionResult.blocks || textRecognitionResult.blocks.length === 0) {
-        LoggingService.warning(TAG, 'No text blocks found - OCR returned empty result');
-        clearTimers();
-        return { success: false, extractedDate: null, confidence: 0, rawText: '', error: 'Nessun testo rilevato' };
+        LoggingService.warning(TAG, 'No text blocks found by ML Kit — trying ocr.space fallback for dot matrix');
+      } else {
+        const totalBlocks = textRecognitionResult.blocks.length;
+        LoggingService.info(TAG, `ML Kit successful - Found ${totalBlocks} text blocks`);
+
+        // Log all detected blocks for debugging
+        textRecognitionResult.blocks.forEach((block, index) => {
+          LoggingService.debug(TAG, `Block ${index + 1}: "${block.text}"`);
+        });
+
+        setOcrProgress(prev => ({ ...prev, progress: 50, currentStep: 'Pulizia e analisi testo...' }));
+
+        const rawText = textRecognitionResult.blocks.map(b => b.text).join(' ');
+        const mlKitResult = parseBlocksForDate(textRecognitionResult.blocks, rawText);
+
+        if (mlKitResult) {
+          // ML Kit found a valid date — use it, no fallback needed
+          setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'Completato!' }));
+          clearTimers();
+          return mlKitResult;
+        }
+
+        // ML Kit found text but no valid dates — fall through to ocr.space
+        LoggingService.info(TAG, 'ML Kit found text but no valid dates — trying ocr.space fallback');
       }
 
-      const totalBlocks = textRecognitionResult.blocks.length;
-      LoggingService.info(TAG, `OCR successful - Found ${totalBlocks} text blocks`);
+      // === OCR.space fallback for dot-matrix text ===
+      setOcrProgress(prev => ({ ...prev, progress: 55, currentStep: 'Fallback dot-matrix...' }));
 
-      // Log all detected blocks for debugging
-      textRecognitionResult.blocks.forEach((block, index) => {
-        LoggingService.debug(TAG, `Block ${index + 1}: "${block.text}"`);
-      });
+      const ocrSpaceResponse = await ocrSpaceRecognize(imageUri);
 
-      setOcrProgress(prev => ({ ...prev, progress: 50, currentStep: 'Pulizia e analisi testo...' }));
+      if (ocrSpaceResponse) {
+        const ocrSpaceBlocks = convertOcrSpaceToTextBlocks(ocrSpaceResponse);
 
-      // 1. Parsing: Find all potential dates and anchors
-      const { matches, anchors } = findAllMatches(textRecognitionResult.blocks);
-      const rawText = textRecognitionResult.blocks.map(b => b.text).join(' ');
+        if (ocrSpaceBlocks.length > 0) {
+          LoggingService.info(TAG, `ocr.space found ${ocrSpaceBlocks.length} text blocks`);
 
-      if (matches.length === 0) {
-        LoggingService.info(TAG, `No date matches found in ${totalBlocks} blocks`);
-        clearTimers();
-        return { success: false, extractedDate: null, confidence: 0, rawText, error: 'Nessuna data rilevata' };
+          setOcrProgress(prev => ({ ...prev, progress: 75, currentStep: 'Analisi testo dot-matrix...' }));
+
+          const rawText = ocrSpaceBlocks.map(b => b.text).join(' ');
+          const fallbackResult = parseBlocksForDate(ocrSpaceBlocks, rawText);
+
+          if (fallbackResult) {
+            LoggingService.info(TAG, 'ocr.space fallback found a valid date');
+            setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'Completato!' }));
+            clearTimers();
+            return fallbackResult;
+          }
+
+          LoggingService.info(TAG, 'ocr.space fallback found text but no valid dates');
+        }
       }
 
-      LoggingService.info(TAG, `Found ${matches.length} potential date matches`);
-
-      setOcrProgress(prev => ({ ...prev, progress: 75, currentStep: 'Analisi spaziale...' }));
-
-      // 2. Spatial Analysis: Link dates to anchors
-      const anchoredValues = findSpatiallyAnchoredMatches(matches, anchors);
-
-      // 3. Scoring & Selection: Pick the best date
-      const result = selectBestDate(matches, anchoredValues, rawText);
-
-      setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'Completato!' }));
+      // Both ML Kit and ocr.space failed to find a date
+      LoggingService.info(TAG, 'No date found by either ML Kit or ocr.space');
       clearTimers();
-      return result;
+      return { success: false, extractedDate: null, confidence: 0, rawText: '', error: 'Nessuna data rilevata' };
 
     } catch (error) {
       LoggingService.error(TAG, 'Errore OCR:', error);
@@ -98,7 +152,7 @@ export const usePhotoOCR = () => {
         setOcrProgress({ isProcessing: false, progress: 0, currentStep: '' });
       }, 500);
     }
-  }, [clearTimers]);
+  }, [clearTimers, parseBlocksForDate]);
 
   const resetProgress = useCallback(() => {
     setOcrProgress({ isProcessing: false, progress: 0, currentStep: '' });

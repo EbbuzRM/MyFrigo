@@ -1,3 +1,13 @@
+// parsing.ts — parsing module.
+//
+// exports: findAllMatches
+// used_by: hooks\usePhotoOCR.ts
+// rules:   - OCR parsing module must maintain separation of concerns: preprocessing (text cleanup) and date pattern matching are distinct phases that must execute in sequence, not in parallel or combined.
+//          - All date pattern imports from `@/utils/datePatterns` must remain as an independent dependency; no date logic should be duplicated or embedded in this module.
+//          - The confidence-based block filtering must occur before any text extraction or pattern matching operations.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { DateMatch } from './types';
 import { cleanBlockText } from './preprocessing';
@@ -12,6 +22,19 @@ import {
     PARTIAL_DATE_PATTERN,
 } from '@/utils/datePatterns';
 import { LoggingService } from '@/services/LoggingService';
+
+const removeIgnoredDateContexts = (text: string): string => {
+    return text.replace(
+        /\b(?:CONF|CONE)\.?\s*[:.]?\s*\d{1,2}\s*[/\\\-.]\s*\d{1,2}(?:\s*[/\\\-.]\s*(?:\d{4}|\d{2}))?/gi,
+        ' '
+    ).replace(
+        // FIX: Expanded to cover LOTTO, LOT, LT, L: and L. with their number values.
+        // Handles formats like: "LOTTO 11.8", "LOT 02/05/2026", "LT:058", "L. 11.8"
+        // MUST run before cleanBlockText which would strip "LOTTO" via its L[A-Z0-9] regex.
+        /\b(?:LOTTO|LOT|LT|L[.:])\s*\d{1,4}(?:\s*[/\\\-.]\s*\d{1,4}){0,2}/gi,
+        ' '
+    );
+};
 
 /**
  * Parses OCR blocks to find date matches and expiration anchors.
@@ -34,12 +57,16 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
     const fullText = validBlocks.map(b => b.text).join(' \n ');
 
     const fullTextUpper = fullText.toUpperCase();
-    
+
     LoggingService.debug(TAG, `RAW Combined text: "${fullTextUpper.replace(/\n/g, ' ')}"`);
-    
-    const fullTextCleaned = cleanBlockText(fullTextUpper);
+
+    // FIX: removeIgnoredDateContexts runs BEFORE cleanBlockText so that "LOTTO" is still
+    // present in the text when the lot-exclusion regex tries to match it.
+    // cleanBlockText strips "LOTTO" via its \bL[A-Z0-9]{2,6}\b regex, which would make
+    // the lot filter ineffective and let lot numbers like "11.8" pass as date candidates.
+    const fullTextCleaned = cleanBlockText(removeIgnoredDateContexts(fullTextUpper));
     LoggingService.debug(TAG, `CLEANED Combined text: "${fullTextCleaned.replace(/\n/g, ' ')}"`);
-    
+
     // Helper to add matches from text and origin block
     const addMatchesFromText = (text: string, frame: any) => {
         // Textual Matches
@@ -139,20 +166,14 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
         const blockText = block.text.replace(/\n/g, ' ');
         const blockUpper = blockText.toUpperCase();
 
-        // Skip blocks containing "LOTTO" as they often contain incorrect date information
-        if (blockUpper.includes('LOTTO')) {
-            LoggingService.debug(TAG, `Skipping block with LOTTO: "${blockText}"`);
-            continue;
-        }
-
         // 1. Check for Anchors
         if (isExpirationAnchor(blockUpper)) {
             anchors.push(block);
             LoggingService.debug(TAG, `Anchor found: "${blockText}"`);
         }
 
-        // 2. Clean Text
-        const cleanedText = cleanBlockText(blockUpper);
+        // 2. Clean Text — removeIgnoredDateContexts BEFORE cleanBlockText (same reason as fullText)
+        const cleanedText = cleanBlockText(removeIgnoredDateContexts(blockUpper));
 
         // 3. Extract Dates from individual blocks
         addMatchesFromText(cleanedText, block.frame);

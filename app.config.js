@@ -1,3 +1,11 @@
+// app.config.js — app.config module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 module.exports = {
   expo: {
     name: "MyFrigo",
@@ -21,7 +29,8 @@ module.exports = {
       eas: {
         "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"
       },
-      oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || "***REMOVED***"
+      oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || "***REMOVED***",
+      ocrSpaceApiKey: process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY || ""
     },
     icon: "./assets/images/icon.png",
     splash: {
