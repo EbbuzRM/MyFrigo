@@ -1,3 +1,11 @@
+// useOpenFoodFactsApi.ts — useOpenFoodFactsApi module.
+//
+// exports: useOpenFoodFactsApi
+// used_by: hooks\useBarcodeScanner.ts
+// rules:   This module is a stateless React hook that wraps the Open Food Facts API; it must not introduce any local state or side effects beyond the fetch logic.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 import { OpenFoodFactsProduct } from '@/types/api';

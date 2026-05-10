@@ -1,3 +1,13 @@
+// caseConverter.ts — caseConverter module.
+//
+// exports: toCamelCase | toSnakeCase | convertObjectKeys | convertProductToCamelCase | convertProductToSnakeCase | convertCategoryToCamelCase | convertCategoryToSnakeCase | convertSettingsToCamelCase | convertSettingsToSnakeCase | convertTemplateToCamelCase | convertTemplateToSnakeCase | convertProductsToCamelCase | convertCategoriesToCamelCase
+// used_by: none
+// rules:   - All object key conversion functions must preserve recursive depth traversal for nested objects and arrays
+//          - The module must maintain bidirectional compatibility between snake_case (API/DB) and camelCase (application) key formats
+//          - Input validation with null/undefined checks must be performed before any key conversion operations
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { Product, ProductCategory } from '@/types/Product';
 import { AppSettings } from '@/services/SettingsService';
 import { ProductTemplate } from '@/services/TemplateService';

@@ -1,3 +1,13 @@
+// ExpirationCardHeader.tsx — ExpirationCardHeader module.
+//
+// exports: ExpirationCardHeader
+// used_by: components\ExpirationCard.tsx
+// rules:   - All component styles must be defined using `StyleSheet.create()` wrapped in `useMemo` hooks for performance optimization
+//          - All text styling must use `scaleFont()` utility for font sizes, not raw pixel values
+//          - All color values must be provided as props with dark mode variants, never hardcoded
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CategoryIcon } from './CategoryIcon';

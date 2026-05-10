@@ -1,3 +1,60 @@
+// Product.ts — Product module.
+//
+// exports: ISODateString | ProductStatus | AddMethod | NutritionalInfo | Quantity | Product | ProductSnakeCase | LocalIcon | ProductCategory | ProductFormState | ProductDetailState | IconData | ProductCategorySnakeCase | ProductForSupabase | PRODUCT_CATEGORIES
+// used_by: app\(tabs)\products.tsx
+//         app\consumed-list.tsx
+//         app\history-detail.tsx
+//         app\manage-categories.tsx
+//         app\manual-entry.tsx
+//         app\scanner.tsx
+//         components\CategoryFilter.tsx
+//         components\CategoryIcon.tsx
+//         components\ConsumeQuantityModal.tsx
+//         components\ExpirationCard.tsx
+//         components\ExpirationCardDetails.tsx
+//         components\ExpirationCardHeader.tsx
+//         components\HistoryCard.tsx
+//         components\HistoryCardDetails.tsx
+//         components\HistoryCardHeader.tsx
+//         components\HistoryStats.tsx
+//         components\ProductCard.tsx
+//         components\ProductCardDetails.tsx
+//         components\ProductCardHeader.tsx
+//         components\ProductDetailHeader.tsx
+//         components\ProductDetailInfo.tsx
+//         components\QuantityDisplay.tsx
+//         components\products\CategoryFilterBar.tsx
+//         components\products\ProductList.tsx
+//         context\CategoryContext.tsx
+//         context\ManualEntryActionsContext.tsx
+//         context\ManualEntryContext.tsx
+//         context\ProductContext.tsx
+//         context\__tests__\ProductContext.test.tsx
+//         hooks\__tests__\useDashboardStats.test.ts
+//         hooks\barcode\useLocalDatabaseLookup.ts
+//         hooks\useBarcodeScanner.ts
+//         hooks\useCategorySelection.ts
+//         hooks\useDashboardStats.ts
+//         hooks\useHistoryData.ts
+//         hooks\useProductActions.ts
+//         hooks\useProductDetail.ts
+//         hooks\useProductFilters.ts
+//         hooks\useProductInitialization.ts
+//         hooks\useProductSave.ts
+//         hooks\useQuantityCalculation.ts
+//         services\CategoryMatcher.ts
+//         services\CategoryService.ts
+//         services\ProductStorage.ts
+//         services\TemplateService.ts
+//         services\__tests__\StorageService.test.ts
+//         types\history.ts
+//         utils\accessibility\cards.ts
+//         utils\caseConverter.ts
+//         utils\historyCalculations.ts
+// rules:   This module is a shared type definitions hub; do not add runtime logic or side effects to this file. All exports must remain pure TypeScript types, interfaces, or const enums. Any new type added here must be accompanied by its corresponding snake_case variant and Supabase-compatible serialization type.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Rappresenta una data in formato ISO 8601 (YYYY-MM-DD)
  * @example "2023-12-31"

@@ -1,3 +1,15 @@
+// useCamera.ts — useCamera module.
+//
+// exports: CaptureMode | useCamera
+// used_by: app\photo-capture.tsx
+//         components\CameraView.tsx
+//         components\PhotoPreview.tsx
+//         hooks\usePhotoActions.ts
+// rules:   - This hook must remain a pure camera management layer, never containing UI rendering logic or business-specific image processing; all capture mode behaviors must be controlled by the consuming component.
+//          - Camera and gallery permissions must be requested separately and independently, never combined into a single permission request.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useRef, useCallback, useState, useEffect, RefObject } from 'react';
 import { Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -108,6 +120,7 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
        const result = await ImageManipulator.manipulateAsync(
          uri,
          [
+           { rotate: 0 },
            { crop: cropRect },
            { resize: { width: 1200 } }, // ✅ dimensione ottimale per ML Kit 
          ],
@@ -238,7 +251,9 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
         const asset = result.assets[0];
         LoggingService.info('useCamera', `Image selected from gallery: ${asset.uri} (${asset.width}x${asset.height})`);
 
-        const normalizedUri = await processGalleryImage(asset.uri);
+        const normalizedUri = captureMode === 'expirationDateOnly'
+          ? await prepareImageForOCR(asset.uri, asset.width, asset.height)
+          : await processGalleryImage(asset.uri);
         return normalizedUri;
       }
 
@@ -252,7 +267,7 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
       );
       return null;
     }
-  }, [processGalleryImage]);
+  }, [captureMode, prepareImageForOCR, processGalleryImage]);
 
   const hasCameraPermission = cameraPermission?.granted ?? false;
   const hasGalleryPermission = galleryPermission?.granted ?? false;

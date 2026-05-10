@@ -1,4 +1,14 @@
-import React from 'react';
+// DiagnosticPanel.tsx — DiagnosticPanel module.
+//
+// exports: DiagnosticPanel
+// used_by: app\(tabs)\settings.tsx
+// rules:   - All child diagnostic components (AuthTestSection, DatabaseTestSection, PerformanceTestSection, DiagnosticControls) must use the shared `useDiagnosticTests` hook for state management and test execution coordination.
+//          - All log operations must go through `LoggingService`; direct file system or storage access for logs is prohibited.
+//          - Theme dependency via `useTheme()` and `getStyles(isDarkMode)` must be consistently applied across all diagnostic sub-components.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useDiagnosticTests } from '@/hooks/useDiagnosticTests';
@@ -6,6 +16,7 @@ import { AuthTestSection } from '@/components/diagnostic/AuthTestSection';
 import { DatabaseTestSection } from '@/components/diagnostic/DatabaseTestSection';
 import { PerformanceTestSection } from '@/components/diagnostic/PerformanceTestSection';
 import { DiagnosticControls } from '@/components/diagnostic/DiagnosticControls';
+import { LoggingService } from '@/services/LoggingService';
 
 interface DiagnosticPanelProps {
   onClose: () => void;
@@ -20,6 +31,38 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
     runAllTests,
     runTest
   } = useDiagnosticTests();
+
+  const [logs, setLogs] = useState<string>('');
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const loadLogs = async () => {
+    try {
+      setLoadingLogs(true);
+      const logData = await LoggingService.getLogs();
+      setLogs(logData);
+    } catch (error) {
+      console.error('Errore nel caricamento dei log:', error);
+      setLogs('Errore nel caricamento dei log');
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const handleClearLogs = async () => {
+    try {
+      setLoadingLogs(true);
+      await LoggingService.clearLogs();
+      setLogs('');
+    } catch (error) {
+      console.error('Errore nella cancellazione dei log:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLogs();
+  }, []);
 
   const styles = getStyles(isDarkMode);
   const completedTests = results.length;
@@ -61,6 +104,22 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           results={results}
           isRunning={isRunning}
         />
+
+        {/* Log Viewer Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Log dell'App</Text>
+          <View style={styles.logControls}>
+            <TouchableOpacity style={styles.logButton} onPress={loadLogs} disabled={loadingLogs}>
+              <Text style={styles.logButtonText}>{loadingLogs ? 'Caricamento...' : 'Aggiorna Log'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.logButton, styles.clearButton]} onPress={handleClearLogs}>
+              <Text style={[styles.logButtonText, styles.clearButtonText]}>Cancella Log</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.logContainer}>
+            <Text style={styles.logText}>{logs || 'Nessun log disponibile'}</Text>
+          </View>
+        </View>
 
         <Text style={styles.infoText}>
           Questi test verificano il corretto funzionamento del sistema MyFrigo, inclusi autenticazione, inserimento prodotti,
@@ -135,8 +194,51 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   infoText: {
     fontSize: 14,
     color: isDarkMode ? '#8b949e' : '#64748b',
-    marginTop: 8, // Ridotto da 16 a 8 per avvicinare il testo
-    marginBottom: 16, // Aggiunto margine inferiore per separazione
+    marginTop: 8,
+    marginBottom: 16,
     lineHeight: 20,
+  },
+  section: {
+    marginVertical: 12,
+  },
+  logControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 8,
+  },
+  logButton: {
+    flex: 1,
+    backgroundColor: isDarkMode ? '#21262d' : '#e2e8f0',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
+    alignItems: 'center',
+  },
+  logButtonText: {
+    color: isDarkMode ? '#58a6ff' : '#3b82f6',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  clearButton: {
+    backgroundColor: isDarkMode ? '#da3633' : '#ef4444',
+    borderColor: isDarkMode ? '#f85149' : '#dc2626',
+  },
+  clearButtonText: {
+    color: '#ffffff',
+  },
+  logContainer: {
+    backgroundColor: isDarkMode ? '#161b22' : '#f1f5f9',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
+  },
+  logText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: isDarkMode ? '#c9d1d9' : '#1e293b',
+    lineHeight: 18,
   },
 });

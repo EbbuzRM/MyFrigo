@@ -1,3 +1,13 @@
+// HistoryCardStatus.tsx — HistoryCardStatus module.
+//
+// exports: HistoryStatus
+// used_by: components\HistoryCard.tsx
+// rules:   - The `StatusInfo` interface and status color objects (`CONSUMED_COLORS`, `EXPIRED_COLORS`) define the canonical data structure for status theming and must remain consistent across all status-related components
+//          - Theme colors are mapped exclusively through the `isDarkMode` boolean pattern; no additional theme provider or context should be introduced for status color resolution
+//          - Status text translations are centralized in `STATUS_TEXTS` record; inline status strings must not be used elsewhere in the module
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react-native';
 

@@ -1,3 +1,13 @@
+// useProductRefresh.ts — useProductRefresh module.
+//
+// exports: UseProductRefreshResult | UseProductRefreshParams | useProductRefresh
+// used_by: app\(tabs)\products.tsx
+// rules:   - Exported interfaces and functions must maintain backward compatibility as they are consumed by `app\(tabs)\products.tsx`.
+//          - The `AUTO_REFRESH_INTERVAL` constant (2 minutes) drives auto-refresh logic and should not be modified without updating all dependent timing calculations.
+//          - The hook's `refreshProductsFromContext` parameter is required and must always be provided by consumers.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback } from 'react';
 import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';

@@ -1,3 +1,13 @@
+// HistoryErrorState.tsx — HistoryErrorState module.
+//
+// exports: HistoryErrorState
+// used_by: app\(tabs)\history.tsx
+// rules:   - All UI components must accept an `isDarkMode` prop and use it to toggle between light/dark color schemes
+//          - Error states must always include a retry action with `onRetry` callback and display error text in a consistent error color
+//          - Font families must use Inter variants (Inter-Medium, Inter-Regular, etc.) consistently across all components
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 

@@ -1,3 +1,13 @@
+// ValidationCheck.tsx — ValidationCheck module.
+//
+// exports: ValidationCheckProps | ValidationCheck
+// used_by: app\signup.tsx
+// rules:   - The component must remain a stateless functional component without internal mutation or state management.
+//          - All visual customization must be controlled exclusively through props (`validColor`, `invalidColor`, `iconSize`), never via external theme or context overrides.
+//          - The `testID` prop must be forwarded and suffixed consistently to child elements (`-icon`, `-text`) for test accessibility.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';

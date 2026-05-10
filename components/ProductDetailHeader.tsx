@@ -1,3 +1,12 @@
+// ProductDetailHeader.tsx — ProductDetailHeader module.
+//
+// exports: ProductDetailHeader
+// used_by: none
+// rules:   - The product display name must always fallback to 'Nome non disponibile' if not a valid string, and must be guarded with typeof check before rendering.
+//          - Category icon rendering must follow strict priority: localIcon (Image source) > http icon (Image URI) > icon string as emoji text > fallback '?' character.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { memo } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

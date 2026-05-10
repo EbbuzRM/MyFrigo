@@ -1,3 +1,12 @@
+// api.ts — api module.
+//
+// exports: OpenFoodFactsProduct | OpenFoodFactsMappedProduct
+// used_by: hooks\barcode\useOpenFoodFactsApi.ts
+//         hooks\useBarcodeScanner.ts
+// rules:   Module defines public interfaces consumed across multiple hooks; do not rename or remove exported types without updating all consumers.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Type for products returned by the OpenFoodFacts API.
  * Based on the official API response structure.

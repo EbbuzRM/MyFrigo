@@ -1,3 +1,13 @@
+// UpdateService.download.ts — UpdateService.download module.
+//
+// exports: UpdateDownloadService
+// used_by: services\UpdateService.ts
+// rules:   - This module must remain stateless: all state dependencies (isInitialized, isDownloading, isUpdatePending) must be passed as parameters, never stored internally.
+//          - Platform-specific behavior (web/dev vs. native) must be handled via early return guards, not by branching the core download logic.
+//          - The download flow must always follow the sequential order: check availability → fetch update → report completion, with no reordering or skipping of steps.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { Platform } from 'react-native';
 import * as Updates from 'expo-updates';
 import { LoggingService } from '../LoggingService';

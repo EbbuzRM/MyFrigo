@@ -1,3 +1,11 @@
+// AuthContext.test.tsx — AuthContext.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { render, act, waitFor } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
@@ -26,6 +34,7 @@ jest.mock('expo-router', () => ({
 
 // Mock del Supabase client
 const mockGetSession = jest.fn();
+const mockGetCachedSession = jest.fn();
 const mockOnAuthStateChange = jest.fn();
 const mockSignOut = jest.fn();
 const mockFrom = jest.fn();
@@ -39,6 +48,7 @@ jest.mock('@/services/supabaseClient', () => ({
     },
     from: (table: string) => mockFrom(table),
   },
+  getCachedSession: () => mockGetCachedSession(),
 }));
 
 // --- Componente di Test ---
@@ -98,7 +108,7 @@ describe('AuthContext', () => {
     authCallback = null;
     
     // Setup default mock implementations
-    mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
+    mockGetCachedSession.mockResolvedValue({ data: { session: null }, error: null });
     mockOnAuthStateChange.mockImplementation((callback: Function) => {
       authCallback = callback;
       return {
@@ -134,10 +144,10 @@ describe('AuthContext', () => {
       expect(getByTestId('profile-name').props.children).toBe('null');
     });
 
-    it('dovrebbe chiamare getSession all\'inizializzazione', async () => {
+    it('dovrebbe chiamare getCachedSession all\'inizializzazione', async () => {
       renderAuthProvider();
       
-      expect(mockGetSession).toHaveBeenCalledTimes(1);
+      expect(mockGetCachedSession).toHaveBeenCalledTimes(1);
     });
 
     it('dovrebbe impostare loading false dopo l\'inizializzazione', async () => {
@@ -155,7 +165,7 @@ describe('AuthContext', () => {
       const mockUser = createMockUser('user-123');
       const mockSession = createMockSession(mockUser);
       
-      mockGetSession.mockResolvedValue({ 
+      mockGetCachedSession.mockResolvedValue({ 
         data: { session: mockSession }, 
         error: null 
       });
@@ -179,7 +189,7 @@ describe('AuthContext', () => {
       const mockUser = createMockUser('user-123');
       const mockSession = createMockSession(mockUser);
       
-      mockGetSession.mockResolvedValue({ 
+      mockGetCachedSession.mockResolvedValue({ 
         data: { session: mockSession }, 
         error: null 
       });
@@ -204,7 +214,7 @@ describe('AuthContext', () => {
       const mockUser = createMockUser('user-123');
       const mockSession = createMockSession(mockUser);
       
-      mockGetSession.mockResolvedValue({ 
+      mockGetCachedSession.mockResolvedValue({ 
         data: { session: mockSession }, 
         error: null 
       });
@@ -244,7 +254,7 @@ describe('AuthContext', () => {
       const mockUser = createMockUser('user-123');
       const mockSession = createMockSession(mockUser);
       
-      mockGetSession.mockResolvedValue({ 
+      mockGetCachedSession.mockResolvedValue({ 
         data: { session: mockSession }, 
         error: null 
       });
@@ -324,7 +334,7 @@ describe('AuthContext', () => {
       const mockUser = createMockUser('user-123');
       const mockSession = createMockSession(mockUser);
       
-      mockGetSession.mockResolvedValue({ 
+      mockGetCachedSession.mockResolvedValue({ 
         data: { session: mockSession }, 
         error: null 
       });
@@ -370,7 +380,7 @@ describe('AuthContext', () => {
       const mockUser = createMockUser('user-123');
       const mockSession = createMockSession(mockUser);
       
-      mockGetSession.mockResolvedValue({ 
+      mockGetCachedSession.mockResolvedValue({ 
         data: { session: mockSession }, 
         error: null 
       });
@@ -409,7 +419,7 @@ describe('AuthContext', () => {
       const mockUser = createMockUser('user-123');
       const mockSession = createMockSession(mockUser);
       
-      mockGetSession.mockResolvedValue({ 
+      mockGetCachedSession.mockResolvedValue({ 
         data: { session: mockSession }, 
         error: null 
       });

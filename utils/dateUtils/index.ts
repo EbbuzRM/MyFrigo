@@ -1,3 +1,13 @@
+// index.ts — index module.
+//
+// exports: DATE_CONSTANTS | DATE_FORMATS | MONTH_MAP | DateParseResult | DateParser | DateValidator | ParserConfig | validateYear | createDateValidator | normalizeTwoDigitYear | parseDateFromString | parseTextualMonthDate | parseSequenceDate | parseMonthYearDate | isDateInFuture | isDateTooOld | toLocalISOString | getLocalISODate | isDateWith31InShortMonth | sortDatesAscending
+// used_by: none
+// rules:   - Maintain the barrel export pattern: all public APIs must be re-exported from `index.ts` only, with no direct exports from submodules
+//          - All date parsing functions must return `DateParseResult` objects (with `success`, `date`, and `error` properties) rather than throwing exceptions or returning null
+//          - Locale-aware formatting and date input parsing must be handled at the application layer, not within this utility module
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Date utility functions - Barrel export.
  * @module dateUtils

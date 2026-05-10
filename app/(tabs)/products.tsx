@@ -1,3 +1,13 @@
+// products.tsx — products module.
+//
+// exports: ProductsScreen | function
+// used_by: none
+// rules:   - All product data mutations (consume, delete) must be performed through `useProductActions` hook, never directly on the `ProductContext`
+//          - Filtering logic (search, category, status) must remain delegated to dedicated hooks (`useProductSearch`, `useProductFilters`) and filter constants from `@/constants/productFilters`
+//          - Screen composition must follow the component hierarchy: ProductsHeader → SearchBar → StatusFilterBar → CategoryFilterBar → ProductList, with ConsumeQuantityModal overlay only
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

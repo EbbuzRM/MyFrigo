@@ -1,3 +1,13 @@
+// DiagnosticContext.tsx — DiagnosticContext module.
+//
+// exports: DiagnosticState | DiagnosticProvider | useDiagnosticContext
+// used_by: none
+// rules:   - All state mutations must go through the `diagnosticReducer` using the defined action types - direct state manipulation is prohibited
+//          - The `availableTests` field must be preserved when resetting state (RESET action) while all other fields revert to initial values
+//          - The context must always provide `state` object and all dispatcher functions (`setRunning`, `addResult`, `setResults`, `setAvailableTests`, `setError`) to consumers
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { TestResult, DiagnosticTest } from '@/hooks/useDiagnosticTests';
 

@@ -1,3 +1,14 @@
+// NotificationPermissionService.ts — NotificationPermissionService module.
+//
+// exports: NotificationPermissionService
+// used_by: services\NotificationCoreService.ts
+//         services\NotificationService.ts
+// rules:   - This module wraps expo-notifications and must NOT be bypassed for direct native permission calls — all permission checks must go through `NotificationPermissionService`.
+//          - The `availabilityChecked` and `availabilityResult` static cache must be invalidated if the module is re-initialized or if the platform context changes.
+//          - This service is consumed by `NotificationCoreService` and `NotificationService`; any changes to the public API must be reflected in both consumers.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Notification Permission Service
  * 

@@ -1,3 +1,11 @@
+// useDashboardStats.test.ts — useDashboardStats.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { renderHook } from '@testing-library/react-native';
 import { useDashboardStats } from '../useDashboardStats';
 import { Product } from '@/types/Product';

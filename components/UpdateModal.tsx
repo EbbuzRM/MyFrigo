@@ -1,3 +1,14 @@
+// UpdateModal.tsx — UpdateModal module.
+//
+// exports: UpdateModal
+// used_by: components\GlobalUpdateModal.tsx
+//         context\UpdateContext.tsx
+// rules:   - All child components (UpdateModalHeader, UpdateProgressBar, UpdateStatusMessage, UpdateActions) must remain as atomic, independently testable components with clearly defined interfaces
+//          - State management for download progress, installation status, and update status must be centralized in UpdateModal and passed down as props, never duplicated in child components
+//          - ResetAnimations must be called whenever the modal visibility changes to ensure consistent animation state
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View } from 'react-native';
 import * as Haptics from 'expo-haptics';

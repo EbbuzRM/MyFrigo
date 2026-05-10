@@ -1,3 +1,13 @@
+// GoogleLoginButton.tsx — GoogleLoginButton module.
+//
+// exports: GoogleLoginButton
+// used_by: app\login.tsx
+// rules:   - All UI components must support dark mode via the `useTheme()` context from `@/context/ThemeContext`
+//          - Social authentication buttons must display loading states and retry attempt indicators with their current attempt number
+//          - TouchableOpacity components must include `accessibilityLabel`, `accessibilityRole`, and `accessibilityState` props for accessibility compliance
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';

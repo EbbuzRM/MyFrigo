@@ -1,3 +1,13 @@
+// ProductCard.styles.ts — ProductCard.styles module.
+//
+// exports: getProductCardStyles | baseCardStyles | textStyles
+// used_by: components\ProductCard.tsx
+// rules:   - Exported style functions and objects must remain pure and stateless, accepting theme parameters at call time rather than module initialization
+//          - All shared compositional style objects (baseCardStyles, textStyles) must remain importable for external composition without requiring theme parameters
+//          - Style creation must use StyleSheet.create() exclusively; inline style objects or dynamic style generation outside of getProductCardStyles are prohibited
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet } from 'react-native';
 import { scaleFont } from '@/utils/scaleFont';
 import { COLORS } from '@/constants/colors';

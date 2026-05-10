@@ -1,3 +1,13 @@
+// useProductInitialization.ts — useProductInitialization module.
+//
+// exports: UseProductInitializationProps | UseProductInitializationReturn | useProductInitialization
+// used_by: hooks\useProductForm.ts
+// rules:   - The hook must receive `setIsLoading`, `categories`, and `categoriesLoading` as a single `UseProductInitializationProps` argument object; do not refactor to individual parameters.
+//          - The returned `UseProductInitializationReturn` object must expose exactly `productId`, `scannerDataKey`, `loadData`, and `guessCategory` as required by consumers.
+//          - All state management must flow through the `useManualEntry` context; do not introduce independent local state for form fields.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ProductStorage } from '@/services/ProductStorage';

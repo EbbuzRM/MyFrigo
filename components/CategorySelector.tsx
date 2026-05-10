@@ -1,3 +1,13 @@
+// CategorySelector.tsx — CategorySelector module.
+//
+// exports: CategorySelector
+// used_by: none
+// rules:   - This module renders a horizontal scrollable chip selector; any new props must maintain backward compatibility with the existing `CategorySelectorProps` interface.
+//          - The component is wrapped in `React.memo` and uses `useCallback` for the selection handler; preserve these performance optimizations when adding new functionality.
+//          - Theme dependency via `useTheme()` with `isDarkMode` is required for styling; all visual changes must derive from the `getStyles` helper.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

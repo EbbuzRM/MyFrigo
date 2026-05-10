@@ -1,3 +1,13 @@
+// UpdateStatusMessage.tsx — UpdateStatusMessage module.
+//
+// exports: UpdateStatusMessage
+// used_by: components\UpdateModal.tsx
+// rules:   - The `UpdateStatusMessage` component must remain a pure presentational component with no side effects or direct state management
+//          - All style dependencies must come exclusively from the injected `UpdateModalStyles` object, not from inline or local style definitions
+//          - The component's rendering logic must strictly follow the `UpdateStatus` union type defined in `UpdateModalHeader`, with no additional status values introduced
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text } from 'react-native';
 import Constants from 'expo-constants';

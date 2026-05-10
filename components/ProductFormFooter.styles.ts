@@ -1,3 +1,16 @@
+// ProductFormFooter.styles.ts — ProductFormFooter.styles module.
+//
+// exports: getStyles
+// used_by: components\DatePickerRow.tsx
+//         components\FormActionButtons.tsx
+//         components\ProductFormFooter.tsx
+//         components\QuantitySection.tsx
+// rules:   - All style objects must be generated via the `getStyles(isDarkMode: boolean)` factory function to support theme switching; direct `StyleSheet.create()` calls with static styles are not permitted.
+//          - Style properties using color values must reference the `isDarkMode` parameter to toggle between dark and light theme tokens consistently.
+//          - All exported styles must be consumed exclusively through the `getStyles()` return value; individual style objects or constants must not be exported directly.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet } from 'react-native';
 
 export const getStyles = (isDarkMode: boolean) =>

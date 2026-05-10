@@ -1,3 +1,13 @@
+// AccountSettingsSection.tsx — AccountSettingsSection module.
+//
+// exports: AccountSettingsSectionProps | AccountSettingsSection
+// used_by: app\(tabs)\settings.tsx
+// rules:   - The `SettingsSection` wrapper must not be removed or modified, as it provides consistent layout and title rendering for all settings sections.
+//          - The `cards` array must remain derived from `createAccountCards()` to ensure alignment with centralized settings card definitions.
+//          - All interactive elements must use the `SettingsCard` component for consistent styling and behavior across settings.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { SettingsCard } from '@/components/SettingsCard';
 import { SettingsSection } from './SettingsSection';

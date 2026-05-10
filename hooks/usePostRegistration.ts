@@ -1,3 +1,13 @@
+// usePostRegistration.ts — usePostRegistration module.
+//
+// exports: PostRegistrationCallbacks | usePostRegistration
+// used_by: hooks\useRegistration.ts
+// rules:   - This module is a pure side-effect hook that must not contain business logic or state management; it only orchestrates UI alerts and callback delegation based on RegistrationResult.
+//          - All user-facing strings and alert configurations must be sourced exclusively from AUTH_CONSTANTS, never hardcoded.
+//          - The callbacks parameter must remain immutable and provided externally; this module must not create or modify callbacks internally.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';

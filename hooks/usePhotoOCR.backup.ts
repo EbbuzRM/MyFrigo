@@ -1,3 +1,13 @@
+// usePhotoOCR.backup.ts — usePhotoOCR.backup module.
+//
+// exports: OCRResult | OCRProgress | usePhotoOCR
+// used_by: none
+// rules:   - This module must maintain its stateless hook architecture; all external dependencies (date parsing, pattern matching, confidence calculation) must remain imported as pure utility functions and not be inlined or duplicated.
+//          - The OCR progress state must remain a single React state object with required fields `isProcessing`, `progress`, and `currentStep`; partial or split state management is prohibited.
+//          - Pattern memoization using `useMemo` with stable regex construction from exported pattern objects must be preserved; direct inline regex literals or pattern mutations are not allowed.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback, useMemo } from 'react';
 import TextRecognition, { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { LoggingService } from '@/services/LoggingService';

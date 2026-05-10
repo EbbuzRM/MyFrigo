@@ -1,3 +1,11 @@
+// _layout.tsx — _layout module.
+//
+// exports: RootLayout | function
+// used_by: none
+// rules:   The `ThemeProvider`, `AppProviders`, and `ErrorBoundary` must wrap the entire navigation tree; any component using `useUpdate()` must be rendered as a child of `AppProviders`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';

@@ -1,3 +1,12 @@
+// useProductSearch.ts — useProductSearch module.
+//
+// exports: ProductStatusFilter | UseProductSearchResult | useProductSearch
+// used_by: app\(tabs)\products.tsx
+// rules:   - The debounced query state must remain synchronized with the search query state via a 300ms debounce timeout, and this debounce mechanism must not be altered or removed.
+//          - Search state management must be self-contained within the hook and must not directly depend on external state management or routing libraries.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 

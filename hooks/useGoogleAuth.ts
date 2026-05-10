@@ -1,3 +1,13 @@
+// useGoogleAuth.ts — useGoogleAuth module.
+//
+// exports: useGoogleAuth
+// used_by: app\login.tsx
+// rules:   - This hook depends on `GoogleAuthStorage`, `AuthAttemptRepository`, and `createGoogleAuthRetryManager` which must remain instantiated via `useMemo` with stable dependencies to preserve retry state across renders.
+//          - All exported functions must check `isMountedRef.current` before performing state updates to prevent memory leaks and state updates on unmounted components.
+//          - The `loading`, `googleRetryInProgress`, and `retryAttemptNumber` states must be managed through the `useGoogleAuthFeedback` handler for consistent UX feedback.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Alert, Platform, BackHandler } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';

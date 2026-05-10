@@ -1,3 +1,13 @@
+// ConsumeActions.tsx — ConsumeActions module.
+//
+// exports: ConsumeActions
+// used_by: components\ConsumeQuantityModal.tsx
+// rules:   - All style props (containerStyle, buttonStyle, cancelButtonStyle, confirmButtonStyle, disabledButtonStyle, buttonTextStyle, cancelButtonTextStyle) must remain as required external props and cannot be hardcoded inline
+//          - Accessibility attributes (accessibilityLabel, accessibilityRole, accessibilityState) must be preserved on all interactive elements, including disabled state indication
+//          - The `onCancel` and `onConfirm` callbacks must remain memoized via useCallback with correct dependency arrays
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback, useMemo } from 'react';
 import { TouchableOpacity, Text, View, ViewStyle, TextStyle } from 'react-native';
 import { CheckCircle } from 'lucide-react-native';

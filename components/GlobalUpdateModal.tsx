@@ -1,3 +1,11 @@
+// GlobalUpdateModal.tsx — GlobalUpdateModal module.
+//
+// exports: GlobalUpdateModal
+// used_by: app\_layout.tsx
+// rules:   - The `GlobalUpdateModal` uses absolute positioning with `Animated.View` to overlay all content, replacing React Native's native `Modal` component - any refactoring must maintain this overlay pattern to ensure the modal always renders above all other UI elements.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, TouchableOpacity, ViewStyle } from 'react-native';
 import { UpdateModal } from './UpdateModal';

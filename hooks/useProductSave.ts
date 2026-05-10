@@ -1,4 +1,12 @@
-import { useCallback, useRef } from 'react';
+// useProductSave.ts — useProductSave module.
+//
+// exports: UseProductSaveReturn | useProductSave
+// used_by: hooks\useProductForm.ts
+// rules:   The `formValuesRef` must be updated synchronously every render before any callback execution, and all form values must be accessed exclusively through this ref rather than direct state variables to ensure stale closure issues are avoided.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
+import { useCallback, useRef, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ProductStorage } from '@/services/ProductStorage';
@@ -28,41 +36,43 @@ export const useProductSave = (): UseProductSaveReturn => {
     isFrozen,
   } = useManualEntry();
 
-  // Ref per memorizzare i valori del form senza causare ricreazione della callback
-  const formValuesRef = useRef({
-    name,
-    brand,
-    selectedCategory,
-    quantities,
-    purchaseDate,
-    expirationDate,
-    notes,
-    barcode,
-    imageUrl,
-    isEditMode,
-    originalProductId,
-    clearForm,
-    isFrozen,
-    addedMethod: params.addedMethod,
-  });
+// Ref per memorizzare i valori del form senza causare ricreazione della callback
+   const formValuesRef = useRef({
+     name,
+     brand,
+     selectedCategory,
+     quantities,
+     purchaseDate,
+     expirationDate,
+     notes,
+     barcode,
+     imageUrl,
+     isEditMode,
+     originalProductId,
+     clearForm,
+     isFrozen,
+     addedMethod: params.addedMethod,
+   });
 
-  // Aggiorna il ref ad ogni cambio di stato
-  formValuesRef.current = {
-    name,
-    brand,
-    selectedCategory,
-    quantities,
-    purchaseDate,
-    expirationDate,
-    notes,
-    barcode,
-    imageUrl,
-    isEditMode,
-    originalProductId,
-    clearForm,
-    isFrozen,
-    addedMethod: params.addedMethod,
-  };
+   // Sincronizza il ref con i valori del form ad ogni render
+   useEffect(() => {
+     formValuesRef.current = {
+       name,
+       brand,
+       selectedCategory,
+       quantities,
+       purchaseDate,
+       expirationDate,
+       notes,
+       barcode,
+       imageUrl,
+       isEditMode,
+       originalProductId,
+       clearForm,
+       isFrozen,
+       addedMethod: params.addedMethod,
+     };
+   });
 
   const handleSaveProduct = useCallback(async () => {
     // Accedi ai valori correnti tramite il ref

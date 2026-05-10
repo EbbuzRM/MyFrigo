@@ -1,3 +1,13 @@
+// QuantityInputRow.tsx — QuantityInputRow module.
+//
+// exports: QuantityInputRow
+// used_by: components\QuantitySection.tsx
+// rules:   - All components in this module must preserve the `React.memo` wrapping and `useCallback` hooks for performance optimization, as quantity inputs re-render frequently during user interaction.
+//          - The `item.id` property is the immutable key for all quantity operations; any mutation or reassignment of this ID will break the update/remove logic across the module.
+//          - Any new UI controls added to the row must maintain the existing column layout structure and responsive sizing between the quantity input, unit selector, and remove button.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

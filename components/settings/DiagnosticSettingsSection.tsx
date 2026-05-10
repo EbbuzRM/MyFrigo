@@ -1,3 +1,13 @@
+// DiagnosticSettingsSection.tsx — DiagnosticSettingsSection module.
+//
+// exports: DiagnosticSettingsSectionProps
+// used_by: app\(tabs)\settings.tsx
+// rules:   - All settings sections (Notifications, Appearance, Data Management, Support) must be rendered as separate `<SettingsSection>` components with distinct `title` props, each containing their respective `<SettingsCard>` children
+//          - The component must maintain a flat prop interface without nesting related props into sub-objects, as all callbacks are passed directly at the top level
+//          - Settings card creation functions from `@/constants/settings` must be used to supply card configurations, not inline card definitions
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { Switch } from 'react-native';
 import { SettingsCard } from '@/components/SettingsCard';

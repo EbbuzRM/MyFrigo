@@ -1,3 +1,13 @@
+// HistoryCardDetails.tsx — HistoryCardDetails module.
+//
+// exports: HistoryCardDetails
+// used_by: components\HistoryCard.tsx
+// rules:   - All component styles must use `useMemo` with proper dependency arrays including `isDarkMode` and any dynamic color values
+//          - All text components must use `scaleFont()` for font sizing and specify explicit `fontFamily` values from the Inter font family
+//          - Spacing values must use the predefined `SPACING` object with keys `xs`, `sm`, `md`
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Calendar, Package, RotateCcw } from 'lucide-react-native';

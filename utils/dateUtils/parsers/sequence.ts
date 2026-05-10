@@ -1,3 +1,13 @@
+// sequence.ts — sequence module.
+//
+// exports: parseSequenceDate
+// used_by: none
+// rules:   - All date parsing functions must return `DateParseResult` type from `../constants`
+//          - Input normalization must strip separators (`.`, ` `, `/`, `\`, `-`) before validation
+//          - All parsed dates must be validated through `validateYear` and `isValid` before returning success
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Sequence date parsing (e.g., "150124" or "15012024").
  * @module dateUtils/parsers/sequence
@@ -16,20 +26,22 @@ const TAG = 'DateUtils';
  * @returns DateParseResult with parsed date or error
  */
 export function parseSequenceDate(sequence: string): DateParseResult {
-  if (!/^\d{6}$|^\d{8}$/.test(sequence)) {
+  const normalizedSequence = sequence.replace(/[.\s/\\-]/g, '');
+
+  if (!/^\d{6}$|^\d{8}$/.test(normalizedSequence)) {
     return { success: false, date: null, formattedDate: null, error: 'Invalid sequence format' };
   }
 
   let day: number, month: number, year: number;
 
-  if (sequence.length === 8) {
-    day = parseInt(sequence.substring(0, 2), 10);
-    month = parseInt(sequence.substring(2, 4), 10) - 1;
-    year = parseInt(sequence.substring(4, 8), 10);
+  if (normalizedSequence.length === 8) {
+    day = parseInt(normalizedSequence.substring(0, 2), 10);
+    month = parseInt(normalizedSequence.substring(2, 4), 10) - 1;
+    year = parseInt(normalizedSequence.substring(4, 8), 10);
   } else {
-    day = parseInt(sequence.substring(0, 2), 10);
-    month = parseInt(sequence.substring(2, 4), 10) - 1;
-    year = parseInt(sequence.substring(4, 6), 10);
+    day = parseInt(normalizedSequence.substring(0, 2), 10);
+    month = parseInt(normalizedSequence.substring(2, 4), 10) - 1;
+    year = parseInt(normalizedSequence.substring(4, 6), 10);
     year = normalizeTwoDigitYear(year);
   }
 

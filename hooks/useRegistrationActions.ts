@@ -1,3 +1,13 @@
+// useRegistrationActions.ts — useRegistrationActions module.
+//
+// exports: useEmailCheck | useUserProfileCreation | useAccountCreation
+// used_by: hooks\useRegistration.ts
+// rules:   - All authentication hooks must use `useCallback` with proper dependency arrays and must not mutate external state directly
+//          - Supabase client calls must always be wrapped in try-catch or error-checked, with errors logged via `LoggingService` using the `LOG_TAG` constant
+//          - Profile creation and email checking RPCs must be handled as separate, composable hooks rather than combined into a single function
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';

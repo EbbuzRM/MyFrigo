@@ -1,3 +1,14 @@
+// IconLoader.ts — IconLoader module.
+//
+// exports: IconData | IconLoader
+// used_by: services\IconMapper.ts
+//         services\IconService.ts
+// rules:   - Caching via AsyncStorage must be attempted before any Supabase fetch, with errors caught silently via LoggingService
+//          - The module must always use the 'icon' column (not 'icon_url') when querying categories table
+//          - Return type must always be `Promise<IconData[]>` and never throw exceptions to callers
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { supabase } from './supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { Database } from '@/types/supabase';

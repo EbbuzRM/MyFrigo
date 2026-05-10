@@ -1,3 +1,11 @@
+// useRegistration.ts — useRegistration module.
+//
+// exports: useRegistration | RegistrationData | RegistrationResult | UseRegistrationReturn
+// used_by: app\signup.tsx
+// rules:   This module's state management, orchestration, and side-effect hooks must remain separate and composable; do not merge state logic into the main `useRegistration` hook or inline orchestration steps into individual action hooks.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { RegistrationData, RegistrationResult, UseRegistrationReturn } from './useRegistration.types';
 import { useRegistrationState } from './useRegistrationState';

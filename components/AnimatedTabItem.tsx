@@ -1,3 +1,13 @@
+// AnimatedTabItem.tsx — AnimatedTabItem module.
+//
+// exports: AnimatedTabItem
+// used_by: components\AnimatedTabBar.tsx
+// rules:   - All Reanimated hooks (`useSharedValue`, `useAnimatedStyle`) must be called unconditionally at the top level of the component, never inside conditionals or callbacks
+//          - The `useReducedMotion` hook must be checked before any animation execution to respect accessibility preferences
+//          - `useTheme()` and `useReducedMotion()` must be called before any animation logic that depends on their values
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';

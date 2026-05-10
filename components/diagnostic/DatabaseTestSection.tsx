@@ -1,3 +1,13 @@
+// DatabaseTestSection.tsx — DatabaseTestSection module.
+//
+// exports: DatabaseTestSection
+// used_by: components\DiagnosticPanel.tsx
+// rules:   - Database test results must be filtered and displayed only for tests with `test.category === 'database'`, maintaining separation from other test categories
+//          - Test button states (success, error, loading) are mutually exclusive and controlled by result status and running state
+//          - The `onRunTest` callback must handle individual test IDs, not batch operations, since each test button triggers a single test run
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

@@ -1,3 +1,17 @@
+// UpdateModal.styles.ts — UpdateModal.styles module.
+//
+// exports: createUpdateModalStyles | UpdateModalStyles
+// used_by: components\UpdateActions.tsx
+//         components\UpdateModal.tsx
+//         components\UpdateModalHeader.tsx
+//         components\UpdateProgressBar.tsx
+//         components\UpdateStatusMessage.tsx
+// rules:   - All style properties must be derived from the `isDarkMode` parameter using the `createUpdateModalStyles` function; no hardcoded color or spacing values should be used outside this function.
+//          - The `Styles` interface and `colors` object must remain the single source of truth for all style properties and theme values across all update modal components.
+//          - Any new style variants must be added to the `Styles` interface and the `createUpdateModalStyles` function, not as separate inline styles.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet, Dimensions, ViewStyle, TextStyle } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');

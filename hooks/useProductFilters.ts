@@ -1,3 +1,11 @@
+// useProductFilters.ts — useProductFilters module.
+//
+// exports: UseProductFiltersParams | UseProductFiltersResult | useProductFilters
+// used_by: app\(tabs)\products.tsx
+// rules:   The hook must remain a pure computation with no side effects, API calls, or state mutations. All filtering logic must derive exclusively from the input parameters.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useMemo } from 'react';
 import { Product } from '@/types/Product';
 import { ProductStatusFilter, DEFAULT_NOTIFICATION_DAYS } from '@/constants/productFilters';

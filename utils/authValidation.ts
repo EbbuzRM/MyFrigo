@@ -1,3 +1,16 @@
+// authValidation.ts — authValidation module.
+//
+// exports: PasswordValidationResult | validatePassword | isPasswordValid | validateEmail
+// used_by: app\password-reset-form.tsx
+//         hooks\useSignupValidation.ts
+//         hooks\useSignupValidation.types.ts
+//         hooks\useSignupValidators.ts
+// rules:   - Password validation must always check all four criteria (length, uppercase, lowercase, digits) simultaneously, never allow partial validation
+//          - Email validation must use the defined regex pattern and cannot be modified without explicit architectural approval
+//          - All validation functions must remain pure, synchronous, and side-effect free
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Funzioni di utilità per la validazione dell'autenticazione
  */

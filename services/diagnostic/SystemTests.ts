@@ -1,3 +1,14 @@
+// SystemTests.ts — SystemTests module.
+//
+// exports: DiagnosticData | SystemTestResult | SystemTests
+// used_by: hooks\useDiagnosticTests.ts
+//         services\diagnostic\TestRunner.ts
+// rules:   - Do NOT convert static class methods to instance methods; this module is designed for stateless utility-style access throughout the app
+//          - All public API methods must return `SystemTestResult` with consistent timing via `Date.now()` at start and end of each operation
+//          - Network tests must use the shared `supabase` client from `@/services/supabaseClient`; do not create new connections
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { LoggingService } from '@/services/LoggingService';
 import { supabase } from '@/services/supabaseClient';
 import { SettingsService } from '@/services/SettingsService';

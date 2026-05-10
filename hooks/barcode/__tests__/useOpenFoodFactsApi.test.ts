@@ -1,3 +1,11 @@
+// useOpenFoodFactsApi.test.ts — useOpenFoodFactsApi.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Test per useOpenFoodFactsApi - Chiamate HTTP all'API Open Food Facts
  */
@@ -37,6 +45,7 @@ describe('useOpenFoodFactsApi', () => {
         it('should fetch product from API successfully', async () => {
             const mockProduct = {
                 code: testBarcode,
+                barcode: testBarcode,
                 product_name: 'Pasta Barilla',
                 brands: 'Barilla',
                 image_url: 'https://images.openfoodfacts.org/image.jpg',
@@ -46,7 +55,12 @@ describe('useOpenFoodFactsApi', () => {
                 ok: true,
                 json: () => Promise.resolve({
                     status: 1,
-                    product: mockProduct,
+                    product: {
+                        code: testBarcode,
+                        product_name: 'Pasta Barilla',
+                        brands: 'Barilla',
+                        image_url: 'https://images.openfoodfacts.org/image.jpg',
+                    },
                 }),
             });
 
@@ -76,6 +90,7 @@ describe('useOpenFoodFactsApi', () => {
         it('should return product when status is 1', async () => {
             const mockProduct = {
                 code: testBarcode,
+                barcode: testBarcode,
                 product_name: 'Test Product',
             };
 
@@ -83,7 +98,10 @@ describe('useOpenFoodFactsApi', () => {
                 ok: true,
                 json: () => Promise.resolve({
                     status: 1,
-                    product: mockProduct,
+                    product: {
+                        code: testBarcode,
+                        product_name: 'Test Product',
+                    },
                 }),
             });
 
@@ -100,6 +118,7 @@ describe('useOpenFoodFactsApi', () => {
 
             if (fetchResult && !fetchResult.error) {
                 expect(fetchResult.product_name).toBe('Test Product');
+                expect(fetchResult.barcode).toBe(testBarcode);
             }
         });
 
@@ -109,17 +128,15 @@ describe('useOpenFoodFactsApi', () => {
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            let errorResult: unknown = null;
-            await act(async () => {
-                try {
-                    await result.current.fetchProduct(testBarcode);
-                } catch (e) {
-                    errorResult = e;
-                }
+            // Avviamo la fetch
+            const fetchPromise = result.current.fetchProduct(testBarcode);
+            
+            // Avanziamo i timer per triggerare il timeout nel hook
+            act(() => {
+                jest.advanceTimersByTime(API_TIMEOUT + 100);
             });
 
-            expect(errorResult).not.toBeNull();
-            expect(errorResult instanceof Error ? errorResult.message : String(errorResult)).toBe('Timeout della richiesta API');
+            await expect(fetchPromise).rejects.toThrow('Timeout della richiesta API');
         });
 
         it('should return null on error', async () => {
@@ -127,17 +144,7 @@ describe('useOpenFoodFactsApi', () => {
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            let errorResult: unknown = null;
-            await act(async () => {
-                try {
-                    await result.current.fetchProduct(testBarcode);
-                } catch (e) {
-                    errorResult = e;
-                }
-            });
-
-            expect(errorResult).not.toBeNull();
-            expect(errorResult instanceof Error ? errorResult.message : String(errorResult)).toBe('Network error');
+            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Network error');
         });
 
         it('should reject when HTTP status is not ok', async () => {
@@ -148,17 +155,7 @@ describe('useOpenFoodFactsApi', () => {
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            let errorResult: unknown = null;
-            await act(async () => {
-                try {
-                    await result.current.fetchProduct(testBarcode);
-                } catch (e) {
-                    errorResult = e;
-                }
-            });
-
-            expect(errorResult).not.toBeNull();
-            expect(errorResult instanceof Error ? errorResult.message : String(errorResult)).toBe('Errore HTTP: 404');
+            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Errore HTTP: 404');
         });
 
         it('should reject when product not found in database', async () => {
@@ -172,17 +169,7 @@ describe('useOpenFoodFactsApi', () => {
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            let errorResult: unknown = null;
-            await act(async () => {
-                try {
-                    await result.current.fetchProduct(testBarcode);
-                } catch (e) {
-                    errorResult = e;
-                }
-            });
-
-            expect(errorResult).not.toBeNull();
-            expect(errorResult instanceof Error ? errorResult.message : String(errorResult)).toBe('Prodotto non trovato nel database online');
+            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Prodotto non trovato nel database online');
         });
 
         it('should reject when response is empty', async () => {
@@ -193,17 +180,7 @@ describe('useOpenFoodFactsApi', () => {
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            let errorResult: unknown = null;
-            await act(async () => {
-                try {
-                    await result.current.fetchProduct(testBarcode);
-                } catch (e) {
-                    errorResult = e;
-                }
-            });
-
-            expect(errorResult).not.toBeNull();
-            expect(errorResult instanceof Error ? errorResult.message : String(errorResult)).toBe('Risposta API vuota');
+            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Risposta API vuota');
         });
     });
 });

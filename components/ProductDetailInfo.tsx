@@ -1,3 +1,13 @@
+// ProductDetailInfo.tsx — ProductDetailInfo module.
+//
+// exports: ProductDetailInfo
+// used_by: none
+// rules:   - Module components must use `memo` for performance optimization and follow the established pattern of `const { isDarkMode } = useTheme()` with dynamic styles via `getStyles(isDarkMode)`
+//          - All textual fallbacks and date formatting must be in Italian (`it-IT` locale) with consistent "Data non disponibile" / "Data non valida" patterns
+//          - Icon imports from `lucide-react-native` must maintain consistent size (20) and color scheme based on `isDarkMode` with specific hex values
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { memo, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

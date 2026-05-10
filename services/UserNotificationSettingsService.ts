@@ -1,3 +1,12 @@
+// UserNotificationSettingsService.ts — UserNotificationSettingsService module.
+//
+// exports: UserNotificationSettings | UserNotificationSettingsService
+// used_by: services\OneSignalService.ts
+//         services\SettingsService.ts
+// rules:   This module must always handle the case where no database row exists for a userId by creating default settings (PGRST116 → ensureSettings). All external callers should interact only through the exported class and interface; the `supabase` client must never be referenced directly from outside this module.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * UserNotificationSettingsService
  *

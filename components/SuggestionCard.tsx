@@ -1,3 +1,13 @@
+// SuggestionCard.tsx — SuggestionCard module.
+//
+// exports: SuggestionCard
+// used_by: components\history\HistorySuggestions.tsx
+// rules:   - All component styles must use `StyleSheet.create()` and theme colors from `useTheme()` hook for dark mode support
+//          - Icon components must be imported from `lucide-react-native` and size must be passed as numeric prop
+//          - All file-level console/logging must use `LoggingService` instead of direct console methods
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

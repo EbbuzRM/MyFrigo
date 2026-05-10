@@ -1,3 +1,11 @@
+// NotificationCoreService.ts — NotificationCoreService module.
+//
+// exports: NotificationCoreService
+// used_by: services\NotificationService.ts
+// rules:   This module is a slimmed-down diagnostic layer; no scheduling or cancellation logic should be re-added here, as those responsibilities have been permanently offloaded to the server-side Edge Function.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * NotificationCoreService
  *

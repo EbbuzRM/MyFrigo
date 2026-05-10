@@ -1,3 +1,13 @@
+// PerformanceTestSection.tsx — PerformanceTestSection module.
+//
+// exports: PerformanceTestSection
+// used_by: components\DiagnosticPanel.tsx
+// rules:   - Use `useTheme()` hook for all color/style decisions, accessing `isDarkMode` to generate dynamic styles via `getStyles()`
+//          - All performance test data must be filtered by `test.category === 'performance' || test.category === 'system'`
+//          - Test result UI states must handle three visual variants: success, error, and loading (with disabled interaction during loading)
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

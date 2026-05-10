@@ -1,3 +1,13 @@
+// complete-profile.tsx — complete-profile module.
+//
+// exports: CompleteProfileScreen | function
+// used_by: none
+// rules:   - This module depends on `updateProfile` from `AuthContext`; any changes to this dependency must preserve its contract and side effect (auto-navigation upon profile completion).
+//          - All user-facing strings must remain in Italian (e.g., 'Attenzione', 'Completa il Tuo Profilo').
+//          - The screen is a standalone modal for first-time profile setup; do not merge it into other navigation flows or add new routes.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState } from 'react';
 import { Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

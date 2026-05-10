@@ -1,3 +1,12 @@
+// CategoryFilterBar.tsx — CategoryFilterBar module.
+//
+// exports: CategoryFilterBar
+// used_by: app\(tabs)\products.tsx
+// rules:   - Category toggle logic must preserve the "all" selection state behavior: selecting "all" resets to only "all", and deselecting all individual categories falls back to "all"
+//          - LoggingService must be used for all user interaction logging with consistent component identifier as first argument
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Product, ProductCategory } from '@/types/Product';

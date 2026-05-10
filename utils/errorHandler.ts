@@ -1,3 +1,15 @@
+// errorHandler.ts — errorHandler module.
+//
+// exports: createError | handleError | handleValidationError | normalizeError | handleNetworkErrorCompat | handleDatabaseErrorCompat | handleAuthErrorCompat | ErrorCode | getErrorCategory | isErrorCategory | ErrorCategory | AppError | ErrorConfig | hasErrorCode | hasErrorMessage | isNetworkError | isStandardError | extractErrorMessage | extractErrorCode | handleNetworkError | (+18 more)
+// used_by: utils\AuthErrorHandler.ts
+//         utils\DatabaseErrorHandler.ts
+//         utils\NetworkErrorHandler.ts
+// rules:   - All error handling must go through this module as the single facade entry point; specialized handlers (NetworkErrorHandler, DatabaseErrorHandler, AuthErrorHandler) must not be imported directly by other modules.
+//          - The ErrorCode enum and ErrorCategory types are defined externally in '../types/errorCodes' and must remain in sync with this module's error creation and categorization logic.
+//          - Every public export function must have a corresponding import from a specialized handler or formatter; the facade pattern must be consistently maintained.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * @fileoverview Centralized error handler - Facade pattern.
  * Aggregates specialized error handlers and provides a unified interface.

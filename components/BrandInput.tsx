@@ -1,3 +1,13 @@
+// BrandInput.tsx — BrandInput module.
+//
+// exports: BrandInput
+// used_by: components\ProductFormHeader.tsx
+// rules:   - The module exports a single memoized React component (`BrandInput`) as default; any re-export or additional exports must maintain backward compatibility
+//          - The component depends on `useTheme` from `@/context/ThemeContext` and `getInputStyles` from `./ProductFormHeader.styles` — these imports must remain valid and unchanged unless the theme system is globally refactored
+//          - Props interface (`BrandInputProps`) defines the public API; adding required props will break existing consumers
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { TextInput, Text } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

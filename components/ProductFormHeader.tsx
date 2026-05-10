@@ -1,3 +1,12 @@
+// ProductFormHeader.tsx — ProductFormHeader module.
+//
+// exports: ProductFormHeader
+// used_by: app\manual-entry.tsx
+// rules:   - This module's props are organized into four strict interface groups (ProductData, FormActions, PhotoConfig, FormData) that must remain as flat property names when accessed in JSX — do not nest or rename these groups.
+//          - Sub-components (PhotoCaptureButton, ProductNameInput, BrandInput) are extracted and imported separately; any new header functionality must be added via new sub-components, not inline within ProductFormHeader.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { Text, TextInput, Switch, View } from 'react-native';
 import { router } from 'expo-router';

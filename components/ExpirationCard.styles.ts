@@ -1,3 +1,11 @@
+// ExpirationCard.styles.ts — ExpirationCard.styles module.
+//
+// exports: getExpirationCardStyles | getExpirationCardColors
+// used_by: components\ExpirationCard.tsx
+// rules:   Export function signatures must remain unchanged to preserve the expected consumer interface used by `components\ExpirationCard.tsx`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet } from 'react-native';
 import { scaleFont } from '@/utils/scaleFont';
 

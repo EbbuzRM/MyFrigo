@@ -1,3 +1,15 @@
+// NetworkErrorHandler.ts — NetworkErrorHandler module.
+//
+// exports: isSessionExpired | isUnauthorized | handleNetworkConnectionError | handleTimeoutError | handleServiceUnavailableError | handleNetworkError
+// used_by: utils\errorHandler.ts
+// rules:   Based on the provided source context, the module implements a Strategy pattern for network error handling with standardized error creation and code-based error identification.
+//          ```yaml
+//          - All error handling functions must use the centralized createError utility with ErrorCode enum values
+//          - Error identification functions must implement type-safe checks using the provided type guards (hasErrorMessage, hasErrorCode, isNetworkError) before accessing error properties
+//          ```
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * @fileoverview Network error handler using Strategy pattern.
  * Handles connection errors, timeouts, and network-related failures.

@@ -1,3 +1,12 @@
+// DiagnosticWrapper.tsx — DiagnosticWrapper module.
+//
+// exports: DiagnosticWrapper | TestResultIndicator
+// used_by: none
+// rules:   - This component must maintain the error-first rendering pattern: always render error state before loading state before children state, in that exact priority order.
+//          - All visual styling must be derived from the `useTheme` hook via the `getStyles(isDarkMode)` factory pattern, never using hardcoded color values outside of theme configuration.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { ReactNode, memo, useMemo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

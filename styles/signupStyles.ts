@@ -1,3 +1,12 @@
+// signupStyles.ts — signupStyles module.
+//
+// exports: signupStyles
+// used_by: app\signup.tsx
+// rules:   - All style definitions must remain as a single StyleSheet.create() object; individual style properties should not be extracted into separate style objects or spread across multiple StyleSheet declarations.
+//          - Exported style object name `signupStyles` must remain unchanged, as it is consumed by `app/signup.tsx`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet } from 'react-native';
 
 export const signupStyles = StyleSheet.create({

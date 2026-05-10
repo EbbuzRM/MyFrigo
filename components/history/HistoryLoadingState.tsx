@@ -1,3 +1,11 @@
+// HistoryLoadingState.tsx — HistoryLoadingState module.
+//
+// exports: HistoryLoadingState
+// used_by: app\(tabs)\history.tsx
+// rules:   This component must accept an `isDarkMode` prop to apply theme-consistent colors; all text elements must use the Inter font family with consistent typography (Inter-Medium for primary text, Inter-Regular for secondary text).
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 

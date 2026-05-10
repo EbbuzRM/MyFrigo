@@ -1,3 +1,12 @@
+// EventEmitter.ts — EventEmitter module.
+//
+// exports: EventEmitter | eventEmitter
+// used_by: services\NotificationService.ts
+// rules:   - Maintain module-level singleton state: all listeners are stored in a module-scoped object, not instance-scoped
+//          - Event names should follow domain:action naming convention (e.g., `product:expired`) for consistency across the codebase
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * EventEmitter Service
  * 

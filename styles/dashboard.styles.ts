@@ -1,3 +1,11 @@
+// dashboard.styles.ts — dashboard.styles module.
+//
+// exports: getStyles
+// used_by: app\(tabs)\index.tsx
+// rules:   This module exports a factory function (`getStyles`) that takes `isDarkMode` as a parameter — all style consumers must call this function rather than importing static styles.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet } from 'react-native';
 
 export const getStyles = (isDarkMode: boolean) => StyleSheet.create({

@@ -1,3 +1,14 @@
+// history.ts — history module.
+//
+// exports: SuggestionType | Suggestion | HistoryStatsData | HistoryCalculationResult | HistoryLoadingState | UseHistoryDataReturn
+// used_by: components\history\HistorySuggestions.tsx
+//         hooks\useHistoryData.ts
+//         utils\historyCalculations.ts
+// rules:   - Module must maintain strict separation between types, data fetching (hooks/useHistoryData.ts), and computation (utils/historyCalculations.ts) - no business logic in types
+//          - All interfaces must remain exported as they are consumed by three separate modules (components, hooks, utils)
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * History Module Types
  * @module types/history

@@ -1,3 +1,11 @@
+// cards.ts — cards module.
+//
+// exports: ExpirationStatus | getProductCardAccessibilityProps | getSettingsCardAccessibilityProps | getStatsCardAccessibilityProps | getExpirationCardAccessibilityProps
+// used_by: none
+// rules:   No architectural constraints detected for this module.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Card accessibility utilities for React Native
  * @module utils/accessibility/cards

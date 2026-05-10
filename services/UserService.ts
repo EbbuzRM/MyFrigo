@@ -1,3 +1,13 @@
+// UserService.ts — UserService module.
+//
+// exports: UserProfile | UserService
+// used_by: none
+// rules:   - Do not expose UserService state or construct instances; all access is through static methods only.
+//          - Keep UserProfile as a pure data interface; avoid adding methods, getters, or setters to it.
+//          - Maintain the existing placeholder pattern for unimplemented methods: log via LoggingService and return null/void rather than throwing.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { LoggingService } from './LoggingService';
 
 /**

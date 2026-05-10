@@ -1,3 +1,13 @@
+// QuantityButton.tsx — QuantityButton module.
+//
+// exports: QuantityButton
+// used_by: components\QuantityInputRow.tsx
+// rules:   - The component uses `AnimatedPressable` for all pressable interactions; the `disabled` prop must be passed to this inner component, not just the container style.
+//          - Theme context (`useTheme`) provides styling via `getStyles` function, which must remain memoized or called inline to react to theme changes.
+//          - Accessibility props (`accessibilityLabel`, `accessibilityState`) must be set based on `operation` and `disabled` props to comply with React Native accessibility standards.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';

@@ -1,3 +1,15 @@
+// productFilters.ts — productFilters module.
+//
+// exports: ProductStatusFilter | StatusFilterConfig | STATUS_FILTERS | DEFAULT_NOTIFICATION_DAYS | AUTO_REFRESH_INTERVAL
+// used_by: app\(tabs)\products.tsx
+//         components\products\StatusFilterBar.tsx
+//         hooks\useProductFilters.ts
+// rules:   - Adding new product status filter categories requires extending both the `ProductStatusFilter` type union and the `STATUS_FILTERS` constant array in tandem to maintain type safety.
+//          - All filter keys must have corresponding entries in `StatusFilterConfig` with valid label and accessibilityLabel properties for UI rendering.
+//          - Any changes to filter configurations must keep the 'all' key as the first entry and default filter option.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Status filter types for product filtering
  */

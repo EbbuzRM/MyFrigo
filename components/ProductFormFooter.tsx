@@ -1,3 +1,11 @@
+// ProductFormFooter.tsx — ProductFormFooter module.
+//
+// exports: ProductFormFooter
+// used_by: app\manual-entry.tsx
+// rules:   - The `ProductFormFooter` component receives form state and handlers via props and must remain a controlled, purely presentational component with no direct access to context or state management.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { View, Text, TextInput, AccessibilityProps } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

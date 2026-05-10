@@ -1,3 +1,13 @@
+// IconMapper.ts — IconMapper module.
+//
+// exports: IconMapper
+// used_by: services\IconService.ts
+// rules:   - This module is a pure utility object with no internal state; all mutations must be performed via exported functions only.
+//          - The `IconMapper` object must not be extended with methods that create side effects outside the module boundary.
+//          - All exported functions must maintain synchronous, stateless behavior; async or stateful additions require explicit architectural review.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { IconData } from './IconLoader';
 
 export const IconMapper = {

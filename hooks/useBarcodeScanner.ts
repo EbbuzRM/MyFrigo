@@ -1,3 +1,13 @@
+// useBarcodeScanner.ts — useBarcodeScanner module.
+//
+// exports: ScanResult | UseBarcodeScannerReturn | extractProductName | extractBrand | extractImageUrl | useBarcodeScanner
+// used_by: app\scanner.tsx
+// rules:   - All scanner hooks (useBarcodeCache, useOpenFoodFactsApi, useLocalDatabaseLookup) must be consumed through this module's exports only, never directly imported in other files
+//          - The ScanResult interface defines the canonical return type; all scan resolution paths must produce a result conforming to this interface without adding custom properties
+//          - Camera permission management is exclusively handled through this hook; no other module should request or manage camera permissions independently
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCameraPermissions, PermissionResponse } from 'expo-camera';
 import { CategoryMatcher } from '@/services/CategoryMatcher';

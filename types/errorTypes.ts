@@ -1,7 +1,12 @@
-/**
- * @fileoverview Type definitions and type guards for application errors.
- * Provides standardized error structures and utilities for type checking.
- */
+// errorTypes.ts — errorTypes module.
+//
+// exports: AppError | ErrorConfig | CodeError | MessageError | NetworkError | hasErrorCode | hasErrorMessage | isNetworkError | isStandardError | extractErrorMessage | extractErrorCode
+// used_by: none
+// rules:   All error interfaces must extend a base interface (AppError or CodeError) to maintain structural hierarchy; type guards must use the `is` return type syntax for proper TypeScript narrowing.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
+/** @fileoverview Type definitions and type guards for application errors. */
 
 import { ErrorCode } from './errorCodes';
 

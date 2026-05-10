@@ -1,3 +1,21 @@
+// AuthContext.tsx — AuthContext module.
+//
+// exports: useAuth | AuthProvider
+// used_by: app\(tabs)\index.tsx
+//         app\complete-profile.tsx
+//         app\index.tsx
+//         app\profile.tsx
+//         components\AppProviders.tsx
+//         context\CategoryContext.tsx
+//         context\ProductContext.tsx
+//         context\SettingsContext.tsx
+//         hooks\useDiagnosticTests.ts
+//         hooks\useGoogleAuth.ts
+// rules:   - All Supabase authentication operations must be handled exclusively through this context to maintain a single source of truth for user session and profile data
+//          - Session and user state initialization must occur before any child component mounts; do not modify the auth flow without ensuring the loading state properly gates rendering
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, getCachedSession } from '@/services/supabaseClient';

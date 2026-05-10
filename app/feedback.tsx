@@ -1,3 +1,13 @@
+// feedback.tsx — feedback module.
+//
+// exports: FeedbackScreen
+// used_by: none
+// rules:   - All Supabase interactions and file system operations must be wrapped in try-catch blocks with error logging via LoggingService
+//          - Image picker results must always validate `result.canceled` and `result.assets` array before accessing URIs
+//          - Theme-dependent styles must be computed using `useMemo` with `isDarkMode` as dependency
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useMemo } from 'react';
 import {
   View,

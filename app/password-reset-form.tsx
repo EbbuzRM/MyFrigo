@@ -1,3 +1,13 @@
+// password-reset-form.tsx — password-reset-form module.
+//
+// exports: PasswordResetForm | function
+// used_by: none
+// rules:   - The module expects a valid Supabase session to be established via `supabase.auth.getSession()` or server confirmation before allowing password reset; always verify `session` is not null before rendering form.
+//          - Password validation must use `validatePassword` and `isPasswordValid` from `@/utils/authValidation`; never bypass or inline custom validation logic.
+//          - The `serverConfirmed` ref must be checked to avoid race conditions between session recovery and user interaction.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { supabase } from '@/services/supabaseClient';

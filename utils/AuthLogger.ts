@@ -1,3 +1,15 @@
+// AuthLogger.ts — AuthLogger module.
+//
+// exports: AuthLogger | authLogger
+// used_by: hooks\useGoogleAuth.ts
+//         services\AuthService.ts
+//         services\diagnostic\AuthTests.ts
+//         services\diagnostic\__tests__\AuthTests.test.ts
+//         utils\DiagnosticTester.ts
+// rules:   The module must maintain singleton pattern enforcement and ensure all auth process logging is chronologically sequential, with each step having a clear start/end pairing and status.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { LoggingService } from '@/services/LoggingService';
 
 /**

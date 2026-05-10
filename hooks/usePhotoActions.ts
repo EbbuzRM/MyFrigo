@@ -1,3 +1,12 @@
+// usePhotoActions.ts — usePhotoActions module.
+//
+// exports: ConfirmPhotoResult | usePhotoActions
+// used_by: app\photo-capture.tsx
+// rules:   - Module exports (`ConfirmPhotoResult`, `usePhotoActions`) and imported dependencies (`LoggingService`, `ProductStorage`, `ManualEntryContext`, `usePhotoOCR`) must remain unchanged as they are consumed by external components (e.g., `app/photo-capture.tsx`)
+//          - Router parameter interface `RouterParams` and `CaptureMode` type must remain backward-compatible with existing callers passing `productId`, `isEditMode`, and capture mode values
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';

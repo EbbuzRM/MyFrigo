@@ -1,3 +1,13 @@
+// useHistoryData.ts — useHistoryData module.
+//
+// exports: useHistoryData
+// used_by: app\(tabs)\history.tsx
+// rules:   - Do not modify the throttling logic (THROTTLE_TIME, lastLoadTimeRef) or loading timeout (LOADING_TIMEOUT) without updating all references in loadData and refreshHistory functions.
+//          - Any new async operations added to loadData must respect the existing isLoadingRef guard and cleanup timeoutRef on abort or completion.
+//          - The hook must always initialize with loading=true and must manage the dataLoadedRef to prevent duplicate initial fetches.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * useHistoryData Hook
  * @module hooks/useHistoryData

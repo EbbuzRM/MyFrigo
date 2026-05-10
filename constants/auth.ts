@@ -1,3 +1,16 @@
+// auth.ts — auth module.
+//
+// exports: AUTH_CONSTANTS | AuthConstants
+// used_by: app\signup.tsx
+//         hooks\usePostRegistration.ts
+//         hooks\useRegistrationActions.ts
+//         hooks\useRegistrationOrchestrator.ts
+//         hooks\useRegistrationState.ts
+//         hooks\useSignupValidators.ts
+// rules:   Utilizzare esclusivamente le costanti definite in `AUTH_CONSTANTS` per tutte le stringhe UI, messaggi di errore e regole di validazione relative all'autenticazione; non introdurre stringhe hardcodate nei componenti. Mantenere la struttura dell'oggetto `AUTH_CONSTANTS` coerentemente organizzata per categorie (ERRORS, ALERT_TITLES, ALERT_MESSAGES, UI_LABELS).
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Constants for authentication-related strings and validation rules
  */

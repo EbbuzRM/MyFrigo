@@ -1,3 +1,11 @@
+// eslint.config.js — eslint.config module.
+//
+// exports: tseslint
+// used_by: none
+// rules:   The ESLint configuration is defined through the `tseslint.config()` functional API rather than a flat config object, requiring all rule modifications to be made within the exported configuration array and not as separate overrides.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import globals from "globals";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";

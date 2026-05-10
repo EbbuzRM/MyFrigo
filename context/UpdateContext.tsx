@@ -1,3 +1,16 @@
+// UpdateContext.tsx — UpdateContext module.
+//
+// exports: useUpdate | UpdateProvider
+// used_by: app\(tabs)\settings.tsx
+//         app\_layout.tsx
+//         components\AppProviders.tsx
+//         hooks\useSettingsSections.ts
+// rules:   - The UpdateProvider component must remain as a single React context provider wrapping the entire update subsystem; do not split it into multiple providers or mix concerns with other contexts.
+//          - All AsyncStorage read/write operations for update settings must use the UPDATE_SETTINGS_KEY constant exclusively; no hardcoded keys or alternative storage keys allowed.
+//          - The update lifecycle (check, download, install) must be managed through the global UpdateService singleton, not through direct Expo Updates API calls.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUpdates, reloadAsync, fetchUpdateAsync } from 'expo-updates';

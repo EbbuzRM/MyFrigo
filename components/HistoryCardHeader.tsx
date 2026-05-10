@@ -1,3 +1,12 @@
+// HistoryCardHeader.tsx — HistoryCardHeader module.
+//
+// exports: HistoryCardHeader
+// used_by: components\HistoryCard.tsx
+// rules:   - The `SPACING` object must remain immutable and defined as a module-level constant using `as const` or object literal.
+//          - All dynamic styles dependent on `isDarkMode` or `categoryInfo.color` MUST be wrapped in `useMemo` with those values in the dependency array.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ProductCategory } from '@/types/Product';

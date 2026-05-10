@@ -1,3 +1,11 @@
+// ocrGeometry.ts — ocrGeometry module.
+//
+// exports: calculateDistance | isRightOf | isBelow | isAbove
+// used_by: utils\ocr\spatial.ts
+// rules:   The module's `Frame` type is imported from `@react-native-ml-kit/text-recognition` and must not be replaced with alternative geometry types, as all exported functions depend on this interface for bounding box calculations.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Utility functions for OCR spatial logic (Bounding Boxes).
  * @module utils/ocrGeometry

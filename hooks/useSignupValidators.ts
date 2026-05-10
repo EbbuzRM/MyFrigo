@@ -1,3 +1,14 @@
+// useSignupValidators.ts — useSignupValidators module.
+//
+// exports: useEmailValidator | useNameValidator | usePasswordValidator | useFormValidator | usePasswordValidationChecker | useFormValidityChecker
+// used_by: hooks\useSignupValidation.ts
+// rules:   rules:
+//          - All exported hooks must remain stable, memoized, and return pure callbacks to avoid breaking dependent validation pipelines.
+//          - The module must not introduce dependencies on UI state, React context, or side effects; it is a pure validation logic layer.
+//          - All validation functions must use constants from `AUTH_CONSTANTS` for limits and regex patterns to ensure consistency.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { AUTH_CONSTANTS } from '@/constants/auth';
 import { validatePassword, PasswordValidationResult } from '@/utils/authValidation';

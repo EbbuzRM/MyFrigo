@@ -1,3 +1,13 @@
+// IconService.ts — IconService module.
+//
+// exports: IconService
+// used_by: context\CategoryContext.tsx
+// rules:   - Do not rename or restructure `IconService` as it is a stateless singleton object, not a class, used via direct import in `CategoryContext.tsx` and elsewhere.
+//          - All icon data fetching and mapping must go through `IconLoader` and `IconMapper` respectively; `IconService` is a coordination layer, not a data source.
+//          - Maintain the `validate` reference to `IconMapper.validateIconUrl` and the `translateToEnglish` method signature for backward compatibility with existing consumers.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { IconLoader, IconData } from './IconLoader';
 import { IconMapper } from './IconMapper';
 import { LoggingService } from './LoggingService';

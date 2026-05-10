@@ -1,3 +1,12 @@
+// StatsCard.tsx — StatsCard module.
+//
+// exports: StatsCard
+// used_by: app\(tabs)\index.tsx
+//         components\HistoryStats.tsx
+// rules:   This component must remain a `React.memo` wrapped functional component using named export only. All style definitions must be computed dynamically via the `getStyles` function based on `isDarkMode` to support theme switching.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

@@ -1,3 +1,11 @@
+// withTextRecognition.js — withTextRecognition module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 const { createRunOncePlugin } = require('@expo/config-plugins');
 
 const withReactNativeMLKitTextRecognition = (config) => {

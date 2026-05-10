@@ -1,3 +1,13 @@
+// useQuantityCalculation.ts — useQuantityCalculation module.
+//
+// exports: QuantityCalculationResult | ValidationResult | useQuantityCalculation
+// used_by: components\ConsumeQuantityModal.tsx
+// rules:   - This module exports a **merged return type** (`QuantityCalculationResult & { validateInput: ... }`) that must be preserved as a single return from `useQuantityCalculation`
+//          - The `validateInput` function **depends on the reactive `totalQuantity` value** — any refactoring must maintain this closure relationship to avoid stale comparisons
+//          - The two `unit` types (`'pz'` and `'conf'`) are **semantically significant** for the mixed-unit calculation logic and must not be removed or renamed without updating all consumers
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useMemo, useCallback } from 'react';
 import { Quantity } from '@/types/Product';
 

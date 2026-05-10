@@ -1,3 +1,13 @@
+// manual-entry.tsx — manual-entry module.
+//
+// exports: ManualEntryScreen | function
+// used_by: none
+// rules:   - This module renders a product entry form with category selection, loading states, and dark mode support; do not remove or flatten the theme-dependent style generation pattern
+//          - All category item rendering must preserve the 2-column grid layout with aspect ratio constraints and selection highlighting logic
+//          - The module composition depends on ProductFormHeader, ProductFormFooter, useProductForm hook, and LoggingService; do not eliminate these dependencies without full form refactoring
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback, useMemo, useRef } from 'react';
 import {
   View,

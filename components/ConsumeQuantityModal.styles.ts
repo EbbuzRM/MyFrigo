@@ -1,3 +1,11 @@
+// ConsumeQuantityModal.styles.ts — ConsumeQuantityModal.styles module.
+//
+// exports: getConsumeQuantityModalStyles
+// used_by: components\ConsumeQuantityModal.tsx
+// rules:   This styles file is a pure utility module that returns a StyleSheet object from a factory function; it must never import or reference any React components, hooks, or business logic. The returned styles object is consumed only by ConsumeQuantityModal.tsx and should never be used outside that module.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet } from 'react-native';
 
 /**

@@ -1,3 +1,13 @@
+// ProductDetailActions.tsx — ProductDetailActions module.
+//
+// exports: ProductDetailActions
+// used_by: none
+// rules:   - Accessibility attributes (accessibilityLabel, accessibilityRole, accessibilityHint, accessibilityState) must be preserved on all interactive elements in this component.
+//          - The `disabled` prop must consistently disable all user interactions and visually style all action buttons accordingly.
+//          - All action buttons must maintain their existing icon+text layout structure and styling pattern.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { memo } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

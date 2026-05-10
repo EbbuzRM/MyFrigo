@@ -1,3 +1,13 @@
+// ProductCardHeader.tsx — ProductCardHeader module.
+//
+// exports: ProductCardHeader
+// used_by: components\ProductCard.tsx
+// rules:   - All action handlers (`onConsume`, `onDelete`) must remain as direct props passed from parent, not internal state or redux dispatchers within this component
+//          - The component must remain a pure presentational `React.memo` wrapper with no direct access to global state, navigation, or async operations
+//          - Design tokens and styling utilities (`scaleFont`, color props) must be injected through props, not imported directly from theme/styling modules
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Check, Trash2 } from 'lucide-react-native';

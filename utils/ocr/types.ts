@@ -1,3 +1,16 @@
+// types.ts — types module.
+//
+// exports: OCRResult | OCRProgress | DateMatch | ScoredDate
+// used_by: hooks\usePhotoOCR.ts
+//         utils\ocr\parsing.ts
+//         utils\ocr\scoring.ts
+//         utils\ocr\spatial.ts
+// rules:   - Types importing from `@react-native-ml-kit/text-recognition` must not create runtime dependencies on native modules in non-mobile environments
+//          - All date-related interfaces must maintain compatibility with the `MatchType` enum from `@/utils/datePatterns` without circular dependencies
+//          - The `DateMatch` interface serves as the shared contract between OCR processing and date pattern matching modules
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { MatchType } from '@/utils/datePatterns';
 

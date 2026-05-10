@@ -1,3 +1,13 @@
+// consumed-list.tsx — consumed-list module.
+//
+// exports: ConsumedListScreen | function
+// used_by: none
+// rules:   - Must maintain the read-only historical display pattern: consumes `ProductStorage.getHistory()` and filters by `status === 'consumed`, never modifies product data.
+//          - Navigation must use `expo-router` (router) for back navigation only; no push navigation from this screen.
+//          - Theme context and styles must remain as dynamic `getStyles(isDarkMode)` pattern for light/dark mode support.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

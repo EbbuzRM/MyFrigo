@@ -1,3 +1,11 @@
+// useUpdateAnimation.ts — useUpdateAnimation module.
+//
+// exports: useUpdateAnimation
+// used_by: components\UpdateModal.tsx
+// rules:   This module exports a single custom hook that manages two independent animated values (progress and fade), both using `useNativeDriver: false` — any changes must preserve this constraint as the values drive style properties not supported by the native driver.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useRef, useCallback } from 'react';
 import { Animated, Easing } from 'react-native';
 

@@ -1,3 +1,13 @@
+// ConsumeQuantityModal.tsx — ConsumeQuantityModal module.
+//
+// exports: ConsumeQuantityModal
+// used_by: app\(tabs)\products.tsx
+// rules:   - All state management for quantity input, validation, and error display must remain local to this modal component using React hooks
+//          - Modal visibility reset logic must clear input state and errors on open without external side effects
+//          - Quantity validation and consumption logic must use the `useQuantityCalculation` hook and never compute these values inline
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Modal, View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

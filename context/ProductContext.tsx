@@ -1,3 +1,15 @@
+// ProductContext.tsx — ProductContext module.
+//
+// exports: ProductProvider | useProducts
+// used_by: app\(tabs)\index.tsx
+//         app\(tabs)\products.tsx
+//         components\AppProviders.tsx
+// rules:   - Context providers must use useRef-based debouncing and fetch guards (isFetchingRef) to prevent concurrent data fetches
+//          - All asynchronous operations in context providers must include mounted state checks (isMounted) to prevent state updates on unmounted components
+//          - Error handling in context providers must use LoggingService for structured error logging and set fallback empty states for all data fields
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { ProductStorage } from '@/services/ProductStorage';
 import { Product } from '@/types/Product';

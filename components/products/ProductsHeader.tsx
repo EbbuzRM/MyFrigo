@@ -1,3 +1,13 @@
+// ProductsHeader.tsx — ProductsHeader module.
+//
+// exports: ProductsHeader
+// used_by: app\(tabs)\products.tsx
+// rules:   - All React Native components must be located in the `components/` directory and follow the existing naming convention (`ComponentName.tsx`)
+//          - Theme context (`useTheme`) must be used for all color/dark mode values; hardcoded colors are only allowed for brand colors (like `#2563EB`) and white
+//          - Navigation must be handled exclusively through `expo-router` using the established route pattern (`/(tabs)/*`)
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Plus } from 'lucide-react-native';

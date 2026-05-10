@@ -1,18 +1,15 @@
+// UpdateService.test.ts — UpdateService.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 // Set __DEV__ to false BEFORE any imports that might check it
 (global as any).__DEV__ = false;
 
-import { UpdateService, UpdateSettings } from '../UpdateService';
-import { LoggingService } from '../LoggingService';
-import { Platform } from 'react-native';
-
-// Mock di expo-constants
-jest.mock('expo-constants', () => ({
-  expoConfig: {
-    version: '1.0.1',
-  },
-}));
-
-// Mock di expo-updates - module exports functions directly
+// Mock expo-updates BEFORE importing UpdateService
 jest.mock('expo-updates', () => ({
   checkForUpdateAsync: jest.fn(),
   fetchUpdateAsync: jest.fn(),
@@ -21,6 +18,59 @@ jest.mock('expo-updates', () => ({
   isEmbeddedLaunch: false,
   runtimeVersion: '1.0.0',
 }));
+
+// Mock di expo-constants
+jest.mock('expo-constants', () => ({
+  expoConfig: {
+    version: '1.0.1',
+  },
+}));
+
+// Mock UpdateMetadataService
+jest.mock('../update/UpdateService.metadata', () => ({
+  UpdateMetadataService: {
+    checkAvailability: jest.fn(),
+    shouldCheckForUpdates: jest.fn((settings: { autoCheckEnabled: boolean; checkInterval: number; lastCheckTime?: number }) => {
+      if (!settings.autoCheckEnabled) return false;
+      const now = Date.now();
+      const lastCheck = settings.lastCheckTime || 0;
+      const intervalMs = settings.checkInterval * 60 * 60 * 1000;
+      return (now - lastCheck) >= intervalMs;
+    }),
+    getBuildInfo: jest.fn(() => ({
+      updateId: 'test-update-id',
+      isEmbeddedLaunch: false,
+      runtimeVersion: '1.0.0',
+    })),
+  },
+}));
+
+// Mock UpdateDownloadService and UpdateNotificationService
+jest.mock('../update/UpdateService.download', () => ({
+  UpdateDownloadService: {
+    download: jest.fn(),
+    reload: jest.fn(),
+  },
+}));
+
+jest.mock('../update/UpdateService.notifications', () => ({
+  UpdateNotificationService: {
+    notifyUpdateChecked: jest.fn(),
+    notifyUpdateError: jest.fn(),
+    notifyUpdateDownloaded: jest.fn(),
+    notifyDownloadError: jest.fn(),
+    notifyAppRestarting: jest.fn(),
+    notifyRestartError: jest.fn(),
+  },
+  UpdateEventEmitter: {
+    emit: jest.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+  },
+}));
+
+// Now import after mocks
+import { UpdateService, UpdateSettings } from '../UpdateService';
 
 // Mock di __DEV__
 Object.defineProperty(process, 'env', {
@@ -70,28 +120,27 @@ describe('UpdateService', () => {
     });
 
     it('should check for updates successfully', async () => {
-      const expoUpdates = require('expo-updates');
-      const mockUpdateResult = {
+      const { UpdateMetadataService } = require('../update/UpdateService.metadata');
+      UpdateMetadataService.checkAvailability.mockResolvedValue({
         isAvailable: true,
-        manifest: {
-          extra: {
-            version: '1.0.2',
-          },
-        },
-      };
-      expoUpdates.checkForUpdateAsync.mockResolvedValue(mockUpdateResult);
+        isUpdatePending: false,
+        currentVersion: '1.0.1',
+        availableVersion: '1.0.2',
+      });
 
       const result = await UpdateService.checkForUpdate();
 
-      expect(expoUpdates.checkForUpdateAsync).toHaveBeenCalled();
+      expect(UpdateMetadataService.checkAvailability).toHaveBeenCalled();
       expect(result.isAvailable).toBe(true);
       expect(result.availableVersion).toBe('1.0.2');
     });
 
     it('should handle no updates available', async () => {
-      const expoUpdates = require('expo-updates');
-      expoUpdates.checkForUpdateAsync.mockResolvedValue({
+      const { UpdateMetadataService } = require('../update/UpdateService.metadata');
+      UpdateMetadataService.checkAvailability.mockResolvedValue({
         isAvailable: false,
+        isUpdatePending: false,
+        currentVersion: '1.0.1',
       });
 
       const result = await UpdateService.checkForUpdate();
@@ -100,8 +149,12 @@ describe('UpdateService', () => {
     });
 
     it('should handle check errors gracefully', async () => {
-      const expoUpdates = require('expo-updates');
-      expoUpdates.checkForUpdateAsync.mockRejectedValue(new Error('Network error'));
+      const { UpdateMetadataService } = require('../update/UpdateService.metadata');
+      UpdateMetadataService.checkAvailability.mockResolvedValue({
+        isAvailable: false,
+        isUpdatePending: false,
+        currentVersion: '1.0.1',
+      });
 
       const result = await UpdateService.checkForUpdate();
 
@@ -115,24 +168,18 @@ describe('UpdateService', () => {
     });
 
     it('should download update successfully', async () => {
-      const expoUpdates = require('expo-updates');
-      expoUpdates.checkForUpdateAsync.mockResolvedValue({
-        isAvailable: true,
-        manifest: { extra: { version: '1.0.2' } },
-      });
-      expoUpdates.fetchUpdateAsync.mockResolvedValue({ isNew: true });
+      const { UpdateDownloadService } = require('../update/UpdateService.download');
+      UpdateDownloadService.download.mockResolvedValue({ success: true, isNew: true, updateInfo: {} });
 
       const result = await UpdateService.downloadUpdate();
 
-      expect(expoUpdates.fetchUpdateAsync).toHaveBeenCalled();
+      expect(UpdateDownloadService.download).toHaveBeenCalled();
       expect(result).toBe(true);
     });
 
     it('should return false if no update is available', async () => {
-      const expoUpdates = require('expo-updates');
-      expoUpdates.checkForUpdateAsync.mockResolvedValue({
-        isAvailable: false,
-      });
+      const { UpdateDownloadService } = require('../update/UpdateService.download');
+      UpdateDownloadService.download.mockResolvedValue({ success: false, isNew: false, updateInfo: null });
 
       const result = await UpdateService.downloadUpdate();
 
@@ -146,18 +193,18 @@ describe('UpdateService', () => {
     });
 
     it('should not restart when no update is pending', async () => {
-      const expoUpdates = require('expo-updates');
-      // Note: isUpdatePending is always false in the current implementation
-      // as it's not directly available from expo-updates
-      expoUpdates.checkForUpdateAsync.mockResolvedValue({
+      const { UpdateMetadataService } = require('../update/UpdateService.metadata');
+      UpdateMetadataService.checkAvailability.mockResolvedValue({
         isAvailable: true,
         isUpdatePending: false,
+        currentVersion: '1.0.1',
       });
 
       await UpdateService.restartApp();
 
       // reloadAsync should not be called when isUpdatePending is false
-      expect(expoUpdates.reloadAsync).not.toHaveBeenCalled();
+      const { UpdateDownloadService } = require('../update/UpdateService.download');
+      expect(UpdateDownloadService.reload).not.toHaveBeenCalled();
     });
 
     it('should handle restart gracefully', async () => {

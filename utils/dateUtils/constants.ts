@@ -1,3 +1,14 @@
+// constants.ts — constants module.
+//
+// exports: DATE_CONSTANTS | DATE_FORMATS | MONTH_MAP | DateParseResult | DateParser | DateValidator | ParserConfig
+// used_by: utils\dateUtils\formatters.ts
+//         utils\dateUtils\validators.ts
+//         utils\ocr\scoring.ts
+// rules:   - The DATE_CONSTANTS, DATE_FORMATS, and MONTH_MAP exports must remain as `const` assertions (`as const`) to preserve literal types and prevent mutation across the module
+//          - All constants and type definitions in this file are shared across the date utilities module and must not be moved or duplicated into individual function files
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Date constants used across the date utilities module.
  * @module dateUtils/constants

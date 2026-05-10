@@ -1,3 +1,11 @@
+// GoogleAuthRetryManager.ts — GoogleAuthRetryManager module.
+//
+// exports: RetryManagerDependencies | GoogleAuthRetryManager | createGoogleAuthRetryManager
+// used_by: hooks\useGoogleAuth.ts
+// rules:   The module depends on `AuthAttemptRepository` and `RetryStrategyConfig` interfaces which must be implemented by any consuming code; these dependencies should not be altered or removed without updating all consumers.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { LoggingService } from '@/services/LoggingService';
 import { 
   GoogleAuthAttempt, 

@@ -1,3 +1,11 @@
+// errorCodes.ts — errorCodes module.
+//
+// exports: ErrorCategory | ERROR_CATEGORIES | getErrorCategory | isErrorCategory
+// used_by: types\errorTypes.ts
+// rules:   This module defines the canonical error categorization system; do not add, remove, or reorder entries in the `ErrorCategory` type or `ErrorCode` enum without updating `ERROR_CATEGORIES` mapping accordingly. All error codes must follow the `CATEGORY_SPECIFIC` naming pattern and be assigned to exactly one category in the mapping.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * @fileoverview Error code enum with 18 standardized error codes.
  * Categorized by error type for easy maintenance and filtering.

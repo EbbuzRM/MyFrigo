@@ -1,3 +1,13 @@
+// NotificationTests.ts — NotificationTests module.
+//
+// exports: DiagnosticData | NotificationTestResult | NotificationTests
+// used_by: hooks\useDiagnosticTests.ts
+// rules:   Module requires cross-platform handling for web vs native notification APIs (expo-notifications vs Alert).
+//          Relies on NotificationService and LoggingService singletons for permission management and diagnostics.
+//          All public test methods must return `NotificationTestResult` with consistent `testId`, `success`, and `duration` fields.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { LoggingService } from '@/services/LoggingService';
 import { NotificationService } from '@/services/NotificationService';
 import { Alert, Platform } from 'react-native';

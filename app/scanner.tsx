@@ -1,3 +1,12 @@
+// scanner.tsx — scanner module.
+//
+// exports: BarcodeScannerScreen | function
+// used_by: none
+// rules:   - Do not remove or modify the `interface FrameLayout` or `interface ManualEntryParams` type definitions; they are used for type-safe navigation parameters and UI layout calculations.
+//          - The `CameraView` from `expo-camera` is the core scanning component and must remain the primary barcode capture method.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useCallback } from 'react';
 import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { CameraView } from 'expo-camera';

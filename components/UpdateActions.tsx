@@ -1,3 +1,13 @@
+// UpdateActions.tsx — UpdateActions module.
+//
+// exports: UpdateActions
+// used_by: components\UpdateModal.tsx
+// rules:   - All status transitions must be handled consistently: idle → downloading/installing → completed/error, with conditional restart logic based on autoInstall prop
+//          - Action buttons must maintain layout stability: show placeholder View during progress states, error shows retry, completed with autoInstall=false shows restart, otherwise show later/install
+//          - Accessibility props (accessible, accessibilityLabel, accessibilityRole) must be preserved on all TouchableOpacity buttons
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { UpdateModalStyles } from './UpdateModal.styles';

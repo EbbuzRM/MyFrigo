@@ -1,3 +1,13 @@
+// ProductNameInput.tsx — ProductNameInput module.
+//
+// exports: ProductNameInput
+// used_by: components\ProductFormHeader.tsx
+// rules:   - Module exports are restricted to the `ProductNameInput` component only; no additional exports or re-exports from this file
+//          - Dependency on `@/context/ThemeContext` and `useTheme` hook is mandatory for styling; style objects must remain sourced from `./ProductFormHeader.styles`
+//          - Component signature and props interface must remain stable to maintain compatibility with `components\ProductFormHeader.tsx`
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { TextInput, Text } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

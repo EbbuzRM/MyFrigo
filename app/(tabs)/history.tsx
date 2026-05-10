@@ -1,3 +1,12 @@
+// history.tsx — history module.
+//
+// exports: History
+// used_by: none
+// rules:   - This module is a display-only view component; it must never mutate or modify `allHistory` data directly, only pass it to child components for rendering.
+//          - The `useFocusEffect` hook controls data loading logic and debounce (5-second throttle); any changes to data fetching must preserve this ref-based debounce pattern to avoid excessive reloads.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

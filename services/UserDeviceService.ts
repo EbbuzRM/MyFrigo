@@ -1,3 +1,12 @@
+// UserDeviceService.ts — UserDeviceService module.
+//
+// exports: UserDeviceService
+// used_by: services\OneSignalService.ts
+// rules:   - This module provides a static class with no instantiation; all methods must remain `static`.
+//          - Database upsert via `supabase.from('user_devices')` is the sole persistence mechanism; do not alter the insert/conflict strategy without explicit cross-module coordination.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { supabase } from './supabaseClient';
 import { TablesInsert } from '@/types/supabase';
 import { LoggingService } from './LoggingService';

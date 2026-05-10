@@ -1,3 +1,11 @@
+// ocrKeywords.ts — ocrKeywords module.
+//
+// exports: EXPIRATION_ANCHORS | isExpirationAnchor
+// used_by: utils\ocr\parsing.ts
+// rules:   EXPIRATION_ANCHORS array must remain read-only (as const) and all values must be uppercase strings. The isExpirationAnchor function must use word boundary regex for short keywords (≤3 characters) and exact substring match for longer keywords.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Keywords and patterns for identifying expiration date anchors in OCR text.
  * @module utils/ocrKeywords

@@ -1,3 +1,12 @@
+// PhotoPreview.tsx — PhotoPreview module.
+//
+// exports: PhotoPreview
+// used_by: app\photo-capture.tsx
+// rules:   - OCR progress state must be properly managed to prevent UI blocking during image processing operations
+//          - Capture mode determines which UI elements and callbacks are rendered, requiring consistent mode-based conditional rendering throughout
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { memo } from 'react';
 import { View, Image, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { Check, RefreshCw, Calendar, Edit2 } from 'lucide-react-native';

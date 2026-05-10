@@ -1,3 +1,12 @@
+// useProductDetail.ts — useProductDetail module.
+//
+// exports: ProductDetailActions | useProductDetail
+// used_by: none
+// rules:   - The `DetailState` type must always extend `ProductDetailState & UIStateExtras` and be the single source of truth for all UI and product state.
+//          - All state mutations must go through `updateState` callback to maintain immutable state updates.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';

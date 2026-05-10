@@ -1,3 +1,11 @@
+// QuantityInputRow.styles.ts — QuantityInputRow.styles module.
+//
+// exports: getStyles
+// used_by: components\QuantityInputRow.tsx
+// rules:   Only `getStyles` should be exported; all style objects must be typed via the `QuantityInputRowStyles` interface and constructed through `StyleSheet.create`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet, TextStyle, ViewStyle } from 'react-native';
 
 /**

@@ -1,3 +1,13 @@
+// photo-capture.tsx — photo-capture module.
+//
+// exports: PhotoCaptureScreen
+// used_by: none
+// rules:   - Module follows a capture-confirm-action flow: camera first, then preview/confirmation, then final processing via `usePhotoActions`
+//          - Capture mode must be passed as route param `captureMode` with valid values: `expirationDateOnly`, `updateProductPhoto`, or `productPhoto`
+//          - Camera lifecycle is tied to screen focus (`useIsFocused`) and must handle back navigation appropriately
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { View, Button, BackHandler, Text, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';

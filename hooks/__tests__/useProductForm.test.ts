@@ -1,3 +1,11 @@
+// useProductForm.test.ts — useProductForm.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 // Mock delle dipendenze PRIMA di importare useProductForm
 jest.mock('react-native-url-polyfill/auto');
 jest.mock('@react-native-async-storage/async-storage');

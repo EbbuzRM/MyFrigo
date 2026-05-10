@@ -1,3 +1,13 @@
+// confirm-email.tsx — confirm-email module.
+//
+// exports: ConfirmEmailScreen | function
+// used_by: none
+// rules:   - This module depends on `@/services/supabaseClient` and `@/services/LoggingService`; any refactoring must preserve these import paths and service interfaces.
+//          - The screen expects `email` as a route parameter via `useLocalSearchParams`; changes to navigation or parameter handling must maintain this input contract.
+//          - OTP verification logic is tightly coupled to Supabase Auth's `verifyOtp` with `type: 'signup'`; alternative auth providers or verification flows cannot be introduced here without modifying this core integration point.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState } from 'react';
 import {
   View,

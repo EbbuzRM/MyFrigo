@@ -1,3 +1,12 @@
+// StatusFilterBar.tsx — StatusFilterBar module.
+//
+// exports: StatusFilterBar
+// used_by: app\(tabs)\products.tsx
+// rules:   - All React Native UI components must use the `useTheme()` hook for theming and derive styles from `getStyles(isDarkMode)` to support dark mode switching.
+//          - Accessibility props (`accessibilityLabel`, `accessibilityRole`, `accessibilityState`, `accessibilityHint`) must be provided on all interactive elements.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

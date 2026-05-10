@@ -1,3 +1,13 @@
+// TestRunner.ts — TestRunner module.
+//
+// exports: TestRunnerCallbacks | TestRunner | testRunner
+// used_by: none
+// rules:   - All test category implementations (auth, database, performance, system) must be executed through this module's switch-based dispatch in `runTest()` with corresponding test IDs mapped to specific runner methods
+//          - The `TestRunnerCallbacks` interface must remain the single mechanism for test lifecycle notification across all test categories
+//          - All test result types (`AuthTestResult`, `DatabaseTestResult`, `PerformanceTestResult`, `SystemTestResult`) must be compatible with the `TestResult` interface from useDiagnosticTests
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { LoggingService } from '@/services/LoggingService';
 import { AuthTests, AuthTestResult } from './AuthTests';
 import { DatabaseTests, DatabaseTestResult } from './DatabaseTests';

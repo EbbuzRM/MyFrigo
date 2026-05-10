@@ -1,3 +1,12 @@
+// inputs.ts — inputs module.
+//
+// exports: getInputAccessibilityProps | getListItemAccessibilityProps | getImageAccessibilityProps | getTextAccessibilityProps
+// used_by: none
+// rules:   - All accessibility prop generation must use `createAccessibilityProps` from `./buttons` as the single source of truth for attribute creation
+//          - The `AccessibilityAttributes` return type must remain consistent across all exported functions in this module
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Input accessibility utilities for React Native
  * @module utils/accessibility/inputs

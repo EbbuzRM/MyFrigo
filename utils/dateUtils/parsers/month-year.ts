@@ -1,3 +1,13 @@
+// month-year.ts — month-year module.
+//
+// exports: parseMonthYearDate
+// used_by: none
+// rules:   - All date parsers in this module MUST return `DateParseResult` objects with consistent structure and the same success/error handling pattern
+//          - Parser functions MUST use `validateYear()` and `normalizeTwoDigitYear()` for year validation before creating Date objects
+//          - Date formats and outputs MUST remain compatible with `date-fns` formatting functions, particularly `yyyy-MM-dd`
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Month/year date parsing (e.g., "12/2024").
  * @module dateUtils/parsers/month-year

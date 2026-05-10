@@ -1,3 +1,13 @@
+// CustomDatePicker.tsx — CustomDatePicker module.
+//
+// exports: CustomDatePicker
+// used_by: components\DatePickerRow.tsx
+// rules:   - Platform-specific rendering must be maintained: use Modal + Calendar for web, native DateTimePicker for mobile
+//          - All styling must derive from `useTheme()` and dynamic stylesheets; no hardcoded or static styles
+//          - Date formatting must use `toLocalISOString` utility and DateTimePickerEvent for type safety
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';

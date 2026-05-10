@@ -1,3 +1,14 @@
+// CategoryMatcher.ts — CategoryMatcher module.
+//
+// exports: CategoryMatcher
+// used_by: hooks\useBarcodeScanner.ts
+//         hooks\useCategorySelection.ts
+//         hooks\useProductInitialization.ts
+// rules:   - Module exports must remain as a class named `CategoryMatcher` with only static methods, as it is consumed by multiple hooks as a stateless service
+//          - All category keyword maps must be maintained as private static members to prevent external mutation, with new categories added only via the `italianKeywordMap` structure
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { ProductCategory } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
 

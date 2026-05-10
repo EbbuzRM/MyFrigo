@@ -1,3 +1,21 @@
+// ManualEntryContext.tsx — ManualEntryContext module.
+//
+// exports: Quantity | FormState | InitializeFormData | MetaState | ManualEntryProvider | useManualEntry | ManualEntryContextType
+// used_by: components\AppProviders.tsx
+//         components\ProductFormFooter.tsx
+//         components\QuantityInputRow.tsx
+//         components\QuantitySection.tsx
+//         hooks\__tests__\useProductForm.test.ts
+//         hooks\useCategorySelection.ts
+//         hooks\usePhotoActions.ts
+//         hooks\useProductForm.ts
+//         hooks\useProductInitialization.ts
+//         hooks\useProductSave.ts
+// rules:   - The ManualEntryContext is composed from three nested providers (Meta, Form, Actions) and a composite wrapper, so any modifications to state management or provider structure must maintain this hierarchy to avoid breaking context dependencies.
+//          - All setter functions, form operations, and state types are exported through the unified ManualEntryContextType interface, meaning any new state or operations must be added to this interface and implemented consistently across all sub-contexts.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 import { Product } from '@/types/Product';

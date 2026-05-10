@@ -1,3 +1,15 @@
+// CategoryService.ts — CategoryService module.
+//
+// exports: CategoryService
+// used_by: context\CategoryContext.tsx
+//         services\diagnostic\DatabaseTests.ts
+//         services\diagnostic\PerformanceTests.ts
+// rules:   - Use Supabase client for all database operations, never raw SQL queries
+//          - Always convert between camelCase (TypeScript) and snake_case (database) using the provided utility functions
+//          - All service methods must be static and return typed Promises with proper error handling via LoggingService
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { ProductCategory } from '@/types/Product';
 import { supabase } from './supabaseClient';
 import { TablesInsert, TablesUpdate } from '@/types/supabase';

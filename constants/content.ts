@@ -1,3 +1,17 @@
+// content.ts — content module.
+//
+// exports: DASHBOARD_CONTENT
+// used_by: app\(tabs)\index.tsx
+//         components\dashboard\DashboardHeader.tsx
+//         components\dashboard\ProfileMenu.tsx
+//         components\dashboard\QuickActions.tsx
+//         components\dashboard\__tests__\DashboardHeader.test.tsx
+//         components\dashboard\__tests__\ProfileMenu.test.tsx
+//         components\dashboard\__tests__\QuickActions.test.tsx
+// rules:   All text strings must be defined inside `DASHBOARD_CONTENT`, not as raw strings in components or tests.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Costanti testuali utilizzate nell'applicazione,
  * raggruppate per facilitare future integrazioni di internazionalizzazione (i18n).

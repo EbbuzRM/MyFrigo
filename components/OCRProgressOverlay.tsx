@@ -1,3 +1,11 @@
+// OCRProgressOverlay.tsx — OCRProgressOverlay module.
+//
+// exports: OCRProgressOverlay
+// used_by: components\PhotoPreview.tsx
+// rules:   The component must remain a pure, memoized presentational component that derives all state and styling from props, without internal state or business logic.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { PhotoCaptureStyles } from '@/app/_photo-capture.styles';

@@ -1,3 +1,34 @@
+// supabaseClient.ts — supabaseClient module.
+//
+// exports: getCachedSession | supabase | refreshAuthSession | clearSession | forceRefreshToken
+// used_by: app\(tabs)\index.tsx
+//         app\+not-found.tsx
+//         app\auth\reset-password.tsx
+//         app\confirm-email.tsx
+//         app\feedback.tsx
+//         app\forgot-password.tsx
+//         app\password-reset-form.tsx
+//         app\profile.tsx
+//         context\AuthContext.tsx
+//         context\ProductContext.tsx
+//         context\__tests__\AuthContext.test.tsx
+//         hooks\useRegistrationActions.ts
+//         services\AuthService.ts
+//         services\CategoryService.ts
+//         services\IconLoader.ts
+//         services\OneSignalService.ts
+//         services\ProductStorage.ts
+//         services\SettingsService.ts
+//         services\TemplateService.ts
+//         services\UserDeviceService.ts
+//         services\UserNotificationSettingsService.ts
+//         services\diagnostic\DatabaseTests.ts
+//         services\diagnostic\SystemTests.ts
+// rules:   - Module exports a shared `supabase` client instance; do not create additional Supabase clients or duplicate the initialization elsewhere in the codebase
+//          - Session caching logic (`cachedSession`, `cacheTimestamp`) is module-scoped state that must remain synchronous and accessed only through the exported session functions, not directly mutated
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, Session } from '@supabase/supabase-js';

@@ -1,3 +1,11 @@
+// AuthTestSection.tsx — AuthTestSection module.
+//
+// exports: AuthTestSection
+// used_by: components\DiagnosticPanel.tsx
+// rules:   All UI components in this module must use the `useTheme()` hook and `getStyles(isDarkMode)` pattern for dark mode support, and access tokens/permissions must only be checked through diagnostic test hooks rather than directly.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

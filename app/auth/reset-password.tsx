@@ -1,3 +1,11 @@
+// reset-password.tsx — reset-password module.
+//
+// exports: ResetPassword | function
+// used_by: none
+// rules:   This module is a one-page screen component (not a navigator or layout) and should remain a single, self-contained export. Its routing and authentication logic depend on Expo Router's `useLocalSearchParams` and Supabase's session management — do not replace these dependencies or extract token handling into external utilities without updating all callers.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity } from 'react-native';

@@ -1,3 +1,13 @@
+// ExpirationCardDetails.tsx — ExpirationCardDetails module.
+//
+// exports: ExpirationCardDetails
+// used_by: components\ExpirationCard.tsx
+// rules:   - All new UI components in this module must use `React.memo()` for performance optimization
+//          - Style definitions must use `useMemo()` with proper dependency arrays to prevent unnecessary re-renders
+//          - All date formatting must use the 'it-IT' locale for consistency across the module
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Calendar, Package } from 'lucide-react-native';

@@ -1,3 +1,14 @@
+// ManualEntryFormContext.tsx — ManualEntryFormContext module.
+//
+// exports: Quantity | FormState | FormAction | ManualEntryFormProvider | useManualEntryForm | FormContextValue
+// used_by: context\ManualEntryActionsContext.tsx
+//         context\ManualEntryContext.tsx
+// rules:   - The `FormAction` discriminated union type is the sole mechanism for state mutations and must not be extended with direct state assignment patterns
+//          - All state initialization must go through `getInitialState()` to ensure proper default values including UUID generation and local date formatting
+//          - The `FormState` interface is the single source of truth for form data structure and any new fields must be added to both the interface and reducer cases
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { createContext, useContext, ReactNode, useReducer, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import 'react-native-get-random-values';

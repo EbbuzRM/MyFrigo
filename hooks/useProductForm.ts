@@ -1,3 +1,13 @@
+// useProductForm.ts — useProductForm module.
+//
+// exports: useProductForm
+// used_by: app\manual-entry.tsx
+// rules:   - All hooks (useProductFormData, useProductInitialization, useCategorySelection, useProductSave) must remain composable as separate hooks; do not merge them into a single monolithic hook.
+//          - The ManualEntryContext is the single source of truth for all form field values; do not introduce duplicate state management for name, brand, category, quantities, dates, notes, or images.
+//          - Date picker visibility, modal state, and loading state are local UI concerns managed by useProductFormData; do not lift these into context.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useManualEntry } from '@/context/ManualEntryContext';
 import { useCategories } from '@/context/CategoryContext';
 import { useProductFormData } from './useProductFormData';

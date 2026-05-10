@@ -1,3 +1,12 @@
+// _layout.tsx — _layout module.
+//
+// exports: TabLayout
+// used_by: none
+// rules:   - The TabLayout component uses `AnimatedTabBar` as a custom tab bar; do not replace or remove it without updating the corresponding component module.
+//          - All tab screens defined here must match actual file names inside `app/(tabs)/` directory; adding or removing tabs requires corresponding file changes.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { Tabs, useLocalSearchParams } from 'expo-router';
 import { Home, Plus, Package, Settings, History } from 'lucide-react-native';
 import AnimatedTabBar from '@/components/AnimatedTabBar';

@@ -1,3 +1,11 @@
+// usePhotoNavigation.ts — usePhotoNavigation module.
+//
+// exports: PhotoNavigationParams | UsePhotoNavigationReturn | usePhotoNavigation
+// used_by: components\PhotoCaptureButton.tsx
+// rules:   - This module manages a `navigatingToPhotoCapture` ref that must remain `true` during navigation and reset to `false` after a 500ms timeout to prevent duplicate navigation.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { router } from 'expo-router';
 import { useCallback, useRef } from 'react';
 import { formStateLogger } from '@/utils/FormStateLogger';

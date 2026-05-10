@@ -1,3 +1,13 @@
+// validators.ts — validators module.
+//
+// exports: validateYear | createDateValidator | normalizeTwoDigitYear
+// used_by: none
+// rules:   - All exported functions must return strictly typed `{ valid: boolean; error?: string }` objects for consistent validation patterns across the module
+//          - All date validation logic must use `DATE_CONSTANTS` for boundary values rather than inline magic numbers
+//          - LoggingService must receive the module-level `TAG` constant as first argument for consistent log categorization
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Date validation utilities.
  * @module dateUtils/validators

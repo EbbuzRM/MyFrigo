@@ -1,3 +1,12 @@
+// useQuantityInput.ts — useQuantityInput module.
+//
+// exports: useQuantityInput
+// used_by: components\QuantityInputRow.tsx
+// rules:   - The `quantity` state string and `onUpdate` callback must remain the single source of truth; derived values from `parseQty` must never be stored externally or used to replace the string-based interface.
+//          - All modified quantity values passed to `onUpdate` must be converted to strings; the hook must never return or emit numeric quantity values externally.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { MIN_QUANTITY, MAX_QUANTITY, QUANTITY_STEP } from '@/constants/quantities';
 

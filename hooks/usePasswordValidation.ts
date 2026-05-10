@@ -1,3 +1,12 @@
+// usePasswordValidation.ts — usePasswordValidation module.
+//
+// exports: PasswordValidation | usePasswordValidation
+// used_by: components\LoginForm.tsx
+//         components\PasswordValidationDisplay.tsx
+// rules:   This hook's API surface must remain stable as it is consumed by multiple components; do not remove or rename exported properties (`password`, `validation`, `handlePasswordChange`, `isPasswordValid`, `validationProgress`, `setPassword`) without updating all consumers listed in comments.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback } from 'react';
 import { validatePassword } from '../utils/authValidation';
 

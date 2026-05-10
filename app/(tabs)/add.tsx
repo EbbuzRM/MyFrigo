@@ -1,3 +1,13 @@
+// add.tsx — add module.
+//
+// exports: AddProduct
+// used_by: none
+// rules:   - This module uses router.replace() to navigate to manual-entry after barcode scanning; do not change navigation strategy without updating scanner.tsx and manual-entry.tsx flow.
+//          - All forwarded barcode parameters (barcode, barcodeType, productName, brand, imageUrl) must be preserved as-is when routing to manual-entry.
+//          - The add screen must remain a lightweight pass-through/dumb component only responsible for parameter forwarding and should not contain form logic.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useEffect } from 'react'; // Consolidated React imports
 import {
   View,

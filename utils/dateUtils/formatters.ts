@@ -1,3 +1,14 @@
+// formatters.ts — formatters module.
+//
+// exports: isDateInFuture | isDateTooOld | toLocalISOString | isDateWith31InShortMonth | sortDatesAscending | getLocalISODate
+// used_by: hooks\useDashboardStats.ts
+//         utils\ocr\scoring.ts
+// rules:   - All date formatting and validation functions must use `date-fns` consistently; no mixing with native `Date.toISOString()` or other date libraries.
+//          - The `DATE_CONSTANTS.PAST_DATE_FILTER_YEARS` value from `./constants` must remain the single source of truth for date boundaries; no hardcoded year values.
+//          - All exported functions must maintain clock-time independence using `startOfToday()` for comparisons, never `new Date()` alone.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Date formatting and utility functions.
  * @module dateUtils/formatters

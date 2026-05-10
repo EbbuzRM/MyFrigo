@@ -1,3 +1,13 @@
+// AddMethodCard.tsx — AddMethodCard module.
+//
+// exports: AddMethodCard
+// used_by: app\(tabs)\add.tsx
+// rules:   - All components using `AnimatedPressable` must pass accessibility props via `getAnimatedPressableAccessibilityProps()` utility
+//          - Color schemes for barcode and manual variants must maintain their respective light/dark mode mappings defined in `getColors()`
+//          - TestID prop must be propagated to all interactive elements for E2E testing compatibility
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';

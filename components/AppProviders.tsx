@@ -1,3 +1,12 @@
+// AppProviders.tsx — AppProviders module.
+//
+// exports: AppProviders
+// used_by: app\_layout.tsx
+// rules:   - LoggingService must be initialized synchronously at module level before any component mounts, as it is a critical dependency for all logging operations throughout the application
+//          - All application context providers must be nested inside AuthProvider and SettingsProvider as the outermost providers in the hierarchy
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useEffect } from 'react';
 import { AuthProvider } from '@/context/AuthContext';
 import { SettingsProvider } from '@/context/SettingsContext';

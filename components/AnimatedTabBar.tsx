@@ -1,3 +1,13 @@
+// AnimatedTabBar.tsx — AnimatedTabBar module.
+//
+// exports: AnimatedTabBar
+// used_by: app\(tabs)\_layout.tsx
+// rules:   - The AnimatedTabBar component must always receive bottomTabNavigator navigation props and must not be used outside a BottomTabNavigator context
+//          - All tab items must be wrapped in AnimatedTabItem components; no direct tab rendering is permitted outside the AnimatedTabItem abstraction
+//          - The component must always use useSafeAreaInsets for bottom padding and never hardcode tab bar bottom spacing
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

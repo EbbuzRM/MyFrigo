@@ -1,3 +1,11 @@
+// ExpirationCard.tsx — ExpirationCard module.
+//
+// exports: ExpirationCard
+// used_by: app\(tabs)\index.tsx
+// rules:   The module follows a React Native component pattern where styles and colors are computed using memoized helper functions from a separate `.styles` file, and all dependencies must be injected via React hooks (contexts) rather than global imports.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback, useMemo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Product } from '@/types/Product';

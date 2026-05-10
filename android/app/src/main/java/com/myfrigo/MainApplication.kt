@@ -1,5 +1,13 @@
 package com.myfrigo
 
+// MainApplication.kt — MainApplication module.
+//
+// exports: MainApplication | MainApplication.onCreate | MainApplication.onConfigurationChanged
+// used_by: none
+// rules:   none
+// agent:   codedna-cli (no-llm) | codedna-cli | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import android.app.Application
 import android.content.res.Configuration
 
@@ -38,6 +46,11 @@ class MainApplication : Application(), ReactApplication {
   override val reactHost: ReactHost
     get() = ReactNativeHostWrapper.createReactHost(applicationContext, reactNativeHost)
 
+  /**
+   * Rules:   Must handle potential IllegalArgumentException when parsing REACT_NATIVE_RELEASE_LEVEL
+   * Rules:   REACT_NATIVE_RELEASE_LEVEL build config must be a valid ReleaseLevel enum value (STABLE, BETA, etc.) or it will default to STABLE
+   * Rules:   DefaultNewArchitectureEntryPoint.releaseLevel must be set BEFORE loadReactNative() is called, as loadReactNative uses this value to configure the React Native runtime. Changing it afterward has no effect.
+   */
   override fun onCreate() {
     super.onCreate()
     DefaultNewArchitectureEntryPoint.releaseLevel = try {

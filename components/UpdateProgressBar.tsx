@@ -1,3 +1,13 @@
+// UpdateProgressBar.tsx — UpdateProgressBar module.
+//
+// exports: UpdateProgressBar
+// used_by: components\UpdateModal.tsx
+// rules:   - All React Native components in this module must accept and use `UpdateModalStyles` from `./UpdateModal.styles` for consistent theming
+//          - Animated values (`Animated.Value`) must be passed as props, not created internally within components
+//          - Components must use `React.memo` with explicit `displayName` for performance optimization
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, Animated } from 'react-native';
 import { UpdateModalStyles } from './UpdateModal.styles';

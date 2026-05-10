@@ -1,3 +1,14 @@
+// HistoryCard.tsx — HistoryCard module.
+//
+// exports: HistoryCard
+// used_by: app\consumed-list.tsx
+//         app\history-detail.tsx
+// rules:   - All history card components must use `useReducedMotion()` hook to respect accessibility preferences, with animation fallbacks that skip animations when reduced motion is enabled
+//          - Staggered animations must use `ANIMATION_DELAY_PER_ITEM` (100ms) and `ANIMATION_DURATION` (400ms) constants with index-based calculation
+//          - Category data must be resolved via `useCategories()` context's `getCategoryById()` method, never by directly accessing product category fields
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay } from 'react-native-reanimated';

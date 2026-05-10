@@ -1,3 +1,13 @@
+// DashboardHeader.tsx — DashboardHeader module.
+//
+// exports: DashboardHeader
+// used_by: app\(tabs)\index.tsx
+// rules:   - Always use `React.memo` for exported components to prevent unnecessary re-renders in the dashboard module
+//          - Theme must be consumed via `useTheme()` from `@/context/ThemeContext` with dynamic styles generated through a `getStyles(isDarkMode)` function
+//          - All interactive elements must include proper `testID` and accessibility props (`accessibilityLabel`, `accessibilityRole`) for testing and screen reader support
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { User, Bell, BellOff } from 'lucide-react-native';

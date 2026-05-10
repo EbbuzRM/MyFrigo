@@ -1,3 +1,12 @@
+// useDashboardStats.ts — useDashboardStats module.
+//
+// exports: useDashboardStats
+// used_by: app\(tabs)\index.tsx
+// rules:   - All date comparisons must use local timezone dates (YYYY-MM-DD'T00:00:00' format) to prevent UTC offset issues in expiration calculations
+//          - The notificationDays parameter defaults to 7 when undefined to maintain consistent alert threshold behavior across all stats computations
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useMemo } from 'react';
 import { Product } from '@/types/Product';
 import { getLocalISODate } from '@/utils/dateUtils/formatters';

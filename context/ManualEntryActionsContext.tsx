@@ -1,3 +1,13 @@
+// ManualEntryActionsContext.tsx — ManualEntryActionsContext module.
+//
+// exports: InitializeFormData | ManualEntryActionsProvider | useManualEntryActions | ActionsContextValue
+// used_by: context\ManualEntryContext.tsx
+// rules:   - The `ActionsContext` must remain a singleton per provider instance and must only expose mutations via `ActionsContextValue`, never direct state access.
+//          - All form state updates must go through `setField`, `addQuantity`, `removeQuantity`, `updateQuantity`, or `setQuantities` to maintain immutable state consistency.
+//          - The `initializeForm` function must accept `InitializeFormData` and merge it with processed product data, never bypassing the context boundaries.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import 'react-native-get-random-values';

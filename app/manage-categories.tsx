@@ -1,3 +1,13 @@
+// manage-categories.tsx — manage-categories module.
+//
+// exports: ManageCategoriesScreen | function
+// used_by: none
+// rules:   - All category mutations (add, update, delete) must be performed exclusively through the CategoryContext API, never directly modifying the categories state.
+//          - The PRODUCT_CATEGORIES constant defines default/system categories that must remain immutable and cannot be deleted or edited through the UI.
+//          - Screen navigation and modal visibility state must be managed locally with useState, not shared outside the component.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

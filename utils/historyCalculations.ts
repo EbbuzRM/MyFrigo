@@ -1,3 +1,13 @@
+// historyCalculations.ts — historyCalculations module.
+//
+// exports: calculateHistoryStats | generateSuggestions | calculateHistoryData
+// used_by: app\(tabs)\history.tsx
+// rules:   - Module exports only the three specified functions (`calculateHistoryStats`, `generateSuggestions`, `calculateHistoryData`) - no other functions should be exposed
+//          - Performance logging using `LoggingService.debug` must be maintained for all calculation functions, as this is the module's standard tracing pattern
+//          - All threshold constants (`WASTE_WARNING_THRESHOLD`, `WASTE_POSITIVE_THRESHOLD`, `MIN_PRODUCTS_FOR_POSITIVE`) must remain as module-level constants, not moved or inlined
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * History Calculations Utilities
  * @module utils/historyCalculations

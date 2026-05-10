@@ -1,3 +1,13 @@
+// textual.ts — textual module.
+//
+// exports: parseTextualMonthDate
+// used_by: none
+// rules:   - MONTH_MAP must remain a complete mapping of all supported textual month abbreviations in uppercase, and no new date parsing logic should bypass this centralized map
+//          - All date parsing functions must consistently use validateYear and normalizeTwoDigitYear from validators module before returning successful DateParseResult objects
+//          - The LoggingService must be used with TAG constant for all debug-level logging in this module, never with direct console calls
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Textual month date parsing.
  * @module dateUtils/parsers/textual

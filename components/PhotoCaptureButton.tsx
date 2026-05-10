@@ -1,3 +1,13 @@
+// PhotoCaptureButton.tsx — PhotoCaptureButton module.
+//
+// exports: ExpirationPhotoButton | ProductPhotoButton | PhotoCaptureButton
+// used_by: components\ProductFormFooter.tsx
+//         components\ProductFormHeader.tsx
+// rules:   - All button components must extend `AccessibilityProps` interface and use `React.memo` for performance optimization
+//          - All photo capture interactions must exclusively use the `usePhotoNavigation` hook for navigation logic
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { Text, TouchableOpacity, Image, View, AccessibilityProps } from 'react-native';
 import { usePhotoNavigation, PhotoNavigationParams } from '@/hooks/usePhotoNavigation';

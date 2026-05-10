@@ -1,3 +1,13 @@
+// CategoryFilter.tsx — CategoryFilter module.
+//
+// exports: CategoryFilter
+// used_by: components\products\CategoryFilterBar.tsx
+// rules:   - Category selection uses ID-based tracking via `selectedCategories` array, not single selection; all category interactions must support multi-selection logic.
+//          - Categories with zero product count are automatically hidden (except 'all'), and any new category implementation must maintain this filtering behavior.
+//          - Category colors are provided from external `ProductCategory` data and used dynamically for border styling; color handling must remain data-driven, not hardcoded.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Product, ProductCategory } from '@/types/Product';

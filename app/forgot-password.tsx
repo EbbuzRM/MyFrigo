@@ -1,3 +1,13 @@
+// forgot-password.tsx — forgot-password module.
+//
+// exports: ForgotPassword | function
+// used_by: none
+// rules:   - OTP-based password reset flow must preserve the current Supabase auth pattern without redirectTo parameter
+//          - Email validation and error handling logic for specific Supabase error messages must remain intact
+//          - State management for email, loading, OTP input visibility, and OTP value must be maintained across the component lifecycle
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { supabase } from '@/services/supabaseClient';

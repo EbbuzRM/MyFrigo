@@ -1,3 +1,11 @@
+// AuthErrorHandler.ts — AuthErrorHandler module.
+//
+// exports: isEmailNotConfirmed | isInvalidCredentials | isAuthSessionExpired | isForbidden | isInsufficientPermissions | handleEmailNotConfirmedError | handleInvalidCredentialsError | handleSessionExpiredError | handleForbiddenError | handleInsufficientPermissionsError | handleGenericAuthError | handleAuthError
+// used_by: utils\errorHandler.ts
+// rules:   Functions must remain pure and stateless — no module-level state or side effects. All exported functions must accept error as their first parameter and return boolean or createError result. New error checkers must follow the same signature and naming pattern as existing ones.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * @fileoverview Authentication error handler using Strategy pattern.
  * Handles login failures, session issues, and authorization errors.

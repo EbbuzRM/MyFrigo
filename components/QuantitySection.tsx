@@ -1,3 +1,13 @@
+// QuantitySection.tsx — QuantitySection module.
+//
+// exports: QuantitySection
+// used_by: components\ProductFormFooter.tsx
+// rules:   - All quantity management operations must go through the `handlers` object from the parent context, not modify state directly
+//          - The `QuantitySection` component is memoized with `React.memo`; any props passed to it must maintain referential stability to prevent unnecessary re-renders
+//          - Accessibility props are required and must propagate to the root container element
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, AccessibilityProps } from 'react-native';
 import QuantityInputRow from './QuantityInputRow';

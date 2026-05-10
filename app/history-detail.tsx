@@ -1,3 +1,11 @@
+// history-detail.tsx — history-detail module.
+//
+// exports: HistoryDetailScreen | function
+// used_by: none
+// rules:   This module is a screen-level component that directly consumes `ProductStorage` and `LoggingService` services for data operations, and it must remain a self-contained screen without being imported by other modules.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

@@ -1,3 +1,13 @@
+// useProductActions.ts — useProductActions module.
+//
+// exports: UseProductActionsParams | UseProductActionsResult | useProductActions
+// used_by: app\(tabs)\products.tsx
+// rules:   - Must use `ProductStorage` service for all product data mutations, not direct state manipulation
+//          - All action handlers must call `refreshProducts` callback after successful mutations to maintain UI consistency
+//          - Should delegate to `onShowConsumeModal` callback for multi-quantity products instead of implementing modal logic directly
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { Product } from '@/types/Product';

@@ -1,3 +1,13 @@
+// ProfileMenu.tsx — ProfileMenu module.
+//
+// exports: ProfileMenu
+// used_by: app\(tabs)\index.tsx
+// rules:   - Modal and overlay press handlers must clear all ephemeral UI state (notifications, dropdowns) before navigation or logout actions.
+//          - All modal containers and menu items must use dynamic theming via `getStyles(isDarkMode)` pattern, never inline colors.
+//          - TouchableOpacity and Pressable elements must include `accessibilityLabel` and `accessibilityRole` props for screen reader support.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, Pressable, StyleSheet } from 'react-native';
 import { Settings, LogOut } from 'lucide-react-native';

@@ -1,3 +1,15 @@
+// TemplateService.ts — TemplateService module.
+//
+// exports: ProductTemplate | TemplateService
+// used_by: hooks\barcode\useLocalDatabaseLookup.ts
+//         services\ProductStorage.ts
+//         utils\caseConverter.ts
+// rules:   - The `TemplateService` class must use `convertTemplateToCamelCase` for database-to-application data conversion and `convertTemplateToSnakeCase` for application-to-database data conversion.
+//          - All database operations must be wrapped in try-catch blocks with error logging via `LoggingService.error()`.
+//          - The `ProductTemplate` interface is the canonical data shape for template operations and must not be modified without updating all consumers.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { Product } from '@/types/Product';
 import { supabase } from './supabaseClient';
 import { TablesInsert } from '@/types/supabase';

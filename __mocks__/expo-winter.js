@@ -1,3 +1,11 @@
+// expo-winter.js — expo-winter module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   codedna-cli (no-llm) | codedna-cli | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 // Mock for Expo Winter APIs (structuredClone, fetch, etc.)
 // This prevents "import outside test scope" errors in Jest
 

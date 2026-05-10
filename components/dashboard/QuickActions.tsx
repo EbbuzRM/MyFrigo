@@ -1,3 +1,12 @@
+// QuickActions.tsx — QuickActions module.
+//
+// exports: QuickActions
+// used_by: app\(tabs)\index.tsx
+// rules:   - Must maintain consistent routing paths (`/add`, `/scanner`) and accessibility labels (`accessibilityLabel`, `accessibilityRole`) across all quick action buttons.
+//          - Quick action buttons must strictly follow the two-button layout (primary/secondary) with color contrast rules defined by `useTheme()` and the design system.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Plus, ScanBarcode } from 'lucide-react-native';

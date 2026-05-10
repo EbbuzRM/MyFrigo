@@ -1,3 +1,13 @@
+// HistoryCard.styles.ts — HistoryCard.styles module.
+//
+// exports: getHistoryCardStyles
+// used_by: components\HistoryCard.tsx
+// rules:   - The `getHistoryCardStyles` function must remain the single export point, accepting only `isDarkMode: boolean` as parameter and returning a `StyleSheet.create` object.
+//          - All color values must be hardcoded theme-specific pairs (dark/light) rather than referencing external theme variables or tokens.
+//          - Border radius, spacing, and shadow constants are defined as module-level constants and must be used consistently across all styles; inline values are prohibited.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { StyleSheet } from 'react-native';
 import { scaleFont } from '@/utils/scaleFont';
 

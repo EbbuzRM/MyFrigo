@@ -1,3 +1,13 @@
+// UpdateService.metadata.ts — UpdateService.metadata module.
+//
+// exports: ExpoUpdatesManifest | DownloadProgress | UpdateInfo | UpdateSettings | UpdateMetadataService
+// used_by: services\UpdateService.ts
+//         services\update\UpdateService.download.ts
+//         services\update\UpdateService.notifications.ts
+// rules:   Return only the constraint text.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { Platform } from 'react-native';
 import * as Updates from 'expo-updates';
 import Constants from 'expo-constants';

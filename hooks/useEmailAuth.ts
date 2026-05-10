@@ -1,3 +1,11 @@
+// useEmailAuth.ts — useEmailAuth module.
+//
+// exports: useEmailAuth
+// used_by: components\LoginForm.tsx
+// rules:   The authentication flow is managed exclusively by AuthContext via expo-router; this hook must never handle navigation or redirection logic.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 import { AuthService, AuthResult } from '@/services/AuthService';

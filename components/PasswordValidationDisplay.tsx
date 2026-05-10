@@ -1,3 +1,12 @@
+// PasswordValidationDisplay.tsx — PasswordValidationDisplay module.
+//
+// exports: PasswordValidationDisplay
+// used_by: components\LoginForm.tsx
+// rules:   - Password validation display components must remain presentational only, receiving validation state via props and not managing any validation logic internally
+//          - All password validation criteria (minLength, hasLower, hasUpper, hasNumber) must be displayed as individual ValidationCheck components following the established icon+text pattern
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';

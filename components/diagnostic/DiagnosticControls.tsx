@@ -1,3 +1,13 @@
+// DiagnosticControls.tsx — DiagnosticControls module.
+//
+// exports: DiagnosticControls
+// used_by: components\DiagnosticPanel.tsx
+// rules:   - Must maintain separation between UI rendering logic and diagnostic execution logic; diagnostic state management should not leak into presentation components
+//          - All component styles must be derived from the theme context using the `useTheme` hook with dark mode support
+//          - UI components must be memoized and use useMemo for computed values to prevent unnecessary re-renders during diagnostic execution cycles
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { memo, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

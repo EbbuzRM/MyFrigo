@@ -1,3 +1,11 @@
+// AuthTests.test.ts — AuthTests.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { AuthTests } from '../AuthTests';
 import { authLogger } from '@/utils/AuthLogger';
 import { formStateLogger } from '@/utils/FormStateLogger';

@@ -1,3 +1,12 @@
+// HistoryHeader.tsx — HistoryHeader module.
+//
+// exports: HistoryHeader
+// used_by: app\(tabs)\history.tsx
+// rules:   - All components in the history module must accept `isDarkMode` prop for theme consistency
+//          - Style definitions must remain within the component file using StyleSheet.create pattern
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 

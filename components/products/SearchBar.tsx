@@ -1,3 +1,13 @@
+// SearchBar.tsx — SearchBar module.
+//
+// exports: SearchBar
+// used_by: app\(tabs)\products.tsx
+// rules:   - All presentational components must use `useTheme()` from `@/context/ThemeContext` for dark mode support, with conditional style generation via `getStyles(isDarkMode)`
+//          - All user-facing strings should default to Italian and include proper accessibility props (`accessibilityLabel`, `accessibilityRole`, `accessibilityHint`)
+//          - All text inputs must follow the standard search pattern with `Search` icon from `lucide-react-native` and include `returnKeyType="search"` and `clearButtonMode="while-editing"`
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Search } from 'lucide-react-native';

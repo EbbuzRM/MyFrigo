@@ -1,3 +1,13 @@
+// useCategorySelection.ts — useCategorySelection module.
+//
+// exports: UseCategorySelectionProps | UseCategorySelectionReturn | useCategorySelection
+// used_by: hooks\useProductForm.ts
+// rules:   - Category data formatting logic (grid spacers, "Add New" button) must remain isolated in the `formatCategoryData` utility function and not be mixed into React component or hook logic
+//          - All category selection and creation flows must go through the CategoryContext and ManualEntryContext providers, not direct state manipulation
+//          - The ADD_NEW_CATEGORY_ID constant must be defined by the consumer and passed through props, not hardcoded in this hook
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useCategories } from '@/context/CategoryContext';

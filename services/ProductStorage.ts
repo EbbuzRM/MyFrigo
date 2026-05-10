@@ -1,3 +1,26 @@
+// ProductStorage.ts — ProductStorage module.
+//
+// exports: ProductStorage
+// used_by: app\consumed-list.tsx
+//         app\history-detail.tsx
+//         context\ProductContext.tsx
+//         context\__tests__\ProductContext.test.tsx
+//         hooks\__tests__\useProductDetail.test.ts
+//         hooks\useHistoryData.ts
+//         hooks\usePhotoActions.ts
+//         hooks\useProductActions.ts
+//         hooks\useProductDetail.ts
+//         hooks\useProductInitialization.ts
+//         hooks\useProductRefresh.ts
+//         hooks\useProductSave.ts
+//         services\diagnostic\DatabaseTests.ts
+//         services\diagnostic\PerformanceTests.ts
+// rules:   - All ProductStorage methods must return `ServiceResult<T>` for consistent error handling across all consumers
+//          - Database operations must use the Supabase client obtained via `getCachedSession()` for authenticated access
+//          - All product data transformations between snake_case (database) and camelCase (application) must use the dedicated converter utilities
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { Product } from '@/types/Product';
 import { ServiceResult, createSuccessResult, createErrorResult } from '@/types/ServiceResult';
 import { supabase, getCachedSession } from './supabaseClient';

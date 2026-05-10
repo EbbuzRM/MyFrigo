@@ -1,3 +1,13 @@
+// UpdateService.notifications.ts — UpdateService.notifications module.
+//
+// exports: UpdateEventEmitter | UpdateNotificationService
+// used_by: services\UpdateService.ts
+// rules:   - The `UpdateEventEmitter` is the single event bus for the module; all inter-component communication must go through it, not direct function calls between unrelated services.
+//          - Event names used in `UpdateNotificationService` are the canonical set; adding new event types requires explicit cross-module coordination with `UpdateService.ts`.
+//          - Static methods on `UpdateNotificationService` must remain the only way to emit update-related events externally.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { UpdateInfo } from './UpdateService.metadata';
 
 type UpdateEventListener = (data: UpdateInfo | null) => void;

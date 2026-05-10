@@ -1,3 +1,11 @@
+// useBarcodeScanner.test.ts — useBarcodeScanner.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Test per le funzioni helper di estrazione dati da Open Food Facts.
  * Verificano i fallback per product_name, brands e image_url.

@@ -1,3 +1,11 @@
+// usePhotoOCR.test.ts — usePhotoOCR.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { renderHook, act } from '@testing-library/react-native';
 import { usePhotoOCR } from '../usePhotoOCR';
 
@@ -6,6 +14,9 @@ jest.mock('@react-native-ml-kit/text-recognition', () => ({
   __esModule: true,
   default: {
     recognize: jest.fn()
+  },
+  TextRecognitionScript: {
+    LATIN: 'latin'
   }
 }));
 
@@ -18,11 +29,18 @@ jest.mock('@/services/LoggingService', () => ({
   }
 }));
 
+jest.mock('@/utils/ocr/ocrSpaceService', () => ({
+  ocrSpaceRecognize: jest.fn(),
+  convertOcrSpaceToTextBlocks: jest.fn()
+}));
+
 const mockTextRecognition = require('@react-native-ml-kit/text-recognition').default;
+const { ocrSpaceRecognize } = require('@/utils/ocr/ocrSpaceService');
 
 describe('usePhotoOCR', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    ocrSpaceRecognize.mockResolvedValue(null);
   });
 
   it('should initialize with correct default state', () => {
@@ -61,7 +79,7 @@ describe('usePhotoOCR', () => {
     });
 
     // Verify that OCR was called and returned a result (success depends on date parsing)
-    expect(mockTextRecognition.recognize).toHaveBeenCalledWith(mockImageUri);
+    expect(mockTextRecognition.recognize).toHaveBeenCalledWith(mockImageUri, 'latin');
     // The result structure should be valid regardless of date extraction success
     expect(ocrResult).toHaveProperty('success');
     expect(ocrResult).toHaveProperty('extractedDate');
@@ -101,7 +119,7 @@ describe('usePhotoOCR', () => {
     });
 
     expect(ocrResult?.success).toBe(false);
-    expect(ocrResult?.error).toBe('Nessun testo rilevato');
+    expect(ocrResult?.error).toBe('Nessuna data rilevata');
   });
 
   it('should handle images without valid dates', async () => {

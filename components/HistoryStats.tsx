@@ -1,3 +1,13 @@
+// HistoryStats.tsx — HistoryStats module.
+//
+// exports: HistoryStats
+// used_by: app\(tabs)\history.tsx
+// rules:   - Route navigation must use `expo-router` with filter type params ('consumed', 'expired', 'all'), never pass product data arrays as navigation parameters
+//          - StatsCard components must follow the established props interface pattern (title, value, icon, themed backgrounds, onPress handlers)
+//          - All color values must use hex codes and respect the theme system through the `useTheme()` context
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react-native';

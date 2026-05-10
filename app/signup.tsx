@@ -1,3 +1,12 @@
+// signup.tsx — signup module.
+//
+// exports: SignupScreen | function
+// used_by: none
+// rules:   This module must remain a self-contained signup screen with no direct dependencies on other screens, only navigating via router.replace.
+//          The component must use the useSignupValidation and useRegistration hooks for all form logic and API calls, never implementing validation or registration logic internally.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useCallback } from 'react';
 import {
   Alert,

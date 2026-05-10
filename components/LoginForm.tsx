@@ -1,3 +1,13 @@
+// LoginForm.tsx — LoginForm module.
+//
+// exports: LoginForm
+// used_by: app\login.tsx
+// rules:   - All authentication flows must use `useEmailAuth` and `usePasswordValidation` hooks, never direct `AuthService` calls
+//          - Theme-aware styling must use `useTheme()` context hook, not hardcoded colors or manual dark mode checks
+//          - Login form state (password visibility, verification success) must be managed locally, not in external state
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useEffect } from 'react';
 import {
   View,

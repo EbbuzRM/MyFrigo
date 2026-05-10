@@ -1,3 +1,11 @@
+// index.ts — index module.
+//
+// exports: saveFCMToken | sendPushNotification | scheduleDailyNotifications | sendFeedback
+// used_by: none
+// rules:   The module exclusively exports Firebase Cloud Functions (HTTPS onCall) that depend on Firebase Admin SDK initialization and Firestore operations. All exported functions must maintain the authenticated context check (`_context.auth`) and use the shared `LoggingService` for error handling.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { LoggingService } from "../../services/LoggingService";

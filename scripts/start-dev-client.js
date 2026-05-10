@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+// start-dev-client.js — start-dev-client module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
 
 /**
  * Script per avviare l'app con il custom development client

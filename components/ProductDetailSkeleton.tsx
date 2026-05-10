@@ -1,3 +1,11 @@
+// ProductDetailSkeleton.tsx — ProductDetailSkeleton module.
+//
+// exports: ProductDetailSkeleton
+// used_by: none
+// rules:   `getStyles(isDarkMode)` pattern must be used for all styles; do not use static `StyleSheet.create` or hardcoded style objects. Maintain the memoized functional component pattern with `React.memo`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

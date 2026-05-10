@@ -1,3 +1,13 @@
+// useProductFormData.ts — useProductFormData module.
+//
+// exports: UseProductFormDataReturn | useProductFormData
+// used_by: hooks\useProductForm.ts
+// rules:   - All state management functions must return or handle date string values (not Date objects) through the `onChangePurchaseDate` and `onChangeExpirationDate` handlers
+//          - The `navigatingToPhotoCapture` ref must remain as a mutable ref object and must never be converted to a state variable
+//          - The `ADD_NEW_CATEGORY_ID` constant must always use the sentinel value `'add_new_category_sentinel_value'` and must never be compared against actual user-created category IDs
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback, useRef } from 'react';
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { LoggingService } from '@/services/LoggingService';

@@ -1,3 +1,13 @@
+// QuantityValidationMessage.tsx — QuantityValidationMessage module.
+//
+// exports: QuantityValidationMessage
+// used_by: components\ConsumeQuantityModal.tsx
+// rules:   - Components with accessibility properties must preserve `accessibilityLabel`, `accessibilityRole`, and `accessibilityLiveRegion` on interactive/alert elements
+//          - All exported components must use `React.memo` with a `displayName` set for debugging and performance
+//          - Components must return `null` when no data/error is present instead of rendering empty or hidden elements
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { Text, TextStyle } from 'react-native';
 

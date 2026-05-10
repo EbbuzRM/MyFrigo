@@ -1,3 +1,11 @@
+// test-icon-service.js — test-icon-service module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 // Test script per verificare che IconService trovi "olive"
 const { IconService } = require('./services/IconService');
 

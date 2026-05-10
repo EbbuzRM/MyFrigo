@@ -1,3 +1,11 @@
+// supabaseClient.test.ts — supabaseClient.test module.
+//
+// exports: supabase | refreshAuthSession | forceRefreshToken | clearSession
+// used_by: none
+// rules:   The test client MUST never persist authentication state (no session storage, no auto-refresh) and operates exclusively with mock/in-memory storage to ensure test isolation and prevent side effects.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import { LoggingService } from './LoggingService';

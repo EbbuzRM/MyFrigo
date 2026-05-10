@@ -1,3 +1,12 @@
+// ProductList.tsx — ProductList module.
+//
+// exports: ProductList
+// used_by: app\(tabs)\products.tsx
+// rules:   - The module must maintain FlashList as the only allowed list virtualization component; no replacement with ScrollView, FlatList, or SectionList is permitted
+//          - All category lookups must use the pre-computed categoryMap object for O(1) access; no direct array filtering or find() calls on the categories array in render paths
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo, useCallback } from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';

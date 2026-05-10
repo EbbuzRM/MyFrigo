@@ -1,3 +1,13 @@
+// standard.ts — standard module.
+//
+// exports: parseDateFromString
+// used_by: none
+// rules:   - All date parsing functions must return `DateParseResult` objects with consistent `success`, `date`, `formattedDate`, and `error` properties
+//          - Input normalization (backslash to slash, spacing cleanup) must occur before any format parsing
+//          - Parsed dates must pass through `validateYear` before being returned as successful results
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Standard date parsing from various formats.
  * @module dateUtils/parsers/standard
@@ -20,7 +30,10 @@ export function parseDateFromString(dateString: string): DateParseResult {
   }
 
   // Normalize backslashes to slashes for consistent parsing
-  const trimmedInput = dateString.trim().replace(/\\/g, '/');
+  // Also remove extra spaces around separators (e.g., "12 / 05 / 2026" -> "12/05/2026")
+  const trimmedInput = dateString.trim()
+    .replace(/\\/g, '/')
+    .replace(/\s*([/.-])\s*/g, '$1');
 
   for (const dateFormat of DATE_FORMATS) {
     const parsedDate = parse(trimmedInput, dateFormat, new Date());

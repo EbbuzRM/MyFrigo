@@ -1,3 +1,13 @@
+// ProductCardDetails.tsx — ProductCardDetails module.
+//
+// exports: ProductCardDetails
+// used_by: components\ProductCard.tsx
+// rules:   - All style objects must be memoized with `useMemo` and depend on the `colors` prop
+//          - Date formatting must be passed as formatted props, not computed inside the component
+//          - The component must be wrapped with `React.memo` for performance optimization
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Calendar, Package, ShoppingCart } from 'lucide-react-native';

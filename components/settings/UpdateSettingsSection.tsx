@@ -1,3 +1,11 @@
+// UpdateSettingsSection.tsx — UpdateSettingsSection module.
+//
+// exports: UpdateSettingsSectionProps | UpdateSettingsSection
+// used_by: app\(tabs)\settings.tsx
+// rules:   - All settings section components must receive individual boolean/callback props rather than a single settings object, enabling per-field React re-rendering optimization.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { View, Text, Switch, ActivityIndicator, StyleSheet } from 'react-native';
 import { SettingsCard } from '@/components/SettingsCard';

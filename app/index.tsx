@@ -1,3 +1,12 @@
+// index.tsx — index module.
+//
+// exports: Index
+// used_by: none
+// rules:   - This module handles root-level routing logic and must never be modified to include business-specific logic beyond authentication state and password reset detection
+//          - The component must always remain a thin router-only wrapper that immediately shows a loading indicator and performs redirects via useEffect without side effects or state management
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';

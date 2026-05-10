@@ -1,3 +1,14 @@
+// GoogleAuthStorage.ts — GoogleAuthStorage module.
+//
+// exports: GoogleAuthStorage | AuthAttemptRepository
+// used_by: hooks\useGoogleAuth.ts
+//         utils\GoogleAuthRetryManager.ts
+// rules:   - The `GoogleAuthStorage` class must always implement the `AuthStorage` interface from `@/types/auth` without modifying its contract
+//          - All storage keys must use the `STORAGE_KEY_PREFIX` constant to namespace auth attempts and prevent collisions
+//          - The `AuthAttemptRepository` constructor requires both a valid `AuthStorage` implementation and a `retryWindowMs` parameter at instantiation
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoggingService } from '@/services/LoggingService';
 import { AuthStorage, GoogleAuthAttempt } from '@/types/auth';

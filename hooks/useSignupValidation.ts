@@ -1,3 +1,13 @@
+// useSignupValidation.ts — useSignupValidation module.
+//
+// exports: SignupFormData | useSignupValidation
+// used_by: app\signup.tsx
+// rules:   - All validation hooks must remain pure functions with no side effects beyond returning validation results
+//          - The module exports must maintain backward compatibility with the `SignupFormData` and `UseSignupValidationReturn` types
+//          - Validation logic must stay decoupled from UI rendering, with state managed exclusively through `useState` in the main hook
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useState, useCallback } from 'react';
 import { PasswordValidationResult } from '@/utils/authValidation';
 import { SignupFormData, ValidationErrors, ValidationState, UseSignupValidationReturn } from './useSignupValidation.types';

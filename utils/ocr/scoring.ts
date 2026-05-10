@@ -1,3 +1,13 @@
+// scoring.ts — scoring module.
+//
+// exports: selectBestDate
+// used_by: hooks\usePhotoOCR.ts
+// rules:   - All date parsing and validation logic must be centralized through the dedicated parsers and formatters in `@/utils/dateUtils/`, not duplicated or modified locally in this module.
+//          - The scoring module must remain pure with respect to date matching logic, delegating all keyword detection to `@/utils/ocrConfidence` and all logging to `LoggingService`.
+//          - Output `OCRResult` objects must be deterministic based solely on input `DateMatch[]`, `Set<string>`, and `rawText` parameters, with no side effects on external state.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { DateMatch, OCRResult, ScoredDate } from './types';
 import {
     parseDateFromString,

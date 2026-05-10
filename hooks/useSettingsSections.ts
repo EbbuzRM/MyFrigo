@@ -1,3 +1,13 @@
+// useSettingsSections.ts — useSettingsSections module.
+//
+// exports: UseSettingsSectionsReturn | useSettingsSections
+// used_by: none
+// rules:   - All exported interfaces and types must remain backward compatible; any property additions must be optional to not break consumers
+//          - The `cardId` parameter in `handleCardPress` must map exactly to the keys defined in `SettingsSectionConfig` from `@/constants/settings`
+//          - All async operations (save handlers, loading) must integrate with existing context providers (`SettingsContext`, `UpdateContext`), not bypass them
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useMemo, useCallback, useState, useRef } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';

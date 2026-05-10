@@ -1,3 +1,11 @@
+// errorFormatters.ts — errorFormatters module.
+//
+// exports: formatErrorForUI | formatErrorCode | getErrorTitle | formatErrorForDebug | getErrorSuggestions
+// used_by: utils\errorHandler.ts
+// rules:   formatErrorMessages maps MUST remain immutable after initialization and fully cover all ErrorCode values
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * @fileoverview User-friendly error message formatters.
  * Converts technical error codes to readable Italian messages for UI display.

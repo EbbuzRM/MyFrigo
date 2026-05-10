@@ -1,9 +1,17 @@
+// StorageService.test.ts — StorageService.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 // @ts-nocheck
 // Unmock ProductStorage to test the real implementation
 jest.unmock('@/services/ProductStorage');
 
 import { ProductStorage } from '../ProductStorage';
-import { supabase } from '../supabaseClient';
+import { supabase, getCachedSession } from '../supabaseClient';
 import { Product } from '@/types/Product';
 
 // Mock di expo-crypto
@@ -25,6 +33,26 @@ jest.mock('../../utils/caseConverter', () => ({
   convertProductsToCamelCase: jest.fn((data) => data),
 }));
 
+// Mock dateUtils - needed for getLocalISODate in updateProductStatus
+jest.mock('../../utils/dateUtils', () => ({
+  toLocalISOString: jest.fn((date) => date.toISOString()),
+  getLocalISODate: jest.fn(() => '2024-01-01'),
+}));
+
+// Mock supabaseClient - the real module needs to be mocked
+jest.mock('../supabaseClient', () => {
+  const mockSupabase = {
+    from: jest.fn(),
+    auth: {
+      getSession: jest.fn(),
+    },
+  };
+  return {
+    supabase: mockSupabase,
+    getCachedSession: jest.fn(),
+  };
+});
+
 // --- Test Suite ---
 describe('ProductStorage', () => {
   // Pulisce tutti i mock dopo ogni test per garantire l'isolamento
@@ -36,7 +64,7 @@ describe('ProductStorage', () => {
   describe('getProducts', () => {
     it('should fetch products for the current user', async () => {
       // Setup: Simula una sessione utente valida
-      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+      (getCachedSession as jest.Mock).mockResolvedValue({
         data: { session: { user: { id: 'test-user-id' } } },
       });
 
@@ -57,7 +85,7 @@ describe('ProductStorage', () => {
 
       // Asserzioni: Verifica che le funzioni corrette siano state chiamate
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'test-user-id');
 
       // Asserzioni: Verifica che i dati restituiti siano corretti
@@ -68,7 +96,7 @@ describe('ProductStorage', () => {
 
     it('should return an error if no user is authenticated', async () => {
       // Setup: Simula l'assenza di una sessione
-      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+      (getCachedSession as jest.Mock).mockResolvedValue({
         data: { session: null },
       });
 
@@ -86,7 +114,7 @@ describe('ProductStorage', () => {
   describe('saveProduct', () => {
     it('should upsert a product with the user ID', async () => {
       // Setup
-      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+      (getCachedSession as jest.Mock).mockResolvedValue({
         data: { session: { user: { id: 'test-user-id' } } },
       });
 
@@ -136,7 +164,7 @@ describe('ProductStorage', () => {
       // Setup
       const mockQueryBuilder = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null }),
+        eq: jest.fn().mockResolvedValue({ error: null, data: null }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 

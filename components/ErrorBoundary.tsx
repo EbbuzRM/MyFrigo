@@ -1,3 +1,12 @@
+// ErrorBoundary.tsx — ErrorBoundary module.
+//
+// exports: ErrorBoundary
+// used_by: app\_layout.tsx
+// rules:   - The `fallback` prop is the sole extension point for error UI customization; any modifications to error presentation must preserve or delegate to this prop.
+//          - This component must remain a class component extending `React.Component` as it relies on `getDerivedStateFromError` and `componentDidCatch` lifecycle methods.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';

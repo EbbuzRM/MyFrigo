@@ -1,3 +1,14 @@
+// SettingsSection.tsx — SettingsSection module.
+//
+// exports: SettingsSectionProps | SettingsSection
+// used_by: components\settings\AccountSettingsSection.tsx
+//         components\settings\DiagnosticSettingsSection.tsx
+//         components\settings\UpdateSettingsSection.tsx
+// rules:   - Component must use `useTheme()` from `@/context/ThemeContext` for all styling; inline colors or values are not permitted without theme integration.
+//          - All text scaling must use the `scaleFont` utility from `@/utils/scaleFont` rather than hardcoded font sizes.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

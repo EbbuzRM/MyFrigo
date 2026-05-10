@@ -1,3 +1,13 @@
+// useBarcodeCache.ts — useBarcodeCache module.
+//
+// exports: useBarcodeCache
+// used_by: hooks\useBarcodeScanner.ts
+// rules:   - The module uses `useRef` for cache storage, so cache is NOT shared across component instances — each caller gets its own isolated cache.
+//          - Cache has a hard limit of 100 entries (`MAX_CACHE_SIZE`) with automatic LRU-style eviction and periodic cleanup every 5 minutes (`CACHE_CLEANUP_INTERVAL`).
+//          - Cache entries expire after 30 minutes (`CACHE_DURATION`) and expired entries are removed during both `get` and cleanup cycles.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useRef, useEffect, useCallback } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 import { ScanResult } from '../useBarcodeScanner';

@@ -204,3 +204,5 @@ target/
 vendor/
 coverage/
 .cache/
+.env
+.env

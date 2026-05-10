@@ -1,3 +1,12 @@
+// quantities.ts — quantities module.
+//
+// exports: UnitOption | COMMON_UNITS | DEFAULT_QUANTITY | DEFAULT_UNIT | MIN_QUANTITY | MAX_QUANTITY | QUANTITY_STEP
+// used_by: components\QuantityUnitSelector.tsx
+//         hooks\useQuantityInput.ts
+// rules:   Utilizzare solo le unità di misura censite in COMMON_UNITS; per nuove tipologie di quantità, aggiornare le costanti di limite (MIN/MAX) in questo file.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Constants for quantity-related functionality
  * @module constants/quantities

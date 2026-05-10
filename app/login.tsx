@@ -1,3 +1,13 @@
+// login.tsx — login module.
+//
+// exports: LoginScreen | function
+// used_by: none
+// rules:   - This module exports only one component (`LoginScreen` as default) and must never export additional components or functions
+//          - All navigation (signup, forgot-password) must be handled via Expo Router's `router.push()`, never through direct component rendering or imperative navigation
+//          - The Google authentication flow must always go through the `useGoogleAuth` hook, never directly implementing Google Sign-In logic
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Text, Alert } from 'react-native';
 import { useRouter } from 'expo-router';

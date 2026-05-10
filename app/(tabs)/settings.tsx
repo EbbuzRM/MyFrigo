@@ -1,4 +1,14 @@
-import React, { useCallback, useMemo } from 'react';
+// settings.tsx — settings module.
+//
+// exports: Settings | function
+// used_by: none
+// rules:   - All settings logic must be delegated to extracted sub-components and context hooks; the main `Settings` component must remain a thin orchestrator under ~150 lines
+//          - Theme and settings context must be consumed via `useTheme` and `useSettings` hooks; direct imports or prop drilling for these values are prohibited
+//          - Every settings section (Account, Diagnostic, Update) must be implemented as a separate component file in `components/settings/` and handle its own state and UI logic
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
+﻿import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,7 +18,6 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { DiagnosticPanel } from '@/components/DiagnosticPanel';
 import { NotificationDaysModal } from '@/components/settings/NotificationDaysModal';
@@ -33,7 +42,7 @@ import { LoggingService } from '@/services/LoggingService';
  * - DiagnosticSettingsSection: Notifications, appearance, data, support
  * - UpdateSettingsSection: Update checking and installation settings
  * - NotificationDaysModal: Modal for editing notification days
- * - VersionPressHandler: Long press gesture for diagnostic panel
+ * - VersionPressHandler: Tap gesture for diagnostic panel
  *
  * @example
  * ```tsx
@@ -156,13 +165,6 @@ export default function Settings(): React.ReactElement {
     }
   }, [checkForUpdates, showGlobalToast, openUpdateModal]);
 
-  /**
-   * Handle version info display
-   */
-  const handleShowVersionInfo = useCallback(() => {
-    Alert.alert('MyFrigo', `Versione ${Constants.expoConfig?.version}`);
-  }, []);
-
   // Loading state
   if (loading || !settings) {
     return (
@@ -212,10 +214,9 @@ export default function Settings(): React.ReactElement {
           onInstallUpdate={openUpdateModal}
         />
 
-        {/* Version Footer with Long Press */}
+        {/* Version Footer with Tap Gesture */}
         <VersionPressHandler
           onActivate={() => setShowDiagnosticPanel(true)}
-          onShowVersionInfo={handleShowVersionInfo}
         />
       </ScrollView>
 

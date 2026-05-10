@@ -1,3 +1,13 @@
+// spatial.ts — spatial module.
+//
+// exports: findSpatiallyAnchoredMatches
+// used_by: hooks\usePhotoOCR.ts
+// rules:   - All spatial relationship calculations must use the utility functions from `@/utils/ocrGeometry` for consistency
+//          - Date matches without frame geometry data must be excluded from spatial anchoring logic
+//          - The 200px proximity threshold is a shared module constant that must remain consistent across all spatial matching functions
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { DateMatch } from './types';
 import { calculateDistance, isRightOf, isBelow, isAbove } from '@/utils/ocrGeometry';

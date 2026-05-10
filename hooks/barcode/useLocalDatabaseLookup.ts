@@ -1,3 +1,11 @@
+// useLocalDatabaseLookup.ts — useLocalDatabaseLookup module.
+//
+// exports: useLocalDatabaseLookup
+// used_by: hooks\useBarcodeScanner.ts
+// rules:   The module implements a timeout pattern for database lookups; any new async operations added must maintain consistent timeout handling and error fallback behavior. The function returns `Partial<Product> | null` exclusively — all code paths must preserve this return type contract.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { TemplateService } from '@/services/TemplateService';
 import { Product } from '@/types/Product';

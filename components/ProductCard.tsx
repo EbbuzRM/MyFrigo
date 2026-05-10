@@ -1,3 +1,13 @@
+// ProductCard.tsx — ProductCard module.
+//
+// exports: ProductCard
+// used_by: components\products\ProductList.tsx
+// rules:   - All theme-aware styling must use `useTheme()` hook and `colors` from theme context; hardcoded color values are prohibited
+//          - Card animations must use `useCardAnimation` hook with index parameter for staggered entry effects
+//          - Status indicators and visual state must derive from `useProductStatus` hook, not manual date calculations
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Product, ProductCategory } from '@/types/Product';

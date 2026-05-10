@@ -1,3 +1,11 @@
+// ProfileValidator.ts — ProfileValidator module.
+//
+// exports: isDefaultProfile | isValidProfile | getProfileValidationDetails
+// used_by: utils\GoogleAuthRetryManager.ts
+// rules:   Avoid importing external dependencies or adding side effects; keep the module as a pure utility with no imports from other modules.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Profile validation utilities
  * @module utils/ProfileValidator

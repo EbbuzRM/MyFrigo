@@ -1,3 +1,13 @@
+// profile.tsx — profile module.
+//
+// exports: ProfileScreen | function
+// used_by: none
+// rules:   - Depends on `AuthContext` and `supabaseClient` for user/profile state and persistence; must not bypass these shared services.
+//          - Relies on `LoggingService` for operational tracing; all state transitions and validation failures must be logged.
+//          - Uses `useEffect` to synchronize local form state with context `profile`; edits must preserve this reactive sync pattern.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

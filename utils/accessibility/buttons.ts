@@ -1,3 +1,12 @@
+// buttons.ts — buttons module.
+//
+// exports: AccessibilityAttributes | CreateAccessibilityPropsOptions | createAccessibilityProps | getButtonAccessibilityProps | getDeleteButtonAccessibilityProps | getActionButtonAccessibilityProps | getAnimatedPressableAccessibilityProps | getCategoryFilterAccessibilityProps
+// used_by: utils\accessibility\cards.ts
+//         utils\accessibility\inputs.ts
+// rules:   The module provides a single, consistent API surface for button accessibility across the codebase; any new accessibility helper for a button variant must be added as an export from this file and follow the same pattern of returning `AccessibilityAttributes` objects using `createAccessibilityProps`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 /**
  * Button accessibility utilities for React Native
  * @module utils/accessibility/buttons

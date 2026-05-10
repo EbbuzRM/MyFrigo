@@ -1,3 +1,11 @@
+// enrich-emoji.js — enrich-emoji module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 const fs = require('fs');
 const path = require('path');
 

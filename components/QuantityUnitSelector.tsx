@@ -1,3 +1,11 @@
+// QuantityUnitSelector.tsx — QuantityUnitSelector module.
+//
+// exports: QuantityUnitSelector
+// used_by: components\QuantityInputRow.tsx
+// rules:   This component uses `React.memo` and `useCallback` for performance optimization — maintain memoization pattern when adding or modifying props to prevent unnecessary re-renders. The component relies on `COMMON_UNITS` from `@/constants/quantities` as default units; dynamic unit options must always match the `UnitOption` interface. Styling is dynamically generated based on theme context and must remain driven by `isDarkMode` from `useTheme()`.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';

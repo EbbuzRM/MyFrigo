@@ -1,3 +1,13 @@
+// EmailVerificationBanner.tsx — EmailVerificationBanner module.
+//
+// exports: EmailVerificationBanner
+// used_by: components\LoginForm.tsx
+// rules:   - Theme context must be used consistently across all components via `useTheme()` hook from `@/context/ThemeContext`
+//          - Dark mode variants must be implemented using conditional style merging with `isDarkMode` flag for both containers and text elements
+//          - Auto-dismiss timers in notification components must clean up with `clearTimeout` in useEffect return
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';

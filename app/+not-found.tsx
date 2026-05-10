@@ -1,3 +1,12 @@
+// +not-found.tsx — +not-found module.
+//
+// exports: NotFoundScreen | function
+// used_by: none
+// rules:   - Must maintain the 1.5-second delay before redirect to allow for session check completion
+//          - Redirect logic must use router.replace (not push) for all navigation destinations to prevent history stack pollution
+//          - Supabase session check determines redirect target: authenticated users go to '/(tabs)', unauthenticated users go to '/login'
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
 
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native';
@@ -5,6 +14,9 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
+/**
+ * Rules:   Relies on Supabase session to determine redirect destination - if Supabase auth isn't initialized or provider changes, redirect logic breaks. Uses router.replace (not push) so redirect doesn't add history entry.
+ */
 export default function NotFoundScreen() {
   const router = useRouter();
 

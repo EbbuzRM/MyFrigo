@@ -1,3 +1,12 @@
+// useRegistrationState.ts — useRegistrationState module.
+//
+// exports: UseRegistrationStateReturn | useRegistrationState
+// used_by: hooks\useRegistration.ts
+//         hooks\useRegistrationOrchestrator.ts
+// rules:   - The `useRegistrationState` hook must remain a pure state management unit with no business logic, accepting only state mutations through its exposed setters.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { useCallback } from 'react';
 import { RegistrationData, RegistrationResult } from './useRegistration.types';
 

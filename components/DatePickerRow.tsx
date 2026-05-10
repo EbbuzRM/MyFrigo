@@ -1,3 +1,13 @@
+// DatePickerRow.tsx — DatePickerRow module.
+//
+// exports: DatePickerRow
+// used_by: components\ProductFormFooter.tsx
+// rules:   - All date picker visibility states must be managed externally via the `DateHandlers` interface; components must not maintain internal toggle state for date picker modals.
+//          - Component styling must use `getStyles(isDarkMode)` to apply theme-consistent styles; direct style overrides or inline styles are prohibited.
+//          - Accessibility props (`accessible`, `accessibilityLabel`) must be supported via the component interface and default to accessible date selection sections.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback } from 'react';
 import {
   View,

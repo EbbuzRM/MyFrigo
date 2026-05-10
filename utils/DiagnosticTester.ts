@@ -1,3 +1,13 @@
+// DiagnosticTester.ts — DiagnosticTester module.
+//
+// exports: DiagnosticTester
+// used_by: none
+// rules:   - This module is a diagnostic utility class with only static methods and must remain stateless (no instance creation or static state storage).
+//          - All logging operations must go through `LoggingService` or the specialized auth/form loggers; no direct console calls are allowed.
+//          - The `Alert` API from react-native is the only UI interaction permitted; no other UI framework calls should be added.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { LoggingService } from '@/services/LoggingService';
 import { authLogger } from './AuthLogger';
 import { formStateLogger } from './FormStateLogger';

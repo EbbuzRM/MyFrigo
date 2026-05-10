@@ -1,3 +1,12 @@
+// QuantityInput.tsx — QuantityInput module.
+//
+// exports: QuantityInput
+// used_by: components\ConsumeQuantityModal.tsx
+// rules:   - The component is memoized with `React.memo` and uses `useCallback`/`useMemo` hooks; all props passed to this component must remain referentially stable to prevent unnecessary re-renders.
+//          - Input validation must strictly allow only numeric characters (`0-9`) via the existing regex pattern; no other character filtering or format modifications should be introduced.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useCallback, useMemo } from 'react';
 import { TextInput, View, TextStyle, ViewStyle } from 'react-native';
 

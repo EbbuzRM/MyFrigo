@@ -1,7 +1,14 @@
-/**
- * @fileoverview Database error handler using Strategy pattern.
- * Handles PostgreSQL/Supabase specific error codes and database failures.
- */
+// DatabaseErrorHandler.ts — DatabaseErrorHandler module.
+//
+// exports: isDuplicateEntryError | isForeignKeyError | isNotFoundError | getPostgresErrorInfo | handleDuplicateEntryError | handleForeignKeyError | handleNotFoundError | handleGenericDatabaseError | handleDatabaseError
+// used_by: utils\errorHandler.ts
+// rules:   - All database error handling functions must accept `unknown` as input and return `AppError` as output.
+//          - PostgreSQL error code lookup must be centralized through `PG_ERROR_CODES` mapping table, not duplicated in individual handlers.
+//          - Every PostgreSQL error must be mapped to a corresponding `ErrorCode` enum value and an Italian-language message string.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
+/** @fileoverview Database error handler using Strategy pattern. */
 
 import { ErrorCode } from '../types/errorCodes';
 import { AppError, hasErrorCode, hasErrorMessage } from '../types/errorTypes';

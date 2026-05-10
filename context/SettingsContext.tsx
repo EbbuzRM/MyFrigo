@@ -1,3 +1,19 @@
+// SettingsContext.tsx — SettingsContext module.
+//
+// exports: SettingsProvider | useSettings
+// used_by: app\(tabs)\index.tsx
+//         app\(tabs)\products.tsx
+//         app\(tabs)\settings.tsx
+//         components\AppProviders.tsx
+//         hooks\useDiagnosticTests.ts
+//         hooks\useExpirationStatus.ts
+//         hooks\useSettingsSections.ts
+// rules:   - All settings mutations must flow through `updateSettings` to ensure persistence via `SettingsService` and React state synchronization; direct `settings` state manipulation is prohibited.
+//          - The `permissionStatus` state is a reactive dependency for notification UI; any permission-modifying code must invoke `refreshPermissions()` to keep context in sync.
+//          - The context depends on `useAuth` for user identity; authentication changes must trigger SettingsProvider re-mount or state reset.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { convertSettingsToCamelCase } from '../utils/caseConverter';
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { SettingsService, AppSettings } from '@/services/SettingsService';

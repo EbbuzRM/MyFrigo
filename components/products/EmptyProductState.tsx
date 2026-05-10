@@ -1,3 +1,13 @@
+// EmptyProductState.tsx — EmptyProductState module.
+//
+// exports: EmptyProductState
+// used_by: components\products\ProductList.tsx
+// rules:   - Empty state components must use `useTheme()` hook from `@/context/ThemeContext` for dark mode support and generate styles dynamically via `getStyles(isDarkMode)`
+//          - All interactive UI components must include `accessibilityRole`, `accessibilityLabel`, and `accessibilityHint` props for screen reader compatibility
+//          - Component props must be defined as TypeScript interfaces with JSDoc comments for each property
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';

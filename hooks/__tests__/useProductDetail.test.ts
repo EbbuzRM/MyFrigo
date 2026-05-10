@@ -1,3 +1,11 @@
+// useProductDetail.test.ts — useProductDetail.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { renderHook, act } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { useProductDetail } from '../useProductDetail';
