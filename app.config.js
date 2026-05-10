@@ -29,9 +29,8 @@ module.exports = {
       eas: {
         "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"
       },
-      oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || "***REMOVED***",
-      ocrSpaceApiKey: process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY || ""
-    },
+oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || "***REMOVED***"
+     },
     icon: "./assets/images/icon.png",
     splash: {
       image: "./assets/images/splash.png",

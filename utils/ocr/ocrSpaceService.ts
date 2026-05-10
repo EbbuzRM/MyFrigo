@@ -6,7 +6,6 @@
 // agent:   codedna-cli (no-llm) | codedna-cli | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message:
 
-import Constants from 'expo-constants';
 import { File } from 'expo-file-system';
 import { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { LoggingService } from '@/services/LoggingService';
@@ -48,25 +47,6 @@ interface OcrSpaceResponse {
 }
 
 /**
- * Reads the ocr.space API key from Expo extra config (dev only) or backend proxy.
- * In production, API key must never be bundled - use backend proxy instead.
- */
-function getApiKey(): string {
-    // Production: never expose API key in client bundle
-    if (!__DEV__) {
-        LoggingService.warning(TAG, 'ocr.space fallback disabled in production — use backend proxy');
-        return '';
-    }
-
-    // Development: allow local testing with env-configured key
-    const key = Constants.expoConfig?.extra?.ocrSpaceApiKey as string | undefined;
-    if (!key) {
-        LoggingService.warning(TAG, 'OCR_SPACE_API_KEY not configured — dot-matrix fallback disabled');
-    }
-    return key ?? '';
-}
-
-/**
  * Reads an image file as a base64 string with data URI prefix.
  * Uses the new expo-file-system v19 File API.
  */
@@ -78,22 +58,18 @@ async function imageToBase64(imageUri: string): Promise<string> {
 
 /**
  * Calls the ocr.space API with Engine 2 (dot-matrix optimized).
+ * In production, uses a backend proxy to hide the API key.
+ * In development, calls the API directly with the env-configured key.
  *
  * @param imageUri Local file URI of the image to process
  * @returns The raw API response, or null on error
  */
 export async function ocrSpaceRecognize(imageUri: string): Promise<OcrSpaceResponse | null> {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-        LoggingService.info(TAG, 'Skipping ocr.space — no API key configured');
-        return null;
-    }
+    const base64Image = await imageToBase64(imageUri);
 
     LoggingService.info(TAG, 'Calling ocr.space fallback (Engine 2 — dot matrix)');
 
     try {
-        const base64Image = await imageToBase64(imageUri);
-
         const body = new URLSearchParams({
             base64Image,
             language: 'ita',
@@ -102,12 +78,29 @@ export async function ocrSpaceRecognize(imageUri: string): Promise<OcrSpaceRespo
             isOverlayRequired: 'true', // Bounding boxes for spatial analysis
         });
 
-        const response = await fetch('https://api.ocr.space/parse/image', {
+        // Production: use backend proxy (no API key needed in client)
+        // Development: use direct API call with key from env
+        const endpoint = __DEV__
+            ? 'https://api.ocr.space/parse/image'
+            : '/api/ocr-proxy'; // Supabase function endpoint
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        };
+
+        // Only add API key header in development (read directly from env)
+        if (__DEV__) {
+            const apiKey = process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
+            if (!apiKey) {
+                LoggingService.info(TAG, 'Skipping ocr.space — no API key configured');
+                return null;
+            }
+            headers['apikey'] = apiKey;
+        }
+
+        const response = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-                'apikey': apiKey,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers,
             body: body.toString(),
         });
 
