@@ -1,3 +1,11 @@
+// ProductStorage.test.ts — ProductStorage.test module.
+//
+// exports: none
+// used_by: none
+// rules:   none
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 // Unmock ProductStorage to test the real implementation
 jest.unmock('@/services/ProductStorage');
 
@@ -7,10 +15,36 @@ jest.mock('../LoggingService');
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(() => 'mock-uuid-123'),
 }));
+jest.mock('../../utils/dateUtils', () => ({
+  toLocalISOString: jest.fn((date) => date.toISOString()),
+  getLocalISODate: jest.fn(() => '2025-01-15'),
+}));
+jest.mock('../supabaseClient', () => ({
+  supabase: {
+    auth: {
+      getSession: jest.fn(() => Promise.resolve({ data: { session: { user: { id: 'user-123' } } } })),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      upsert: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      lt: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      data: null,
+      error: null,
+    })),
+  },
+  getCachedSession: jest.fn(() => Promise.resolve({ data: { session: { user: { id: 'user-123' } } } })),
+}));
 
 // Import after mocks are set up
 import { ProductStorage } from '../ProductStorage';
-import { supabase } from '../supabaseClient';
+import { supabase, getCachedSession } from '../supabaseClient';
 import * as caseConverter from '../../utils/caseConverter';
 import { LoggingService } from '../LoggingService';
 
@@ -41,9 +75,14 @@ describe('ProductStorage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+    (getCachedSession as jest.Mock).mockResolvedValue({
       data: { session: { user: { id: 'user-123' } } },
+      error: null,
     });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('getProducts', () => {
@@ -62,20 +101,22 @@ it('should fetch products for authenticated user', async () => {
       expect(result.data).toEqual([mockProduct]);
       expect(result.error).toBeNull();
       expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
-      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
-    });
+expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
+       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
+     });
 
-    it('should return empty array when user is not authenticated', async () => {
-      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-        data: { session: null },
-      });
+     it('should return empty array when user is not authenticated', async () => {
+       (getCachedSession as jest.Mock).mockResolvedValue({
+         data: { session: null },
+         error: null,
+       });
 
-      const result = await ProductStorage.getProducts();
+       const result = await ProductStorage.getProducts();
 
-expect(result.success).toBe(false);
-      expect(result.error).toBe('Utente non autenticato');
-    });
+       expect(result.success).toBe(false);
+       expect(result.data).toBeNull();
+       expect(result.error).toBe('Utente non autenticato');
+     });
 
 it('should handle database errors gracefully', async () => {
       const mockError = new Error('Database error');
@@ -88,10 +129,10 @@ it('should handle database errors gracefully', async () => {
 
       const result = await ProductStorage.getProducts();
 
-      expect(result.data).toBeNull();
-      expect(result.error).toEqual(mockError);
-      expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
+expect(result.data).toBeNull();
+       expect(result.error).toBe('Database error');
+       expect(supabase.from).toHaveBeenCalledWith('products');
+       expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
       expect(LoggingService.error).toHaveBeenCalled();
     });
@@ -120,31 +161,31 @@ it('should sort products by expiration date', async () => {
 
       expect(result.data?.[0].expirationDate).toBe('2025-01-15');
       expect(result.data?.[1].expirationDate).toBe('2025-06-15');
-      expect(result.data?.[2].expirationDate).toBe('2025-12-31');
-      expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
-      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
-    });
-  });
+expect(result.data?.[2].expirationDate).toBe('2025-12-31');
+       expect(supabase.from).toHaveBeenCalledWith('products');
+       expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
+       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
+     });
+   });
 
-  describe('getProductById', () => {
-    it('should fetch a single product by ID', async () => {
-      const mockQueryBuilder = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: mockProductSnakeCase, error: null }),
-      };
-      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
-      (caseConverter.convertProductToCamelCase as jest.Mock).mockReturnValue(mockProduct);
+   describe('getProductById', () => {
+     it('should fetch a single product by ID', async () => {
+       const mockQueryBuilder = {
+         select: jest.fn().mockReturnThis(),
+         eq: jest.fn().mockReturnThis(),
+         single: jest.fn().mockResolvedValue({ data: mockProductSnakeCase, error: null }),
+       };
+       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+       (caseConverter.convertProductToCamelCase as jest.Mock).mockReturnValue(mockProduct);
 
-      const result = await ProductStorage.getProductById('test-id');
+       const result = await ProductStorage.getProductById('test-id');
 
-      expect(result.data).toEqual(mockProduct);
-      expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url');
-      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'test-id');
-      expect(mockQueryBuilder.single).toHaveBeenCalled();
-    });
+       expect(result.data).toEqual(mockProduct);
+       expect(supabase.from).toHaveBeenCalledWith('products');
+       expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url');
+       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'test-id');
+       expect(mockQueryBuilder.single).toHaveBeenCalled();
+     });
 
     it('should return null when product not found', async () => {
       (supabase.from as jest.Mock).mockReturnValue({
@@ -204,18 +245,19 @@ it('should sort products by expiration date', async () => {
        expect(result.error).toBe('Save failed');
     });
 
-    it('should throw error when user is not authenticated', async () => {
-      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-        data: { session: null },
-      });
+it('should throw error when user is not authenticated', async () => {
+       (getCachedSession as jest.Mock).mockResolvedValue({
+         data: { session: null },
+         error: null,
+       });
 
-      const result = await ProductStorage.saveProduct(mockProduct as any);
-expect(result.success).toBe(false);
-      expect(result.error).toBe('Utente non autenticato');
-    });
-  });
+       const result = await ProductStorage.saveProduct(mockProduct as any);
+       expect(result.success).toBe(false);
+       expect(result.error).toBe('Utente non autenticato');
+     });
+   });
 
-  describe('deleteProduct', () => {
+   describe('deleteProduct', () => {
     it('should delete a product by ID', async () => {
       const mockQueryBuilder = {
         delete: jest.fn().mockReturnThis(),
@@ -280,40 +322,41 @@ expect(result.success).toBe(false);
     });
   });
 
-  describe('getExpiredProducts', () => {
-    it('should fetch expired products for authenticated user', async () => {
-      const mockData = [mockProductSnakeCase];
-      const mockQueryBuilder = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        lt: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({ data: mockData, error: null }),
-      };
-      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
-      (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue([mockProduct]);
+describe('getExpiredProducts', () => {
+     it('should fetch expired products for authenticated user', async () => {
+       const mockData = [mockProductSnakeCase];
+       const mockQueryBuilder = {
+         select: jest.fn().mockReturnThis(),
+         eq: jest.fn().mockReturnThis(),
+         lt: jest.fn().mockReturnThis(),
+         order: jest.fn().mockResolvedValue({ data: mockData, error: null }),
+       };
+       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+       (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue([mockProduct]);
 
-      const result = await ProductStorage.getExpiredProducts();
+       const result = await ProductStorage.getExpiredProducts();
 
-      expect(result.data).toEqual([mockProduct]);
-      expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
-      expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
-      expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(2, 'status', 'active');
-      expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(3, 'is_frozen', false);
-      expect(mockQueryBuilder.lt).toHaveBeenCalledWith('expiration_date', expect.any(String));
-      expect(mockQueryBuilder.order).toHaveBeenCalledWith('expiration_date', { ascending: true });
-    });
+       expect(result.data).toEqual([mockProduct]);
+       expect(supabase.from).toHaveBeenCalledWith('products');
+       expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
+       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
+       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(2, 'status', 'active');
+       expect(mockQueryBuilder.eq).toHaveBeenNthCalledWith(3, 'is_frozen', false);
+       expect(mockQueryBuilder.lt).toHaveBeenCalledWith('expiration_date', expect.any(String));
+       expect(mockQueryBuilder.order).toHaveBeenCalledWith('expiration_date', { ascending: true });
+     });
 
-    it('should return empty array when user is not authenticated', async () => {
-      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-        data: { session: null },
-      });
+     it('should return empty array when user is not authenticated', async () => {
+       (getCachedSession as jest.Mock).mockResolvedValue({
+         data: { session: null },
+         error: null,
+       });
 
-      const result = await ProductStorage.getExpiredProducts();
+       const result = await ProductStorage.getExpiredProducts();
 
-      expect(result.success).toBe(false);
-    });
-  });
+       expect(result.success).toBe(false);
+     });
+   });
 
   describe('getTrulyExpiredProducts', () => {
     it('should fetch truly expired products', async () => {
@@ -340,14 +383,14 @@ expect(result.success).toBe(false);
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
       (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue([mockProduct]);
 
-      const result = await ProductStorage.getTrulyExpiredProducts();
+const result = await ProductStorage.getTrulyExpiredProducts();
 
-      expect(result.data).toEqual([mockProduct]);
-      expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
-      expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
-      expect(eqMock).toHaveBeenNthCalledWith(2, 'status', 'expired');
-    });
+       expect(result.data).toEqual([mockProduct]);
+       expect(supabase.from).toHaveBeenCalledWith('products');
+       expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
+       expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
+       expect(eqMock).toHaveBeenNthCalledWith(2, 'status', 'expired');
+     });
 
     it('should return empty array when no truly expired products', async () => {
       (supabase.from as jest.Mock).mockReturnValue({
@@ -425,26 +468,27 @@ expect(result.success).toBe(false);
 
       (caseConverter.convertProductsToCamelCase as jest.Mock).mockReturnValue([mockProduct]);
 
-      const result = await ProductStorage.getHistory();
+const result = await ProductStorage.getHistory();
 
-      expect(result.data).toEqual([mockProduct]);
-      expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
-      expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
-      expect(eqMock).toHaveBeenNthCalledWith(2, 'status', 'consumed');
-      expect(mockQueryBuilder.order).toHaveBeenCalledWith('consumed_date', { ascending: false });
-    });
+       expect(result.data).toEqual([mockProduct]);
+       expect(supabase.from).toHaveBeenCalledWith('products');
+       expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
+       expect(eqMock).toHaveBeenNthCalledWith(1, 'user_id', 'user-123');
+       expect(eqMock).toHaveBeenNthCalledWith(2, 'status', 'consumed');
+       expect(mockQueryBuilder.order).toHaveBeenCalledWith('consumed_date', { ascending: false });
+     });
 
-    it('should return empty array when user is not authenticated', async () => {
-      (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-        data: { session: null },
-      });
+     it('should return empty array when user is not authenticated', async () => {
+       (getCachedSession as jest.Mock).mockResolvedValue({
+         data: { session: null },
+         error: null,
+       });
 
-      const result = await ProductStorage.getHistory();
+       const result = await ProductStorage.getHistory();
 
-      expect(result.success).toBe(false);
-    });
-  });
+       expect(result.success).toBe(false);
+     });
+   });
 
   describe('restoreConsumedProduct', () => {
     it('should restore a consumed product to active status', async () => {
@@ -480,22 +524,22 @@ expect(result.success).toBe(false);
     });
   });
 
-  describe('Error Handling and Logging', () => {
-    it('should log errors when operations fail', async () => {
-      const mockError = new Error('Test error');
-      const mockQueryBuilder = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: null, error: mockError }),
-      };
-      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+describe('Error Handling and Logging', () => {
+     it('should log errors when operations fail', async () => {
+       const mockError = new Error('Test error');
+       const mockQueryBuilder = {
+         select: jest.fn().mockReturnThis(),
+         eq: jest.fn().mockResolvedValue({ data: null, error: mockError }),
+       };
+       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 
-      await ProductStorage.getProducts();
+       await ProductStorage.getProducts();
 
-      expect(LoggingService.error).toHaveBeenCalled();
-      expect(supabase.from).toHaveBeenCalledWith('products');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, expiration_date, status, quantities, is_frozen, consumed_date');
-      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
-    });
+       expect(LoggingService.error).toHaveBeenCalled();
+       expect(supabase.from).toHaveBeenCalledWith('products');
+       expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date');
+       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
+     });
 
     it('should log info messages for successful operations', async () => {
       const mockQueryBuilder = {
