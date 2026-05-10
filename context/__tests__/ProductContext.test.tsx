@@ -7,7 +7,7 @@
 // message: 
 
 import React from 'react';
-import { render, act, waitFor } from '@testing-library/react-native';
+import { render, act, waitFor, waitForElementToBeRemoved } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 import { ProductProvider, useProducts } from '../ProductContext';
 import { ProductStorage } from '@/services/ProductStorage';
@@ -120,11 +120,11 @@ describe('ProductContext', () => {
     // Asserzione: Inizialmente, dovremmo vedere lo stato di caricamento
     expect(getByTestId('loading-text')).toBeTruthy();
 
-    // Asserzione: Attende che il caricamento sia finito e che i prodotti siano visualizzati
-    await waitFor(() => {
-      expect(queryByTestId('loading-text')).toBeNull();
-      expect(getByText('Latte')).toBeTruthy();
-    });
+    // Asserzione: Attende che il caricamento finisca
+    await waitForElementToBeRemoved(() => queryByTestId('loading-text'), { timeout: 3000 });
+
+    // Asserzione: I prodotti dovrebbero essere visualizzati
+    expect(getByText('Latte')).toBeTruthy();
 
     // Verifica che getProducts sia stato chiamato
     expect(mockedGetProducts).toHaveBeenCalled();
@@ -147,12 +147,11 @@ describe('ProductContext', () => {
     // Asserzione: Inizia in caricamento
     expect(getByTestId('loading-text')).toBeTruthy();
 
-    // Asserzione: Attende che il caricamento finisca, ma non ci devono essere prodotti
-    await waitFor(() => {
-      expect(queryByTestId('loading-text')).toBeNull();
-      // Verifichiamo che non ci siano prodotti renderizzati
-      expect(queryByText('Latte')).toBeNull(); // Nessun prodotto renderizzato
-    }, { timeout: 3000 }); // Aumentiamo il timeout per dare tempo al caricamento
+    // Asserzione: Attende che il caricamento finisca
+    await waitForElementToBeRemoved(() => queryByTestId('loading-text'), { timeout: 3000 });
+
+    // Verifichiamo che non ci siano prodotti renderizzati
+    expect(queryByText('Latte')).toBeNull();
   });
 
   it('should not fetch products if there is no user', () => {

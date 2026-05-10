@@ -167,7 +167,7 @@ function determineErrorCategory(error: unknown): ErrorCategory {
     const msg = error.message.toLowerCase();
 
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
-      return 'DATABASE';
+      return 'DATABASE'; // Will be routed to handleNetworkError
     }
     if (
       msg.includes('unauthorized') ||
@@ -203,7 +203,15 @@ export function handleError(error: unknown): AppError {
 
     case 'DATABASE':
       // Network errors go through network handler first
-      if (isNetworkError(error) || (hasErrorMessage(error) && error.message.includes('network'))) {
+      if (
+        isNetworkError(error) ||
+        isSessionExpired(error) ||
+        isUnauthorized(error) ||
+        (hasErrorMessage(error) &&
+          (error.message.toLowerCase().includes('network') ||
+            error.message.toLowerCase().includes('fetch') ||
+            error.message.toLowerCase().includes('connection')))
+      ) {
         return handleNetworkError(error);
       }
       return handleDatabaseError(error);

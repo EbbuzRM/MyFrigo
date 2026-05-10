@@ -249,6 +249,16 @@ jest.mock('expo-notifications', () => ({
   addNotificationReceivedListener: jest.fn(),
   addNotificationResponseReceivedListener: jest.fn(),
   setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve('mock-id')),
+  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+  AndroidImportance: {
+    MAX: 4,
+    HIGH: 3,
+    DEFAULT: 2,
+    LOW: 1,
+    MIN: 0,
+  },
 }));
 
 // Mock expo-task-manager
@@ -805,6 +815,21 @@ jest.mock('@/utils/dateUtils', () => ({
   isDateTooOld: jest.fn(() => false),
   isDateWith31InShortMonth: jest.fn(() => false),
   sortDatesAscending: jest.fn((dates) => dates.sort((a, b) => a.getTime() - b.getTime())),
+  validateYear: jest.fn((year) => ({ valid: year >= 2020 && year <= 2100 })),
+  normalizeTwoDigitYear: jest.fn((year) => year < 100 ? 2000 + year : year),
+  toLocalISOString: jest.fn((date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }),
+  getLocalISODate: jest.fn(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }),
   formatDateToISO: jest.fn((date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -866,6 +891,16 @@ jest.mock('date-fns', () => ({
   subYears: jest.fn((date, years) => {
     const result = new Date(date);
     result.setFullYear(result.getFullYear() - years);
+    return result;
+  }),
+  addDays: jest.fn((date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }),
+  subDays: jest.fn((date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() - days);
     return result;
   }),
 }));

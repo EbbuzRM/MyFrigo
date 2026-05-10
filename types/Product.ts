@@ -123,6 +123,12 @@ export interface Product {
   nutritionalInfo?: NutritionalInfo;
   /** Indica se il prodotto è congelato */
   isFrozen?: boolean;
+  /** Data di aggiunta del prodotto in formato ISO 8601 */
+  addedAt?: ISODateString;
+  /** Data di ultima modifica del prodotto in formato ISO 8601 */
+  updatedAt?: ISODateString;
+  /** ID dell'utente proprietario del prodotto */
+  userId?: string;
 }
 
 /**
@@ -144,6 +150,9 @@ export interface ProductSnakeCase {
   added_method: AddMethod;
   nutritional_info?: NutritionalInfo;
   is_frozen?: boolean;
+  added_at?: ISODateString;
+  updated_at?: ISODateString;
+  user_id?: string;
 }
 
 /**
@@ -247,6 +256,9 @@ export interface ProductForSupabase {
   added_method: AddMethod;
   nutritional_info?: NutritionalInfo;
   is_frozen?: boolean;
+  added_at?: ISODateString;
+  updated_at?: ISODateString;
+  user_id?: string;
 }
 
 import flourIcon from '../assets/images/flour-icon.png';

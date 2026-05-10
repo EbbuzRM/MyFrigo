@@ -120,12 +120,13 @@ export class NotificationPermissionService {
     }
 
     try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const permissions = await Notifications.getPermissionsAsync();
+      const existingStatus = permissions?.status;
       let finalStatus = existingStatus;
 
       if (existingStatus !== 'granted') {
         LoggingService.info('NotificationPermissionService', 'Permissions not granted, requesting...');
-        const { status } = await Notifications.requestPermissionsAsync({
+        const requestResult = await Notifications.requestPermissionsAsync({
           ios: {
             allowAlert: true,
             allowBadge: true,
@@ -133,7 +134,7 @@ export class NotificationPermissionService {
             provideAppNotificationSettings: true,
           },
         });
-        finalStatus = status;
+        finalStatus = requestResult?.status;
       }
 
       if (finalStatus !== 'granted') {
