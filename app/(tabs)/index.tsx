@@ -1,3 +1,13 @@
+// index.tsx — index module.
+//
+// exports: DashboardScreen | function
+// used_by: none
+// rules:   - All navigation must use `expo-router`'s `router.push()` with string path constants, never native navigation or direct component imports
+//          - All accessibility labels must be in Italian using both `accessibilityLabel` and `accessibilityRole` on every interactive element
+//          - All styles must use the `useTheme()` hook and `getStyles(isDarkMode)` pattern, never inline styles or direct theme value references
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
@@ -115,8 +125,13 @@ function Dashboard() {
             data={expiringProducts}
             // @ts-ignore: estimatedItemSize error due to React 19 typing mismatch with FlashList
             estimatedItemSize={120}
-            renderItem={({ item }) => (
-              <View style={{ width: 300, marginRight: 16 }}>
+            // renderItem prop for FlashList
+renderItem={({ item }) => (
+               <View 
+                 style={{ width: 300, marginRight: 16 }}
+                 accessibilityLabel={`Prodotto ${item.name}, scade il ${item.expirationDate}`}
+                 accessibilityRole="button"
+               >
                 <ExpirationCard
                   product={item}
                   onPress={() => router.push(`/manual-entry?productId=${item.id}`)}

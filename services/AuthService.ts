@@ -1,6 +1,103 @@
+// AuthService.ts — AuthService module.
+//
+// exports: AuthResult | AuthService
+// used_by: components\LoginForm.tsx
+//         hooks\useEmailAuth.ts
+//         hooks\useGoogleAuth.ts
+// rules:   - All authentication methods must use `AuthLogger` for step tracking and error logging
+//          - Email validation must always run before any Supabase authentication call
+//          - All authentication operations must measure and return duration in `AuthResult`
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { supabase } from './supabaseClient';
 import { LoggingService } from './LoggingService';
 import { authLogger } from '@/utils/AuthLogger';
+
+/**
+ * Rate limiter configuration
+ */
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+interface RateLimitRecord {
+  attempts: number;
+  firstAttempt: number;
+}
+
+/**
+ * In-memory rate limit tracker per email
+ */
+const rateLimitStore = new Map<string, RateLimitRecord>();
+
+/**
+ * Checks if the email is rate limited
+ * Returns true if allowed, false if rate limited
+ */
+function checkRateLimit(email: string): { allowed: boolean; remainingMs?: number } {
+  const now = Date.now();
+  const record = rateLimitStore.get(email);
+
+  if (!record) {
+    return { allowed: true };
+  }
+
+  // Reset window if expired
+  if (now - record.firstAttempt > RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.delete(email);
+    return { allowed: true };
+  }
+
+  // Check if under limit
+  if (record.attempts >= RATE_LIMIT_MAX_ATTEMPTS) {
+    const remainingMs = RATE_LIMIT_WINDOW_MS - (now - record.firstAttempt);
+    return { allowed: false, remainingMs };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Records a failed login attempt
+ */
+function recordFailedAttempt(email: string): void {
+  const now = Date.now();
+  const record = rateLimitStore.get(email);
+
+  if (!record) {
+    rateLimitStore.set(email, { attempts: 1, firstAttempt: now });
+  } else if (now - record.firstAttempt > RATE_LIMIT_WINDOW_MS) {
+    // Window expired, start fresh
+    rateLimitStore.set(email, { attempts: 1, firstAttempt: now });
+  } else {
+    record.attempts += 1;
+  }
+}
+
+/**
+ * Clears rate limit for an email (on successful login)
+ */
+function clearRateLimit(email: string): void {
+  rateLimitStore.delete(email);
+}
+
+/**
+ * Periodically cleans up expired rate limit records
+ * Runs every 10 minutes to prevent memory leaks
+ */
+function startRateLimitCleanup(): void {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [email, record] of rateLimitStore.entries()) {
+      if (now - record.firstAttempt > RATE_LIMIT_WINDOW_MS) {
+        rateLimitStore.delete(email);
+      }
+    }
+  }, 10 * 60 * 1000); // 10 minutes
+}
+
+// Start cleanup on module load
+startRateLimitCleanup();
 
 /**
  * Interfaccia per il risultato dell'autenticazione
@@ -37,6 +134,16 @@ export class AuthService {
         throw new Error('Email e password sono richieste');
       }
 
+      // Rate limiting check
+      const rateCheck = checkRateLimit(email);
+      if (!rateCheck.allowed) {
+        const minutes = Math.ceil((rateCheck.remainingMs || 0) / 60000);
+        return {
+          success: false,
+          error: `Troppi tentativi di login. Riprova tra ${minutes} minuti.`
+        };
+      }
+
       authLogger.endStep('LOGIN_VALIDATION');
       authLogger.startStep('SUPABASE_LOGIN');
 
@@ -52,6 +159,9 @@ export class AuthService {
       const duration = Date.now() - startTime;
 
       if (error) {
+        // Record failed attempt
+        recordFailedAttempt(email);
+        
         authLogger.errorStep('SUPABASE_LOGIN', error);
 
         // Gestione errore email non confermata
@@ -85,6 +195,9 @@ export class AuthService {
         duration,
         email: email
       });
+
+      // Clear rate limit on successful login
+      clearRateLimit(email);
 
       authLogger.completeAuth(true);
       return { success: true, duration };
