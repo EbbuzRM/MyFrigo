@@ -48,10 +48,17 @@ interface OcrSpaceResponse {
 }
 
 /**
- * Reads the ocr.space API key from Expo extra config.
- * Key is set via EXPO_PUBLIC_OCR_SPACE_API_KEY env var.
+ * Reads the ocr.space API key from Expo extra config (dev only) or backend proxy.
+ * In production, API key must never be bundled - use backend proxy instead.
  */
 function getApiKey(): string {
+    // Production: never expose API key in client bundle
+    if (!__DEV__) {
+        LoggingService.warning(TAG, 'ocr.space fallback disabled in production — use backend proxy');
+        return '';
+    }
+
+    // Development: allow local testing with env-configured key
     const key = Constants.expoConfig?.extra?.ocrSpaceApiKey as string | undefined;
     if (!key) {
         LoggingService.warning(TAG, 'OCR_SPACE_API_KEY not configured — dot-matrix fallback disabled');
@@ -136,7 +143,13 @@ export async function ocrSpaceRecognize(imageUri: string): Promise<OcrSpaceRespo
 export function convertOcrSpaceToTextBlocks(response: OcrSpaceResponse): TextBlock[] {
     const blocks: TextBlock[] = [];
 
-    const parsedResults = response.ParsedResults ?? [];
+    // Guard: validate ParsedResults exists before processing
+    const parsedResults = response.ParsedResults;
+    if (!parsedResults || !Array.isArray(parsedResults) || parsedResults.length === 0) {
+        LoggingService.warning(TAG, 'convertOcrSpaceToTextBlocks: No ParsedResults in response');
+        return blocks;
+    }
+
     for (const result of parsedResults) {
         const lines = result.TextOverlay?.Lines ?? [];
         for (const line of lines) {

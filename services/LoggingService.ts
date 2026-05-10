@@ -1,3 +1,129 @@
+// LoggingService.ts — LoggingService module.
+//
+// exports: LoggingService
+// used_by: app\(tabs)\history.tsx
+//         app\(tabs)\index.tsx
+//         app\(tabs)\products.tsx
+//         app\(tabs)\settings.tsx
+//         app\+not-found.tsx
+//         app\_layout.tsx
+//         app\auth\reset-password.tsx
+//         app\confirm-email.tsx
+//         app\consumed-list.tsx
+//         app\feedback.tsx
+//         app\forgot-password.tsx
+//         app\history-detail.tsx
+//         app\index.tsx
+//         app\login.tsx
+//         app\manage-categories.tsx
+//         app\manual-entry.tsx
+//         app\password-reset-form.tsx
+//         app\photo-capture.tsx
+//         app\profile.tsx
+//         app\scanner.tsx
+//         components\AddMethodCard.tsx
+//         components\AnimatedPressable.tsx
+//         components\AnimatedTabBar.tsx
+//         components\AnimatedTabItem.tsx
+//         components\AppProviders.tsx
+//         components\CategoryFilter.tsx
+//         components\ConsumeQuantityModal.tsx
+//         components\CustomDatePicker.tsx
+//         components\DiagnosticPanel.tsx
+//         components\ErrorBoundary.tsx
+//         components\HistoryStats.tsx
+//         components\ProductCard.tsx
+//         components\SettingsCard.tsx
+//         components\StatsCard.tsx
+//         components\SuggestionCard.tsx
+//         components\Toast.tsx
+//         components\UpdateModal.tsx
+//         components\products\CategoryFilterBar.tsx
+//         components\products\StatusFilterBar.tsx
+//         context\AuthContext.tsx
+//         context\CategoryContext.tsx
+//         context\ManualEntryActionsContext.tsx
+//         context\ManualEntryContext.tsx
+//         context\ManualEntryMetaContext.tsx
+//         context\ProductContext.tsx
+//         context\SettingsContext.tsx
+//         context\ThemeContext.tsx
+//         context\UpdateContext.tsx
+//         hooks\__tests__\useAppLifecycle.test.ts
+//         hooks\barcode\useBarcodeCache.ts
+//         hooks\barcode\useLocalDatabaseLookup.ts
+//         hooks\barcode\useOpenFoodFactsApi.ts
+//         hooks\useAppLifecycle.ts
+//         hooks\useBarcodeScanner.ts
+//         hooks\useCamera.ts
+//         hooks\useCategorySelection.ts
+//         hooks\useDiagnosticGesture.ts
+//         hooks\useDiagnosticTests.ts
+//         hooks\useEmailAuth.ts
+//         hooks\useExpirationStatus.ts
+//         hooks\useGoogleAuth.ts
+//         hooks\useHistoryData.ts
+//         hooks\usePhotoActions.ts
+//         hooks\usePhotoOCR.backup.ts
+//         hooks\usePhotoOCR.ts
+//         hooks\usePostRegistration.ts
+//         hooks\useProductActions.ts
+//         hooks\useProductDetail.ts
+//         hooks\useProductFormData.ts
+//         hooks\useProductInitialization.ts
+//         hooks\useProductRefresh.ts
+//         hooks\useProductSave.ts
+//         hooks\useProductSearch.ts
+//         hooks\useProductStatus.ts
+//         hooks\useRegistrationActions.ts
+//         hooks\useRegistrationOrchestrator.ts
+//         hooks\useRegistrationState.ts
+//         hooks\useSettingsSections.ts
+//         services\AuthService.ts
+//         services\CategoryMatcher.ts
+//         services\CategoryService.ts
+//         services\IconLoader.ts
+//         services\IconService.ts
+//         services\NotificationCoreService.ts
+//         services\NotificationPermissionService.ts
+//         services\NotificationService.ts
+//         services\OneSignalService.ts
+//         services\ProductStorage.ts
+//         services\SettingsService.ts
+//         services\TemplateService.ts
+//         services\UpdateService.ts
+//         services\UserDeviceService.ts
+//         services\UserNotificationSettingsService.ts
+//         services\UserService.ts
+//         services\diagnostic\AuthTests.ts
+//         services\diagnostic\DatabaseTests.ts
+//         services\diagnostic\NotificationTests.ts
+//         services\diagnostic\PerformanceTests.ts
+//         services\diagnostic\SystemTests.ts
+//         services\diagnostic\TestRunner.ts
+//         services\supabaseClient.test.ts
+//         services\supabaseClient.ts
+//         utils\AuthLogger.ts
+//         utils\DiagnosticTester.ts
+//         utils\FormStateLogger.ts
+//         utils\GoogleAuthRetryManager.ts
+//         utils\GoogleAuthStorage.ts
+//         utils\caseConverter.ts
+//         utils\dateUtils\parsers\month-year.ts
+//         utils\dateUtils\parsers\sequence.ts
+//         utils\dateUtils\parsers\textual.ts
+//         utils\dateUtils\validators.ts
+//         utils\historyCalculations.ts
+//         utils\ocr\ocrSpaceService.ts
+//         utils\ocr\parsing.ts
+//         utils\ocr\scoring.ts
+//         utils\ocr\spatial.ts
+// rules:   - All public methods must remain synchronous; do not convert to async or return Promises.
+//          - Logger initialization must be done once at import time; do not expose or call a separate init() method.
+//          - Log output format (timestamp, level, message) must not be changed without updating all consumers that parse logs.
+// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
+// message: 
+
 import { Platform } from 'react-native';
 import { LogFileManager } from './LogFileManager';
 
@@ -25,6 +151,8 @@ class Logger {
   private isWriting: boolean = false;
   private batchTimer: ReturnType<typeof setInterval> | null = null;
   private isInitialized: boolean = false;
+  private memoryLogBuffer: string[] = [];
+  private readonly MAX_MEMORY_LOGS = 1000;
 
   private constructor() {
     this.config = {
@@ -68,10 +196,9 @@ class Logger {
     this.log(LogLevel.DEBUG, tag, message, data);
   }
 
-  public info(tag: string, message: string, data?: unknown): void {
-    if (!__DEV__) return;
-    this.log(LogLevel.INFO, tag, message, data);
-  }
+public info(tag: string, message: string, data?: unknown): void {
+     this.log(LogLevel.INFO, tag, message, data);
+   }
 
   public warning(tag: string, message: string, data?: unknown): void {
     if (!__DEV__) return;
@@ -99,6 +226,13 @@ class Logger {
         level === LogLevel.WARNING ? console.warn : console.error;
       fn(logMessage);
     }
+
+    // Always keep in memory buffer (oldest first, newest last)
+    this.memoryLogBuffer.push(logMessage); // Più vecchi prima
+    if (this.memoryLogBuffer.length > this.MAX_MEMORY_LOGS) {
+      this.memoryLogBuffer.shift(); // Rimuovi il più vecchio dalla cima
+    }
+
     if (this.config.enableFileLogging && Platform.OS !== 'web') this.queueLog(logMessage);
   }
 
@@ -125,25 +259,32 @@ class Logger {
   }
 
   public async getLogs(): Promise<string> {
-    if (!this.fileManager) return 'File logging is disabled or not supported on this platform';
-    await this.flushQueue();
-    return this.fileManager.getLogs();
-  }
-
-  public async clearLogs(): Promise<void> {
-    if (!this.fileManager) return;
-    await this.flushQueue();
-    await this.fileManager.clear();
-    this.log(LogLevel.INFO, 'LoggingService', 'Logs cleared');
-  }
-
-  public destroy(): void {
-    if (this.batchTimer) {
-      clearInterval(this.batchTimer);
-      this.batchTimer = null;
+    if (this.fileManager) {
+      await this.flushQueue();
+      return this.fileManager.getLogs();
     }
-    this.flushQueue();
+    // In dev mode or when file logging is disabled, return memory buffer
+    return this.memoryLogBuffer.join('\n') || 'Nessun log disponibile';
   }
+
+public async clearLogs(): Promise<void> {
+     // Always flush the queue first, regardless of fileManager presence
+     await this.flushQueue();
+     if (this.fileManager) {
+       await this.fileManager.clear();
+     }
+     // Always clear memory buffer
+     this.memoryLogBuffer = [];
+     this.log(LogLevel.INFO, 'LoggingService', 'Logs cleared');
+   }
+
+public async destroy(): Promise<void> {
+     if (this.batchTimer) {
+       clearInterval(this.batchTimer);
+       this.batchTimer = null;
+     }
+     await this.flushQueue();
+   }
 }
 
 export const LoggingService = Logger.getInstance();
