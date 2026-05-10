@@ -70,56 +70,80 @@ export async function ocrSpaceRecognize(imageUri: string): Promise<OcrSpaceRespo
     LoggingService.info(TAG, 'Calling ocr.space fallback (Engine 2 — dot matrix)');
 
     try {
-        const body = new URLSearchParams({
-            base64Image,
-            language: 'ita',
-            OCREngine: '2',       // Dot Matrix OCR engine
-            scale: 'true',        // Internal upscaling for low-res images
-            isOverlayRequired: 'true', // Bounding boxes for spatial analysis
-        });
+        const apiKey = __DEV__ ? process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY : undefined;
 
-        // Production: use backend proxy (no API key needed in client)
         // Development: use direct API call with key from env
-        const endpoint = __DEV__
-            ? 'https://api.ocr.space/parse/image'
-            : '/api/ocr-proxy'; // Supabase function endpoint
-
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        };
-
-        // Only add API key header in development (read directly from env)
+        // Production: use backend proxy (no API key needed in client)
         if (__DEV__) {
-            const apiKey = process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
             if (!apiKey) {
                 LoggingService.info(TAG, 'Skipping ocr.space — no API key configured');
                 return null;
             }
-            headers['apikey'] = apiKey;
+
+            const body = new URLSearchParams({
+                base64Image,
+                language: 'ita',
+                OCREngine: '2',       // Dot Matrix OCR engine
+                scale: 'true',        // Internal upscaling for low-res images
+                isOverlayRequired: 'true', // Bounding boxes for spatial analysis
+            });
+
+            const response = await fetch('https://api.ocr.space/parse/image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'apikey': apiKey,
+                },
+                body: body.toString(),
+            });
+
+            if (!response.ok) {
+                LoggingService.error(TAG, `ocr.space HTTP error: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            const result: OcrSpaceResponse = await response.json();
+
+            if (result.IsErroredOnProcessing) {
+                LoggingService.error(TAG, `ocr.space processing error: ${result.ErrorMessage ?? 'unknown'}`);
+                return null;
+            }
+
+            const textLength = result.ParsedResults?.[0]?.ParsedText?.length ?? 0;
+            LoggingService.info(TAG, `ocr.space response received — ${textLength} chars of text`);
+
+            return result;
+        } else {
+            // Production: use backend proxy that handles ocr.space internally
+            // Proxy expects JSON with base64Image, handles URL-encoded format internally
+            const response = await fetch(
+                'https://tfhjupcybietwzmnpwfh.supabase.co/functions/v1/ocr-proxy',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ base64Image }),
+                }
+            );
+
+            if (!response.ok) {
+                LoggingService.error(TAG, `ocr.space proxy HTTP error: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            const result: OcrSpaceResponse = await response.json();
+
+            if (result.IsErroredOnProcessing) {
+                LoggingService.error(TAG, `ocr.space proxy processing error: ${result.ErrorMessage ?? 'unknown'}`);
+                return null;
+            }
+
+            const textLength = result.ParsedResults?.[0]?.ParsedText?.length ?? 0;
+            LoggingService.info(TAG, `ocr.space proxy response received — ${textLength} chars of text`);
+
+            return result;
         }
-
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers,
-            body: body.toString(),
-        });
-
-        if (!response.ok) {
-            LoggingService.error(TAG, `ocr.space HTTP error: ${response.status} ${response.statusText}`);
-            return null;
-        }
-
-        const result: OcrSpaceResponse = await response.json();
-
-        if (result.IsErroredOnProcessing) {
-            LoggingService.error(TAG, `ocr.space processing error: ${result.ErrorMessage ?? 'unknown'}`);
-            return null;
-        }
-
-        const textLength = result.ParsedResults?.[0]?.ParsedText?.length ?? 0;
-        LoggingService.info(TAG, `ocr.space response received — ${textLength} chars of text`);
-
-        return result;
     } catch (error) {
         LoggingService.error(TAG, 'ocr.space network/fetch error', error);
         return null;
