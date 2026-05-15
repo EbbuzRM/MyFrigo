@@ -25,15 +25,17 @@ jest.mock('@/services/LoggingService', () => ({
     },
 }));
 
-// Mock global fetch
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
+// Mock Supabase client
+jest.mock('@/services/supabaseClient', () => ({
+    supabase: {
+        functions: {
+            invoke: jest.fn(),
+        },
+    },
+}));
 
-// Mock __DEV__
-Object.defineProperty(globalThis, '__DEV__', {
-    value: true,
-    writable: true,
-});
+import { supabase } from '@/services/supabaseClient';
+const mockInvoke = supabase.functions.invoke as jest.MockedFunction<typeof supabase.functions.invoke>;
 
 // ── Tests ────────────────────────────────────────────────────────────
 
@@ -41,107 +43,65 @@ describe('ocrSpaceService', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockFetch.mockReset();
+        mockInvoke.mockReset();
     });
 
     // ── ocrSpaceRecognize ───────────────────────────────────────────
 
     describe('ocrSpaceRecognize', () => {
 
-        it('should return null when no API key is configured in dev mode', async () => {
-            // Ensure env var is undefined
-            delete process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
-
-            const result = await ocrSpaceRecognize('file:///path/to/image.jpg');
-
-            expect(result).toBeNull();
-        });
-
-        it('should call ocr.space API with correct parameters in dev mode', async () => {
-            process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY = 'test-api-key';
-
+        it('should call Supabase Edge Function proxy with correct parameters', async () => {
             const mockResponse = {
-                ok: true,
-                json: jest.fn().mockResolvedValue({
-                    ParsedResults: [{ ParsedText: '15/11/26', TextOverlay: { Lines: [] } }],
-                    OCRExitCode: 1,
-                    IsErroredOnProcessing: false,
-                }),
+                ParsedResults: [{ ParsedText: '15/11/26', TextOverlay: { Lines: [] } }],
+                OCRExitCode: 1,
+                IsErroredOnProcessing: false,
             };
-            mockFetch.mockResolvedValue(mockResponse);
+            mockInvoke.mockResolvedValue({ data: mockResponse, error: null });
 
             const result = await ocrSpaceRecognize('file:///path/to/image.jpg');
 
-            expect(mockFetch).toHaveBeenCalledTimes(1);
-            expect(mockFetch).toHaveBeenCalledWith(
-                'https://api.ocr.space/parse/image',
-                expect.objectContaining({
-                    method: 'POST',
-                    headers: expect.objectContaining({
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        apikey: 'test-api-key',
-                    }),
-                })
-            );
+            expect(mockInvoke).toHaveBeenCalledTimes(1);
+            expect(mockInvoke).toHaveBeenCalledWith('ocr-proxy', {
+                body: { base64Image: 'data:image/jpeg;base64,dGVzdA==', engine: 2 },
+            });
 
             expect(result).not.toBeNull();
             expect(result?.ParsedResults).toHaveLength(1);
-
-            // Cleanup
-            delete process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
         });
 
-        it('should return null on HTTP error', async () => {
-            process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY = 'test-api-key';
-
-            mockFetch.mockResolvedValue({
-                ok: false,
-                status: 500,
-                statusText: 'Internal Server Error',
-            });
+        it('should return null when proxy returns an error', async () => {
+            mockInvoke.mockResolvedValue({ data: null, error: { message: 'Function not found' } });
 
             const result = await ocrSpaceRecognize('file:///path/to/image.jpg');
 
             expect(result).toBeNull();
-
-            delete process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
         });
 
         it('should return null when ocr.space reports processing error', async () => {
-            process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY = 'test-api-key';
-
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: jest.fn().mockResolvedValue({
+            mockInvoke.mockResolvedValue({
+                data: {
                     ParsedResults: [],
                     OCRExitCode: 99,
                     IsErroredOnProcessing: true,
                     ErrorMessage: 'Some error',
-                }),
+                },
+                error: null,
             });
 
             const result = await ocrSpaceRecognize('file:///path/to/image.jpg');
 
             expect(result).toBeNull();
-
-            delete process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
         });
 
         it('should return null on network/fetch exception', async () => {
-            process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY = 'test-api-key';
-
-            mockFetch.mockRejectedValue(new Error('Network error'));
+            mockInvoke.mockRejectedValue(new Error('Network error'));
 
             const result = await ocrSpaceRecognize('file:///path/to/image.jpg');
 
             expect(result).toBeNull();
-
-            delete process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
         });
 
-        it('should return parsed result on successful API call', async () => {
-            process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY = 'test-api-key';
-
+        it('should return parsed result on successful proxy call', async () => {
             const expectedResponse = {
                 ParsedResults: [{
                     ParsedText: '15/11/26',
@@ -150,17 +110,19 @@ describe('ocrSpaceService', () => {
                 OCRExitCode: 1,
                 IsErroredOnProcessing: false,
             };
-
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: jest.fn().mockResolvedValue(expectedResponse),
-            });
+            mockInvoke.mockResolvedValue({ data: expectedResponse, error: null });
 
             const result = await ocrSpaceRecognize('file:///path/to/image.jpg');
 
             expect(result).toEqual(expectedResponse);
+        });
 
-            delete process.env.EXPO_PUBLIC_OCR_SPACE_API_KEY;
+        it('should return null when proxy returns null data', async () => {
+            mockInvoke.mockResolvedValue({ data: null, error: null });
+
+            const result = await ocrSpaceRecognize('file:///path/to/image.jpg');
+
+            expect(result).toBeNull();
         });
     });
 
