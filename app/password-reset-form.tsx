@@ -226,7 +226,7 @@ export default function PasswordResetForm() {
       </View>
 
       <View style={styles.validationContainer}>
-        <ValidationCheck text="Almeno 6 caratteri" isValid={passwordValidation.minLength} />
+        <ValidationCheck text="Almeno 8 caratteri" isValid={passwordValidation.minLength} />
         <ValidationCheck text="Una lettera maiuscola" isValid={passwordValidation.hasUpper} />
         <ValidationCheck text="Una lettera minuscola" isValid={passwordValidation.hasLower} />
         <ValidationCheck text="Un numero" isValid={passwordValidation.hasNumber} />

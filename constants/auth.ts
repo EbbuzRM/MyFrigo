@@ -17,7 +17,7 @@
 
 export const AUTH_CONSTANTS = {
   // Validation rules
-  PASSWORD_MIN_LENGTH: 6,
+  PASSWORD_MIN_LENGTH: 8,
   NAME_MIN_LENGTH: 1,
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
 
@@ -63,7 +63,7 @@ export const AUTH_CONSTANTS = {
 
   // Password validation labels
   PASSWORD_VALIDATION: {
-    MIN_LENGTH: 'Almeno 6 caratteri',
+    MIN_LENGTH: 'Almeno 8 caratteri',
     HAS_UPPER: 'Una lettera maiuscola',
     HAS_LOWER: 'Una lettera minuscola',
     HAS_NUMBER: 'Un numero',

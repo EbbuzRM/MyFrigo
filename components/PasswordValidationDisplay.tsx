@@ -53,7 +53,7 @@ export const PasswordValidationDisplay: React.FC<PasswordValidationDisplayProps>
 
   return (
     <View style={styles.validationContainer}>
-      <ValidationCheck isValid={validation.minLength} text="Almeno 6 caratteri" />
+      <ValidationCheck isValid={validation.minLength} text="Almeno 8 caratteri" />
       <ValidationCheck isValid={validation.hasLower} text="Una lettera minuscola" />
       <ValidationCheck isValid={validation.hasUpper} text="Una lettera maiuscola" />
       <ValidationCheck isValid={validation.hasNumber} text="Un numero" />
