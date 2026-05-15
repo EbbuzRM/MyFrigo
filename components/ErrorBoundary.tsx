@@ -8,7 +8,7 @@
 // message: 
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
 
 interface Props {
@@ -32,8 +32,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    LoggingService.error('ErrorBoundary', 'UI Error', { error, errorInfo });
+    // S-17: Sanitize errorInfo — log only error message, not full componentStack
+    LoggingService.error('ErrorBoundary', 'UI Error', {
+      error: error.message,
+      component: errorInfo.componentStack?.split('\n')[0]?.trim() || 'unknown',
+    });
   }
+
+  private handleRetry = (): void => {
+    this.setState({ hasError: false, error: null });
+  };
 
   render(): React.ReactNode {
     if (this.state.hasError) {
@@ -44,6 +52,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <View style={styles.container}>
           <Text style={styles.title}>Qualcosa è andato storto</Text>
           <Text style={styles.message}>Riprova ad aprire l'app</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry} accessibilityLabel="Riprova" accessibilityHint="Tenta di ripristinare l'app dopo un errore">
+            <Text style={styles.retryButtonText}>Riprova</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -66,5 +77,17 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 14,
     color: '#666',
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
