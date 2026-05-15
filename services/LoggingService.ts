@@ -182,7 +182,7 @@ class Logger {
       this.isInitialized = true;
       this.log(LogLevel.INFO, 'LoggingService', 'Logger initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize logger:', error);
+      if (__DEV__) console.error('Failed to initialize logger:', error);
       this.isInitialized = false;
     }
   }
@@ -222,9 +222,12 @@ public info(tag: string, message: string, data?: unknown): void {
       } else logMessage += `\nData: ${data}`;
     }
     if (this.config.enableConsole) {
-      const fn = level === LogLevel.DEBUG ? console.debug : level === LogLevel.INFO ? console.info :
-        level === LogLevel.WARNING ? console.warn : console.error;
-      fn(logMessage);
+      // S-16: In production, only log errors/critical to console
+      if (__DEV__ || level >= LogLevel.ERROR) {
+        const fn = level === LogLevel.DEBUG ? console.debug : level === LogLevel.INFO ? console.info :
+          level === LogLevel.WARNING ? console.warn : console.error;
+        fn(logMessage);
+      }
     }
 
     // Always keep in memory buffer (oldest first, newest last)
@@ -251,7 +254,7 @@ public info(tag: string, message: string, data?: unknown): void {
     try {
       await this.fileManager.writeBatch(logsToWrite);
     } catch (error) {
-      console.error('Failed to flush log queue:', error);
+      if (__DEV__) console.error('Failed to flush log queue:', error);
       this.logQueue.unshift(...logsToWrite);
     } finally {
       this.isWriting = false;
