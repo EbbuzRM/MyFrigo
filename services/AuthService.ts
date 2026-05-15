@@ -31,6 +31,11 @@ interface RateLimitRecord {
 const rateLimitStore = new Map<string, RateLimitRecord>();
 
 /**
+ * Cleanup interval reference to prevent multiple instances and allow cleanup
+ */
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
  * Checks if the email is rate limited
  * Returns true if allowed, false if rate limited
  */
@@ -86,7 +91,8 @@ function clearRateLimit(email: string): void {
  * Runs every 10 minutes to prevent memory leaks
  */
 function startRateLimitCleanup(): void {
-  setInterval(() => {
+  if (cleanupInterval) return; // Prevent multiple instances
+  cleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [email, record] of rateLimitStore.entries()) {
       if (now - record.firstAttempt > RATE_LIMIT_WINDOW_MS) {
@@ -98,6 +104,18 @@ function startRateLimitCleanup(): void {
 
 // Start cleanup on module load
 startRateLimitCleanup();
+
+/**
+ * Cleans up the rate limiter interval and clears the store.
+ * Call this during application shutdown or test teardown.
+ */
+export function cleanupRateLimiter(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+  rateLimitStore.clear();
+}
 
 /**
  * Interfaccia per il risultato dell'autenticazione
@@ -147,7 +165,7 @@ export class AuthService {
       authLogger.endStep('LOGIN_VALIDATION');
       authLogger.startStep('SUPABASE_LOGIN');
 
-      LoggingService.info('AuthService', 'Attempting direct Supabase login', { email });
+      LoggingService.info('AuthService', 'Login attempt');
 
       const startTime = Date.now();
 
@@ -164,36 +182,32 @@ export class AuthService {
         
         authLogger.errorStep('SUPABASE_LOGIN', error);
 
-        // Gestione errore email non confermata
+        // Gestione errore email non confermata e credenziali non valide
+        // Messaggio unificato per prevenire enumerazione email
         if (error.message?.includes('Email not confirmed') || error.message?.includes('email_not_confirmed')) {
-          LoggingService.warning('AuthService', 'Login failed - email not confirmed', {
+          LoggingService.warning('AuthService', 'Login failed - credentials rejected', {
             duration,
-            errorMessage: error.message,
-            email: email
           });
 
           return {
             success: false,
-            error: 'Email non confermata. Controlla la tua email e clicca sul link di conferma.'
+            error: 'Se le credenziali sono corrette, riceverai un\'email di conferma.'
           };
         }
 
         LoggingService.error('AuthService', 'Login failed', {
           duration,
-          errorMessage: error.message,
-          email: email
         });
 
         return {
           success: false,
-          error: error.message || 'Login fallito'
+          error: 'Se le credenziali sono corrette, riceverai un\'email di conferma.'
         };
       }
 
       authLogger.endStep('SUPABASE_LOGIN', { duration });
       LoggingService.info('AuthService', 'Login successful', {
         duration,
-        email: email
       });
 
       // Clear rate limit on successful login
