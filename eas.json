@@ -12,7 +12,13 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "node": "20.19.4"
+      "node": "20.19.4",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://your-project.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key",
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "your-onesignal-app-id",
+        "EXPO_PUBLIC_OCR_SPACE_API_KEY": "your-ocr-space-api-key"
+      }
     },
     "release-apk": {
       "distribution": "internal",
