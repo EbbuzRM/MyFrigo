@@ -61,7 +61,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [user?.id]);
+  }, [user?.id ?? null]);
 
   useEffect(() => {
     if (!user) return;
@@ -112,7 +112,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }
     };
-  }, [user?.id, fetchProducts]);
+  }, [user?.id ?? null, fetchProducts]);
 
   const contextValue = React.useMemo(() => ({
     products,
