@@ -107,11 +107,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 /**
  * Returns the current session, using a 5-minute cache to reduce API calls.
+ * Before returning a cached session, verifies the JWT is not expired.
  */
 export const getCachedSession = async () => {
   const now = Date.now();
   if (cachedSession && (now - cacheTimestamp < CACHE_DURATION)) {
-    return { data: { session: cachedSession }, error: null };
+    try {
+      const payload = JSON.parse(atob(cachedSession.access_token.split('.')[1]));
+      if (payload.exp * 1000 > now) {
+        return { data: { session: cachedSession }, error: null };
+      }
+    } catch {
+      // Fall through to refresh if JWT decode fails
+    }
   }
 
   const { data, error } = await supabase.auth.getSession();
