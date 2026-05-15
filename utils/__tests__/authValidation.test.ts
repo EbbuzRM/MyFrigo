@@ -2,9 +2,9 @@ import { validatePassword, isPasswordValid, validateEmail } from '../authValidat
 
 describe('authValidation', () => {
   describe('validatePassword', () => {
-    it('should validate minLength', () => {
-      expect(validatePassword('12345').minLength).toBe(false);
-      expect(validatePassword('123456').minLength).toBe(true);
+    it('should validate minLength (8 characters minimum)', () => {
+      expect(validatePassword('1234567').minLength).toBe(false);
+      expect(validatePassword('12345678').minLength).toBe(true);
     });
 
     it('should validate hasUpper', () => {
@@ -21,15 +21,30 @@ describe('authValidation', () => {
       expect(validatePassword('abc').hasNumber).toBe(false);
       expect(validatePassword('abc1').hasNumber).toBe(true);
     });
+
+    it('should validate isNotCommon', () => {
+      expect(validatePassword('password').isNotCommon).toBe(false);
+      expect(validatePassword('PASSWORD').isNotCommon).toBe(false);
+      expect(validatePassword('12345678').isNotCommon).toBe(false);
+      expect(validatePassword('qwerty12').isNotCommon).toBe(false);
+      expect(validatePassword('MyStr0ngP@ss').isNotCommon).toBe(true);
+    });
   });
 
   describe('isPasswordValid', () => {
     it('should return true only if all criteria are met', () => {
-      expect(isPasswordValid('Abc123')).toBe(true);
-      expect(isPasswordValid('abc123')).toBe(false); // No upper
-      expect(isPasswordValid('ABC123')).toBe(false); // No lower
-      expect(isPasswordValid('Abcdef')).toBe(false); // No number
-      expect(isPasswordValid('Ab1')).toBe(false);    // Too short
+      expect(isPasswordValid('Abc12345')).toBe(true);
+      expect(isPasswordValid('abc12345')).toBe(false); // No upper
+      expect(isPasswordValid('ABC12345')).toBe(false); // No lower
+      expect(isPasswordValid('Abcdefgh')).toBe(false); // No number
+      expect(isPasswordValid('Ab1')).toBe(false);      // Too short
+      expect(isPasswordValid('Abc123')).toBe(false);   // Too short (needs 8)
+    });
+
+    it('should reject common passwords', () => {
+      expect(isPasswordValid('Password1')).toBe(false); // common
+      expect(isPasswordValid('Qwerty12')).toBe(false);  // common
+      expect(isPasswordValid('12345678')).toBe(false);  // common (no upper/lower anyway)
     });
   });
 

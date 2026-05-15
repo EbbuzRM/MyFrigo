@@ -23,7 +23,23 @@ export interface PasswordValidationResult {
   hasUpper: boolean;
   hasLower: boolean;
   hasNumber: boolean;
+  isNotCommon: boolean;
 }
+
+/**
+ * Lista di password comuni da bloccare per prevenire attacchi dizionario.
+ */
+const COMMON_PASSWORDS = new Set([
+  'password', 'password1', 'password123',
+  '12345678', '123456789', '1234567890',
+  'qwerty12', 'qwerty', 'qwerty123',
+  'abc123', 'letmein', 'welcome',
+  'admin', 'login', 'master',
+  'hello', 'charlie', 'donald',
+  'iloveyou', 'trustno1', 'sunshine',
+  'princess', 'football', 'shadow',
+  'monkey', 'dragon', 'access',
+]);
 
 /**
  * Valida una password secondo i criteri di sicurezza
@@ -32,10 +48,11 @@ export interface PasswordValidationResult {
  */
 export function validatePassword(password: string): PasswordValidationResult {
   return {
-    minLength: password.length >= 6,
+    minLength: password.length >= 8,
     hasUpper: /[A-Z]/.test(password),
     hasLower: /[a-z]/.test(password),
     hasNumber: /\d/.test(password),
+    isNotCommon: !COMMON_PASSWORDS.has(password.toLowerCase()),
   };
 }
 
@@ -50,7 +67,8 @@ export function isPasswordValid(password: string): boolean {
     validation.minLength &&
     validation.hasUpper &&
     validation.hasLower &&
-    validation.hasNumber
+    validation.hasNumber &&
+    validation.isNotCommon
   );
 }
 

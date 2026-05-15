@@ -30,6 +30,7 @@ export function useSignupValidation(): UseSignupValidationReturn {
     hasUpper: false,
     hasLower: false,
     hasNumber: false,
+    isNotCommon: false,
   });
 
   const validateEmail = useEmailValidator();
@@ -73,7 +74,7 @@ export function useSignupValidation(): UseSignupValidationReturn {
 
   const clearErrors = useCallback(() => {
     setValidationErrors({});
-    setPasswordValidation({ minLength: false, hasUpper: false, hasLower: false, hasNumber: false });
+    setPasswordValidation({ minLength: false, hasUpper: false, hasLower: false, hasNumber: false, isNotCommon: false });
   }, []);
 
   return {
