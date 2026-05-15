@@ -6,12 +6,16 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
+// TODO(S-18): Certificate pinning non implementato. Per produzione, configurare
+// certificate pinning per prevenire attacchi man-in-the-middle. Richiede configurazione
+// nativa (Android: network_security_config.xml, iOS: Info.plist con NSPinnedDomains).
+
 module.exports = {
   expo: {
     name: "MyFrigo",
     slug: "myfrigoapp",
-    version: "1.0.2",
-    runtimeVersion: "1.0.2",
+    version: "1.0.3",
+    runtimeVersion: "1.0.3",
     orientation: "portrait",
     scheme: "myfrigo",
     updates: {
@@ -29,7 +33,7 @@ module.exports = {
       eas: {
         "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"
       },
-oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || "***REMOVED***"
+oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || (() => { throw new Error('EXPO_PUBLIC_ONESIGNAL_APP_ID is required'); })()
      },
     icon: "./assets/images/icon.png",
     splash: {
@@ -43,7 +47,7 @@ oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || "***REMOVED***"
       bundleIdentifier: "com.myfrigo"
     },
     android: {
-      allowBackup: true,
+      allowBackup: false,
       adaptiveIcon: {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"
