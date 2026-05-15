@@ -133,8 +133,10 @@ export class ProductStorage {
   static async deleteProduct(productId: string): Promise<ServiceResult<void>> {
     const validationError = this.validateId(productId, 'ID Prodotto');
     if (validationError) return createErrorResult(validationError.message);
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<void>;
     try {
-      const { error } = await supabase.from('products').delete().eq('id', productId);
+      const { error } = await supabase.from('products').delete().eq('id', productId).eq('user_id', userResult.data);
       if (error) throw error;
       return createSuccessResult(undefined);
     } catch (error) {
@@ -189,8 +191,10 @@ export class ProductStorage {
   /** Sposta più prodotti nello storico impostando lo stato a 'expired'. */
   static async moveProductsToHistory(productIds: string[]): Promise<ServiceResult<void>> {
     if (!productIds.length) return createSuccessResult(undefined);
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<void>;
     try {
-      const { error } = await supabase.from('products').update({ status: 'expired' } as TablesUpdate<'products'>).in('id', productIds);
+      const { error } = await supabase.from('products').update({ status: 'expired' } as TablesUpdate<'products'>).in('id', productIds).eq('user_id', userResult.data);
       if (error) throw error;
       LoggingService.info('ProductStorage', `${productIds.length} prodotti spostati nello storico`);
       return createSuccessResult(undefined);
