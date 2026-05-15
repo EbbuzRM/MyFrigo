@@ -67,7 +67,15 @@ export function useSignupValidation(): UseSignupValidationReturn {
     const passValidation = getPasswordValidation(data.password);
     setPasswordValidation(passValidation);
     const passwordValid = isPasswordValid(passValidation);
-    if (!passwordValid && data.password) errors.password = 'La password non soddisfa i requisiti';
+    if (!passwordValid && data.password) {
+        const missing = [];
+        if (!passValidation.minLength) missing.push('almeno 8 caratteri');
+        if (!passValidation.hasLower) missing.push('una minuscola');
+        if (!passValidation.hasUpper) missing.push('una maiuscola');
+        if (!passValidation.hasNumber) missing.push('un numero');
+        if (!passValidation.isNotCommon) missing.push('non una password comune');
+        errors.password = `La password deve contenere: ${missing.join(', ')}`;
+    }
     setValidationErrors(errors);
     return { errors, passwordValidation: passValidation, isValid: fieldsValid && passwordValid };
   }, [validateFormFields, getPasswordValidation, isPasswordValid]);
