@@ -188,6 +188,18 @@ export const sendFeedback = functions.https.onCall(async (data, _context) => {
   }
 });
 
+// Funzione per sanitizzare input utente prima dell'inserimento in HTML
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 // Funzione helper per inviare email di feedback tramite Resend
 async function sendFeedbackEmail(data: FeedbackEmailData) {
   const { userId, feedbackText, screenshotUrl, timestamp, appVersion } = data;
@@ -212,7 +224,7 @@ async function sendFeedbackEmail(data: FeedbackEmailData) {
         <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #1e293b; margin-top: 0;">Testo del Feedback</h3>
           <p style="background-color: white; padding: 15px; border-radius: 4px; border-left: 4px solid #2563eb;">
-            ${feedbackText.replace(/\n/g, '<br>')}
+            ${escapeHtml(feedbackText).replace(/\n/g, '<br>')}
           </p>
         </div>
   `;
