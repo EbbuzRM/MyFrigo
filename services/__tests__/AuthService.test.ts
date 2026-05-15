@@ -123,7 +123,7 @@ describe('AuthService', () => {
       expect(result.error).toBe('Email e password sono richieste');
     });
 
-    it('should return specific error for unconfirmed email', async () => {
+    it('should return unified error for unconfirmed email (prevents enumeration)', async () => {
       (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
         error: { message: 'Email not confirmed' },
       });
@@ -131,15 +131,15 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Email non confermata. Controlla la tua email e clicca sul link di conferma.');
+      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
       expect(LoggingService.warning).toHaveBeenCalledWith(
         'AuthService',
-        'Login failed - email not confirmed',
-        expect.objectContaining({ errorMessage: 'Email not confirmed' })
+        'Login failed - credentials rejected',
+        expect.objectContaining({ duration: expect.any(Number) })
       );
     });
 
-    it('should return error for email_not_confirmed variant', async () => {
+    it('should return unified error for email_not_confirmed variant', async () => {
       (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
         error: { message: 'email_not_confirmed' },
       });
@@ -147,10 +147,10 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Email non confermata');
+      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
     });
 
-    it('should return generic error on Supabase error', async () => {
+    it('should return unified error on Supabase error (prevents enumeration)', async () => {
       (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
         error: { message: 'Invalid credentials' },
       });
@@ -158,10 +158,10 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'wrong-password');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid credentials');
+      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
     });
 
-    it('should return error with default message when Supabase error has no message', async () => {
+    it('should return unified error when Supabase error has no message', async () => {
       (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
         error: { message: '' },
       });
@@ -169,7 +169,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'wrong-password');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Login fallito');
+      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
     });
 
     it('should handle unexpected exceptions', async () => {
