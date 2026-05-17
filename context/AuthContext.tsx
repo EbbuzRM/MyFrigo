@@ -191,7 +191,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router, fetchUserProfile]);
 
   const signOut = useCallback(async () => {
     try {

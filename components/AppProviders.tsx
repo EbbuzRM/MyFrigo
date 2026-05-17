@@ -2,8 +2,7 @@
 //
 // exports: AppProviders
 // used_by: app\_layout.tsx
-// rules:   - LoggingService must be initialized synchronously at module level before any component mounts, as it is a critical dependency for all logging operations throughout the application
-//          - All application context providers must be nested inside AuthProvider and SettingsProvider as the outermost providers in the hierarchy
+// rules:   - All application context providers must be nested inside AuthProvider and SettingsProvider as the outermost providers in the hierarchy
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
@@ -16,26 +15,6 @@ import { ManualEntryProvider } from '@/context/ManualEntryContext';
 import { UpdateProvider } from '@/context/UpdateContext';
 import { LoggingService } from '@/services/LoggingService';
 
-// Inizializza il LoggingService in modo sincrono all'importazione
-// Per garantire che sia disponibile immediatamente nei componenti
-let isLoggingServiceInitialized = false;
-
-// Assicurati che LoggingService sia inizializzato solo una volta
-if (!isLoggingServiceInitialized) {
-  try {
-    LoggingService.initialize().then(() => {
-      isLoggingServiceInitialized = true;
-    }).catch(error => {
-      LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + (error instanceof Error ? error.message : String(error)));
-    });
-    // Imposta il flag immediatamente per evitare inizializzazioni multiple
-    isLoggingServiceInitialized = true;
-  } catch (error) {
-    LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + (error instanceof Error ? error.message : String(error)));
-    isLoggingServiceInitialized = true;
-  }
-}
-
 interface AppProvidersProps {
   children: React.ReactNode;
 }
@@ -46,9 +25,9 @@ interface AppProvidersProps {
  */
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   useEffect(() => {
-    // Rinizializza il LoggingService in background per garantire la configurazione completa
+    // Inizializza il LoggingService quando il componente monta
     LoggingService.initialize().catch(error => {
-      LoggingService.error('AppProviders', 'Failed to reinitialize LoggingService: ' + (error instanceof Error ? error.message : String(error)));
+      LoggingService.error('AppProviders', 'Failed to initialize LoggingService: ' + (error instanceof Error ? error.message : String(error)));
     });
   }, []);
 

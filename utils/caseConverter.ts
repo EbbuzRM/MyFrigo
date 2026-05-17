@@ -54,10 +54,10 @@ export const convertObjectKeys = <T, U = Record<string, unknown>>(
  * @param product The product object to convert
  * @returns The converted product object
  */
-export function convertProductToCamelCase(product: Record<string, unknown>): Product {
+export function convertProductToCamelCase(product: Record<string, unknown>): Product | null {
   if (!product) {
     LoggingService.warning('caseConverter', 'Attempted to convert null or undefined product to camelCase');
-    return {} as Product;
+    return null;
   }
 
   // Converti le chiavi da snake_case a camelCase
@@ -184,7 +184,7 @@ export function convertProductsToCamelCase(products: Record<string, unknown>[]):
     LoggingService.warning('caseConverter', 'Attempted to convert null, undefined or non-array products to camelCase');
     return [];
   }
-  return products.map(product => convertProductToCamelCase(product));
+  return products.map(product => convertProductToCamelCase(product)).filter((p): p is Product => p !== null);
 }
 
 /**

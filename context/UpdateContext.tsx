@@ -11,7 +11,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUpdates, reloadAsync, fetchUpdateAsync } from 'expo-updates';
 import { UpdateService, UpdateInfo, UpdateSettings, UpdateEventEmitter } from '@/services/UpdateService';
@@ -69,13 +69,13 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
   // FIX RADICE: Usa useUpdates() hook invece di addListener (deprecato in SDK 51+)
   const updates = useUpdates();
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
-  };
+  }, []);
 
-  const hideToast = () => {
+  const hideToast = useCallback(() => {
     setToast(null);
-  };
+  }, []);
 
   // Ref per avere sempre l'ultimo valore dei settings nei listener
   const settingsRef = React.useRef(settings);
@@ -292,7 +292,7 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     toast,
     showToast,
     hideToast,
-  }), [isChecking, isDownloading, lastUpdateInfo, settings, showUpdateModal, toast]);
+  }), [isChecking, isDownloading, lastUpdateInfo, settings, showUpdateModal, toast, showToast, hideToast]);
 
   return (
     <UpdateContext.Provider value={contextValue}>

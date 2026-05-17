@@ -130,9 +130,44 @@ async function sendPushNotification(
   }
 }
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+function isAuthenticated(request: Request): boolean {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader) {
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (bearerToken) {
+      const expectedToken = Deno.env.get('FUNCTION_SECRET_KEY');
+      if (expectedToken && bearerToken === expectedToken) {
+        return true;
+      }
+    }
+  }
+
+  const cronSecret = request.headers.get('x-cron-secret');
+  if (cronSecret) {
+    const expectedCronSecret = Deno.env.get('CRON_SECRET');
+    if (expectedCronSecret && cronSecret === expectedCronSecret) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // ─── Handler principale ───────────────────────────────────────────────────────
 
-serve(async () => {
+serve(async (request: Request) => {
+  if (!isAuthenticated(request)) {
+    log('warning', 'Unauthorized access attempt', {
+      ip: request.headers.get('x-forwarded-for') ?? 'unknown',
+    });
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { headers: { 'Content-Type': 'application/json' }, status: 401 }
+    );
+  }
+
   try {
     log('info', 'send-expiration-notifications started');
 

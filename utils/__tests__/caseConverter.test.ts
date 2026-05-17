@@ -75,25 +75,24 @@ describe('caseConverter', () => {
         quantities: '[{"quantity": 1, "unit": "l"}]'
       };
       const result = convertProductToCamelCase(input);
-      expect(result.productName).toBe('Milk');
-      expect(result.quantities).toEqual([{ quantity: 1, unit: 'l' }]);
+      expect(result!.productName).toBe('Milk');
+      expect(result!.quantities).toEqual([{ quantity: 1, unit: 'l' }]);
     });
 
     it('should handle null quantities', () => {
       const input = { id: '1', quantities: null };
       const result = convertProductToCamelCase(input);
-      expect(result.quantities).toEqual([]);
+      expect(result!.quantities).toEqual([]);
     });
 
     it('should handle invalid quantities JSON', () => {
       const input = { id: '1', quantities: 'invalid json' };
       const result = convertProductToCamelCase(input);
-      expect(result.quantities).toEqual([]);
+      expect(result!.quantities).toEqual([]);
     });
 
-    it('should return empty object for null input', () => {
-      // @ts-ignore
-      expect(convertProductToCamelCase(null)).toEqual({});
+    it('should return null for null input', () => {
+      expect(convertProductToCamelCase(null as unknown as Record<string, unknown>)).toBeNull();
     });
   });
 
