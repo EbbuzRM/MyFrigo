@@ -70,23 +70,23 @@ function log(level: LogLevel, message: string, data: Record<string, unknown> = {
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
 const SUPABASE_URL            = Deno.env.get('SUPABASE_URL');
-// Nuova Secret Key (sostituisce la deprecated SUPABASE_SERVICE_ROLE_KEY)
-// Configurare il valore nella dashboard Supabase → Functions → Secrets
-const SUPABASE_SECRET_KEY = Deno.env.get('SUPABASE_SECRET_KEY');
+// Supabase fornisce automaticamente SUPABASE_SECRET_KEYS come JSON dictionary
+const secretKeys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}');
+const secretKey = secretKeys['default'];
 const ONESIGNAL_APP_ID        = Deno.env.get('ONESIGNAL_APP_ID');
 const ONESIGNAL_REST_API_KEY  = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
-if (!SUPABASE_URL || !SUPABASE_SECRET_KEY || !ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+if (!SUPABASE_URL || !secretKey || !ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
   log('error', 'Missing required environment variables', {
     SUPABASE_URL:       !!SUPABASE_URL,
-    SUPABASE_SECRET_KEY: !!SUPABASE_SECRET_KEY,
+    secretKey: !!secretKey,
     ONESIGNAL_APP_ID:         !!ONESIGNAL_APP_ID,
     ONESIGNAL_REST_API_KEY:   !!ONESIGNAL_REST_API_KEY,
   });
   Deno.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
+const supabase = createClient(SUPABASE_URL, secretKey);
 
 // ─── OneSignal ────────────────────────────────────────────────────────────────
 
