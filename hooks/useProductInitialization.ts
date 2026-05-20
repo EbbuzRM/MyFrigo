@@ -3,7 +3,7 @@
 // exports: UseProductInitializationProps | UseProductInitializationReturn | useProductInitialization
 // used_by: hooks\useProductForm.ts
 // rules:   - The hook must receive `setIsLoading`, `categories`, and `categoriesLoading` as a single `UseProductInitializationProps` argument object; do not refactor to individual parameters.
-//          - The returned `UseProductInitializationReturn` object must expose exactly `productId`, `scannerDataKey`, `loadData`, and `guessCategory` as required by consumers.
+//          - The returned `UseProductInitializationReturn` object must expose exactly `productId`, `scannerDataKey`, and `loadData` as required by consumers.
 //          - All state management must flow through the `useManualEntry` context; do not introduce independent local state for form fields.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
-import { CategoryMatcher } from '@/services/CategoryMatcher';
 import { ManualEntryFormData, useManualEntry } from '@/context/ManualEntryContext';
 import { ProductCategory } from '@/types/Product';
 
@@ -26,7 +25,6 @@ export interface UseProductInitializationReturn {
   productId: string | undefined;
   scannerDataKey: string;
   loadData: () => Promise<void>;
-  guessCategory: (productName: string, productBrand: string, allCategories: ProductCategory[]) => string | null;
 }
 
 export const useProductInitialization = ({
@@ -36,16 +34,10 @@ export const useProductInitialization = ({
 }: UseProductInitializationProps): UseProductInitializationReturn => {
   const params = useLocalSearchParams();
   const {
-    name,
-    brand,
-    selectedCategory,
-    isEditMode,
-    hasManuallySelectedCategory,
     isInitialized,
     setIsInitialized,
     initializeForm,
     setImageUrl,
-    expirationDate,
     setExpirationDate,
   } = useManualEntry();
 
@@ -58,10 +50,6 @@ export const useProductInitialization = ({
   const scannerDataKey = useMemo(() => {
     return `${params.barcode || ''}-${params.fromPhotoCapture ? 'photo' : 'none'}`;
   }, [params.barcode, params.fromPhotoCapture]);
-
-  const guessCategory = useCallback((productName: string, productBrand: string, allCategories: ProductCategory[]): string | null => {
-    return CategoryMatcher.guessCategory(productName, productBrand, allCategories);
-  }, []);
 
   // Ref per tracciare se l'effect per expirationDate è già stato eseguito
   const hasSetExpirationDateRef = useRef(false);
@@ -134,17 +122,9 @@ export const useProductInitialization = ({
     }
   }, [params.fromPhotoCapture, params.imageUrl, setImageUrl]);
 
-  // Effect for auto-guessing category
-  useEffect(() => {
-    if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
-      guessCategory(name, brand, categories);
-    }
-  }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory]);
-
   return {
     productId,
     scannerDataKey,
     loadData,
-    guessCategory,
   };
 };

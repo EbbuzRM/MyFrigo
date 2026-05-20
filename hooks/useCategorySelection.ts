@@ -8,7 +8,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
 import { useCategories } from '@/context/CategoryContext';
 import { useManualEntry } from '@/context/ManualEntryContext';
@@ -95,15 +95,30 @@ export const useCategorySelection = ({
     return CategoryMatcher.guessCategory(productName, productBrand, allCategories);
   }, []);
 
-  // Auto-guess category effect
+  // Debounce ref to avoid calling guessCategory on every keystroke
+  const guessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-guess category effect (debounced 500ms)
   useEffect(() => {
-    if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
-      const guessedCategoryId = guessCategory(name, brand, categories);
-      if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
-        LoggingService.info('useCategorySelection', `Auto-guessed category: ${guessedCategoryId} for name: ${name}, brand: ${brand}`);
-        setSelectedCategory(guessedCategoryId);
-      }
+    if (guessTimeoutRef.current) {
+      clearTimeout(guessTimeoutRef.current);
     }
+
+    if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
+      guessTimeoutRef.current = setTimeout(() => {
+        const guessedCategoryId = guessCategory(name, brand, categories);
+        if (guessedCategoryId && guessedCategoryId !== selectedCategory) {
+          LoggingService.info('useCategorySelection', `Auto-guessed category: ${guessedCategoryId} for name: ${name}, brand: ${brand}`);
+          setSelectedCategory(guessedCategoryId);
+        }
+      }, 500);
+    }
+
+    return () => {
+      if (guessTimeoutRef.current) {
+        clearTimeout(guessTimeoutRef.current);
+      }
+    };
   }, [name, brand, isEditMode, hasManuallySelectedCategory, categories, categoriesLoading, guessCategory, selectedCategory]);
 
   const handleAddNewCategory = useCallback(async () => {
