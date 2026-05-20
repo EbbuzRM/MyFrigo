@@ -8,7 +8,7 @@
 
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { PhotoCaptureStyles } from '@/app/_photo-capture.styles';
+import { PhotoCaptureStyles } from '@/styles/photo-capture.styles';
 
 /**
  * Props for OCRProgressOverlay component

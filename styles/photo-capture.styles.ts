@@ -1,4 +1,4 @@
-// _photo-capture.styles.ts — _photo-capture.styles module.
+// photo-capture.styles.ts — photo-capture.styles module.
 //
 // exports: getStyles | PhotoCaptureStyles
 // used_by: app\photo-capture.tsx

@@ -10,7 +10,7 @@
 import React, { memo } from 'react';
 import { View, Image, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { Check, RefreshCw, Calendar, Edit2 } from 'lucide-react-native';
-import { PhotoCaptureStyles } from '@/app/_photo-capture.styles';
+import { PhotoCaptureStyles } from '@/styles/photo-capture.styles';
 import { OCRProgressOverlay } from './OCRProgressOverlay';
 import { CaptureMode } from '@/hooks/useCamera';
 

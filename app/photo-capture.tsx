@@ -14,7 +14,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
-import { getStyles } from './_photo-capture.styles';
+import { getStyles } from '@/styles/photo-capture.styles';
 import { useCamera, CaptureMode } from '@/hooks/useCamera';
 import { usePhotoActions } from '@/hooks/usePhotoActions';
 import { CameraView } from '@/components/CameraView';

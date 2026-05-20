@@ -2,7 +2,7 @@
 //
 // exports: CameraView
 // used_by: app\photo-capture.tsx
-// rules:   - CameraView component depends on `PhotoCaptureStyles` type from `@/app/_photo-capture.styles` and `CaptureMode` type from `@/hooks/useCamera`
+// rules:   - CameraView component depends on `PhotoCaptureStyles` type from `@/styles/photo-capture.styles` and `CaptureMode` type from `@/hooks/useCamera`
 //          - ExpoCameraView ref must be passed as a prop and typed as `React.RefObject<ExpoCameraView | null>`
 //          - Component is memoized and uses `memo` for performance optimization
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
@@ -13,7 +13,7 @@ import { View, TouchableOpacity, Text } from 'react-native';
 import { CameraView as ExpoCameraView } from 'expo-camera';
 import { Camera as CameraIcon, Image as ImageIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { PhotoCaptureStyles } from '@/app/_photo-capture.styles';
+import { PhotoCaptureStyles } from '@/styles/photo-capture.styles';
 import { CaptureMode } from '@/hooks/useCamera';
 
 /**
