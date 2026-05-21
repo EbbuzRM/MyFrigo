@@ -4,7 +4,11 @@
 // used_by: none
 // rules:   none
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
+// message:
+
+// Load environment variables from .env file so EAS CLI can access them
+// when running `expo config --json` during `eas update`
+require('dotenv').config(); 
 
 // TODO(S-18): Certificate pinning non implementato. Per produzione, configurare
 // certificate pinning per prevenire attacchi man-in-the-middle. Richiede configurazione

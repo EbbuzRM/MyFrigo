@@ -40,7 +40,12 @@
     "dev:ios": "npm run start:clear && npm run ios",
     "serve": "npm run start:web",
     "analyze": "npx depcheck",
-    "doctor": "expo doctor"
+    "doctor": "expo doctor",
+    "eas:update": "eas update",
+    "eas:update:preview": "eas update --branch preview",
+    "eas:update:production": "eas update --branch production",
+    "eas:build:preview": "eas build --platform android --profile preview",
+    "eas:build:production": "eas build --platform android --profile production"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -126,6 +131,7 @@
     "baseline-browser-mapping": "^2.10.25",
     "cross-env": "^10.1.0",
     "depcheck": "^1.4.7",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.5.0",
