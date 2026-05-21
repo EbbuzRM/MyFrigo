@@ -75,7 +75,7 @@ describe('caseConverter', () => {
         quantities: '[{"quantity": 1, "unit": "l"}]'
       };
       const result = convertProductToCamelCase(input);
-      expect(result!.productName).toBe('Milk');
+      expect(result!.name).toBe('Milk');
       expect(result!.quantities).toEqual([{ quantity: 1, unit: 'l' }]);
     });
 
