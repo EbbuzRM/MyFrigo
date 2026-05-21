@@ -1,5 +1,5 @@
-import { renderHook } from '@testing-library/react-hooks';
-import usePhotoOCR from '../usePhotoOCR';
+import { renderHook } from '@testing-library/react';
+import { usePhotoOCR } from '../usePhotoOCR';
 
 // Mock external OCR services
 jest.mock('utils/ocr/ocrSpaceService', () => ({
