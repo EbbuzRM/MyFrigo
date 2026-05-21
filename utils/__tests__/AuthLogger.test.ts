@@ -115,8 +115,8 @@ describe('startStep', () => {
     }>;
     const step = steps.find((s) => s.step === 'LOGIN_FORM');
     expect(step).toBeDefined();
-    expect(step.status).toBe('start');
-    expect(step.data).toEqual({ provider: 'google' });
+    expect(step!.status).toBe('start');
+    expect(step!.data).toEqual({ provider: 'google' });
   });
 
   it('should auto-start auth if not in progress', () => {
@@ -140,10 +140,10 @@ describe('startStep', () => {
     const providerSelect = steps.find((s) => s.step === 'PROVIDER_SELECT');
     const tokenExchange = steps.find((s) => s.step === 'TOKEN_EXCHANGE');
 
-    expect(providerSelect.status).toBe('start');
-    expect(tokenExchange.status).toBe('start');
-    expect(providerSelect.step).toBe('PROVIDER_SELECT');
-    expect(tokenExchange.step).toBe('TOKEN_EXCHANGE');
+    expect(providerSelect!.status).toBe('start');
+    expect(tokenExchange!.status).toBe('start');
+    expect(providerSelect!.step).toBe('PROVIDER_SELECT');
+    expect(tokenExchange!.step).toBe('TOKEN_EXCHANGE');
   });
 });
 
@@ -169,8 +169,8 @@ describe('endStep', () => {
     }>;
     const successStep = steps.find((s) => s.step === 'STEP_1' && s.status === 'success');
     expect(successStep).toBeDefined();
-    expect(successStep.duration).toBeDefined();
-    expect(successStep.duration).toBeGreaterThanOrEqual(0);
+    expect(successStep!.duration).toBeDefined();
+    expect(successStep!.duration).toBeGreaterThanOrEqual(0);
   });
 
   it('should add success step without duration if no matching start', () => {
@@ -185,7 +185,7 @@ describe('endStep', () => {
     }>;
     const successStep = steps.find((s) => s.step === 'ORPHAN_STEP' && s.status === 'success');
     expect(successStep).toBeDefined();
-    expect(successStep.duration).toBeUndefined();
+    expect(successStep!.duration).toBeUndefined();
   });
 
   it('should calculate duration from startStep timestamp', () => {
@@ -202,7 +202,7 @@ describe('endStep', () => {
       duration?: number;
     }>;
     const successStep = steps.find((s) => s.step === 'DELAYED_STEP' && s.status === 'success');
-    expect(successStep.duration).toBeGreaterThanOrEqual(2500);
+    expect(successStep!.duration).toBeGreaterThanOrEqual(2500);
   });
 });
 
@@ -229,8 +229,8 @@ describe('errorStep', () => {
     }>;
     const errorStep = steps.find((s) => s.step === 'STEP_1' && s.status === 'error');
     expect(errorStep).toBeDefined();
-    expect(errorStep.duration).toBeDefined();
-    expect(errorStep.error).toBeInstanceOf(Error);
+    expect(errorStep!.duration).toBeDefined();
+    expect(errorStep!.error).toBeInstanceOf(Error);
   });
 
   it('should add error step without duration if no matching start', () => {
@@ -246,8 +246,8 @@ describe('errorStep', () => {
     }>;
     const errorStep = steps.find((s) => s.step === 'ORPHAN_STEP' && s.status === 'error');
     expect(errorStep).toBeDefined();
-    expect(errorStep.duration).toBeUndefined();
-    expect(errorStep.error).toBeInstanceOf(Error);
+    expect(errorStep!.duration).toBeUndefined();
+    expect(errorStep!.error).toBeInstanceOf(Error);
   });
 
   it('should store error reference in step', () => {
@@ -256,9 +256,9 @@ describe('errorStep', () => {
     const error = new Error('something went wrong');
     logger.errorStep('STEP_1', error);
 
-    const steps = (logger as any).steps as Array<{ error?: unknown }>;
+    const steps = (logger as any).steps as Array<{ step: string; status: string; error?: unknown }>;
     const errorStep = steps.find((s) => s.step === 'STEP_1' && s.status === 'error');
-    expect(errorStep.error).toBe(error);
+    expect(errorStep!.error).toBe(error);
   });
 });
 
@@ -476,16 +476,12 @@ describe('getAuthSummary', () => {
     logger.endStep('STEP_1');
 
     const summary = logger.getAuthSummary();
-    expect(summary.timeline).toBeDefined();
-    expect(Array.isArray(summary.timeline)).toBe(true);
-    expect(summary.timeline.length).toBeGreaterThan(0);
+    const timeline = summary.timeline as Array<{ step: string; status: string; timeFromStart: number; duration?: number }>;
+    expect(timeline).toBeDefined();
+    expect(Array.isArray(timeline)).toBe(true);
+    expect(timeline.length).toBeGreaterThan(0);
 
-    summary.timeline.forEach((entry: {
-      step: string;
-      status: string;
-      timeFromStart: number;
-      duration?: number;
-    }) => {
+    timeline.forEach((entry) => {
       expect(typeof entry.step).toBe('string');
       expect(typeof entry.status).toBe('string');
       expect(typeof entry.timeFromStart).toBe('number');
