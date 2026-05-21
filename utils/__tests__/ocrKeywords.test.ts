@@ -103,14 +103,12 @@ describe('isExpirationAnchor', () => {
             expect(isExpirationAnchor('')).toBe(false);
         });
 
-        // @ts-expect-error — intentional null/undefined test
         it('should return false for null', () => {
-            expect(isExpirationAnchor(null)).toBe(false);
+            expect(isExpirationAnchor(null as unknown as string)).toBe(false);
         });
 
-        // @ts-expect-error — intentional null/undefined test
         it('should return false for undefined', () => {
-            expect(isExpirationAnchor(undefined)).toBe(false);
+            expect(isExpirationAnchor(undefined as unknown as string)).toBe(false);
         });
 
         it("should return false for 'A' (less than 2 chars)", () => {
