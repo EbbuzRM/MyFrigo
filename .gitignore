@@ -207,3 +207,5 @@ coverage/
 .cache/
 .env
 .env
+graphify-out/.graphify_root
+graphify-out/manifest.json
