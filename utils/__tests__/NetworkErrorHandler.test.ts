@@ -106,25 +106,25 @@ describe('handleNetworkConnectionError', () => {
   });
 
   it('should return AppError with NETWORK_ERROR code', () => {
-    const error = { code: 'ERR_NETWORK', message: 'test' };
+    const error = { code: 'ERR_NETWORK' as const, message: 'test' };
     const result = handleNetworkConnectionError(error);
     expect(result.code).toBe(ErrorCode.NETWORK_ERROR);
   });
 
   it('should use default message "Errore di connessione..."', () => {
-    const error = { code: 'ERR_NETWORK' };
+    const error = { code: 'ERR_NETWORK' as const };
     const result = handleNetworkConnectionError(error);
     expect(result.message).toBe('Errore di connessione. Controlla la tua connessione a internet e riprova.');
   });
 
   it('should include originalError and networkCode in details', () => {
-    const error = { code: 'ERR_NETWORK', message: 'test error' };
+    const error = { code: 'ERR_NETWORK' as const, message: 'test error' };
     const result = handleNetworkConnectionError(error);
     expect(result.details).toEqual({ originalError: 'test error', networkCode: 'ERR_NETWORK' });
   });
 
   it('should handle custom error message', () => {
-    const error = { code: 'ECONNABORTED', message: 'custom network error' };
+    const error = { code: 'ECONNABORTED' as const, message: 'custom network error' };
     const result = handleNetworkConnectionError(error);
     expect(result.details).toEqual({ originalError: 'custom network error', networkCode: 'ECONNABORTED' });
   });
