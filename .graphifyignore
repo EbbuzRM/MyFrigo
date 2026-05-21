@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+.git/
+graphify-out/
+dist/
+build/
+coverage/
+*.test.ts
+*.test.tsx
+*.spec.ts
+__tests__/

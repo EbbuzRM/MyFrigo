@@ -1,0 +1,15 @@
+C:\Users\Ebby\Trae Projects\myfrigo\android\app\src\main\res\mipmap-xxxhdpi\ic_launcher.webp
+C:\Users\Ebby\Trae Projects\myfrigo\android\app\src\main\res\mipmap-xxxhdpi\ic_launcher_foreground.webp
+C:\Users\Ebby\Trae Projects\myfrigo\android\app\src\main\res\mipmap-xxxhdpi\ic_launcher_round.webp
+C:\Users\Ebby\Trae Projects\myfrigo\assets\icon_products\brioches.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\icon_products\castagne.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\icon_products\croissant.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\icon_products\pancetta.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\icon_products\pizza.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\icon_products\potato.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\icon_products\salami.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\images\favicon.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\images\flour-icon.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\images\icon.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\images\notification_icon.png
+C:\Users\Ebby\Trae Projects\myfrigo\assets\images\splash.png
