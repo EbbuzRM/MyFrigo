@@ -34,7 +34,14 @@ export const usePasswordValidation = () => {
 
   const handlePasswordChange = useCallback((text: string) => {
     setPassword(text);
-    setValidation(validatePassword(text));
+    const result = validatePassword(text);
+    // Extract only the 4 fields defined in PasswordValidation interface
+    setValidation({
+      minLength: result.minLength,
+      hasUpper: result.hasUpper,
+      hasLower: result.hasLower,
+      hasNumber: result.hasNumber,
+    });
   }, []);
 
   const isPasswordValid = useCallback((): boolean => {
@@ -43,8 +50,21 @@ export const usePasswordValidation = () => {
 
   const getValidationProgress = useCallback((): number => {
     const validCount = Object.values(validation).filter(Boolean).length;
-    return (validCount / Object.keys(validation).length) * 100;
+    const totalCriteria = 4; // minLength, hasUpper, hasLower, hasNumber
+    return (validCount / totalCriteria) * 100;
   }, [validation]);
+
+  const setPasswordDirectly = useCallback((text: string) => {
+    setPassword(text);
+    const result = validatePassword(text);
+    // Extract only the 4 fields defined in PasswordValidation interface
+    setValidation({
+      minLength: result.minLength,
+      hasUpper: result.hasUpper,
+      hasLower: result.hasLower,
+      hasNumber: result.hasNumber,
+    });
+  }, []);
 
   return {
     password,
@@ -52,6 +72,6 @@ export const usePasswordValidation = () => {
     handlePasswordChange,
     isPasswordValid: isPasswordValid(),
     validationProgress: getValidationProgress(),
-    setPassword,
+    setPassword: setPasswordDirectly,
   };
 };
