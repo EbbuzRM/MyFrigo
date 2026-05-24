@@ -14,8 +14,8 @@
       "channel": "preview",
       "node": "20.19.4",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://your-project.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
         "EXPO_PUBLIC_ONESIGNAL_APP_ID": "your-onesignal-app-id",
         "EXPO_PUBLIC_OCR_SPACE_API_KEY": "your-ocr-space-api-key"
       }
@@ -27,8 +27,8 @@
       },
       "node": "20.19.4",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://your-project.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
         "EXPO_PUBLIC_ONESIGNAL_APP_ID": "your-onesignal-app-id"
       }
     },
@@ -36,8 +36,8 @@
       "autoIncrement": true,
       "node": "20.19.4",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://your-project.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
         "EXPO_PUBLIC_ONESIGNAL_APP_ID": "your-onesignal-app-id"
       }
     },

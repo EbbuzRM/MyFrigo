@@ -216,7 +216,7 @@ const PhotoCaptureScreen: React.FC = memo(() => {
   }, [hasCameraPermission, hasGalleryPermission, requestCameraPermission, requestGalleryPermission]);
 
   // Loading state while permissions are loading
-  if (!hasCameraPermission || !hasGalleryPermission) {
+  if (hasCameraPermission == null || hasGalleryPermission == null) {
     return <View />;
   }
 

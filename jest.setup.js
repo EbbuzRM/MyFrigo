@@ -64,6 +64,13 @@ jest.mock('react-native', () => {
   // Mock per i componenti principali
   const View = (props) => React.createElement('View', props);
   const Text = (props) => React.createElement('Text', props);
+  const Button = ({ title, onPress, ...props }) => (
+    React.createElement(
+      'Button',
+      { ...props, onPress },
+      React.createElement('Text', null, title)
+    )
+  );
   const TouchableOpacity = (props) => React.createElement('TouchableOpacity', props);
   const StyleSheet = {
     create: (styles) => styles,
@@ -111,6 +118,7 @@ jest.mock('react-native', () => {
   return {
     View,
     Text,
+    Button,
     TouchableOpacity,
     Modal,
     StyleSheet,
@@ -607,22 +615,8 @@ jest.mock('@/context/ThemeContext', () => ({
   }),
 }));
 
-// Mock CategoryContext
-jest.mock('@/context/CategoryContext', () => ({
-  useCategories: () => ({
-    categories: [
-      { id: 'cat1', name: 'Latticini', icon: '🥛', color: '#3b82f6' },
-      { id: 'cat2', name: 'Frutta', icon: '🍎', color: '#ef4444' },
-    ],
-    getCategoryById: (id) => {
-      const categories = [
-        { id: 'cat1', name: 'Latticini', icon: '🥛', color: '#3b82f6' },
-        { id: 'cat2', name: 'Frutta', icon: '🍎', color: '#ef4444' },
-      ];
-      return categories.find(cat => cat.id === id);
-    }
-  }),
-}));
+// CategoryContext is NOT mocked globally - individual test files provide their own mocks
+// See context/__tests__/CategoryContext.test.tsx for specific CategoryProvider mocks
 
 // Mock LoggingService
 jest.mock('@/services/LoggingService', () => ({

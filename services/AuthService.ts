@@ -182,10 +182,11 @@ export class AuthService {
         
         authLogger.errorStep('SUPABASE_LOGIN', error);
 
-        // Gestione errore email non confermata e credenziali non valide
-        // Messaggio unificato per prevenire enumerazione email
-        if (error.message?.includes('Email not confirmed') || error.message?.includes('email_not_confirmed')) {
-          LoggingService.warning('AuthService', 'Login failed - credentials rejected', {
+        const errMsg = (error.message?.toLowerCase() || '').trim();
+
+        // Caso 1: Email non confermata → messaggio specifico (informativo, non rivela esistenza account)
+        if (errMsg.includes('email') && errMsg.includes('confirm')) {
+          LoggingService.warning('AuthService', 'Login failed - email not confirmed', {
             duration,
           });
 
@@ -195,13 +196,28 @@ export class AuthService {
           };
         }
 
-        LoggingService.error('AuthService', 'Login failed', {
+        // Caso 2: Credenziali non valide → messaggio generico (previene enumerazione email)
+        // Supabase restituisce "Invalid login credentials" per password errata o email inesistente
+        if (errMsg.includes('invalid') && (errMsg.includes('credentials') || errMsg.includes('login'))) {
+          LoggingService.warning('AuthService', 'Login failed - invalid credentials', {
+            duration,
+          });
+
+          return {
+            success: false,
+            error: 'Email o password non validi.'
+          };
+        }
+
+        // Caso 3: Altri errori sconosciuti → messaggio generico di sicurezza
+        LoggingService.error('AuthService', 'Login failed - unexpected error', {
           duration,
+          error: errMsg,
         });
 
         return {
           success: false,
-          error: 'Se le credenziali sono corrette, riceverai un\'email di conferma.'
+          error: 'Email o password non validi.'
         };
       }
 

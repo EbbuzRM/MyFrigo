@@ -134,7 +134,7 @@ describe('AuthService', () => {
       expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
       expect(LoggingService.warning).toHaveBeenCalledWith(
         'AuthService',
-        'Login failed - credentials rejected',
+        'Login failed - email not confirmed',
         expect.objectContaining({ duration: expect.any(Number) })
       );
     });
@@ -150,18 +150,23 @@ describe('AuthService', () => {
       expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
     });
 
-    it('should return unified error on Supabase error (prevents enumeration)', async () => {
+    it('should return invalid credentials error on wrong password', async () => {
       (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
-        error: { message: 'Invalid credentials' },
+        error: { message: 'Invalid login credentials' },
       });
 
       const result = await AuthService.signInWithEmail('user@example.com', 'wrong-password');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
+      expect(result.error).toBe('Email o password non validi.');
+      expect(LoggingService.warning).toHaveBeenCalledWith(
+        'AuthService',
+        'Login failed - invalid credentials',
+        expect.objectContaining({ duration: expect.any(Number) })
+      );
     });
 
-    it('should return unified error when Supabase error has no message', async () => {
+    it('should return generic error when Supabase error has no message', async () => {
       (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
         error: { message: '' },
       });
@@ -169,7 +174,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'wrong-password');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
+      expect(result.error).toBe('Email o password non validi.');
     });
 
     it('should handle unexpected exceptions', async () => {

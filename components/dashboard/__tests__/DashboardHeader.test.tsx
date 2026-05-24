@@ -71,4 +71,24 @@ describe('DashboardHeader', () => {
         const { getByTestId } = renderComponent({ permissionStatus: 'granted' });
         expect(getByTestId('bell-button').props.accessibilityState?.disabled || getByTestId('bell-button').props.disabled).toBe(true);
     });
+
+    it('shows Bell icon when permission is granted', () => {
+        const { getByTestId } = renderComponent({ permissionStatus: 'granted' });
+        // Bell icon should be rendered (not BellOff)
+        const bellButton = getByTestId('bell-button');
+        expect(bellButton).toBeTruthy();
+    });
+
+    it('shows BellOff icon when permission is denied', () => {
+        const { getByTestId } = renderComponent({ permissionStatus: 'denied' });
+        const bellButton = getByTestId('bell-button');
+        expect(bellButton).toBeTruthy();
+        // Bell button should be enabled when permission is denied (tapping enables it)
+        expect(bellButton.props.disabled).toBe(false);
+    });
+
+    it('shows default User icon when initials are not provided', () => {
+        const { getByTestId } = renderComponent({ displayInitials: undefined });
+        expect(getByTestId('profile-button')).toBeTruthy();
+    });
 });

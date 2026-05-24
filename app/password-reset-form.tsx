@@ -101,12 +101,7 @@ export default function PasswordResetForm() {
         serverConfirmed.current = true;
         setSession(currentSession);
 
-        // If metadata flag is cleared, redirect. 
-        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
-        if (currentSession && !isResetting) {
-          LoggingService.info('PasswordResetForm', 'Metadata flag cleared via event, redirecting...');
-          router.replace('/(tabs)');
-        }
+
       }
     });
 
