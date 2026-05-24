@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { DiagnosticPanel } from '@/components/DiagnosticPanel';
 import { NotificationDaysModal } from '@/components/settings/NotificationDaysModal';
+import { ChangePasswordModal } from '@/components/settings/ChangePasswordModal';
 import { VersionPressHandler } from '@/components/settings/VersionPressHandler';
 import { UpdateSettingsSection } from '@/components/settings/UpdateSettingsSection';
 import { AccountSettingsSection } from '@/components/settings/AccountSettingsSection';
@@ -28,6 +29,7 @@ import { DiagnosticSettingsSection } from '@/components/settings/DiagnosticSetti
 import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useUpdate } from '@/context/UpdateContext';
+import { useAuth } from '@/context/AuthContext';
 import { LoggingService } from '@/services/LoggingService';
 
 /**
@@ -66,6 +68,7 @@ import { LoggingService } from '@/services/LoggingService';
 export default function Settings(): React.ReactElement {
   const { isDarkMode, setAppTheme } = useTheme();
   const { settings, updateSettings, loading } = useSettings();
+  const { changePassword } = useAuth();
   const {
     checkForUpdates,
     isChecking,
@@ -74,6 +77,7 @@ export default function Settings(): React.ReactElement {
     settings: updateSettingsConfig,
     updateSettings: updateAppUpdateSettings,
     openModal: openUpdateModal,
+    showToast: showGlobalToast,
   } = useUpdate();
   const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
 
@@ -82,8 +86,10 @@ export default function Settings(): React.ReactElement {
   const [daysInput, setDaysInput] = React.useState(settings?.notificationDays?.toString() ?? '3');
   const [isSaving, setIsSaving] = React.useState(false);
 
-  // Toast state rimosso perché ora è gestito globalmente nel contesto degli aggiornamenti
-  const { showToast: showGlobalToast } = useUpdate();
+  // Change password modal state
+  const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = React.useState(false);
+  const [isChangingPassword, setIsChangingPassword] = React.useState(false);
+  const [passwordError, setPasswordError] = React.useState<string | null>(null);
 
   // Diagnostic panel state
   const [showDiagnosticPanel, setShowDiagnosticPanel] = React.useState(false);
@@ -117,6 +123,24 @@ export default function Settings(): React.ReactElement {
       setIsSaving(false);
     }
   }, [daysInput, updateSettings, showGlobalToast]);
+
+  /**
+   * Handle password change
+   */
+  const handleChangePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    setIsChangingPassword(true);
+    setPasswordError(null);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setIsChangePasswordModalVisible(false);
+      showGlobalToast('Password cambiata con successo', 'success');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Errore durante il cambio password';
+      setPasswordError(message);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }, [changePassword, showGlobalToast]);
 
   /**
    * Handle clear data action with confirmation
@@ -187,7 +211,13 @@ export default function Settings(): React.ReactElement {
         </View>
 
         {/* Account Section */}
-        <AccountSettingsSection onProfilePress={() => router.push('/profile')} />
+        <AccountSettingsSection
+          onProfilePress={() => router.push('/profile')}
+          onChangePasswordPress={() => {
+            setPasswordError(null);
+            setIsChangePasswordModalVisible(true);
+          }}
+        />
 
         {/* Diagnostic Sections (Notifications, Appearance, Data, Support) */}
         <DiagnosticSettingsSection
@@ -228,6 +258,15 @@ export default function Settings(): React.ReactElement {
         onSave={handleSaveNotificationDays}
         onCancel={() => setIsDaysModalVisible(false)}
         isSaving={isSaving}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        visible={isChangePasswordModalVisible}
+        isChanging={isChangingPassword}
+        error={passwordError}
+        onClose={() => setIsChangePasswordModalVisible(false)}
+        onChangePassword={handleChangePassword}
       />
 
       {/* Diagnostic Panel */}

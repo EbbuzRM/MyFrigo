@@ -25,6 +25,10 @@ interface SettingsCardProps {
   onPress?: () => void;
   onLongPress?: (event: GestureResponderEvent) => void;
   control?: React.ReactNode;
+  /** Custom accessibility label, overrides auto-generated one */
+  accessibilityLabel?: string;
+  /** Custom accessibility hint, overrides auto-generated one */
+  accessibilityHint?: string;
 }
 
 /**
@@ -37,7 +41,7 @@ interface SettingsCardProps {
  * @param {() => void} [onPress] - Funzione da eseguire al tocco. Se presente, la card diventa cliccabile.
  * @param {React.ReactNode} [control] - Un componente da visualizzare a destra, come uno Switch.
  */
-export function SettingsCard({ icon, title, description, onPress, onLongPress, control }: SettingsCardProps) {
+export function SettingsCard({ icon, title, description, onPress, onLongPress, control, accessibilityLabel, accessibilityHint }: SettingsCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -54,13 +58,23 @@ export function SettingsCard({ icon, title, description, onPress, onLongPress, c
     </>
   );
 
+  // Build accessibility props: use custom label/hint if provided, otherwise auto-generate
+  const buildAccessibilityProps = (hasControl: boolean) => {
+    const autoProps = getSettingsCardAccessibilityProps(title, description, hasControl);
+    return {
+      ...autoProps,
+      ...(accessibilityLabel !== undefined ? { accessibilityLabel } : {}),
+      ...(accessibilityHint !== undefined ? { accessibilityHint } : {}),
+    };
+  };
+
   // Se c'è un controllo (come lo Switch), rendiamo la card come una View non cliccabile
   // per evitare di intercettare gli eventi destinati allo Switch.
   if (control) {
     return (
       <View
         style={styles.card}
-        {...getSettingsCardAccessibilityProps(title, description, true)}
+        {...buildAccessibilityProps(true)}
       >
         <CardContent />
       </View>
@@ -75,7 +89,7 @@ export function SettingsCard({ icon, title, description, onPress, onLongPress, c
         onPress={onPress}
         onLongPress={onLongPress}
         activeOpacity={0.7}
-        {...getSettingsCardAccessibilityProps(title, description, false)}
+        {...buildAccessibilityProps(false)}
       >
         <CardContent />
       </TouchableOpacity>
@@ -86,7 +100,7 @@ export function SettingsCard({ icon, title, description, onPress, onLongPress, c
   return (
     <View
       style={styles.card}
-      {...getSettingsCardAccessibilityProps(title, description, false)}
+      {...buildAccessibilityProps(false)}
     >
       <CardContent />
     </View>
