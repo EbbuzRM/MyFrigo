@@ -15,7 +15,6 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { LoggingService } from '@/services/LoggingService';
 import { supabase } from '@/services/supabaseClient';
-import { validatePassword, isPasswordValid } from '@/utils/authValidation';
 import { FontAwesome } from '@expo/vector-icons';
 
 // Componente per il check di validazione
@@ -34,14 +33,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(false); // Inizia come false, i dati arrivano dal contesto
   const [saving, setSaving] = useState(false);
 
-  // Stati per la sezione cambio password
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [isCurrentPasswordVisible, setIsCurrentPasswordVisible] = useState(false);
-  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
-  const [isConfirmNewPasswordVisible, setIsConfirmNewPasswordVisible] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
+
 
   useEffect(() => {
     // Popola i campi di input con i dati del profilo dal contesto
@@ -118,57 +110,9 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleChangePassword = async () => {
-    LoggingService.info('[PASSWORD_CHANGE] Inizio cambio password.', 'Change password started');
 
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      Alert.alert('Errore', 'Compila tutti i campi password.');
-      LoggingService.error('[PASSWORD_CHANGE] Uscita: campi vuoti.', 'Empty fields');
-      return;
-    }
 
-    if (!isPasswordValid(newPassword)) {
-      Alert.alert('Errore', 'La nuova password non soddisfa tutti i requisiti di sicurezza.');
-      LoggingService.error('[PASSWORD_CHANGE] Nuova password non valida.', 'Invalid new password');
-      return;
-    }
 
-    if (newPassword !== confirmNewPassword) {
-      Alert.alert('Errore', 'Le nuove password non coincidono.');
-      LoggingService.error('[PASSWORD_CHANGE] Password di conferma non corrispondente.', 'Passwords do not match');
-      return;
-    }
-
-    if (currentPassword === newPassword) {
-      Alert.alert('Errore', 'La nuova password deve essere diversa dalla password attuale.');
-      LoggingService.error('[PASSWORD_CHANGE] Nuova password uguale alla vecchia.', 'New password same as current');
-      return;
-    }
-
-    setChangingPassword(true);
-
-    try {
-      LoggingService.info('[PASSWORD_CHANGE] Chiamo changePassword dal contesto.', 'Calling changePassword');
-      await changePassword(currentPassword, newPassword);
-
-      LoggingService.info('[PASSWORD_CHANGE] Cambio password completato con successo.', 'Password changed successfully');
-      Alert.alert('Successo', 'Password aggiornata con successo!');
-
-      // Svuota i campi
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-    } catch (error: unknown) {
-      LoggingService.error('[PASSWORD_CHANGE] Errore durante il cambio password:', 'Change password error', error);
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-      Alert.alert('Errore', `Impossibile aggiornare la password: ${errorMessage}`);
-    } finally {
-      setChangingPassword(false);
-    }
-  };
-
-  const passwordValidation = validatePassword(newPassword);
-  const passwordsMatch = newPassword === confirmNewPassword && newPassword !== '';
 
   if (loading) {
     return (
@@ -220,93 +164,7 @@ export default function ProfileScreen() {
         <Text style={styles.buttonText}>Logout</Text>
       </TouchableOpacity>
 
-      {/* Sezione Cambio Password */}
-      <View style={styles.passwordSection}>
-        <Text style={styles.sectionTitle}>Cambia Password</Text>
 
-        <Text style={styles.label}>Password Attuale</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.inputWithIcon}
-            placeholder="Inserisci la password attuale"
-            secureTextEntry={!isCurrentPasswordVisible}
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-            editable={!changingPassword}
-          />
-          <TouchableOpacity
-            accessibilityLabel="Mostra password attuale"
-            accessibilityRole="button"
-            onPress={() => setIsCurrentPasswordVisible(!isCurrentPasswordVisible)}
-            style={styles.eyeIcon}
-          >
-            <FontAwesome name={isCurrentPasswordVisible ? 'eye-slash' : 'eye'} size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.label}>Nuova Password</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.inputWithIcon}
-            placeholder="Inserisci la nuova password"
-            secureTextEntry={!isNewPasswordVisible}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            editable={!changingPassword}
-          />
-          <TouchableOpacity
-            accessibilityLabel="Mostra nuova password"
-            accessibilityRole="button"
-            onPress={() => setIsNewPasswordVisible(!isNewPasswordVisible)}
-            style={styles.eyeIcon}
-          >
-            <FontAwesome name={isNewPasswordVisible ? 'eye-slash' : 'eye'} size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.label}>Conferma Nuova Password</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.inputWithIcon}
-            placeholder="Conferma la nuova password"
-            secureTextEntry={!isConfirmNewPasswordVisible}
-            value={confirmNewPassword}
-            onChangeText={setConfirmNewPassword}
-            editable={!changingPassword}
-          />
-          <TouchableOpacity
-            accessibilityLabel="Mostra conferma nuova password"
-            accessibilityRole="button"
-            onPress={() => setIsConfirmNewPasswordVisible(!isConfirmNewPasswordVisible)}
-            style={styles.eyeIcon}
-          >
-            <FontAwesome name={isConfirmNewPasswordVisible ? 'eye-slash' : 'eye'} size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.validationContainer}>
-          <ValidationCheck text="Almeno 8 caratteri" isValid={passwordValidation.minLength} />
-          <ValidationCheck text="Una lettera maiuscola" isValid={passwordValidation.hasUpper} />
-          <ValidationCheck text="Una lettera minuscola" isValid={passwordValidation.hasLower} />
-          <ValidationCheck text="Un numero" isValid={passwordValidation.hasNumber} />
-          <ValidationCheck text="Le password coincidono" isValid={passwordsMatch} />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.button, changingPassword && styles.buttonDisabled]}
-          onPress={handleChangePassword}
-          disabled={changingPassword}
-          accessibilityRole="button"
-          accessibilityLabel="Cambia Password"
-          accessibilityState={{ disabled: changingPassword }}
-        >
-          {changingPassword ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Cambia Password</Text>
-          )}
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -340,22 +198,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
   },
-  inputContainer: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  inputWithIcon: {
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    paddingRight: 50,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
-  },
   button: {
     backgroundColor: '#007bff',
     padding: 15,
@@ -373,21 +215,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  passwordSection: {
-    marginTop: 30,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#333',
-  },
-  validationContainer: {
-    marginTop: 8,
-    marginBottom: 12,
   },
 });
