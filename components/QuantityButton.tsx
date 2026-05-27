@@ -35,6 +35,7 @@ export const QuantityButton = React.memo(({
 
   return (
     <AnimatedPressable
+      testID={`${operation}-quantity-button`}
       onPress={handlePress}
       style={[styles.button, disabled && styles.disabled]}
       accessible={true}

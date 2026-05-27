@@ -185,6 +185,7 @@ const FeedbackScreen = () => {
           </Text>
           
           <TextInput
+            testID="feedback-input"
             style={styles.feedbackInput}
             placeholder="Scrivi qui il tuo messaggio..."
             placeholderTextColor={isDarkMode ? '#8b949e' : '#9ca3af'}
@@ -238,6 +239,7 @@ const FeedbackScreen = () => {
           </View>
           
           <TouchableOpacity
+            testID="send-feedback-button"
             style={[styles.feedbackButton, loading && styles.feedbackButtonDisabled]}
             onPress={handleSendFeedback}
             disabled={loading}

@@ -25,7 +25,7 @@ const mockPerformGoogleSignIn = jest.fn();
 const mockUseGoogleAuth = jest.fn(() => ({
   performGoogleSignIn: mockPerformGoogleSignIn,
   loading: false,
-  configError: null,
+  configError: null as null | string,
   googleRetryInProgress: false,
   retryAttemptNumber: 0,
 }));
@@ -35,12 +35,13 @@ jest.mock('@/hooks/useGoogleAuth', () => ({
 }));
 
 // Mock useEmailAuth hook (used by LoginForm)
-const mockHandleLogin = jest.fn();
+const mockHandleLogin = jest.fn()
+  .mockImplementation((password: string) => Promise.resolve({ success: false, error: 'Messaggio errore predefinito' }));
 const mockUseEmailAuth = jest.fn(() => ({
   email: '',
   setEmail: jest.fn(),
   loading: false,
-  error: null,
+  error: null as null | string,
   handleLogin: mockHandleLogin,
   clearError: jest.fn(),
 }));
@@ -104,13 +105,11 @@ jest.mock('@/components/GoogleLoginButton', () => {
   };
 });
 
-jest.mock('@expo/vector-icons', () => ({
-  FontAwesome: () => null,
-}));
-
 // --- Helpers ---
 
-const renderLoginScreen = () => render(<LoginScreen />);
+const renderLoginScreen = (loginFormProps = {}) => render(
+  <LoginScreen />,
+);
 
 // --- Test Suite ---
 
@@ -121,7 +120,7 @@ describe('LoginScreen', () => {
     mockUseGoogleAuth.mockReturnValue({
       performGoogleSignIn: mockPerformGoogleSignIn,
       loading: false,
-      configError: null,
+      configError: null as null | string,
       googleRetryInProgress: false,
       retryAttemptNumber: 0,
     });
@@ -129,22 +128,25 @@ describe('LoginScreen', () => {
       email: '',
       setEmail: jest.fn(),
       loading: false,
-      error: null,
+      error: null as null | string,
       handleLogin: mockHandleLogin,
       clearError: jest.fn(),
     });
     mockUsePasswordValidation.mockReturnValue({
-      password: '',
+      password: 'Password123!',
       setPassword: jest.fn(),
       handlePasswordChange: mockHandlePasswordChange,
       validation: {
-        minLength: false,
-        hasUpper: false,
-        hasLower: false,
-        hasNumber: false,
+        minLength: true,
+        hasUpper: true,
+        hasLower: true,
+        hasNumber: true,
         isNotCommon: true,
       },
     });
+    // Mock Alert.alert globally
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    (Alert.alert as jest.Mock).mockClear();
   });
 
   // ── Rendering ──────────────────────────────────────────────────────
@@ -275,9 +277,10 @@ describe('LoginScreen', () => {
       // The error should be "Email o password non validi.", NOT
       // "Se le credenziali sono corrette, riceverai un'email di conferma."
       expect(mockHandleLogin).toHaveBeenCalled();
-      const result = await mockHandleLogin.mock.results[0].value;
-      expect(result.error).toBe('Email o password non validi.');
-      expect(result.error).not.toContain('riceverai un\'email di conferma');
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Email o password non validi.');
+      });
     });
 
     it('should show "Se le credenziali sono corrette..." for unconfirmed email', async () => {
@@ -294,8 +297,9 @@ describe('LoginScreen', () => {
         fireEvent.press(getByTestId('login-button'));
       });
 
-      const result = await mockHandleLogin.mock.results[0].value;
-      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Se le credenziali sono corrette, riceverai un\'email di conferma.');
+      });
     });
 
     it('should show Alert when onLoginError is called', async () => {
@@ -338,6 +342,9 @@ describe('LoginScreen', () => {
       // LoginForm should call onLoginError with "Inserisci la password"
       // when password is empty
       expect(mockHandleLogin).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Inserisci la password');
+      });
     });
   });
 
@@ -419,7 +426,7 @@ describe('LoginScreen', () => {
   // ── Edge Cases ─────────────────────────────────────────────────────
 
   describe('edge cases', () => {
-    it('should log error on login failure', async () => {
+    it('should show Alert with error message on login failure', async () => {
       mockHandleLogin.mockResolvedValueOnce({
         success: false,
         error: 'Test error',

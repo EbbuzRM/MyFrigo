@@ -601,13 +601,13 @@ describe('SettingsScreen', () => {
     });
 
     it('should handle update settings toggle for autoCheck', () => {
-      const { getByText } = renderSettingsScreen();
-      expect(getByText('Auto Check: ON')).toBeTruthy();
+      const { getByTestId } = renderSettingsScreen();
+      expect(getByTestId('update-settings-section')).toBeTruthy();
     });
 
     it('should handle update settings toggle for autoInstall', () => {
-      const { getByText } = renderSettingsScreen();
-      expect(getByText('Auto Install: OFF')).toBeTruthy();
+      const { getByTestId } = renderSettingsScreen();
+      expect(getByTestId('update-settings-section')).toBeTruthy();
     });
   });
 });

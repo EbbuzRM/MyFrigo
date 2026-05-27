@@ -138,10 +138,18 @@ describe('ProductStorage', () => {
   // Test per deleteProduct
   describe('deleteProduct', () => {
     it('should delete a product by its ID', async () => {
-      // Setup
+      // Setup: Simula una sessione utente valida
+      (getCachedSession as jest.Mock).mockResolvedValue({
+        data: { session: { user: { id: 'test-user-id' } } },
+      });
+
       const mockQueryBuilder = {
         delete: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null }),
+        eq: jest.fn().mockImplementation(() => {
+          return {
+            eq: jest.fn().mockResolvedValue({ error: null })
+          };
+        })
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 

@@ -88,6 +88,12 @@ jest.mock('react-native', () => {
   const Dimensions = {
     get: jest.fn(() => ({ width: 375, height: 667 })),
   };
+  const PixelRatio = {
+    get: jest.fn(() => 1),
+    getFontScale: jest.fn(() => 1),
+    getPixelSizeForLayoutSize: jest.fn((size) => size),
+    roundToNearestPixel: jest.fn((size) => size),
+  };
   const Animated = {
     createAnimatedComponent: (component) => component,
     View: View,
@@ -132,6 +138,7 @@ jest.mock('react-native', () => {
     StatusBar,
     ActivityIndicator,
     Dimensions,
+    PixelRatio,
     Animated,
     Easing,
     TouchableHighlight,
@@ -222,6 +229,23 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   }),
   useLocalSearchParams: () => ({}),
+}));
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => ({
+  FontAwesome: 'FontAwesome',
+  Ionicons: 'Ionicons',
+  MaterialIcons: 'MaterialIcons',
+  MaterialCommunityIcons: 'MaterialCommunityIcons',
+  Entypo: 'Entypo',
+  Feather: 'Feather',
+  AntDesign: 'AntDesign',
+  SimpleLineIcons: 'SimpleLineIcons',
+  Octicons: 'Octicons',
+  Zocial: 'Zocial',
+  Foundation: 'Foundation',
+  EvilIcons: 'EvilIcons',
+  Fontisto: 'Fontisto',
 }));
 
 // Mock expo-crypto
@@ -494,10 +518,6 @@ jest.mock('@react-native-community/datetimepicker', () => ({
   default: 'DateTimePicker',
 }));
 
-// Mock react-native-vector-icons
-jest.mock('react-native-vector-icons/MaterialIcons', () => 'MaterialIcons');
-jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'MaterialCommunityIcons');
-
 // Mock react-native-sound
 jest.mock('react-native-sound', () => ({
   default: jest.fn().mockImplementation(() => ({
@@ -695,13 +715,37 @@ jest.mock('@supabase/supabase-js', () => ({
       select: jest.fn().mockReturnThis(),
       insert: jest.fn().mockReturnThis(),
       update: jest.fn().mockReturnThis(),
+      upsert: jest.fn().mockReturnThis(),
       delete: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
+      neq: jest.fn().mockReturnThis(),
+      gt: jest.fn().mockReturnThis(),
+      lt: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      lte: jest.fn().mockReturnThis(),
+      like: jest.fn().mockReturnThis(),
+      ilike: jest.fn().mockReturnThis(),
+      is: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      contains: jest.fn().mockReturnThis(),
+      containedBy: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      range: jest.fn().mockReturnThis(),
       single: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockReturnThis(),
+      csv: jest.fn().mockReturnThis(),
+      url: new URL('http://localhost'),
+      headers: {},
       data: [],
       error: null,
     })),
     rpc: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    channel: jest.fn(() => ({
+      on: jest.fn().mockReturnThis(),
+      subscribe: jest.fn().mockReturnThis(),
+    })),
+    removeChannel: jest.fn(),
   })),
 }));
 
@@ -833,68 +877,39 @@ jest.mock('@/utils/dateUtils', () => ({
 }));
 
 // Mock date-fns with proper Italian date parsing
-jest.mock('date-fns', () => ({
-  parse: jest.fn((dateString, formatStr, referenceDate) => {
-    // Handle various Italian date formats commonly found in OCR
-    const cleaned = dateString.toString().trim();
-    
-    // Try DD/MM/YYYY or DD-MM-YYYY
-    let match = cleaned.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
-    if (match) {
-      const day = parseInt(match[1], 10);
-      const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
-      const year = parseInt(match[3], 10);
-      return new Date(year, month, day);
-    }
-    
-    // Try DDMMYYYY format (sequence)
-    match = cleaned.match(/^(\d{2})(\d{2})(\d{4})$/);
-    if (match) {
-      const day = parseInt(match[1], 10);
-      const month = parseInt(match[2], 10) - 1;
-      const year = parseInt(match[3], 10);
-      if (day > 0 && day <= 31 && month >= 0 && month <= 11 && year >= 2020) {
-        return new Date(year, month, day);
-      }
-    }
-    
-    // Fallback to standard Date parsing
-    return new Date(cleaned);
-  }),
-  isValid: jest.fn((date) => {
-    if (!(date instanceof Date)) return false;
-    if (isNaN(date.getTime())) return false;
-    const year = date.getFullYear();
-    return year >= 2020 && year <= 2100;
-  }),
-  isAfter: jest.fn((date, compareDate) => date > compareDate),
-  isBefore: jest.fn((date, compareDate) => date < compareDate),
-  format: jest.fn((date, formatStr) => {
-    if (!(date instanceof Date) || isNaN(date.getTime())) return '';
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }),
-  getYear: jest.fn((date) => date instanceof Date ? date.getFullYear() : NaN),
-  startOfToday: jest.fn(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  }),
-  subYears: jest.fn((date, years) => {
-    const result = new Date(date);
-    result.setFullYear(result.getFullYear() - years);
-    return result;
-  }),
-  addDays: jest.fn((date, days) => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }),
-  subDays: jest.fn((date, days) => {
-    const result = new Date(date);
-    result.setDate(result.getDate() - days);
-    return result;
-  }),
-}));
+jest.mock('date-fns', () => {
+  const actual = jest.requireActual('date-fns');
+  return {
+    ...actual,
+    parse: jest.fn((str, format, ref) => {
+      return actual.parse(str, format, ref);
+    }),
+    format: jest.fn((date, fmt, options) => {
+      return actual.format(date, fmt, options);
+    }),
+    isValid: jest.fn((date) => {
+      return actual.isValid(date);
+    }),
+    isFuture: jest.fn((date) => {
+      return actual.isFuture(date);
+    }),
+    startOfToday: jest.fn(() => {
+      return new Date('2025-01-01T00:00:00Z');
+    }),
+    addDays: jest.fn((date, days) => {
+      return actual.addDays(date, days);
+    }),
+    subDays: jest.fn((date, days) => {
+      return actual.subDays(date, days);
+    }),
+    differenceInDays: jest.fn((dateLeft, dateRight) => {
+      return actual.differenceInDays(dateLeft, dateRight);
+    }),
+    isBefore: jest.fn((date, dateToCompare) => {
+      return actual.isBefore(date, dateToCompare);
+    }),
+    isAfter: jest.fn((date, dateToCompare) => {
+      return actual.isAfter(date, dateToCompare);
+    }),
+  };
+});

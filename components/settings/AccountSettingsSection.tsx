@@ -71,6 +71,7 @@ export function AccountSettingsSection({
           title={card.title}
           description={card.description}
           onPress={() => handleCardPress(card)}
+          testID={card.action === 'change-password' ? 'settings-change-password-button' : undefined}
           accessibilityLabel={card.accessibilityLabel}
           accessibilityHint={card.accessibilityHint}
         />

@@ -21,12 +21,19 @@ export const QuickActions = React.memo(function QuickActions() {
 
     return (
         <View style={styles.ctaContainer}>
-            <TouchableOpacity accessibilityLabel="Aggiungi prodotto" accessibilityRole="button" style={styles.ctaButton} onPress={() => router.push('/add')}>
+            <TouchableOpacity 
+                testID="add-product-button"
+                accessibilityLabel="Aggiungi prodotto" 
+                accessibilityRole="button" 
+                style={styles.ctaButton} 
+                onPress={() => router.push('/add')}
+            >
                 <Plus size={20} color="#ffffff" />
                 <Text style={styles.ctaButtonText}>{DASHBOARD_CONTENT.BTN_ADD}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
+                testID="scan-barcode-button"
                 accessibilityLabel="Scansiona codice a barre"
                 accessibilityRole="button"
                 style={[styles.ctaButton, styles.ctaSecondaryButton]}

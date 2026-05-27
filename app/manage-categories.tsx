@@ -100,7 +100,7 @@ export default function ManageCategoriesScreen() {
         <TouchableOpacity accessibilityLabel="Modifica categoria" accessibilityRole="button" onPress={() => handleEdit(item.id, item.name)} style={styles.button}>
           <Edit2 size={20} color={isDarkMode ? '#58a6ff' : '#3b82f6'} />
         </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel="Elimina categoria" accessibilityRole="button" onPress={() => handleDelete(item.id)} style={styles.button}>
+        <TouchableOpacity accessibilityLabel="Elimina categoria" accessibilityRole="button" onPress={() => handleDelete(item.id)} style={styles.button} testID="delete-category-button">
           <X size={20} color={isDarkMode ? '#EF4444' : 'red'} />
         </TouchableOpacity>
       </View>
@@ -115,7 +115,7 @@ export default function ManageCategoriesScreen() {
       <Text style={styles.infoText}>
         Qui puoi creare, modificare o eliminare le categorie personalizzate. Le categorie predefinite non sono modificabili.
       </Text>
-      <TouchableOpacity accessibilityLabel="Crea nuova categoria" accessibilityRole="button" style={styles.createButton} onPress={() => setCreateModalVisible(true)}>
+       <TouchableOpacity accessibilityLabel="Crea nuova categoria" accessibilityRole="button" style={styles.createButton} onPress={() => setCreateModalVisible(true)} testID="add-category-button">
         <Plus size={20} color="white" />
         <Text style={styles.createButtonText}>Crea Nuova Categoria</Text>
       </TouchableOpacity>
@@ -139,15 +139,16 @@ export default function ManageCategoriesScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Crea Nuova Categoria</Text>
-             <TextInput
-               ref={createInputRef}
-               style={styles.modalInput}
-               placeholder="Nome della categoria"
-               value={createCategoryName}
-               onChangeText={setCreateCategoryName}
-               autoFocus
-               placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
-             />
+              <TextInput
+                ref={createInputRef}
+                style={styles.modalInput}
+                placeholder="Nome della categoria"
+                value={createCategoryName}
+                onChangeText={setCreateCategoryName}
+                autoFocus
+                placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
+                testID="category-name-input"
+              />
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity accessibilityLabel="Annulla" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setCreateModalVisible(false)}>
                 <Text style={styles.modalButtonTextCancel}>Annulla</Text>

@@ -10,6 +10,8 @@ import { Alert } from 'react-native';
 import PasswordResetForm from '../password-reset-form';
 import { supabase } from '@/services/supabaseClient';
 
+
+
 // --- Mocks ---
 
 // Capture the onAuthStateChange callback so tests can fire events
@@ -32,15 +34,17 @@ jest.mock('@/services/supabaseClient', () => ({
       onAuthStateChange: (callback: (event: string, session: unknown) => void) => mockOnAuthStateChange(callback),
     },
   },
+  getCachedSession: () => mockGetSession(),
 }));
 
 const mockRouterReplace = jest.fn();
+const mockRouter = {
+  replace: mockRouterReplace,
+  push: jest.fn(),
+  back: jest.fn(),
+};
 jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    replace: mockRouterReplace,
-    push: jest.fn(),
-    back: jest.fn(),
-  }),
+  useRouter: () => mockRouter,
 }));
 
 jest.mock('@expo/vector-icons', () => ({
@@ -84,8 +88,17 @@ const renderForm = () => render(<PasswordResetForm />);
 describe('PasswordResetForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetSession.mockReset();
+    mockRefreshSession.mockReset();
+    mockUpdateUser.mockReset();
+    mockOnAuthStateChange.mockReset();
     authStateCallback = null;
     setupValidSession();
+    // Default mock for onAuthStateChange
+    mockOnAuthStateChange.mockImplementation((callback: (event: string, session: unknown) => void) => {
+      authStateCallback = callback;
+      return { data: { subscription: { unsubscribe: jest.fn() } } };
+    });
   });
 
   // ── Loading State ──────────────────────────────────────────────────
@@ -176,20 +189,22 @@ describe('PasswordResetForm', () => {
       });
     });
 
-    it('should continue with original session if refresh fails', async () => {
-      mockRefreshSession.mockResolvedValue({
-        data: { session: null },
-        error: { message: 'Network error' },
-      });
+it('should continue with original session if refresh fails', async () => {
+    // Sovrascrivi refreshSession per simulare errore di rete
+    mockRefreshSession.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Network error' },
+    });
+    // Sovrascrivi getSession per restituire SEMPRE defaultSession
+    mockGetSession.mockImplementation(() => Promise.resolve({ data: { session: defaultSession }, error: null }));
 
-      const { getByText } = renderForm();
+    const { getByText } = renderForm();
 
-      await waitFor(() => {
-        // Should still show the form with original session email
-        expect(getByText('Ciao test@example.com, inserisci la tua nuova password')).toBeTruthy();
-      });
+    await waitFor(() => {
+      expect(getByText(/Ciao.*test@example\.com.*inserisci/)).toBeTruthy();
     });
   });
+});
 
   // ── Form Rendering ─────────────────────────────────────────────────
 
@@ -475,13 +490,15 @@ describe('PasswordResetForm', () => {
 
       await fillValidPassword(getByTestId);
 
+      // Usiamo i fake timers prima che venga innescato il setTimeout dentro il handler!
+      jest.useFakeTimers();
+
       // Start the submission
       act(() => {
         fireEvent.press(getByTestId('confirm-reset-button'));
       });
 
       // Advance timers to trigger the 20s timeout
-      jest.useFakeTimers();
       act(() => {
         jest.advanceTimersByTime(21000);
       });

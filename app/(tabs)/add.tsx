@@ -77,7 +77,7 @@ const AddProduct = () => {
 
         <View style={styles.methodsContainer}>
           <AddMethodCard
-            testID="photo-capture-button"
+            testID="barcode-scanner-button"
             title="Scansiona Codice a Barre"
             description="Usa la fotocamera per una scansione rapida"
             icon={<Barcode size={28} />}

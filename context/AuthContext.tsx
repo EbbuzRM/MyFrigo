@@ -120,6 +120,73 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user, refreshUserProfile]);
 
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setLoading(true);
+      try {
+        LoggingService.info('AuthProvider', 'Attempting to get session...');
+        const { data: { session: currentSession }, error } = await getCachedSession();
+        LoggingService.info('AuthProvider', 'Finished getSession call.');
+
+        if (error) {
+          LoggingService.error('AuthProvider', 'Error getting session', error);
+        } else if (currentSession) {
+          LoggingService.info('AuthProvider', 'Session found, processing...');
+          setUser(currentSession.user);
+          await fetchUserProfile(currentSession.user);
+          setSession(currentSession);
+          LoggingService.info('AuthProvider', 'Session restored', { userId: currentSession.user.id });
+        } else {
+          LoggingService.info('AuthProvider', 'No active session found.');
+        }
+      } catch (error) {
+        LoggingService.error('AuthProvider', 'Unexpected error during auth initialization', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      LoggingService.info('AuthProvider', 'Auth state changed', { event });
+
+      setUser(currentSession?.user ?? null);
+      setSession(currentSession);
+
+      if (event === 'SIGNED_IN') {
+        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
+        if (isResetting) {
+          LoggingService.info('AuthProvider', 'User signed in for reset. Skipping profile fetch.');
+          router.replace('/password-reset-form');
+        } else {
+          await fetchUserProfile(currentSession?.user ?? null);
+          router.replace('/(tabs)');
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null);
+        router.replace('/login');
+      } else if (event === 'PASSWORD_RECOVERY') {
+        LoggingService.info('AuthProvider', 'PASSWORD_RECOVERY event received, redirecting to password reset form');
+        router.replace('/password-reset-form');
+      } else if (event === 'USER_UPDATED') {
+        setSession(currentSession);
+        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
+        LoggingService.info('AuthProvider', 'USER_UPDATED event received', { isResetting });
+
+        if (isResetting) {
+          LoggingService.info('AuthProvider', 'User is resetting password. Skipping profile fetch and redirect.');
+        } else {
+          await fetchUserProfile(currentSession?.user ?? null);
+        }
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [router, fetchUserProfile]);
+
   const signOut = useCallback(async () => {
     try {
       LoggingService.info('AuthProvider', 'Signing out user initiated');

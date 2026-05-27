@@ -46,16 +46,17 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
         <Text style={styles.editButtonText}>Modifica Prodotto</Text>
       </TouchableOpacity>
 
-      {canConsume && (
-        <TouchableOpacity
-          style={[styles.consumeButton, disabled && styles.buttonDisabled]}
-          onPress={onConsume}
-          disabled={disabled}
-          accessibilityLabel="Segna come consumato"
-          accessibilityRole="button"
-          accessibilityHint="Segna il prodotto come consumato o apri la schermata per scegliere la quantità"
-          accessibilityState={{ disabled }}
-        >
+{canConsume && (
+         <TouchableOpacity
+           testID="consume-button"
+           style={[styles.consumeButton, disabled && styles.buttonDisabled]}
+           onPress={onConsume}
+           disabled={disabled}
+           accessibilityLabel="Segna come consumato"
+           accessibilityRole="button"
+           accessibilityHint="Segna il prodotto come consumato o apri la schermata per scegliere la quantità"
+           accessibilityState={{ disabled }}
+         >
           <CheckCircle size={20} color="#ffffff" />
           <Text style={styles.consumeButtonText}>Segna come Consumato</Text>
         </TouchableOpacity>

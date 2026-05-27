@@ -25,6 +25,7 @@ interface SettingsCardProps {
   onPress?: () => void;
   onLongPress?: (event: GestureResponderEvent) => void;
   control?: React.ReactNode;
+  testID?: string;
   /** Custom accessibility label, overrides auto-generated one */
   accessibilityLabel?: string;
   /** Custom accessibility hint, overrides auto-generated one */
@@ -41,7 +42,7 @@ interface SettingsCardProps {
  * @param {() => void} [onPress] - Funzione da eseguire al tocco. Se presente, la card diventa cliccabile.
  * @param {React.ReactNode} [control] - Un componente da visualizzare a destra, come uno Switch.
  */
-export function SettingsCard({ icon, title, description, onPress, onLongPress, control, accessibilityLabel, accessibilityHint }: SettingsCardProps) {
+export function SettingsCard({ icon, title, description, onPress, onLongPress, control, testID, accessibilityLabel, accessibilityHint }: SettingsCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -74,6 +75,7 @@ export function SettingsCard({ icon, title, description, onPress, onLongPress, c
     return (
       <View
         style={styles.card}
+        testID={testID}
         {...buildAccessibilityProps(true)}
       >
         <CardContent />
@@ -86,6 +88,7 @@ export function SettingsCard({ icon, title, description, onPress, onLongPress, c
     return (
       <TouchableOpacity
         style={styles.card}
+        testID={testID}
         onPress={onPress}
         onLongPress={onLongPress}
         activeOpacity={0.7}
@@ -97,14 +100,15 @@ export function SettingsCard({ icon, title, description, onPress, onLongPress, c
   }
 
   // Fallback per card puramente informative (senza onPress o control)
-  return (
-    <View
-      style={styles.card}
-      {...buildAccessibilityProps(false)}
-    >
-      <CardContent />
-    </View>
-  );
+    return (
+      <View
+        style={styles.card}
+        testID={testID}
+        {...buildAccessibilityProps(false)}
+      >
+        <CardContent />
+      </View>
+    );
 }
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({

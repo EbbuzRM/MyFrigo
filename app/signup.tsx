@@ -29,7 +29,7 @@ export default function SignupScreen() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const router = useRouter();
   const { validateForm, validatePasswordField, passwordValidation, isFormValid, clearErrors } = useSignupValidation();
-  const handleSuccess = useCallback(() => router.replace('/login'), [router]);
+  const handleSuccess = useCallback(() => {}, []);
   const handleEmailNeedsConfirmation = useCallback((email: string) => router.replace({ pathname: '/confirm-email', params: { email } }), [router]);
   const { register, handlePostRegistration, isLoading, error } = useRegistration(handleSuccess, () => handleEmailNeedsConfirmation(formData.email));
 
@@ -67,14 +67,14 @@ export default function SignupScreen() {
       <Text style={styles.header}>{UI_LABELS.HEADER}</Text>
       <Text style={styles.subtitle}>{UI_LABELS.SUBTITLE}</Text>
       <Text style={styles.label}>{UI_LABELS.FIRST_NAME}</Text>
-      <TextInput style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_FIRST_NAME} value={formData.firstName} onChangeText={(t) => updateField('firstName', t)} autoCapitalize="words" editable={!isLoading} />
+      <TextInput testID="signup-first-name-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_FIRST_NAME} value={formData.firstName} onChangeText={(t) => updateField('firstName', t)} autoCapitalize="words" editable={!isLoading} />
       <Text style={styles.label}>{UI_LABELS.LAST_NAME}</Text>
-      <TextInput style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_LAST_NAME} value={formData.lastName} onChangeText={(t) => updateField('lastName', t)} autoCapitalize="words" editable={!isLoading} />
+      <TextInput testID="signup-last-name-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_LAST_NAME} value={formData.lastName} onChangeText={(t) => updateField('lastName', t)} autoCapitalize="words" editable={!isLoading} />
       <Text style={styles.label}>{UI_LABELS.EMAIL}</Text>
-      <TextInput style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_EMAIL} value={formData.email} onChangeText={(t) => updateField('email', t)} keyboardType="email-address" autoCapitalize="none" editable={!isLoading} />
+      <TextInput testID="signup-email-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_EMAIL} value={formData.email} onChangeText={(t) => updateField('email', t)} keyboardType="email-address" autoCapitalize="none" editable={!isLoading} />
       <Text style={styles.label}>{UI_LABELS.PASSWORD}</Text>
       <View style={styles.passwordContainer}>
-        <TextInput style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_PASSWORD} value={formData.password} onChangeText={(t) => updateField('password', t)} secureTextEntry={!isPasswordVisible} editable={!isLoading} />
+        <TextInput testID="signup-password-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_PASSWORD} value={formData.password} onChangeText={(t) => updateField('password', t)} secureTextEntry={!isPasswordVisible} editable={!isLoading} />
         <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)} disabled={isLoading} accessibilityLabel="Mostra/Nascondi password" accessibilityRole="button" accessibilityState={{ disabled: isLoading }}>
           <FontAwesome name={isPasswordVisible ? 'eye' : 'eye-slash'} size={20} color="#6c757d" />
         </TouchableOpacity>
@@ -88,7 +88,7 @@ export default function SignupScreen() {
         </View>
       )}
       {error && <Text style={styles.errorText}>{error}</Text>}
-      <TouchableOpacity style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled} accessibilityRole="button" accessibilityLabel="Registrati" accessibilityState={{ disabled: isDisabled }}>
+      <TouchableOpacity testID="signup-button" style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled} accessibilityRole="button" accessibilityLabel="Registrati" accessibilityState={{ disabled: isDisabled }}>
         {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{UI_LABELS.SIGNUP_BUTTON}</Text>}
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()}>

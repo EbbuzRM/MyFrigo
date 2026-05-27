@@ -97,6 +97,7 @@ export function DiagnosticSettingsSection({
             title={card.title}
             description={`Avvisami ${notificationDays} giorni prima`}
             onPress={onNotificationDaysPress}
+            testID="settings-notification-days-button"
           />
         ))}
       </SettingsSection>
@@ -133,6 +134,7 @@ export function DiagnosticSettingsSection({
             onPress={
               card.id === 'categories' ? onCategoriesPress : onClearDataPress
             }
+            testID={card.id === 'categories' ? 'settings-categories-button' : undefined}
           />
         ))}
       </SettingsSection>

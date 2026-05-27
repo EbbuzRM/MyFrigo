@@ -59,7 +59,12 @@ describe('CategoryMatcher', () => {
       expect(result).toBe('cheese');
     });
 
-    it('should match "pollo" to meat category', () => {
+    it('should match "crepes pomodoro mozzarella" to frozen category (frozen priority > dairy)', () => {
+      const result = CategoryMatcher.guessCategory('Crepes Pomodoro Mozzarella', 'Brand', defaultCategories);
+      expect(result).toBe('frozen');
+    });
+
+    it('should match "petto di pollo" to meat category', () => {
       const result = CategoryMatcher.guessCategory('Petto di Pollo', 'Aia', defaultCategories);
       expect(result).toBe('meat');
     });

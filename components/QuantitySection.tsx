@@ -60,6 +60,7 @@ export const QuantitySection: React.FC<QuantitySectionProps> = React.memo(
         )}
 
         <TouchableOpacity
+          testID="add-new-quantity-row-button"
           style={styles.addButton}
           onPress={handleAddQuantity}
           accessible={true}

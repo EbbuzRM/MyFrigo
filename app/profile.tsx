@@ -127,6 +127,7 @@ export default function ProfileScreen() {
       <Text style={styles.title}>Il Tuo Profilo</Text>
       <Text style={styles.label}>Nome</Text>
       <TextInput
+        testID="first-name-input"
         style={styles.input}
         placeholder="Il tuo nome"
         value={firstName}
@@ -134,12 +135,14 @@ export default function ProfileScreen() {
       />
       <Text style={styles.label}>Cognome</Text>
       <TextInput
+        testID="last-name-input"
         style={styles.input}
         placeholder="Il tuo cognome"
         value={lastName}
         onChangeText={setLastName}
       />
       <TouchableOpacity
+        testID="save-profile-button"
         style={[styles.button, saving && styles.buttonDisabled]}
         onPress={handleUpdateProfile}
         disabled={saving}

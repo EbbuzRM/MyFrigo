@@ -153,14 +153,15 @@ renderItem={({ item }) => (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{DASHBOARD_CONTENT.TITLE_STATS}</Text>
         <View style={styles.statsContainer}>
-          <StatsCard
-            title={DASHBOARD_CONTENT.STATS_ACTIVE}
-            value={activeProductsCount.toString()}
-            icon={<Package size={24} color="#2563EB" />}
-            lightBackgroundColor="#EFF6FF"
-            darkBackgroundColor="#1e293b"
-            onPress={() => router.push('/(tabs)/products')}
-          />
+           <StatsCard
+             title={DASHBOARD_CONTENT.STATS_ACTIVE}
+             value={activeProductsCount.toString()}
+             valueTestId="total-products-count"
+             icon={<Package size={24} color="#2563EB" />}
+             lightBackgroundColor="#EFF6FF"
+             darkBackgroundColor="#1e293b"
+             onPress={() => router.push('/(tabs)/products')}
+           />
           <StatsCard
             title={DASHBOARD_CONTENT.STATS_EXPIRED}
             value={expiredCount.toString()}

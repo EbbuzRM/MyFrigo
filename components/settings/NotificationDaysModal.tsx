@@ -5,7 +5,7 @@
 // rules:   - All state management (visibility, input value, loading) must remain in the parent component; this component must be purely presentational and stateless
 //          - Input validation boundaries must always reference the imported `MIN_NOTIFICATION_DAYS` and `MAX_NOTIFICATION_DAYS` constants, never hardcoded values
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
+// message:
 
 import React from 'react';
 import {
@@ -23,24 +23,6 @@ import {
   MIN_NOTIFICATION_DAYS,
   MAX_NOTIFICATION_DAYS,
 } from '@/constants/settings';
-
-/**
- * @file components/settings/NotificationDaysModal.tsx
- * @description Modal component for editing notification days setting.
- * Provides input validation and save/cancel actions.
- *
- * @example
- * ```tsx
- * <NotificationDaysModal
- *   visible={isModalVisible}
- *   daysInput={daysInput}
- *   onChangeDays={setDaysInput}
- *   onSave={handleSave}
- *   onCancel={() => setVisible(false)}
- *   isSaving={isSaving}
- * />
- * ```
- */
 
 /**
  * Props for NotificationDaysModal component
@@ -117,6 +99,7 @@ export function NotificationDaysModal({
 
           <View style={styles.modalButtonContainer}>
             <TouchableOpacity
+              testID="cancel-notification-days-button"
               style={[styles.modalButton, styles.modalButtonCancel]}
               onPress={onCancel}
               disabled={isSaving}
@@ -128,6 +111,7 @@ export function NotificationDaysModal({
             </TouchableOpacity>
 
             <TouchableOpacity
+              testID="save-notification-days-button"
               style={[
                 styles.modalButton,
                 styles.modalButtonConfirm,

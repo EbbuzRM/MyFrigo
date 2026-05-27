@@ -45,6 +45,7 @@ export function VersionPressHandler({
     <>
       <View style={styles.footer}>
         <TouchableOpacity
+          testID="version-tap"
           activeOpacity={0.7}
           onPress={handlePress}
           accessibilityLabel="Versione applicazione"

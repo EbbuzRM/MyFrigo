@@ -10,7 +10,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { User, Calendar, Moon, ListTree, Trash2, RefreshCw, Download, MessageSquareQuote } from 'lucide-react-native';
+import { User, Calendar, Moon, ListTree, Trash2, RefreshCw, Download, MessageSquareQuote, Lock } from 'lucide-react-native';
 import { router } from 'expo-router';
 import React from 'react';
 
@@ -74,6 +74,8 @@ export interface SettingsCardConfig {
   route?: string;
   /** Whether this card triggers an action instead of navigation */
   isAction?: boolean;
+  /** Action identifier for cards that trigger actions instead of navigation */
+  action?: string;
   /** Accessibility label for screen readers */
   accessibilityLabel?: string;
   /** Accessibility hint for screen readers */
@@ -184,6 +186,17 @@ export const createAccountCards = (isDarkMode: boolean): AccountCardConfig[] => 
     route: '/profile',
     accessibilityLabel: 'Profilo utente',
     accessibilityHint: 'Tocca per visualizzare e modificare il profilo',
+  },
+  {
+    id: 'change-password',
+    section: 'account',
+    icon: React.createElement(Lock, { size: 24, color: getIconColor(isDarkMode, 'info') }),
+    title: 'Cambia Password',
+    description: 'Modifica la tua password',
+    controlType: 'none',
+    action: 'change-password',
+    accessibilityLabel: 'Cambia password',
+    accessibilityHint: 'Tocca per modificare la tua password',
   },
 ];
 

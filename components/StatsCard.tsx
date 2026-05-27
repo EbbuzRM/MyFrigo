@@ -21,9 +21,10 @@ interface StatsCardProps {
   lightBackgroundColor: string;
   darkBackgroundColor: string;
   onPress?: () => void;
+  valueTestId?: string;
 }
 
-export const StatsCard = React.memo(function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgroundColor, onPress }: StatsCardProps) {
+export const StatsCard = React.memo(function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgroundColor, onPress, valueTestId }: StatsCardProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const CardComponent = onPress ? TouchableOpacity : View;
@@ -31,7 +32,7 @@ export const StatsCard = React.memo(function StatsCard({ title, value, icon, lig
 
   return (
     <CardComponent
-      testID="stats-card"
+      testID={`stats-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
       style={[styles.card, { backgroundColor }]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
@@ -41,7 +42,7 @@ export const StatsCard = React.memo(function StatsCard({ title, value, icon, lig
         {icon}
       </View>
       <View style={styles.content}>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={styles.value} testID={valueTestId}>{value}</Text>
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
       </View>
     </CardComponent>

@@ -52,6 +52,7 @@ function ToastManager() {
       visible={!!toast}
       onDismiss={hideToast}
       type={toast?.type ?? 'success'}
+      testID="toast-message"
     />
   );
 }

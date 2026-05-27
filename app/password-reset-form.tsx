@@ -67,8 +67,10 @@ export default function PasswordResetForm() {
           LoggingService.warning('PasswordResetForm', 'Session refresh failed', refreshError);
         }
 
-        const { data: { session: refreshedSession }, error: sessionError } = await supabase.auth.getSession();
-        const currentSessionToCheck = refreshedSession || currentSession;
+        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+        // Se il refresh ha fallito (errore di rete), usiamo la sessione più recente disponibile
+        // con la sessione originale come fallback di sicurezza
+        const currentSessionToCheck = refreshedSession ?? currentSession;
 
         if (!currentSessionToCheck) {
           LoggingService.error('PasswordResetForm', 'Critical: No session available.');
@@ -77,20 +79,25 @@ export default function PasswordResetForm() {
           return;
         }
 
+        // Se la sessione è esplicitamente null dopo refresh riuscito (senza errori), è scaduta
+        if (!refreshError && !refreshedSession) {
+          LoggingService.error('PasswordResetForm', 'Session expired after refresh.');
+          Alert.alert('Errore', 'Sessione scaduta o non valida. Riprova il login.');
+          router.replace('/login');
+          return;
+        }
+
         setSession(currentSessionToCheck);
         LoggingService.info('PasswordResetForm', 'Session verified successfully', { userId: currentSessionToCheck.user.id });
 
-      } catch (error) {
-        LoggingService.error('PasswordResetForm', 'Unexpected error checking session', error);
-      } finally {
-        setIsReady(true);
-      }
-    };
+  } catch (error) {
+    LoggingService.error('PasswordResetForm', 'Unexpected error checking session', error);
+  } finally {
+    setIsReady(true);
+  }
+};
 
-    checkSession();
-
-    // Safety timer for UI unblocking
-    const timer = setTimeout(() => setIsReady(true), 2000);
+checkSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (event === 'SIGNED_OUT' || !currentSession) {
@@ -105,10 +112,9 @@ export default function PasswordResetForm() {
       }
     });
 
-    return () => {
-      clearTimeout(timer);
-      authListener.subscription.unsubscribe();
-    };
+  return () => {
+    authListener.subscription.unsubscribe();
+  };
   }, [router]);
 
   const handleUpdatePassword = async () => {
@@ -140,10 +146,13 @@ export default function PasswordResetForm() {
       );
 
       try {
-        await Promise.race([updatePromise, timeoutPromise]);
+        const result = await Promise.race([updatePromise, timeoutPromise]) as { data: { user: unknown } | null; error: { message: string } | null } | undefined;
         LoggingService.info('PasswordResetForm', 'Atomic update request resolved normally');
+        if (result && result.error) {
+          throw result.error;
+        }
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorMessage = err instanceof Error ? err.message : (err && typeof err === 'object' && 'message' in err ? String(err.message) : String(err));
         if (errorMessage === 'TIMEOUT' && serverConfirmed.current) {
           LoggingService.info('PasswordResetForm', 'Request timed out locally but server confirmed success via event. Both password and flag updated.');
         } else {
@@ -158,11 +167,16 @@ export default function PasswordResetForm() {
       );
     } catch (error: unknown) {
       LoggingService.error('PasswordResetForm', 'Error during password update', error);
-      let errorMessage = error instanceof Error && error.message !== 'TIMEOUT'
-        ? error.message
-        : (error instanceof Error && error.message === 'TIMEOUT' ? 'Il server non ha risposto in tempo, riprova tra poco.' : 'Errore sconosciuto');
+      let errorMessage = 'Errore sconosciuto';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = String(error.message);
+      }
 
-      if (errorMessage.includes('New password should be different')) {
+      if (errorMessage === 'TIMEOUT') {
+        errorMessage = 'Il server non ha risposto in tempo, riprova tra poco.';
+      } else if (errorMessage.includes('New password should be different')) {
         errorMessage = 'La nuova password deve essere diversa dalla precedente.';
       }
 

@@ -74,6 +74,7 @@ export const DatePickerRow: React.FC<DatePickerRowProps> = React.memo(
       <View accessible={accessible} accessibilityLabel={accessibilityLabel}>
         <Text style={styles.label}>Data di Acquisto*</Text>
         <TouchableOpacity
+          testID="purchase-date-button"
           onPress={handlePurchaseDatePress}
           style={styles.dateInputTouchable}
           accessible={true}
@@ -97,8 +98,8 @@ export const DatePickerRow: React.FC<DatePickerRowProps> = React.memo(
           <Text style={styles.label}>Data di Scadenza*</Text>
           {renderPhotoButton}
         </View>
-
         <TouchableOpacity
+          testID="expiration-date-button"
           onPress={handleExpirationDatePress}
           style={styles.dateInputTouchable}
           accessible={true}

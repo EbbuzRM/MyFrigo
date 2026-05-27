@@ -33,6 +33,7 @@ export const FormActionButtons: React.FC<FormActionButtonsProps> = React.memo(
 
     return (
       <TouchableOpacity
+        testID="save-product-button"
         style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
         onPress={handleSave}
         disabled={isLoading}

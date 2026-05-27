@@ -68,7 +68,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
   const completedTests = results.length;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="diagnostic-panel">
       <View style={styles.header}>
         <Text style={styles.headerText}>Pannello Diagnostico</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>

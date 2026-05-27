@@ -71,7 +71,7 @@ describe('caseConverter', () => {
     it('should convert product keys and parse quantities JSON', () => {
       const input = {
         id: '1',
-        product_name: 'Milk',
+        name: 'Milk',
         quantities: '[{"quantity": 1, "unit": "l"}]'
       };
       const result = convertProductToCamelCase(input);

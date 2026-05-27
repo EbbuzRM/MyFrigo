@@ -138,6 +138,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </TouchableOpacity>
 
       <TouchableOpacity
+        testID="signup-button"
         accessibilityLabel="Registrati"
         accessibilityRole="button"
         style={[styles.button, styles.secondaryButton]}

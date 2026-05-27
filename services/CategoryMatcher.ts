@@ -37,7 +37,7 @@ export class CategoryMatcher {
     // Vegetables (Verdure)
     'vegetables': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci', 'broccoli', 'cavolfiore', 'peperone', 'cetriolo', 'lattuga', 'radicchio', 'finocchio', 'carciofo'],
     // Frozen (Surgelati)
-    'frozen': ['gelato', 'pizza surgelata', 'pasta surgelata', 'minestrone', 'patatine fritte', 'surgelato', 'congelato', 'basta'],
+    'frozen': ['gelato', 'pizza surgelata', 'pasta surgelata', 'minestrone', 'patatine fritte', 'surgelato', 'congelato', 'basta', 'crepes'],
     // Beverages (Bevande)
     'beverages': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè', 'bibita', 'spremuta', 'gassata', 'frizzante', 'mineral'],
     // Canned (Conserve)
@@ -153,8 +153,8 @@ export class CategoryMatcher {
 
     // Priorità alle categorie più specifiche (ordinamento manuale per importanza)
     const categoryPriority = [
-      'legumes', 'cheese', 'dairy', 'salumi', 'meat', 'fish', 'fruits', 'vegetables',
-      'pasta', 'rice', 'flour', 'grains', 'frozen', 'beverages', 'canned',
+      'legumes', 'cheese', 'frozen', 'dairy', 'salumi', 'meat', 'fish', 'fruits', 'vegetables',
+      'pasta', 'rice', 'flour', 'grains', 'beverages', 'canned',
       'snacks', 'sweets', 'condiments', 'sauces', 'eggs', 'jam', 'honey',
       'ice_cream', 'pomodoro', 'vegan', 'milk'
     ];
