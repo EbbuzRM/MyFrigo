@@ -1,0 +1,75 @@
+appId: com.myfrigo
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: "http://localhost:8081"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd
+- back
+
+# 1. Login to reach Settings
+- tapOn:
+    id: "email-input"
+- inputText: { id: "email-input", text: "example@gmail.com" }
+- hideKeyboard
+- tapOn:
+    id: "password-input"
+- inputText: { id: "password-input", text: "A123456a" }
+- hideKeyboard
+- tapOn:
+    id: "login-button"
+- waitForAnimationToEnd
+
+# 2. Navigate to Diagnostic Panel
+- tapOn:
+    text: "Impostazioni"
+- scrollUntilVisible:
+    element:
+      id: "version-tap"
+- tapOn:
+    id: "version-tap"
+- tapOn:
+    id: "version-tap"
+- tapOn:
+    id: "version-tap"
+- tapOn:
+    id: "version-tap"
+- tapOn:
+    id: "version-tap"
+- tapOn:
+    text: "OK"
+    optional: true
+- waitForAnimationToEnd
+
+# 3. Reset Test Users
+- scrollUntilVisible:
+    element:
+      id: "reset-test-users-button"
+- tapOn:
+    id: "reset-test-users-button"
+- tapOn:
+    text: "Sì, Reset"
+- waitForAnimationToEnd
+- tapOn: "OK"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+- back:
+    optional: true
+- waitForAnimationToEnd
+- back:
+    optional: true
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element: "Profilo"
+- tapOn: "Profilo"
+- tapOn: "Logout"
+
+# 4. Verify Login Screen
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
