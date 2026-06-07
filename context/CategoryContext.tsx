@@ -128,66 +128,69 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       isDefault: false,
     };
 
+    // Aggiornamento Ottimistico
+    setCategories(prev => [...prev, newCategoryData].sort((a, b) => a.name.localeCompare(b.name)));
+
     try {
       const savedCategory = await CategoryService.addCategory(newCategoryData);
       if (!savedCategory) {
         LoggingService.error('CategoryContext', `Failed to save category: ${trimmedName}`);
+        setCategories(prev => prev.filter(cat => cat.id !== newCategoryData.id).sort((a, b) => a.name.localeCompare(b.name)));
         return null;
       }
 
-      // Consolida tutti gli aggiornamenti di stato in un unico batch
-      let finalCategory = savedCategory;
+      // Sincronizzazione Icona in Background (non blocca il return)
+      (async () => {
+        try {
+          const fetchedIcon = await IconService.fetchIconForCategory(trimmedName);
+          LoggingService.info('CategoryContext', `Fetched icon for ${trimmedName}:`, fetchedIcon);
+          
+          if (fetchedIcon) {
+            const localIcon = typeof fetchedIcon === 'string' ? IconService.convertToLocalIcon(fetchedIcon) : fetchedIcon;
+            
+            const finalCategory = {
+              ...savedCategory,
+              icon: typeof fetchedIcon === 'string' ? fetchedIcon : '',
+              localIcon: localIcon
+            };
+            
+            await CategoryService.updateCategory({
+              id: finalCategory.id,
+              icon: finalCategory.icon,
+              localIcon: finalCategory.localIcon
+            });
+            
+            setCategories(prev => 
+              prev.map(cat => cat.id === finalCategory.id ? finalCategory : cat)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+            );
+            LoggingService.info('CategoryContext', `Category ${finalCategory.id} updated with icon successfully`);
+          } else {
+            LoggingService.warning('CategoryContext', `No icon found for category: ${trimmedName}.`);
+            
+            setCategories(prev => 
+              prev.map(cat => cat.id === savedCategory.id ? { ...savedCategory, iconNotFound: true } : cat)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+            );
+            
+            setTimeout(() => {
+              Alert.alert(
+                'Icona non trovata',
+                `Non è stata trovata un'icona per la categoria "${trimmedName}". La categoria verrà visualizzata senza icona.`,
+                [{ text: 'OK', style: 'default' }]
+              );
+            }, 100);
+          }
+        } catch (error) {
+          LoggingService.error('CategoryContext', `Error in background icon fetch for ${trimmedName}: ${error}`);
+        }
+      })();
 
-      const fetchedIcon = await IconService.fetchIconForCategory(trimmedName);
-      LoggingService.info('CategoryContext', `Fetched icon for ${trimmedName}:`, fetchedIcon);
-      
-      if (fetchedIcon) {
-        const localIcon = typeof fetchedIcon === 'string' ? IconService.convertToLocalIcon(fetchedIcon!) : fetchedIcon;
-        LoggingService.info('CategoryContext', `Converted icon to local format:`, localIcon);
-        
-        finalCategory = {
-          ...savedCategory,
-          icon: typeof fetchedIcon === 'string' ? fetchedIcon : '',
-          localIcon: localIcon
-        };
-        
-        LoggingService.info('CategoryContext', 'Updating category with icon data:', finalCategory);
-        
-        await CategoryService.updateCategory({
-          id: finalCategory.id,
-          icon: finalCategory.icon,
-          localIcon: finalCategory.localIcon
-        });
-      } else {
-        LoggingService.warning('CategoryContext', `No icon found for category: ${trimmedName}. It will be displayed without one.`);
-        
-        setTimeout(() => {
-          Alert.alert(
-            'Icona non trovata',
-            `Non è stata trovata un'icona per la categoria "${trimmedName}". La categoria verrà visualizzata senza icona.`,
-            [{ text: 'OK', style: 'default' }]
-          );
-        }, 100);
-        
-        finalCategory = {
-          ...savedCategory,
-          iconNotFound: true
-        };
-      }
-
-      // Aggiornamento consolidato dello stato
-      setCategories(prev => {
-        const existing = prev.some(cat => cat.id === finalCategory.id);
-        const updated = existing
-          ? prev.map(cat => cat.id === finalCategory.id ? finalCategory : cat)
-          : [...prev, finalCategory];
-        return updated.sort((a, b) => a.name.localeCompare(b.name));
-      });
-      
-      LoggingService.info('CategoryContext', `Category ${finalCategory.id} created successfully`);
-      return finalCategory;
+      LoggingService.info('CategoryContext', `Category ${savedCategory.id} created successfully (optimistic)`);
+      return savedCategory;
     } catch (error) {
       LoggingService.error('CategoryContext', `Error creating category: ${error}`);
+      setCategories(prev => prev.filter(cat => cat.id !== newCategoryData.id).sort((a, b) => a.name.localeCompare(b.name)));
       throw error;
     }
   }, [categories, user]);

@@ -211,6 +211,7 @@ export default function ManualEntryScreen() {
 
     return (
       <TouchableOpacity
+        testID={`category-item-${item.id}`}
         accessibilityLabel="Seleziona categoria"
         accessibilityRole="button"
         style={[

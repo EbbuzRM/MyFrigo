@@ -9,7 +9,7 @@
 // message: 
 
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { PRODUCT_CATEGORIES } from '@/types/Product';
@@ -19,20 +19,107 @@ import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { LoggingService } from '@/services/LoggingService';
 
+interface CreateCategoryModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  isDarkMode: boolean;
+  styles: any;
+}
+
+function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateCategoryModalProps) {
+  const [categoryName, setCategoryName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const { addCategory } = useCategories();
+
+  const handleCreate = async () => {
+    if (!categoryName.trim()) {
+      Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const newCategory = await addCategory(categoryName.trim());
+      if (newCategory) {
+        if (newCategory.iconNotFound) {
+          LoggingService.info('ManageCategories', `Category "${newCategory.name}" created without icon`);
+        }
+      }
+      setCategoryName('');
+      onClose();
+    } catch (error: unknown) {
+      Alert.alert('Errore', 'Si è verificato un errore durante la creazione della categoria.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <Modal
+      transparent={true}
+      animationType="fade"
+      visible={isVisible}
+      onRequestClose={onClose}
+      onShow={() => inputRef.current?.focus()}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Crea Nuova Categoria</Text>
+          <TextInput
+            ref={inputRef}
+            style={styles.modalInput}
+            placeholder="Nome della categoria"
+            value={categoryName}
+            onChangeText={setCategoryName}
+            autoFocus
+            placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
+            testID="category-name-input"
+          />
+          <View style={styles.modalButtonContainer}>
+            <TouchableOpacity 
+              accessibilityLabel="Annulla" 
+              accessibilityRole="button" 
+              style={[styles.modalButton, styles.modalButtonCancel]} 
+              onPress={onClose}
+              disabled={isCreating}
+            >
+              <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              accessibilityLabel="Conferma creazione" 
+              accessibilityRole="button" 
+              style={[styles.modalButton, styles.modalButtonConfirm]} 
+              onPress={handleCreate} 
+              testID="save-category-button"
+              disabled={isCreating}
+            >
+              {isCreating ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text style={styles.modalButtonTextConfirm}>Crea</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function ManageCategoriesScreen() {
   const { isDarkMode } = useTheme();
   const { categories, addCategory, deleteCategory, updateCategory } = useCategories();
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
   const [isEditModalVisible, setEditModalVisible] = useState(false);
-  const [createCategoryName, setCreateCategoryName] = useState('');
   const [editCategoryNameInput, setEditCategoryNameInput] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const createInputRef = useRef<TextInput>(null);
   const editInputRef = useRef<TextInput>(null);
 
   const customCategories = categories.filter(sc => !PRODUCT_CATEGORIES.some(dc => dc.id === sc.id));
 
   const handleDelete = (categoryId: string) => {
+
     Alert.alert(
       "Conferma Eliminazione",
       "Sei sicuro di voler eliminare questa categoria? Questa azione non può essere annullata.",
@@ -129,45 +216,21 @@ export default function ManageCategoriesScreen() {
         <Text style={styles.backButtonText}>Indietro</Text>
       </TouchableOpacity>
 
-       <Modal
-         transparent={true}
-         animationType="fade"
-         visible={isCreateModalVisible}
-         onRequestClose={() => setCreateModalVisible(false)}
-         onShow={() => createInputRef.current?.focus()}
-       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Crea Nuova Categoria</Text>
-              <TextInput
-                ref={createInputRef}
-                style={styles.modalInput}
-                placeholder="Nome della categoria"
-                value={createCategoryName}
-                onChangeText={setCreateCategoryName}
-                autoFocus
-                placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
-                testID="category-name-input"
-              />
-            <View style={styles.modalButtonContainer}>
-              <TouchableOpacity accessibilityLabel="Annulla" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setCreateModalVisible(false)}>
-                <Text style={styles.modalButtonTextCancel}>Annulla</Text>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityLabel="Conferma creazione" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleCreate}>
-                <Text style={styles.modalButtonTextConfirm}>Crea</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <CreateCategoryModal 
+        isVisible={isCreateModalVisible} 
+        onClose={() => setCreateModalVisible(false)} 
+        isDarkMode={isDarkMode} 
+        styles={styles} 
+      />
 
-       <Modal
-         transparent={true}
-         animationType="fade"
-         visible={isEditModalVisible}
-         onRequestClose={() => setEditModalVisible(false)}
-         onShow={() => editInputRef.current?.focus()}
-       >
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isEditModalVisible}
+        onRequestClose={() => setEditModalVisible(false)}
+        onShow={() => editInputRef.current?.focus()}
+      >
+
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Modifica Nome Categoria</Text>

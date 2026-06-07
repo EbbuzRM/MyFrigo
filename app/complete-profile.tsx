@@ -51,31 +51,34 @@ export default function CompleteProfileScreen() {
       <Text style={styles.subtitle}>Inserisci il tuo nome e cognome per continuare.</Text>
       
       <Text style={styles.label}>Nome</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Il tuo nome"
-        value={firstName}
-        onChangeText={setFirstName}
-        autoCapitalize="words"
-      />
-      
-      <Text style={styles.label}>Cognome</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Il tuo cognome"
-        value={lastName}
-        onChangeText={setLastName}
-        autoCapitalize="words"
-      />
-      
-      <TouchableOpacity
-        style={[styles.button, saving && styles.buttonDisabled]}
-        onPress={handleCompleteProfile}
-        disabled={saving}
-        accessibilityRole="button"
-        accessibilityLabel="Salva e Continua"
-        accessibilityState={{ disabled: saving }}
-      >
+        <TextInput
+          style={styles.input}
+          placeholder="Il tuo nome"
+          value={firstName}
+          onChangeText={setFirstName}
+          autoCapitalize="words"
+          testID="complete-profile-first-name-input"
+        />
+        
+        <Text style={styles.label}>Cognome</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Il tuo cognome"
+          value={lastName}
+          onChangeText={setLastName}
+          autoCapitalize="words"
+          testID="complete-profile-last-name-input"
+        />
+        
+        <TouchableOpacity
+          style={[styles.button, saving && styles.buttonDisabled]}
+          onPress={handleCompleteProfile}
+          disabled={saving}
+          accessibilityRole="button"
+          accessibilityLabel="Salva e Continua"
+          accessibilityState={{ disabled: saving }}
+          testID="complete-profile-save-button"
+        >
         {saving ? (
           <ActivityIndicator color="#fff" />
         ) : (

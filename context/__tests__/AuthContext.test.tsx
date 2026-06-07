@@ -11,6 +11,7 @@ import { render, act, waitFor } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '../AuthContext';
 import { supabase } from '@/services/supabaseClient';
+import { OneSignalService } from '@/services/OneSignalService';
 
 // --- Mocks ---
 
@@ -20,6 +21,15 @@ jest.mock('@/services/LoggingService', () => ({
     info: jest.fn(),
     error: jest.fn(),
     warning: jest.fn(),
+  },
+}));
+
+// Mock del OneSignalService (initialize, configureForUser, logout)
+jest.mock('@/services/OneSignalService', () => ({
+  OneSignalService: {
+    initialize: jest.fn().mockResolvedValue(undefined),
+    configureForUser: jest.fn().mockResolvedValue(undefined),
+    logout: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -609,7 +619,7 @@ describe('AuthContext', () => {
   });
 
   describe('Cleanup', () => {
-    
+
     it('dovrebbe fare unsubscribe del listener al dismount', async () => {
       const mockUnsubscribe = jest.fn();
       mockOnAuthStateChange.mockReturnValue({
@@ -621,14 +631,140 @@ describe('AuthContext', () => {
       });
 
       const { unmount } = renderAuthProvider();
-      
+
       await waitFor(() => {
         expect(mockOnAuthStateChange).toHaveBeenCalled();
       });
 
       unmount();
-      
+
       expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('OneSignalService integration', () => {
+    beforeEach(() => {
+      (OneSignalService.configureForUser as jest.Mock).mockClear();
+      (OneSignalService.logout as jest.Mock).mockClear();
+    });
+
+    it('dovrebbe chiamare OneSignalService.configureForUser su SIGNED_IN', async () => {
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      const mockUser = createMockUser('new-user');
+      const mockSession = createMockSession(mockUser);
+
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { id: 'new-user', first_name: 'New' },
+          error: null,
+        }),
+      });
+
+      await act(async () => {
+        if (authCallback) {
+          await authCallback('SIGNED_IN', mockSession);
+        }
+      });
+
+      await waitFor(() => {
+        expect(OneSignalService.configureForUser).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: 'new-user',
+            email: 'new-user@test.com',
+          })
+        );
+      });
+    });
+
+    it('NON dovrebbe chiamare OneSignalService.configureForUser su SIGNED_IN durante password reset', async () => {
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      const mockUser = createMockUser('reset-user', { is_resetting_password: true });
+      const mockSession = createMockSession(mockUser);
+
+      await act(async () => {
+        if (authCallback) {
+          await authCallback('SIGNED_IN', mockSession);
+        }
+      });
+
+      expect(OneSignalService.configureForUser).not.toHaveBeenCalled();
+      expect(mockRouter.replace).toHaveBeenCalledWith('/password-reset-form');
+    });
+
+    it('dovrebbe chiamare OneSignalService.logout su SIGNED_OUT', async () => {
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      await act(async () => {
+        if (authCallback) {
+          await authCallback('SIGNED_OUT', null);
+        }
+      });
+
+      await waitFor(() => {
+        expect(OneSignalService.logout).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('dovrebbe chiamare OneSignalService.configureForUser all\'avvio se esiste già una sessione', async () => {
+      const mockUser = createMockUser('existing-user');
+      const mockSession = createMockSession(mockUser);
+
+      mockGetCachedSession.mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { id: 'existing-user', first_name: 'Existing' },
+          error: null,
+        }),
+      });
+
+      renderAuthProvider();
+
+      await waitFor(() => {
+        expect(OneSignalService.configureForUser).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: 'existing-user',
+            email: 'existing-user@test.com',
+          })
+        );
+      });
+    });
+
+    it('NON dovrebbe chiamare OneSignalService.configureForUser all\'avvio se non c\'è sessione', async () => {
+      mockGetCachedSession.mockResolvedValue({ data: { session: null }, error: null });
+
+      renderAuthProvider();
+
+      await waitFor(() => {
+        // Wait for init to complete
+        expect(mockGetCachedSession).toHaveBeenCalled();
+      });
+
+      // Give time for any side effect
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(OneSignalService.configureForUser).not.toHaveBeenCalled();
     });
   });
 });

@@ -13,6 +13,7 @@ import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -21,6 +22,17 @@ export default function ForgotPassword() {
   const [otp, setOtp] = useState('');
 
   const router = useRouter();
+
+  // E2E test mode flag — checks build-time env var AND runtime Constants.extra
+  // (so it works both when .env.e2e is used at build time and via app.config.js extra)
+  const isE2ETest = (): boolean => {
+    if (process.env.EXPO_PUBLIC_E2E_TEST_MODE === 'true') return true;
+    try {
+      return Constants.expoConfig?.extra?.e2eTestMode === true;
+    } catch {
+      return false;
+    }
+  };
 
   // Metodo principale: reset con OTP
   const handleResetWithOTP = async () => {
@@ -31,6 +43,51 @@ export default function ForgotPassword() {
 
     setLoading(true);
     LoggingService.info('ForgotPassword', 'Starting password reset with OTP', { email });
+
+    // E2E test mode: use Edge Function instead of real email
+    if (isE2ETest()) {
+      try {
+        LoggingService.info('ForgotPassword', 'E2E test mode: generating recovery token via edge function');
+
+        const { data: otpData, error: otpError } = await supabase.functions.invoke('e2e-otp', {
+          body: { email: email.trim().toLowerCase(), action: 'generate-recovery-token' },
+        });
+
+        if (otpError) {
+          throw new Error(typeof otpError === 'string' ? otpError : otpError.message || 'Errore nella generazione del token');
+        }
+
+        if (!otpData?.token_hash) {
+          throw new Error('Token hash non ricevuto dalla Edge Function');
+        }
+
+        LoggingService.info('ForgotPassword', 'Token hash received, verifying OTP');
+
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: otpData.token_hash,
+          type: 'recovery',
+        });
+
+        if (error) {
+          LoggingService.error('ForgotPassword', 'OTP verification failed in E2E mode', error);
+          Alert.alert('Errore', 'Verifica OTP fallita: ' + error.message);
+          return;
+        }
+
+        if (data?.session) {
+          LoggingService.info('ForgotPassword', 'Session established in E2E mode, navigating to password reset form');
+          router.replace('/password-reset-form');
+        } else {
+          throw new Error('Nessuna sessione stabilita');
+        }
+      } catch (error: unknown) {
+        LoggingService.error('ForgotPassword', 'E2E test mode error', error);
+        Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante la generazione del token'));
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

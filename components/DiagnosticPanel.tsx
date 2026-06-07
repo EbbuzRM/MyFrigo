@@ -9,7 +9,7 @@
 // message: 
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useDiagnosticTests } from '@/hooks/useDiagnosticTests';
 import { AuthTestSection } from '@/components/diagnostic/AuthTestSection';
@@ -17,6 +17,7 @@ import { DatabaseTestSection } from '@/components/diagnostic/DatabaseTestSection
 import { PerformanceTestSection } from '@/components/diagnostic/PerformanceTestSection';
 import { DiagnosticControls } from '@/components/diagnostic/DiagnosticControls';
 import { LoggingService } from '@/services/LoggingService';
+import { supabase } from '@/services/supabaseClient';
 
 interface DiagnosticPanelProps {
   onClose: () => void;
@@ -58,6 +59,32 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
     } finally {
       setLoadingLogs(false);
     }
+  };
+
+  const handleResetTestUsers = async () => {
+    Alert.alert(
+      'Reset Test Users',
+      'Sei sicuro di voler cancellare tutti gli utenti di test? Questa operazione è irreversibile.',
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Sì, Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { data, error } = await supabase.functions.invoke('delete-all-users', {
+                method: 'POST',
+              });
+              if (error) throw error;
+              Alert.alert('Successo', 'Tutti gli utenti di test sono stati rimossi.');
+            } catch (error: any) {
+              console.error('Errore durante il reset degli utenti:', error);
+              Alert.alert('Errore', `Impossibile resettare gli utenti: ${error.message || 'Errore sconosciuto'}`);
+            }
+          },
+        },
+      ]
+    );
   };
 
   useEffect(() => {
@@ -104,6 +131,17 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           results={results}
           isRunning={isRunning}
         />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Manutenzione Sistema</Text>
+          <TouchableOpacity 
+            style={[styles.logButton, styles.clearButton]} 
+            onPress={handleResetTestUsers}
+            testID="reset-test-users-button"
+          >
+            <Text style={[styles.logButtonText, styles.clearButtonText]}>Reset Test Users</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Log Viewer Section */}
         <View style={styles.section}>

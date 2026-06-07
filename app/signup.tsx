@@ -29,7 +29,7 @@ export default function SignupScreen() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const router = useRouter();
   const { validateForm, validatePasswordField, passwordValidation, isFormValid, clearErrors } = useSignupValidation();
-  const handleSuccess = useCallback(() => {}, []);
+  const handleSuccess = useCallback(() => router.replace('/(tabs)'), [router]);
   const handleEmailNeedsConfirmation = useCallback((email: string) => router.replace({ pathname: '/confirm-email', params: { email } }), [router]);
   const { register, handlePostRegistration, isLoading, error } = useRegistration(handleSuccess, () => handleEmailNeedsConfirmation(formData.email));
 

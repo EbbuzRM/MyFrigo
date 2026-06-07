@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { router } from 'expo-router';
 import { LoggingService } from '@/services/LoggingService';
+import { saveImagePermanently } from '@/utils/imageStorage';
 
 /**
  * Type for capture mode
@@ -178,9 +179,48 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
         LoggingService.info('useCamera', 'Photo taken and processed for OCR');
         return croppedUri;
       } else {
-        // For product photos, use original image without cropping
-        LoggingService.info('useCamera', 'Photo taken - original image kept');
-        return photo.uri;
+        // For product photos (productPhoto / updateProductPhoto):
+        // 1. Resize to 1200px to avoid storing 12-48 MP (4-15 MB) images
+        //    that cause slow decode (200-500 ms) on mid-range devices
+        //    and waste user storage. Coerente con prepareImageForOCR
+        //    (1200px) e processGalleryImage (1000px).
+        // 2. Copy the resized image to a persistent location
+        //    (documentDirectory/products/) so it survives OS tmp/
+        //    cleanup, reinstall, OOM, and iOS "Offload App" events.
+        // Note: expirationDateOnly has its own preprocessing (prepareImageForOCR)
+        // and is not touched here.
+        try {
+          const resized = await ImageManipulator.manipulateAsync(
+            photo.uri,
+            [
+              { rotate: 0 }, // Bake EXIF orientation into pixels
+              { resize: { width: 1200 } },
+            ],
+            {
+              compress: 0.85,
+              format: ImageManipulator.SaveFormat.JPEG,
+              base64: false,
+            }
+          );
+          LoggingService.info(
+            'useCamera',
+            `Product photo resized: ${resized.width}x${resized.height}`
+          );
+
+          const persistentUri = await saveImagePermanently(resized.uri);
+          return persistentUri;
+        } catch (resizeError) {
+          // Fallback: se il resize fallisce, salva l'originale piuttosto
+          // che perdere la foto. Coerente con processGalleryImage che fa
+          // fallback a uri originale se manipulateAsync fallisce.
+          LoggingService.error(
+            'useCamera',
+            'Error resizing product photo, falling back to original',
+            resizeError
+          );
+          const persistentUri = await saveImagePermanently(photo.uri);
+          return persistentUri;
+        }
       }
 
     } catch (error) {

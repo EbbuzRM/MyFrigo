@@ -9,7 +9,8 @@
 // message: 
 
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';

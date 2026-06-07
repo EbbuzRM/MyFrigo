@@ -1,8 +1,8 @@
 {
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app.config.js": {
-    "mtime": 1778847656.8997447,
-    "ast_hash": "a858107affe5f47f62a5d4b10b3d0fd6",
-    "semantic_hash": "a858107affe5f47f62a5d4b10b3d0fd6"
+    "mtime": 1779917863.7163274,
+    "ast_hash": "b9ef9d524f4f6f290a5762768d354fda",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\babel.config.js": {
     "mtime": 1778371080.851187,
@@ -25,9 +25,9 @@
     "semantic_hash": "e53098b1d58a7bfcc6d8b1d698e03b00"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\eas.json": {
-    "mtime": 1778845881.2919633,
-    "ast_hash": "18a8c5dff35d7900c029a0806c9cb674",
-    "semantic_hash": "18a8c5dff35d7900c029a0806c9cb674"
+    "mtime": 1779535821.2907581,
+    "ast_hash": "9cefcc214654721cdaa4b4be2b00c7ca",
+    "semantic_hash": "9cefcc214654721cdaa4b4be2b00c7ca"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\eslint.config.js": {
     "mtime": 1778371081.0087216,
@@ -40,14 +40,14 @@
     "semantic_hash": "bf789c73e90fc10d094362f8f96c083a"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\jest.config.js": {
-    "mtime": 1778371081.0922503,
-    "ast_hash": "be9f5346ac6e7d308d9d327cb8292223",
-    "semantic_hash": "be9f5346ac6e7d308d9d327cb8292223"
+    "mtime": 1779620006.5172963,
+    "ast_hash": "124a40ddb7ce3f7c1131d47c7d4d5a72",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\jest.setup.js": {
-    "mtime": 1778436535.5716062,
-    "ast_hash": "a77d7330c0929e3d032a6aea983ef0f5",
-    "semantic_hash": "a77d7330c0929e3d032a6aea983ef0f5"
+    "mtime": 1779657186.1538508,
+    "ast_hash": "7a5b720a4c9847f37e87aa909d71e8cd",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\metro.config.js": {
     "mtime": 1778371081.0942502,
@@ -55,9 +55,9 @@
     "semantic_hash": "00e157caae23025597f87453af79a0a5"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\package.json": {
-    "mtime": 1778619115.5807495,
-    "ast_hash": "7b4ec791f0fc8ed11ae4ee189f92d572",
-    "semantic_hash": "7b4ec791f0fc8ed11ae4ee189f92d572"
+    "mtime": 1779620006.2885034,
+    "ast_hash": "ba3022292cc28a1c4def71aa851a2b86",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\react-native.config.js": {
     "mtime": 1778371081.0982504,
@@ -110,14 +110,14 @@
     "semantic_hash": "3f30f988755c2f87807af8ea71d66fe6"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\+not-found.tsx": {
-    "mtime": 1778371080.825651,
-    "ast_hash": "b320ed9f26a3bf091f462ad24ae91406",
-    "semantic_hash": "b320ed9f26a3bf091f462ad24ae91406"
+    "mtime": 1779914714.3168383,
+    "ast_hash": "14b979fc314c5bc4d15041c6a27ccf12",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\complete-profile.tsx": {
-    "mtime": 1778371080.8306582,
-    "ast_hash": "e2039fb4f64860a4a9c6571d8eeb5978",
-    "semantic_hash": "e2039fb4f64860a4a9c6571d8eeb5978"
+    "mtime": 1780209797.582973,
+    "ast_hash": "916dbfd6d6100d7160722d8c1816a0af",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\confirm-email.tsx": {
     "mtime": 1778371080.8316596,
@@ -130,9 +130,9 @@
     "semantic_hash": "7ee71f9e0f59cb1cc5ce317c1e0f29a6"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\feedback.tsx": {
-    "mtime": 1778371080.8346624,
-    "ast_hash": "ae6b350ceadddac6388bd02fe09151a0",
-    "semantic_hash": "ae6b350ceadddac6388bd02fe09151a0"
+    "mtime": 1779664437.449108,
+    "ast_hash": "2612e549eca152400ca9dddddd4c6434",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\history-detail.tsx": {
     "mtime": 1778371080.8376627,
@@ -150,24 +150,24 @@
     "semantic_hash": "1b3ac8d600adb4d6643cef9eebe8ccc2"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\manage-categories.tsx": {
-    "mtime": 1778371080.8416622,
-    "ast_hash": "1ae584000274ecbaf5a8abc22ac59dca",
-    "semantic_hash": "1ae584000274ecbaf5a8abc22ac59dca"
+    "mtime": 1780192042.3307712,
+    "ast_hash": "9e23b3b86c5fd4ad22e687d8ff2eebe8",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\manual-entry.tsx": {
-    "mtime": 1778371080.8436608,
-    "ast_hash": "afa4aa447d6542a7092c629d5a027b8f",
-    "semantic_hash": "afa4aa447d6542a7092c629d5a027b8f"
+    "mtime": 1780209807.6228209,
+    "ast_hash": "249b1998fd55a7328a8a72e6d09088ef",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\photo-capture.tsx": {
-    "mtime": 1779321139.9775271,
-    "ast_hash": "ec1953246fbd192f9909baa3e7d9c327",
-    "semantic_hash": "ec1953246fbd192f9909baa3e7d9c327"
+    "mtime": 1779577363.429793,
+    "ast_hash": "ffdf617645a1a033ed959806dfe8cd50",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\profile.tsx": {
-    "mtime": 1778371080.8466628,
-    "ast_hash": "1b6eab289730757be5aac43c94770dc6",
-    "semantic_hash": "1b6eab289730757be5aac43c94770dc6"
+    "mtime": 1779664064.756056,
+    "ast_hash": "bb377e7bc088e645ab986dafd3a95f11",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\scanner.tsx": {
     "mtime": 1778371080.847664,
@@ -175,19 +175,19 @@
     "semantic_hash": "b4e456d30c64ed7bac275b45e10dab49"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\signup.tsx": {
-    "mtime": 1778371080.8501883,
-    "ast_hash": "de32e07d4052211ed8de34cf5c344559",
-    "semantic_hash": "de32e07d4052211ed8de34cf5c344559"
+    "mtime": 1779865385.7279303,
+    "ast_hash": "b5e1708e8baa1f7fd3d8e9f6d307019b",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\_layout.tsx": {
-    "mtime": 1778371080.8266504,
-    "ast_hash": "9eba8895b1fde7b40827800ff10495e8",
-    "semantic_hash": "9eba8895b1fde7b40827800ff10495e8"
+    "mtime": 1779581337.6854038,
+    "ast_hash": "26f8474723d0a6225e8cf3f52077c23d",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\(tabs)\\add.tsx": {
-    "mtime": 1778371080.819651,
-    "ast_hash": "4703041c9ebd222b1a61efac0cdb8be3",
-    "semantic_hash": "4703041c9ebd222b1a61efac0cdb8be3"
+    "mtime": 1779664339.8446226,
+    "ast_hash": "eb7fa63b71ad25c5064abc2b2fbf593e",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\(tabs)\\history.tsx": {
     "mtime": 1778371080.8206527,
@@ -195,9 +195,9 @@
     "semantic_hash": "4bbdcc881a2bafc867f8850dad453693"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\(tabs)\\index.tsx": {
-    "mtime": 1778375069.159166,
-    "ast_hash": "f2c986585237885cb029863363b1790c",
-    "semantic_hash": "f2c986585237885cb029863363b1790c"
+    "mtime": 1779825085.5542886,
+    "ast_hash": "f29a886293196257731aaf5124580bed",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\(tabs)\\products.tsx": {
     "mtime": 1778371080.8236494,
@@ -205,9 +205,9 @@
     "semantic_hash": "1d8a750c7ea713f5d51d2b063395a2aa"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\(tabs)\\settings.tsx": {
-    "mtime": 1778371080.824652,
-    "ast_hash": "b0431033505e1dc3dee466397c50276f",
-    "semantic_hash": "b0431033505e1dc3dee466397c50276f"
+    "mtime": 1779639823.666459,
+    "ast_hash": "8cc5b08182ed9407075201c76fa257a5",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app\\(tabs)\\_layout.tsx": {
     "mtime": 1778371080.8186526,
@@ -290,14 +290,14 @@
     "semantic_hash": "b75b2574031be2a838a5ee99b10a8373"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\DatePickerRow.tsx": {
-    "mtime": 1778371080.8751845,
-    "ast_hash": "3584b68b2d7eff9dd6b390d6df775b86",
-    "semantic_hash": "3584b68b2d7eff9dd6b390d6df775b86"
+    "mtime": 1779664337.6900313,
+    "ast_hash": "0f2f433865053397243059dca91191c6",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\DiagnosticPanel.tsx": {
-    "mtime": 1778371080.8761854,
-    "ast_hash": "1dc9dc134f5620af271a99ffc72aa860",
-    "semantic_hash": "1dc9dc134f5620af271a99ffc72aa860"
+    "mtime": 1780224955.873262,
+    "ast_hash": "2aae8acab3b0c8d82c75489bfab1aec8",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\EmailVerificationBanner.tsx": {
     "mtime": 1778371080.8771858,
@@ -330,9 +330,9 @@
     "semantic_hash": "25560fd30641c0eb76434c27fbc727b5"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\FormActionButtons.tsx": {
-    "mtime": 1778371080.8841872,
-    "ast_hash": "594d40778a7a88bb2a429adb414cca84",
-    "semantic_hash": "594d40778a7a88bb2a429adb414cca84"
+    "mtime": 1779581336.5887933,
+    "ast_hash": "eb20f49312992cf2b6dd55129bd902c7",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\GlobalUpdateModal.tsx": {
     "mtime": 1778371080.8861868,
@@ -380,9 +380,9 @@
     "semantic_hash": "4e704789e13571af5ca5cbe64df32a1a"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\LoginForm.tsx": {
-    "mtime": 1778371080.8971875,
-    "ast_hash": "4a78d70cc14ea24b2d507a80c32238f6",
-    "semantic_hash": "4a78d70cc14ea24b2d507a80c32238f6"
+    "mtime": 1779917843.7176554,
+    "ast_hash": "fc6dde60ac1d433a404f1a32c93815fa",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\OCRProgressOverlay.tsx": {
     "mtime": 1779321139.9795253,
@@ -425,9 +425,9 @@
     "semantic_hash": "0e1dc303185976fba9f4969ad60543fd"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\ProductDetailActions.tsx": {
-    "mtime": 1778371080.9081843,
-    "ast_hash": "231658aaa9a9155cb846348a8ade8bce",
-    "semantic_hash": "231658aaa9a9155cb846348a8ade8bce"
+    "mtime": 1779777538.209063,
+    "ast_hash": "38299f794c15d263ceb6784314e6fadb",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\ProductDetailHeader.tsx": {
     "mtime": 1778371080.90919,
@@ -470,9 +470,9 @@
     "semantic_hash": "e160b47431a153d00e9785759dc5706c"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\QuantityButton.tsx": {
-    "mtime": 1778371080.9201844,
-    "ast_hash": "f853ab1e169649ad0f86fbaa66d6e43d",
-    "semantic_hash": "f853ab1e169649ad0f86fbaa66d6e43d"
+    "mtime": 1779664334.6520388,
+    "ast_hash": "738e8bb120f14e8a850916c05b74e124",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\QuantityDisplay.tsx": {
     "mtime": 1778371080.9211855,
@@ -495,9 +495,9 @@
     "semantic_hash": "755f02afb34adcadc6999ba4c2e3cd4a"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\QuantitySection.tsx": {
-    "mtime": 1778371080.9261885,
-    "ast_hash": "0593320c6bb954df75d0ff3273cd662a",
-    "semantic_hash": "0593320c6bb954df75d0ff3273cd662a"
+    "mtime": 1779664335.0623758,
+    "ast_hash": "745d4de769c3e0980df24719c392702e",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\QuantityUnitSelector.tsx": {
     "mtime": 1778371080.9281833,
@@ -510,14 +510,14 @@
     "semantic_hash": "94d8390c81ecde8806d52b56863a932f"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\SettingsCard.tsx": {
-    "mtime": 1778371080.9301858,
-    "ast_hash": "478fdbebf5464fe2a24bfc41771104c4",
-    "semantic_hash": "478fdbebf5464fe2a24bfc41771104c4"
+    "mtime": 1779832754.9009235,
+    "ast_hash": "b52492973868cd9b1fc30e01e93c838b",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\StatsCard.tsx": {
-    "mtime": 1778371080.9321876,
-    "ast_hash": "9a82d3e6dc5585bcff7dbb5842aaf199",
-    "semantic_hash": "9a82d3e6dc5585bcff7dbb5842aaf199"
+    "mtime": 1779825218.387008,
+    "ast_hash": "782cc28e9bf965be0cf69d9174887db3",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\SuggestionCard.tsx": {
     "mtime": 1778371080.9331832,
@@ -575,9 +575,9 @@
     "semantic_hash": "d1a80a38a4565a398cf907aa8da49372"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\dashboard\\QuickActions.tsx": {
-    "mtime": 1778371080.9491982,
-    "ast_hash": "59f4bf501ab07595578182ca58a12d93",
-    "semantic_hash": "59f4bf501ab07595578182ca58a12d93"
+    "mtime": 1779664339.2172003,
+    "ast_hash": "0aa97ebb3773d1461eaaa1089a94f205",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\dashboard\\__tests__\\DashboardHeader.test.tsx": {
     "mtime": 1778371080.9507198,
@@ -680,19 +680,19 @@
     "semantic_hash": "0f8c4ae814b661c36d684f360c4978f7"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\settings\\AccountSettingsSection.tsx": {
-    "mtime": 1778371080.9747198,
-    "ast_hash": "b730e521b3b268379a73e1a970b9adbd",
-    "semantic_hash": "b730e521b3b268379a73e1a970b9adbd"
+    "mtime": 1779832759.4633968,
+    "ast_hash": "6483e0006b6b2371795e71929f59c4e2",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\settings\\DiagnosticSettingsSection.tsx": {
-    "mtime": 1778371080.9757183,
-    "ast_hash": "441f662a995f5e2cd96df97a6e0c291c",
-    "semantic_hash": "441f662a995f5e2cd96df97a6e0c291c"
+    "mtime": 1779832767.342214,
+    "ast_hash": "55b3a75f8710106d3f971977136f9b22",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\settings\\NotificationDaysModal.tsx": {
-    "mtime": 1778371080.9777198,
-    "ast_hash": "2631b215d082a0f51e700914b263fe4a",
-    "semantic_hash": "2631b215d082a0f51e700914b263fe4a"
+    "mtime": 1779777981.5428553,
+    "ast_hash": "1f8b41c0613b807b0f74ea036110650c",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\settings\\SettingsSection.tsx": {
     "mtime": 1778371080.9787192,
@@ -705,9 +705,9 @@
     "semantic_hash": "e7fbeebbaadfb2544a04b3cbbf6fc243"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\settings\\VersionPressHandler.tsx": {
-    "mtime": 1778371080.9817233,
-    "ast_hash": "a23c2f0c2558f40512291efd247ce154",
-    "semantic_hash": "a23c2f0c2558f40512291efd247ce154"
+    "mtime": 1779833845.0443563,
+    "ast_hash": "1eb1a6e419f1c8a3cdbcb4fa7fb00af4",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\__tests__\\AddMethodCard.test.tsx": {
     "mtime": 1778406338.6619847,
@@ -815,14 +815,14 @@
     "semantic_hash": "219dbb1b2a0127a4f721cd3975c164f1"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\constants\\settings.ts": {
-    "mtime": 1778371080.990719,
-    "ast_hash": "06c9ef407d15814995c8093646391f31",
-    "semantic_hash": "06c9ef407d15814995c8093646391f31"
+    "mtime": 1779627769.3504817,
+    "ast_hash": "e9563baeb23ac8728fd87b9319930650",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\context\\AuthContext.tsx": {
-    "mtime": 1778847710.2077968,
-    "ast_hash": "d0576db396b3bf3f978b04b28af77d72",
-    "semantic_hash": "d0576db396b3bf3f978b04b28af77d72"
+    "mtime": 1779880824.7807896,
+    "ast_hash": "533f42b880e27eb2ef920b2274377129",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\context\\CategoryContext.tsx": {
     "mtime": 1778371080.993721,
@@ -950,9 +950,9 @@
     "semantic_hash": "53385d8d93bd4ab7a9efd373fa3b174d"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\hooks\\useDiagnosticGesture.ts": {
-    "mtime": 1778371081.0377312,
-    "ast_hash": "a415d05e0f335e18ebe3efad29df8cbd",
-    "semantic_hash": "a415d05e0f335e18ebe3efad29df8cbd"
+    "mtime": 1780233798.7294998,
+    "ast_hash": "e6df4e6dcb6c4d60277bfc7139365f41",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\hooks\\useDiagnosticTests.ts": {
     "mtime": 1778371081.038732,
@@ -980,9 +980,9 @@
     "semantic_hash": "2c6ebe7d1255de430be224f426101859"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\hooks\\usePasswordValidation.ts": {
-    "mtime": 1778371081.0457306,
-    "ast_hash": "671bf8c85e2b0d089094bacbc3bbfa59",
-    "semantic_hash": "671bf8c85e2b0d089094bacbc3bbfa59"
+    "mtime": 1779575085.6586058,
+    "ast_hash": "5590c0c4d9962250e4db1d6c8552f380",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\hooks\\usePhotoActions.ts": {
     "mtime": 1778371081.04673,
@@ -1230,14 +1230,14 @@
     "semantic_hash": "5607b0f6be2ebbb55cd68539570c3fcf"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\services\\AuthService.ts": {
-    "mtime": 1778846625.8571014,
-    "ast_hash": "b36be8418b4e8e3284533b0053d17e5e",
-    "semantic_hash": "b36be8418b4e8e3284533b0053d17e5e"
+    "mtime": 1779540171.9646125,
+    "ast_hash": "83b7596ac9498d9ab7663d154570ffa3",
+    "semantic_hash": "83b7596ac9498d9ab7663d154570ffa3"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\services\\CategoryMatcher.ts": {
-    "mtime": 1778371081.1072514,
-    "ast_hash": "60d1ef955ecf6cd84c47801c13329e5a",
-    "semantic_hash": "60d1ef955ecf6cd84c47801c13329e5a"
+    "mtime": 1779730126.6856573,
+    "ast_hash": "1dfaf0f690dc0e631970d9a8d24071c8",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\services\\CategoryService.ts": {
     "mtime": 1778371081.1082506,
@@ -2079,679 +2079,604 @@
     "ast_hash": "d25e1a0c35d2b7855090ba4d82b94bde",
     "semantic_hash": "d25e1a0c35d2b7855090ba4d82b94bde"
   },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\generate-email.js": {
-    "mtime": 1778337453.754623,
-    "ast_hash": "ab270eae0d347db7127518fb8848dd96",
-    "semantic_hash": ""
-  },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.opencode\\opencode.json": {
     "mtime": 1779401375.875485,
     "ast_hash": "1efe24ecf938911d4f23e4b1c6ec91f7",
-    "semantic_hash": ""
+    "semantic_hash": "1efe24ecf938911d4f23e4b1c6ec91f7"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.opencode\\package.json": {
-    "mtime": 1779401390.3775127,
-    "ast_hash": "bc4105f797304ae00bc7e12f4f85bd1a",
-    "semantic_hash": ""
+    "mtime": 1779534466.525758,
+    "ast_hash": "755ca5500aaa07e94b202102ee8d7898",
+    "semantic_hash": "755ca5500aaa07e94b202102ee8d7898"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.opencode\\plugins\\graphify.js": {
     "mtime": 1779400791.5469575,
     "ast_hash": "32b67963417a30cb80544e0b2a56a98d",
-    "semantic_hash": ""
+    "semantic_hash": "32b67963417a30cb80544e0b2a56a98d"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\android_gradle_build.json": {
     "mtime": 1777675363.656707,
     "ast_hash": "dfc8e1ae51e17070913b65accf662f8f",
-    "semantic_hash": ""
+    "semantic_hash": "dfc8e1ae51e17070913b65accf662f8f"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\android_gradle_build_mini.json": {
     "mtime": 1777675364.3170435,
     "ast_hash": "449a5119a9aebc1d6a7e7b5ad686b307",
-    "semantic_hash": ""
+    "semantic_hash": "449a5119a9aebc1d6a7e7b5ad686b307"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\compile_commands.json": {
-    "mtime": 1777675360.7963178,
-    "ast_hash": "c01992881b5e61e7d2caece892753268",
+    "mtime": 1779621013.916549,
+    "ast_hash": "8a7a4b99a6ea06828993a6a6c5095473",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\prefab_config.json": {
     "mtime": 1777675333.2802126,
     "ast_hash": "cb0a3d34139fcef61c280c5a4e3b4fd8",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\cache-v2-9c45c5cb799a7c212e66.json": {
-    "mtime": 1777675361.028551,
-    "ast_hash": "4506c764111911c07ff108ba076cceb0",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\cmakeFiles-v1-892143376d2a19390365.json": {
-    "mtime": 1777675361.0800934,
-    "ast_hash": "666b7a96c5c81560eae3a1e5ff2cb095",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\codemodel-v2-9050dcbd3d70ead0098d.json": {
-    "mtime": 1777675362.2002146,
-    "ast_hash": "55ae322a0b827888112f17ff4ea3512e",
-    "semantic_hash": ""
+    "semantic_hash": "cb0a3d34139fcef61c280c5a4e3b4fd8"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-.-Debug-d0094a50bb2071803777.json": {
     "mtime": 1776986714.5474436,
     "ast_hash": "9f40cd23d42f6f64a253672a38c7ce57",
-    "semantic_hash": ""
+    "semantic_hash": "9f40cd23d42f6f64a253672a38c7ce57"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-rnasyncstorage_autolinked_build-Debug-67986b714e2f1de4c62e.json": {
     "mtime": 1776986714.5514467,
     "ast_hash": "560ea2c1b84ba4b50debfe09fbe229cd",
-    "semantic_hash": ""
+    "semantic_hash": "560ea2c1b84ba4b50debfe09fbe229cd"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-RNCWebViewSpec_autolinked_build-Debug-0aee71e9030272f53329.json": {
     "mtime": 1776986714.603147,
     "ast_hash": "79a4d710572d2a69fdfa96d30318cc12",
-    "semantic_hash": ""
+    "semantic_hash": "79a4d710572d2a69fdfa96d30318cc12"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-RNDateTimePickerCGen_autolinked_build-Debug-9ff8704b7f7f247877d5.json": {
     "mtime": 1776986714.5554476,
     "ast_hash": "8c728223c10da75f00ae303901a11922",
-    "semantic_hash": ""
+    "semantic_hash": "8c728223c10da75f00ae303901a11922"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-rngesturehandler_codegen_autolinked_build-Debug-9d1910ceeaff47e0b7e4.json": {
     "mtime": 1776986714.5695593,
     "ast_hash": "63c5b04f3e235d5c4d0da032ead170d0",
-    "semantic_hash": ""
+    "semantic_hash": "63c5b04f3e235d5c4d0da032ead170d0"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-RNGetRandomValuesSpec_autolinked_build-Debug-d6ac37770fb9c51346d6.json": {
     "mtime": 1776986714.5735655,
     "ast_hash": "3551d4ef9cbb3e1d11a190efacbd3be4",
-    "semantic_hash": ""
+    "semantic_hash": "3551d4ef9cbb3e1d11a190efacbd3be4"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-RNGoogleSignInCGen_autolinked_build-Debug-188408b792493403232c.json": {
     "mtime": 1776986714.559447,
     "ast_hash": "df06a55428b5b4edee7589b94fb5f232",
-    "semantic_hash": ""
+    "semantic_hash": "df06a55428b5b4edee7589b94fb5f232"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-RNOneSignalSpec_autolinked_build-Debug-92a4b18023c01168d3d9.json": {
     "mtime": 1777675362.0546281,
     "ast_hash": "7638e0247dff42150ef2d23e9f4634ce",
-    "semantic_hash": ""
+    "semantic_hash": "7638e0247dff42150ef2d23e9f4634ce"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-rnpicker_autolinked_build-Debug-ad1ff5150f8ba29fbf9f.json": {
     "mtime": 1776986714.5645683,
     "ast_hash": "69c07ae0fc867157a279109e303436a6",
-    "semantic_hash": ""
+    "semantic_hash": "69c07ae0fc867157a279109e303436a6"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-rnreanimated_autolinked_build-Debug-0b2001f9482598ff34a0.json": {
     "mtime": 1776986714.577573,
     "ast_hash": "6c2f59f8c406a2304e9a2a65685f285a",
-    "semantic_hash": ""
+    "semantic_hash": "6c2f59f8c406a2304e9a2a65685f285a"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-rnscreens_autolinked_build-Debug-af2a87b7633de0222429.json": {
     "mtime": 1776986714.5845685,
     "ast_hash": "0ee2c84d4e043f6cfba6972ff7f10193",
-    "semantic_hash": ""
+    "semantic_hash": "0ee2c84d4e043f6cfba6972ff7f10193"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-RNSoundSpec_autolinked_build-Debug-8983bfe8812acf7684ee.json": {
     "mtime": 1776986714.5886035,
     "ast_hash": "a65cbf48d361e71d0248b376a8b6f951",
-    "semantic_hash": ""
+    "semantic_hash": "a65cbf48d361e71d0248b376a8b6f951"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-rnsvg_autolinked_build-Debug-0da834d8de6f1b575e0d.json": {
     "mtime": 1776986714.593593,
     "ast_hash": "d80efab7b7dbc8ea979c2363bb352dd2",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-RNVectorIconsSpec_autolinked_build-Debug-6fb8ce0ea4b00d441adc.json": {
-    "mtime": 1776986714.598591,
-    "ast_hash": "c6e117b97777f2fa852dfff5d79549d1",
-    "semantic_hash": ""
+    "semantic_hash": "d80efab7b7dbc8ea979c2363bb352dd2"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-rnworklets_autolinked_build-Debug-ea02ee21c7ab46b73a76.json": {
     "mtime": 1776986714.6081374,
     "ast_hash": "cb9d311952a32b12a52e6642ff1ffbf0",
-    "semantic_hash": ""
+    "semantic_hash": "cb9d311952a32b12a52e6642ff1ffbf0"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\directory-safeareacontext_autolinked_build-Debug-8d1402e3840c40c6edb7.json": {
     "mtime": 1776986714.5805714,
     "ast_hash": "4a70097df7f52cf1e752dbf30243674d",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\index-2026-05-01T22-42-42-0233.json": {
-    "mtime": 1777675362.2322357,
-    "ast_hash": "06cdf7c1b3b050cc7c3f960d5fdf2b79",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-appmodules-Debug-3c789cafadf541112365.json": {
-    "mtime": 1777675361.1716983,
-    "ast_hash": "b51c66de47169dbaf317543014d6ef45",
-    "semantic_hash": ""
+    "semantic_hash": "4a70097df7f52cf1e752dbf30243674d"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnasyncstorage-Debug-38cd2a520f94f7695b06.json": {
     "mtime": 1777675361.591713,
     "ast_hash": "d6650f84be183fe26936d5a111844ef2",
-    "semantic_hash": ""
+    "semantic_hash": "d6650f84be183fe26936d5a111844ef2"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNCWebViewSpec-Debug-26417158c63a9d4dc3ae.json": {
     "mtime": 1777675361.2207334,
     "ast_hash": "378036a4d6e575549c65f0b612f6401e",
-    "semantic_hash": ""
+    "semantic_hash": "378036a4d6e575549c65f0b612f6401e"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNDateTimePickerCGen-Debug-df1cba0e390dac72ae47.json": {
     "mtime": 1777675361.2742994,
     "ast_hash": "fa6af23816998a2499c04e1003ea4bff",
-    "semantic_hash": ""
+    "semantic_hash": "fa6af23816998a2499c04e1003ea4bff"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_rngesturehandler_codegen-Debug-cf1c0bf4b6ff55512b50.json": {
     "mtime": 1777675361.6297338,
     "ast_hash": "25c67bfcc6c6c41a9fc634989109da60",
-    "semantic_hash": ""
+    "semantic_hash": "25c67bfcc6c6c41a9fc634989109da60"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNGetRandomValuesSpec-Debug-2e7f3906150fa9dfda3a.json": {
     "mtime": 1777675361.3283346,
     "ast_hash": "bd19580fcbd9eae01b63ef44f1784588",
-    "semantic_hash": ""
+    "semantic_hash": "bd19580fcbd9eae01b63ef44f1784588"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNGoogleSignInCGen-Debug-ab66dd067b074e3d3648.json": {
     "mtime": 1777675361.3868988,
     "ast_hash": "3f65746801cd59a8aebc5c0b01c40f58",
-    "semantic_hash": ""
+    "semantic_hash": "3f65746801cd59a8aebc5c0b01c40f58"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNOneSignalSpec-Debug-a5e68f223f03dced9ca0.json": {
     "mtime": 1777675361.428937,
     "ast_hash": "921ac801082a159c153a42080cd73971",
-    "semantic_hash": ""
+    "semantic_hash": "921ac801082a159c153a42080cd73971"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnpicker-Debug-c6f0cb4c751cd7911548.json": {
     "mtime": 1777675361.6983051,
     "ast_hash": "64f340d8f1e7de5f91af6541cd850b9d",
-    "semantic_hash": ""
+    "semantic_hash": "64f340d8f1e7de5f91af6541cd850b9d"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnreanimated-Debug-866213bfadb883024574.json": {
     "mtime": 1777675361.7293406,
     "ast_hash": "177288f080c6b955778e54c5d9cb6bc4",
-    "semantic_hash": ""
+    "semantic_hash": "177288f080c6b955778e54c5d9cb6bc4"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnscreens-Debug-eb9b7d01f369cc613142.json": {
     "mtime": 1777675361.7958956,
     "ast_hash": "9242c811f37eb94dd8d175a058f627db",
-    "semantic_hash": ""
+    "semantic_hash": "9242c811f37eb94dd8d175a058f627db"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNSoundSpec-Debug-c20315bf66ca397b7976.json": {
     "mtime": 1777675361.4744961,
     "ast_hash": "f65afe48b2fa0830a78a85468a18795d",
-    "semantic_hash": ""
+    "semantic_hash": "f65afe48b2fa0830a78a85468a18795d"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnsvg-Debug-3bf80567ba3f3f046dd7.json": {
     "mtime": 1777675361.8564603,
     "ast_hash": "5b5de2cb8b5ea9d4c66d0ef3f8e5ffdc",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNVectorIconsSpec-Debug-539a5d13fdd841316f9d.json": {
-    "mtime": 1777675361.5281565,
-    "ast_hash": "3fb16e749b0e42882db8f19c4ab43828",
-    "semantic_hash": ""
+    "semantic_hash": "5b5de2cb8b5ea9d4c66d0ef3f8e5ffdc"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnworklets-Debug-f67e5ad55f4bf56f90e2.json": {
     "mtime": 1777675361.90846,
     "ast_hash": "dc7a409dd2813b8821b7aab61fc8f442",
-    "semantic_hash": ""
+    "semantic_hash": "dc7a409dd2813b8821b7aab61fc8f442"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-react_codegen_safeareacontext-Debug-21cebcb45651b090c6ce.json": {
     "mtime": 1777675361.9324944,
     "ast_hash": "85726e0da8dfb23dd8acd9d8af8d2b33",
-    "semantic_hash": ""
+    "semantic_hash": "85726e0da8dfb23dd8acd9d8af8d2b33"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\3.22.1-g37088a8-dirty\\CompilerIdC\\CMakeCCompilerId.c": {
     "mtime": 1776986701.965441,
     "ast_hash": "245b894a1d9b5e1b569506b0cfe5d36b",
-    "semantic_hash": ""
+    "semantic_hash": "245b894a1d9b5e1b569506b0cfe5d36b"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\3.22.1-g37088a8-dirty\\CompilerIdCXX\\CMakeCXXCompilerId.cpp": {
     "mtime": 1776986704.0469785,
     "ast_hash": "493a7cc5e29a3cf2b0d95a50ee58d987",
-    "semantic_hash": ""
+    "semantic_hash": "493a7cc5e29a3cf2b0d95a50ee58d987"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\foo.cpp": {
-    "mtime": 1777675347.8870418,
+    "mtime": 1779621011.9794018,
     "ast_hash": "bbf8a05ecab16853fd9ad99b367175f8",
-    "semantic_hash": ""
+    "semantic_hash": "bbf8a05ecab16853fd9ad99b367175f8"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\main.cpp": {
-    "mtime": 1777675347.9060304,
+    "mtime": 1779621011.9864216,
     "ast_hash": "6155bf9e179fd0f9c2529e16119d24d8",
-    "semantic_hash": ""
+    "semantic_hash": "6155bf9e179fd0f9c2529e16119d24d8"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\android_gradle_build.json": {
     "mtime": 1777675387.7987535,
     "ast_hash": "4b83b4977b88ca4b3cee877eb5e16915",
-    "semantic_hash": ""
+    "semantic_hash": "4b83b4977b88ca4b3cee877eb5e16915"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\android_gradle_build_mini.json": {
     "mtime": 1777675387.9193754,
     "ast_hash": "1742fb15521eb009ac41be2319e0cf16",
-    "semantic_hash": ""
+    "semantic_hash": "1742fb15521eb009ac41be2319e0cf16"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\compile_commands.json": {
-    "mtime": 1777675386.74495,
-    "ast_hash": "89cb57b430330a7499c3f3f1d19d7d9a",
+    "mtime": 1779621049.7504816,
+    "ast_hash": "9586af8f1ac98cbc1f80056a38d82741",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\prefab_config.json": {
     "mtime": 1777675366.678509,
     "ast_hash": "cb0a3d34139fcef61c280c5a4e3b4fd8",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\cache-v2-8a329fc369f1388c52ae.json": {
-    "mtime": 1777675386.9822502,
-    "ast_hash": "400b90ab6f7020f78276231e6324c12d",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\cmakeFiles-v1-b2349f0b359493093c1b.json": {
-    "mtime": 1777675387.0330143,
-    "ast_hash": "9c9fc7d939faad7b4a41bf7e539e4c2c",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\codemodel-v2-e81f693d6f630ccfa440.json": {
-    "mtime": 1777675387.593572,
-    "ast_hash": "debec519e4450946d6f93efa2c3db4d0",
-    "semantic_hash": ""
+    "semantic_hash": "cb0a3d34139fcef61c280c5a4e3b4fd8"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-.-Debug-d0094a50bb2071803777.json": {
     "mtime": 1776986730.0608976,
     "ast_hash": "9f40cd23d42f6f64a253672a38c7ce57",
-    "semantic_hash": ""
+    "semantic_hash": "9f40cd23d42f6f64a253672a38c7ce57"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-rnasyncstorage_autolinked_build-Debug-67986b714e2f1de4c62e.json": {
     "mtime": 1776986730.064901,
     "ast_hash": "560ea2c1b84ba4b50debfe09fbe229cd",
-    "semantic_hash": ""
+    "semantic_hash": "560ea2c1b84ba4b50debfe09fbe229cd"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-RNCWebViewSpec_autolinked_build-Debug-0aee71e9030272f53329.json": {
     "mtime": 1776986730.1224706,
     "ast_hash": "79a4d710572d2a69fdfa96d30318cc12",
-    "semantic_hash": ""
+    "semantic_hash": "79a4d710572d2a69fdfa96d30318cc12"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-RNDateTimePickerCGen_autolinked_build-Debug-9ff8704b7f7f247877d5.json": {
     "mtime": 1776986730.0689027,
     "ast_hash": "8c728223c10da75f00ae303901a11922",
-    "semantic_hash": ""
+    "semantic_hash": "8c728223c10da75f00ae303901a11922"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-rngesturehandler_codegen_autolinked_build-Debug-9d1910ceeaff47e0b7e4.json": {
     "mtime": 1776986730.0838988,
     "ast_hash": "63c5b04f3e235d5c4d0da032ead170d0",
-    "semantic_hash": ""
+    "semantic_hash": "63c5b04f3e235d5c4d0da032ead170d0"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-RNGetRandomValuesSpec_autolinked_build-Debug-d6ac37770fb9c51346d6.json": {
     "mtime": 1776986730.0879002,
     "ast_hash": "3551d4ef9cbb3e1d11a190efacbd3be4",
-    "semantic_hash": ""
+    "semantic_hash": "3551d4ef9cbb3e1d11a190efacbd3be4"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-RNGoogleSignInCGen_autolinked_build-Debug-188408b792493403232c.json": {
     "mtime": 1776986730.0738988,
     "ast_hash": "df06a55428b5b4edee7589b94fb5f232",
-    "semantic_hash": ""
+    "semantic_hash": "df06a55428b5b4edee7589b94fb5f232"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-RNOneSignalSpec_autolinked_build-Debug-92a4b18023c01168d3d9.json": {
     "mtime": 1777675387.5191114,
     "ast_hash": "7638e0247dff42150ef2d23e9f4634ce",
-    "semantic_hash": ""
+    "semantic_hash": "7638e0247dff42150ef2d23e9f4634ce"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-rnpicker_autolinked_build-Debug-ad1ff5150f8ba29fbf9f.json": {
     "mtime": 1776986730.0779004,
     "ast_hash": "69c07ae0fc867157a279109e303436a6",
-    "semantic_hash": ""
+    "semantic_hash": "69c07ae0fc867157a279109e303436a6"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-rnreanimated_autolinked_build-Debug-0b2001f9482598ff34a0.json": {
     "mtime": 1776986730.0928977,
     "ast_hash": "6c2f59f8c406a2304e9a2a65685f285a",
-    "semantic_hash": ""
+    "semantic_hash": "6c2f59f8c406a2304e9a2a65685f285a"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-rnscreens_autolinked_build-Debug-af2a87b7633de0222429.json": {
     "mtime": 1776986730.1019213,
     "ast_hash": "0ee2c84d4e043f6cfba6972ff7f10193",
-    "semantic_hash": ""
+    "semantic_hash": "0ee2c84d4e043f6cfba6972ff7f10193"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-RNSoundSpec_autolinked_build-Debug-8983bfe8812acf7684ee.json": {
     "mtime": 1776986730.1079216,
     "ast_hash": "a65cbf48d361e71d0248b376a8b6f951",
-    "semantic_hash": ""
+    "semantic_hash": "a65cbf48d361e71d0248b376a8b6f951"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-rnsvg_autolinked_build-Debug-0da834d8de6f1b575e0d.json": {
     "mtime": 1776986730.1129217,
     "ast_hash": "d80efab7b7dbc8ea979c2363bb352dd2",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-RNVectorIconsSpec_autolinked_build-Debug-6fb8ce0ea4b00d441adc.json": {
-    "mtime": 1776986730.1184673,
-    "ast_hash": "c6e117b97777f2fa852dfff5d79549d1",
-    "semantic_hash": ""
+    "semantic_hash": "d80efab7b7dbc8ea979c2363bb352dd2"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-rnworklets_autolinked_build-Debug-ea02ee21c7ab46b73a76.json": {
     "mtime": 1776986730.127463,
     "ast_hash": "cb9d311952a32b12a52e6642ff1ffbf0",
-    "semantic_hash": ""
+    "semantic_hash": "cb9d311952a32b12a52e6642ff1ffbf0"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\directory-safeareacontext_autolinked_build-Debug-8d1402e3840c40c6edb7.json": {
     "mtime": 1776986730.0978985,
     "ast_hash": "4a70097df7f52cf1e752dbf30243674d",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\index-2026-05-01T22-43-07-0611.json": {
-    "mtime": 1777675387.610565,
-    "ast_hash": "b88b7faad28b26c15f642d23751cd504",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-appmodules-Debug-39fe80418d26dfdf5bdf.json": {
-    "mtime": 1777675387.0870333,
-    "ast_hash": "e99fa4f27362ba61a455153bc8a693ec",
-    "semantic_hash": ""
+    "semantic_hash": "4a70097df7f52cf1e752dbf30243674d"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnasyncstorage-Debug-1cbc6b58ebdefd4e629b.json": {
     "mtime": 1777675387.2612028,
     "ast_hash": "d6d85a7a14287639cd32a1a1554fdd18",
-    "semantic_hash": ""
+    "semantic_hash": "d6d85a7a14287639cd32a1a1554fdd18"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNCWebViewSpec-Debug-65f7e0a7d1dad7d18ab0.json": {
     "mtime": 1777675387.1190298,
     "ast_hash": "2cb042d1a0f82c46af2c0221106a5e42",
-    "semantic_hash": ""
+    "semantic_hash": "2cb042d1a0f82c46af2c0221106a5e42"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNDateTimePickerCGen-Debug-f8f7b74971f4807e1f60.json": {
     "mtime": 1777675387.1430354,
     "ast_hash": "933f4201914c82f5773d79cf4c9797c6",
-    "semantic_hash": ""
+    "semantic_hash": "933f4201914c82f5773d79cf4c9797c6"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_rngesturehandler_codegen-Debug-ec8045929dee9b29b2f8.json": {
     "mtime": 1777675387.28117,
     "ast_hash": "32924999f98f18a904de9d59a93038b1",
-    "semantic_hash": ""
+    "semantic_hash": "32924999f98f18a904de9d59a93038b1"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNGetRandomValuesSpec-Debug-0c5b4aa2455ed5beda75.json": {
     "mtime": 1777675387.1696098,
     "ast_hash": "a98774c8098de1c2c5011c267ff71dc3",
-    "semantic_hash": ""
+    "semantic_hash": "a98774c8098de1c2c5011c267ff71dc3"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNGoogleSignInCGen-Debug-c7c221affebe56828e86.json": {
     "mtime": 1777675387.1866128,
     "ast_hash": "ad596b4830fc6511933a5bd342baebbc",
-    "semantic_hash": ""
+    "semantic_hash": "ad596b4830fc6511933a5bd342baebbc"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNOneSignalSpec-Debug-c060fbe34aec9ff405d1.json": {
     "mtime": 1777675387.207609,
     "ast_hash": "d778667508f9ee6e18fc7d753e398bc7",
-    "semantic_hash": ""
+    "semantic_hash": "d778667508f9ee6e18fc7d753e398bc7"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnpicker-Debug-024c4bb52cc3c8fb2e93.json": {
     "mtime": 1777675387.3051598,
     "ast_hash": "9da80c8197febb291db04ffc9d0f3163",
-    "semantic_hash": ""
+    "semantic_hash": "9da80c8197febb291db04ffc9d0f3163"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnreanimated-Debug-c7afabb654ba6743f6bf.json": {
     "mtime": 1777675387.3359253,
     "ast_hash": "69810f6f56e6d1e144015a072235b20b",
-    "semantic_hash": ""
+    "semantic_hash": "69810f6f56e6d1e144015a072235b20b"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnscreens-Debug-64372e90b1fa246d25eb.json": {
     "mtime": 1777675387.3755002,
     "ast_hash": "f475f2615ce316540e9caa987c61d713",
-    "semantic_hash": ""
+    "semantic_hash": "f475f2615ce316540e9caa987c61d713"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNSoundSpec-Debug-d0e8e6ba6f8f1fb5ae13.json": {
     "mtime": 1777675387.2236106,
     "ast_hash": "80c2607d8f03f9e67118dcca2c0b300a",
-    "semantic_hash": ""
+    "semantic_hash": "80c2607d8f03f9e67118dcca2c0b300a"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnsvg-Debug-a7ea766c1eb7078e336f.json": {
     "mtime": 1777675387.3975053,
     "ast_hash": "c251b50af1aad9bbd85949b4bbca4b47",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_RNVectorIconsSpec-Debug-c39f50a7e9f9f75267ba.json": {
-    "mtime": 1777675387.2446382,
-    "ast_hash": "dcd74534f40ac7d76555e9f7415ddc0f",
-    "semantic_hash": ""
+    "semantic_hash": "c251b50af1aad9bbd85949b4bbca4b47"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_rnworklets-Debug-bea3d9f77fbf03b8a042.json": {
     "mtime": 1777675387.4225047,
     "ast_hash": "dc300e3492d9404e0a90d81e47683e08",
-    "semantic_hash": ""
+    "semantic_hash": "dc300e3492d9404e0a90d81e47683e08"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-react_codegen_safeareacontext-Debug-9c361994b94a5a0e1925.json": {
     "mtime": 1777675387.4465027,
     "ast_hash": "0d273c40420b45fd7250d7bac9f5efc1",
-    "semantic_hash": ""
+    "semantic_hash": "0d273c40420b45fd7250d7bac9f5efc1"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\3.22.1-g37088a8-dirty\\CompilerIdC\\CMakeCCompilerId.c": {
     "mtime": 1776986724.4951403,
     "ast_hash": "245b894a1d9b5e1b569506b0cfe5d36b",
-    "semantic_hash": ""
+    "semantic_hash": "245b894a1d9b5e1b569506b0cfe5d36b"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\3.22.1-g37088a8-dirty\\CompilerIdCXX\\CMakeCXXCompilerId.cpp": {
     "mtime": 1776986725.4713333,
     "ast_hash": "493a7cc5e29a3cf2b0d95a50ee58d987",
-    "semantic_hash": ""
+    "semantic_hash": "493a7cc5e29a3cf2b0d95a50ee58d987"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\foo.cpp": {
-    "mtime": 1777675380.6361098,
+    "mtime": 1779621048.4587605,
     "ast_hash": "bbf8a05ecab16853fd9ad99b367175f8",
-    "semantic_hash": ""
+    "semantic_hash": "bbf8a05ecab16853fd9ad99b367175f8"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\main.cpp": {
-    "mtime": 1777675380.6451175,
+    "mtime": 1779621048.463284,
     "ast_hash": "6155bf9e179fd0f9c2529e16119d24d8",
-    "semantic_hash": ""
+    "semantic_hash": "6155bf9e179fd0f9c2529e16119d24d8"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\tools\\debug\\arm64-v8a\\compile_commands.json": {
     "mtime": 1777675360.7963178,
     "ast_hash": "c01992881b5e61e7d2caece892753268",
-    "semantic_hash": ""
+    "semantic_hash": "c01992881b5e61e7d2caece892753268"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\tools\\debug\\armeabi-v7a\\compile_commands.json": {
     "mtime": 1777675386.74495,
     "ast_hash": "89cb57b430330a7499c3f3f1d19d7d9a",
-    "semantic_hash": ""
+    "semantic_hash": "89cb57b430330a7499c3f3f1d19d7d9a"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\debug_logs\\.maestro\\tests\\2025-09-03_230517\\ai-(settings_test).json": {
     "mtime": 1756933646.7775035,
     "ast_hash": "cf35c729693753b0aeaa149244830059",
-    "semantic_hash": ""
+    "semantic_hash": "cf35c729693753b0aeaa149244830059"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\debug_logs\\.maestro\\tests\\2025-09-03_230517\\commands-(settings_test.yaml).json": {
     "mtime": 1756933646.7393274,
     "ast_hash": "e1c9f6172ffda49995784883ffdc7aa1",
-    "semantic_hash": ""
+    "semantic_hash": "e1c9f6172ffda49995784883ffdc7aa1"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\debug_logs\\.maestro\\tests\\2025-09-03_230815\\ai-(settings_test).json": {
     "mtime": 1756933832.5570035,
     "ast_hash": "cf35c729693753b0aeaa149244830059",
-    "semantic_hash": ""
+    "semantic_hash": "cf35c729693753b0aeaa149244830059"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\debug_logs\\.maestro\\tests\\2025-09-03_230815\\commands-(settings_test.yaml).json": {
     "mtime": 1756933832.5167987,
     "ast_hash": "231a6eead22222221a94cad017279ef8",
-    "semantic_hash": ""
+    "semantic_hash": "231a6eead22222221a94cad017279ef8"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\debug_logs\\.maestro\\tests\\2025-09-03_231751\\ai-(settings_test).json": {
     "mtime": 1756934427.8407667,
     "ast_hash": "cf35c729693753b0aeaa149244830059",
-    "semantic_hash": ""
+    "semantic_hash": "cf35c729693753b0aeaa149244830059"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\debug_logs\\.maestro\\tests\\2025-09-03_231751\\commands-(settings_test.yaml).json": {
     "mtime": 1756934427.809841,
     "ast_hash": "d04737756cd7e709e8ae12c7dffce7b1",
-    "semantic_hash": ""
+    "semantic_hash": "d04737756cd7e709e8ae12c7dffce7b1"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\hooks\\usePhotoOCR.backup.ts": {
     "mtime": 1778371081.0492394,
     "ast_hash": "45b1c9bf37a97887a278cf2c11d050e3",
-    "semantic_hash": ""
+    "semantic_hash": "45b1c9bf37a97887a278cf2c11d050e3"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\delete-all-users\\index.ts": {
     "mtime": 1778371081.1557806,
     "ast_hash": "529bc81a9181a918bbf64b7377a9db9c",
-    "semantic_hash": ""
+    "semantic_hash": "529bc81a9181a918bbf64b7377a9db9c"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\ensure-profile\\index.ts": {
     "mtime": 1778371081.1567798,
     "ast_hash": "06aaa4990edafc0196cafcdf3c6f9b83",
-    "semantic_hash": ""
+    "semantic_hash": "06aaa4990edafc0196cafcdf3c6f9b83"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\ocr-proxy\\index.ts": {
     "mtime": 1778376214.0298903,
     "ast_hash": "cd8094ca8cc0fd703603662ee0343129",
-    "semantic_hash": ""
+    "semantic_hash": "cd8094ca8cc0fd703603662ee0343129"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\send-feedback\\index.ts": {
     "mtime": 1778371081.1587796,
     "ast_hash": "baf691c0dcbb81219ab9eb5fa4d0b209",
-    "semantic_hash": ""
+    "semantic_hash": "baf691c0dcbb81219ab9eb5fa4d0b209"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\update-profile\\index.ts": {
     "mtime": 1778371081.15978,
     "ast_hash": "dfd98b76e8b8bdc382c62d1a8578ee24",
-    "semantic_hash": ""
+    "semantic_hash": "dfd98b76e8b8bdc382c62d1a8578ee24"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250706120000_create_products_table.sql": {
     "mtime": 1751843771.5180614,
     "ast_hash": "ea6bb074ecb96ebae82572c195aeeb7c",
-    "semantic_hash": ""
+    "semantic_hash": "ea6bb074ecb96ebae82572c195aeeb7c"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250706120001_create_users_table.sql": {
     "mtime": 1754261118.3624065,
     "ast_hash": "82407bcb94a310176824964e825897da",
-    "semantic_hash": ""
+    "semantic_hash": "82407bcb94a310176824964e825897da"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250706120002_create_app_settings_table.sql": {
     "mtime": 1751838065.597883,
     "ast_hash": "f45d19f21519e5c50879dd0fe5045762",
-    "semantic_hash": ""
+    "semantic_hash": "f45d19f21519e5c50879dd0fe5045762"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250706120003_create_barcode_templates_table.sql": {
     "mtime": 1751838074.8197734,
     "ast_hash": "ce60990b9c0824b6914e2e758d9c5eab",
-    "semantic_hash": ""
+    "semantic_hash": "ce60990b9c0824b6914e2e758d9c5eab"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250706120004_setup_rls.sql": {
     "mtime": 1751912411.2141316,
     "ast_hash": "206971a97bed076b672fa53b728019ac",
-    "semantic_hash": ""
+    "semantic_hash": "206971a97bed076b672fa53b728019ac"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250706120005_import_data.sql": {
     "mtime": 1751839125.6185598,
     "ast_hash": "8f01d3c98a570df2f55f9d005727ee01",
-    "semantic_hash": ""
+    "semantic_hash": "8f01d3c98a570df2f55f9d005727ee01"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250707120006_create_categories_table.sql": {
     "mtime": 1751900982.5670831,
     "ast_hash": "c280016df6c578e798e2f4c4ad9a7fcb",
-    "semantic_hash": ""
+    "semantic_hash": "c280016df6c578e798e2f4c4ad9a7fcb"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250707201800_create_user_profile_on_signup.sql": {
     "mtime": 1751912403.3161068,
     "ast_hash": "a7df4277ebc4b5a15130a35bfe809ced",
-    "semantic_hash": ""
+    "semantic_hash": "a7df4277ebc4b5a15130a35bfe809ced"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250708003000_add_color_to_categories.sql": {
     "mtime": 1751927205.2932198,
     "ast_hash": "48a624374e97cc1d145bbff35c3897df",
-    "semantic_hash": ""
+    "semantic_hash": "48a624374e97cc1d145bbff35c3897df"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250709100000_add_user_id_to_products.sql": {
     "mtime": 1752095560.4671967,
     "ast_hash": "4eb2f837b3141faa36836779a49b22db",
-    "semantic_hash": ""
+    "semantic_hash": "4eb2f837b3141faa36836779a49b22db"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250709100001_secure_categories_table.sql": {
     "mtime": 1752095560.4681976,
     "ast_hash": "42ea3c4fc3674a7aae80785f9b8dc1e1",
-    "semantic_hash": ""
+    "semantic_hash": "42ea3c4fc3674a7aae80785f9b8dc1e1"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250709100002_create_product_rls_policies.sql": {
     "mtime": 1752095560.4692588,
     "ast_hash": "3293dea05edcacc1e2f19b1086bc75d7",
-    "semantic_hash": ""
+    "semantic_hash": "3293dea05edcacc1e2f19b1086bc75d7"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250714110000_add_profile_columns_to_users.sql": {
     "mtime": 1752533517.928989,
     "ast_hash": "7efa66ad5d7f7fd64ea7bb3642f7f7ac",
-    "semantic_hash": ""
+    "semantic_hash": "7efa66ad5d7f7fd64ea7bb3642f7f7ac"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250714120000_remove_conflicting_rls_policy.sql": {
     "mtime": 1752532231.7985365,
     "ast_hash": "f858894f45965a0aa604da86cf4242a6",
-    "semantic_hash": ""
+    "semantic_hash": "f858894f45965a0aa604da86cf4242a6"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250718100000_refactor_categories_rls.sql": {
     "mtime": 1752853276.3386838,
     "ast_hash": "5bfe0cf9a9a226a26b9b1cf514720c27",
-    "semantic_hash": ""
+    "semantic_hash": "5bfe0cf9a9a226a26b9b1cf514720c27"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250725_add_icon_url_column.sql": {
     "mtime": 1753478433.932473,
     "ast_hash": "c0b62a3f5e39b3a60d63d07dcbe54c1f",
-    "semantic_hash": ""
+    "semantic_hash": "c0b62a3f5e39b3a60d63d07dcbe54c1f"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250726010000_correct_app_settings_rls.sql": {
     "mtime": 1753396055.6966414,
     "ast_hash": "78d154ab026bab0621f47b179e7b4244",
-    "semantic_hash": ""
+    "semantic_hash": "78d154ab026bab0621f47b179e7b4244"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250804_fix_auth_trigger.sql": {
     "mtime": 1754344919.3785527,
     "ast_hash": "11f71eb8d24d21df3cff005c040debcc",
-    "semantic_hash": ""
+    "semantic_hash": "11f71eb8d24d21df3cff005c040debcc"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250824160000_add_salumi_category.sql": {
     "mtime": 1756050898.680179,
     "ast_hash": "7d1224f1545ed1950596aafbed643e9b",
-    "semantic_hash": ""
+    "semantic_hash": "7d1224f1545ed1950596aafbed643e9b"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250824183000_create_feedback_storage_bucket.sql": {
     "mtime": 1756073617.7330933,
     "ast_hash": "60f686c00381b7f1aca54b2996135897",
-    "semantic_hash": ""
+    "semantic_hash": "60f686c00381b7f1aca54b2996135897"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20250913153000_fix_check_email_exists_security.sql": {
     "mtime": 1757861297.8345935,
     "ast_hash": "71ba2313d05100f18fc9976bbe6ecc17",
-    "semantic_hash": ""
+    "semantic_hash": "71ba2313d05100f18fc9976bbe6ecc17"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20251028_create_get_expiring_products.sql": {
     "mtime": 1761688240.7908137,
     "ast_hash": "8ec846d54b17f1f7289996ff230d7f13",
-    "semantic_hash": ""
+    "semantic_hash": "8ec846d54b17f1f7289996ff230d7f13"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20251116100000_create_user_devices_table.sql": {
     "mtime": 1763330215.0007298,
     "ast_hash": "f34a6070703c7a6cd30cf17008e55bf7",
-    "semantic_hash": ""
+    "semantic_hash": "f34a6070703c7a6cd30cf17008e55bf7"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20260324000000_supabase_security_hardening.sql": {
     "mtime": 1774385905.521454,
     "ast_hash": "0a77b8e992824e7807d0aa8f58af702f",
-    "semantic_hash": ""
+    "semantic_hash": "0a77b8e992824e7807d0aa8f58af702f"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20260515000001_drop_permissive_products_policy.sql": {
     "mtime": 1778844908.612122,
     "ast_hash": "69169687194f16390c52dacf6d5f2524",
-    "semantic_hash": ""
+    "semantic_hash": "69169687194f16390c52dacf6d5f2524"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20260515000002_revoke_security_definer_from_anon.sql": {
     "mtime": 1778844908.6131248,
     "ast_hash": "21cecc7fba5c819dedcebfb8ca5767bc",
-    "semantic_hash": ""
+    "semantic_hash": "21cecc7fba5c819dedcebfb8ca5767bc"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20260515000003_add_product_indexes.sql": {
     "mtime": 1778846535.0287876,
     "ast_hash": "91cdb5062aec24c6662c5e712f725617",
-    "semantic_hash": ""
+    "semantic_hash": "91cdb5062aec24c6662c5e712f725617"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\migrations\\20260515000004_ensure_app_settings_default.sql": {
     "mtime": 1778847738.8858757,
     "ast_hash": "da7472020dc6cec814e6567bf88d8dd1",
-    "semantic_hash": ""
+    "semantic_hash": "da7472020dc6cec814e6567bf88d8dd1"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\AGENTS.md": {
-    "mtime": 1779400791.5449572,
-    "ast_hash": "752aa83aa64361ac32860f882dcff932",
+    "mtime": 1779920495.4243717,
+    "ast_hash": "ffbcee65b30af1850ea1aeea780aa80e",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\CODEDNA-GUIDE.md": {
@@ -2794,164 +2719,9 @@
     "ast_hash": "fa83c2c6c3294ee2b3910502c32136a1",
     "semantic_hash": ""
   },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\.agent.md": {
-    "mtime": 1756934250.782355,
-    "ast_hash": "152f74075c08e3cde42f6432e793f8b6",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\add-product-manual.yml": {
-    "mtime": 1756930278.188391,
-    "ast_hash": "78a8304b1a7404578b1b17fd8edc2010",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\add-product-scanner.yml": {
-    "mtime": 1756930278.1943898,
-    "ast_hash": "074fff579db5493996c6664a64caadc0",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\barcode-scanner-test.yml": {
-    "mtime": 1770569643.4714172,
-    "ast_hash": "4507e550266fbf1b8eaad2e30f5a0ac6",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\categories-management-test.yml": {
-    "mtime": 1769757943.4636743,
-    "ast_hash": "3f1c62b4eb6e6d05028bf38becdb2f8f",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\complete-flow-test.yml": {
-    "mtime": 1770567067.133364,
-    "ast_hash": "3fd83bacd5c08781bb0890c29c451bb4",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\complete-profile-test.yml": {
-    "mtime": 1770569644.187329,
-    "ast_hash": "a3874b1dbee5e8e1acf8d37d4d4ecc52",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\dashboard-stats-test.yml": {
-    "mtime": 1770567168.3809693,
-    "ast_hash": "a8f42364bbe282cd8e157d48092e4d69",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\dashboard-test.yml": {
-    "mtime": 1770567147.5744355,
-    "ast_hash": "aef758b4fdb3026c09f713f15ff15a71",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\error-scenarios-test.yml": {
-    "mtime": 1756930278.208398,
-    "ast_hash": "4113b47166e921df85b62e59722bea0c",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\feedback-test.yml": {
-    "mtime": 1770569637.8589897,
-    "ast_hash": "1b369d54a0d94c54b56ca009735c802e",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\frozen-products-test.yml": {
-    "mtime": 1769757932.00995,
-    "ast_hash": "bd254742b027b24d6e9d928eab5fb616",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\history-test.yml": {
-    "mtime": 1756930278.2143977,
-    "ast_hash": "3646cbe901cd5bb5a010d841d7dc225b",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\LaunchApp.yml": {
-    "mtime": 1756931641.6052895,
-    "ast_hash": "e1f5729aa0c13c84aa2a720751f8f618",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\login.yml": {
-    "mtime": 1756931840.6761577,
-    "ast_hash": "00af1a9a071a1ea6957da6df822e01bd",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\manage-categories-test.yml": {
-    "mtime": 1770569672.5964687,
-    "ast_hash": "0fbd8c011c17e470f3b2cd2b84c1590d",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\ocr-e2e.yaml": {
-    "mtime": 1770566572.7720025,
-    "ast_hash": "24e121cb429d4cd09461b31ac405387c",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\ocr-failure.yaml": {
-    "mtime": 1770566570.5144122,
-    "ast_hash": "fc95989d841383dea4b9ed758e2c42e1",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\ocr-success.yaml": {
-    "mtime": 1770566564.8364565,
-    "ast_hash": "14a20bb66a1003711eeb6244c3104989",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\photo-capture-ocr-test.yml": {
-    "mtime": 1769757919.7579463,
-    "ast_hash": "895c434682fe47743f70e501a5e65fb6",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\product-actions-test.yml": {
-    "mtime": 1756930278.223396,
-    "ast_hash": "d79252183efea294705604002e2802f5",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\product-quantities-test.yml": {
-    "mtime": 1769757925.1470108,
-    "ast_hash": "a97f5c6ae52512f636b3a11ba536b2b9",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\products-actions-test.yml": {
-    "mtime": 1756930278.2290308,
-    "ast_hash": "10ce3969ad858dab99668468c1fe61ab",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\products-filters-advanced-test.yml": {
-    "mtime": 1756930278.2360194,
-    "ast_hash": "74e73126d703f2f5ca230c8e36782e47",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\products-management.yml": {
-    "mtime": 1756932760.5518885,
-    "ast_hash": "5371f82ff40fd2e58c981e72a2e8add5",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\products-performance-test.yml": {
-    "mtime": 1770567068.4195309,
-    "ast_hash": "e57867c66e9a74621ae550ef26b25f38",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\profile-management-test.yml": {
-    "mtime": 1770569628.940008,
-    "ast_hash": "e499fdb89e7825e11da75a0d0f016c24",
-    "semantic_hash": ""
-  },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\README.md": {
-    "mtime": 1770569780.3565507,
-    "ast_hash": "84274a07e0dc170bfb6e8caafeb812cb",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\settings_test.yaml": {
-    "mtime": 1770567052.394475,
-    "ast_hash": "8313db18e2d0559edb4bc334951a21b3",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\signup_test.yml": {
-    "mtime": 1756931840.692377,
-    "ast_hash": "620819bd1332e522571a8aabbf4db62f",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\test-suite.yml": {
-    "mtime": 1770569722.0666485,
-    "ast_hash": "2779b8313369afd43786f57716191139",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\TEST_CORRECTIONS_SUMMARY.md": {
-    "mtime": 1756932986.3881826,
-    "ast_hash": "5c6891a7e2c79504e0fec27de080f3b5",
+    "mtime": 1779831122.3604934,
+    "ast_hash": "e4faf5aaec6299569c3e2c264be21120",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.planning\\ARCHITECTURE.md": {
@@ -2990,8 +2760,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.planning\\SESSIONS.md": {
-    "mtime": 1779322255.4369502,
-    "ast_hash": "44aaae3773a6a8ef7a36885c356a4f3e",
+    "mtime": 1779917975.4695504,
+    "ast_hash": "cdf7c3113e9e6974e515a6d750ae7868",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.planning\\STACK.md": {
@@ -3000,8 +2770,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.planning\\STATE.md": {
-    "mtime": 1778437525.4850895,
-    "ast_hash": "f09da14492e6c09bdb9c78f76710f694",
+    "mtime": 1779579928.4246426,
+    "ast_hash": "852f8eab00de3d4e90ad2160a35c1c91",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.planning\\STRUCTURE.md": {
@@ -3030,8 +2800,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeCache.txt": {
-    "mtime": 1777675353.1696954,
-    "ast_hash": "77c44d2c954f203a1ceb61852ad989cd",
+    "mtime": 1779621013.1003125,
+    "ast_hash": "b8efcf58fa5f9dce849b296b856762f8",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\metadata_generation_command.txt": {
@@ -3045,22 +2815,22 @@
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\TargetDirectories.txt": {
-    "mtime": 1777675360.7247345,
-    "ast_hash": "331a1857eddaaacbdb4aed204d561524",
+    "mtime": 1779621013.9009798,
+    "ast_hash": "eb316e9079ddae74ac9d9b6a2ba196a7",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\_CMakeLTOTest-CXX\\bin\\CMakeCache.txt": {
-    "mtime": 1777675348.1182878,
+    "mtime": 1779621012.067483,
     "ast_hash": "962bea9d202f8d965b349a978abb1079",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\_CMakeLTOTest-CXX\\bin\\CMakeFiles\\TargetDirectories.txt": {
-    "mtime": 1777675348.1868508,
+    "mtime": 1779621012.1217947,
     "ast_hash": "65490163fe84009973a5fcb33f0cb77d",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\CMakeLists.txt": {
-    "mtime": 1777675347.876045,
+    "mtime": 1779621011.9715414,
     "ast_hash": "4da62ef32315d0f698473abc5d91ca05",
     "semantic_hash": ""
   },
@@ -3075,8 +2845,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeCache.txt": {
-    "mtime": 1777675383.1545804,
-    "ast_hash": "e86c8d225f11ffb080b26f733e45199b",
+    "mtime": 1779621049.1768546,
+    "ast_hash": "dbb13ac63d5e0006da012cee339a0e46",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\metadata_generation_command.txt": {
@@ -3090,22 +2860,22 @@
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\TargetDirectories.txt": {
-    "mtime": 1777675386.6324449,
-    "ast_hash": "103918213882ef797aa141e5bcafe370",
+    "mtime": 1779621049.74093,
+    "ast_hash": "c7d4b1b71b703759d44c0ca1f9e77263",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\_CMakeLTOTest-CXX\\bin\\CMakeCache.txt": {
-    "mtime": 1777675380.763289,
+    "mtime": 1779621048.5148594,
     "ast_hash": "3d02088d409031854137b907d56c80de",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\_CMakeLTOTest-CXX\\bin\\CMakeFiles\\TargetDirectories.txt": {
-    "mtime": 1777675380.8082929,
+    "mtime": 1779621048.542651,
     "ast_hash": "3a6f36b9787b98b7460031e3f5d921af",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\CMakeLists.txt": {
-    "mtime": 1777675380.623101,
+    "mtime": 1779621048.452763,
     "ast_hash": "4da62ef32315d0f698473abc5d91ca05",
     "semantic_hash": ""
   },
@@ -3142,6 +2912,546 @@
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\debug_logs\\.maestro\\tests\\2025-09-03_231751\\screenshot-\u274c-1756934426580-(settings_test.yaml).png": {
     "mtime": 1756934427.8166404,
     "ast_hash": "046e1bc711e2005f3fa630a685824e52",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\fill-product-form.yml": {
+    "mtime": 1780223549.7852693,
+    "ast_hash": "ed88eefa09a45d6b738f065d4b102ebe",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\logout.yml": {
+    "mtime": 1779840219.3327334,
+    "ast_hash": "a70666a712bb8d8b892eea3bdff96f6d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\navigate-manual-entry.yml": {
+    "mtime": 1779840219.3357303,
+    "ast_hash": "02432c734bd2f0c544af561c75c4792d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\save-product.yml": {
+    "mtime": 1780190956.9006362,
+    "ast_hash": "4ae732f44aacf49a23344e37313414f1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\cache-v2-d9cc58fbbee94cee3985.json": {
+    "mtime": 1779621013.9673696,
+    "ast_hash": "ab54b7b0d7c6a0a7d93e269975d47da1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\cmakeFiles-v1-0a79dcdb35319a6f251c.json": {
+    "mtime": 1779621013.9739072,
+    "ast_hash": "b3736902ea1f5b6b1d6564f97d50884d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\codemodel-v2-4779b9002f7a042e0254.json": {
+    "mtime": 1779621014.088658,
+    "ast_hash": "0b86e94f0ce43cb78d244293eaa99c8b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\index-2026-05-24T11-10-14-0094.json": {
+    "mtime": 1779621014.0932007,
+    "ast_hash": "9044bfb5030ff00d023555cf57992be4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\arm64-v8a\\.cmake\\api\\v1\\reply\\target-appmodules-Debug-48c63e2ad50a6c0fbc77.json": {
+    "mtime": 1779621013.9879756,
+    "ast_hash": "db3c8552a2e6a2a17b3a784d864aa940",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\cache-v2-fb54365bf339b67dfc4c.json": {
+    "mtime": 1779621049.7910106,
+    "ast_hash": "05e60c5b709df5e3a1a3d0329868da0d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\cmakeFiles-v1-3b81888f4bfe24fa579f.json": {
+    "mtime": 1779621049.799042,
+    "ast_hash": "c470483d60ff0e2999a8bb1e0e2e27f1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\codemodel-v2-c118f446a3a01664d1fe.json": {
+    "mtime": 1779621049.9139202,
+    "ast_hash": "606b397ee6851b0c71b5bc251c500e70",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\index-2026-05-24T11-10-49-0920.json": {
+    "mtime": 1779621049.9189246,
+    "ast_hash": "7fe358e8efa02de9de5287a1dee728de",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\armeabi-v7a\\.cmake\\api\\v1\\reply\\target-appmodules-Debug-376e55b7cc69c0f3d959.json": {
+    "mtime": 1779621049.8098617,
+    "ast_hash": "7026b432300c8a6904074c4a2f6e9cf9",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\components\\settings\\ChangePasswordModal.tsx": {
+    "mtime": 1779842538.2757697,
+    "ast_hash": "df893e9f5154896607fe8574dca06dfc",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\android_gradle_build.json": {
+    "mtime": 1779812772.726057,
+    "ast_hash": "83053ab38da45f7fcb8883b9f8c2b850",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\android_gradle_build_mini.json": {
+    "mtime": 1779812772.7732036,
+    "ast_hash": "7f5e7fd2c3f931515e586f4529221892",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\compile_commands.json": {
+    "mtime": 1779812772.4606264,
+    "ast_hash": "92d02a3022e94cb47065010b8b33a5c0",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\prefab_config.json": {
+    "mtime": 1779812772.777207,
+    "ast_hash": "cb0a3d34139fcef61c280c5a4e3b4fd8",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\cache-v2-005ac7670411034f15c0.json": {
+    "mtime": 1779812772.4967442,
+    "ast_hash": "2e7c8396192562958e614317d1684940",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\cmakeFiles-v1-c3f954a460afd353c8ed.json": {
+    "mtime": 1779812772.5062962,
+    "ast_hash": "39dbf344464d705cae5c1fe753fd074f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\codemodel-v2-8e59abbd45b9446b55a3.json": {
+    "mtime": 1779812772.6647947,
+    "ast_hash": "a9d77c972cc72f9e4808a8190bfad51e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-.-Debug-d0094a50bb2071803777.json": {
+    "mtime": 1779812772.6076567,
+    "ast_hash": "9f40cd23d42f6f64a253672a38c7ce57",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-rnasyncstorage_autolinked_build-Debug-67986b714e2f1de4c62e.json": {
+    "mtime": 1779812772.610658,
+    "ast_hash": "560ea2c1b84ba4b50debfe09fbe229cd",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-RNCWebViewSpec_autolinked_build-Debug-0aee71e9030272f53329.json": {
+    "mtime": 1779812772.6577947,
+    "ast_hash": "79a4d710572d2a69fdfa96d30318cc12",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-RNDateTimePickerCGen_autolinked_build-Debug-9ff8704b7f7f247877d5.json": {
+    "mtime": 1779812772.6146586,
+    "ast_hash": "8c728223c10da75f00ae303901a11922",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-rngesturehandler_codegen_autolinked_build-Debug-9d1910ceeaff47e0b7e4.json": {
+    "mtime": 1779812772.6262138,
+    "ast_hash": "63c5b04f3e235d5c4d0da032ead170d0",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-RNGetRandomValuesSpec_autolinked_build-Debug-d6ac37770fb9c51346d6.json": {
+    "mtime": 1779812772.6312015,
+    "ast_hash": "3551d4ef9cbb3e1d11a190efacbd3be4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-RNGoogleSignInCGen_autolinked_build-Debug-188408b792493403232c.json": {
+    "mtime": 1779812772.618214,
+    "ast_hash": "df06a55428b5b4edee7589b94fb5f232",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-RNOneSignalSpec_autolinked_build-Debug-92a4b18023c01168d3d9.json": {
+    "mtime": 1779812772.6347272,
+    "ast_hash": "7638e0247dff42150ef2d23e9f4634ce",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-rnpicker_autolinked_build-Debug-ad1ff5150f8ba29fbf9f.json": {
+    "mtime": 1779812772.6222098,
+    "ast_hash": "69c07ae0fc867157a279109e303436a6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-rnreanimated_autolinked_build-Debug-0b2001f9482598ff34a0.json": {
+    "mtime": 1779812772.6387298,
+    "ast_hash": "6c2f59f8c406a2304e9a2a65685f285a",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-rnscreens_autolinked_build-Debug-af2a87b7633de0222429.json": {
+    "mtime": 1779812772.6462543,
+    "ast_hash": "0ee2c84d4e043f6cfba6972ff7f10193",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-RNSoundSpec_autolinked_build-Debug-8983bfe8812acf7684ee.json": {
+    "mtime": 1779812772.650782,
+    "ast_hash": "a65cbf48d361e71d0248b376a8b6f951",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-rnsvg_autolinked_build-Debug-0da834d8de6f1b575e0d.json": {
+    "mtime": 1779812772.6537979,
+    "ast_hash": "d80efab7b7dbc8ea979c2363bb352dd2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-rnworklets_autolinked_build-Debug-ea02ee21c7ab46b73a76.json": {
+    "mtime": 1779812772.660797,
+    "ast_hash": "cb9d311952a32b12a52e6642ff1ffbf0",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\directory-safeareacontext_autolinked_build-Debug-8d1402e3840c40c6edb7.json": {
+    "mtime": 1779812772.642242,
+    "ast_hash": "4a70097df7f52cf1e752dbf30243674d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\index-2026-05-26T16-26-12-0669.json": {
+    "mtime": 1779812772.668409,
+    "ast_hash": "b3099b76bd083a0d646e27d01b468024",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-appmodules-Debug-d1b0874779074d193b08.json": {
+    "mtime": 1779812772.5168033,
+    "ast_hash": "f05cdb7b60e8242130b30761291c7112",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_rnasyncstorage-Debug-38cd2a520f94f7695b06.json": {
+    "mtime": 1779812772.561414,
+    "ast_hash": "d6650f84be183fe26936d5a111844ef2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_RNCWebViewSpec-Debug-26417158c63a9d4dc3ae.json": {
+    "mtime": 1779812772.5238397,
+    "ast_hash": "378036a4d6e575549c65f0b612f6401e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_RNDateTimePickerCGen-Debug-df1cba0e390dac72ae47.json": {
+    "mtime": 1779812772.5298321,
+    "ast_hash": "fa6af23816998a2499c04e1003ea4bff",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_rngesturehandler_codegen-Debug-5dd9766f39baf7d0dc35.json": {
+    "mtime": 1779812772.5669417,
+    "ast_hash": "1607911bb5b89b1ab2fe291e2cbcc20c",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_RNGetRandomValuesSpec-Debug-2e7f3906150fa9dfda3a.json": {
+    "mtime": 1779812772.5361106,
+    "ast_hash": "bd19580fcbd9eae01b63ef44f1784588",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_RNGoogleSignInCGen-Debug-ab66dd067b074e3d3648.json": {
+    "mtime": 1779812772.5421197,
+    "ast_hash": "3f65746801cd59a8aebc5c0b01c40f58",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_RNOneSignalSpec-Debug-a5e68f223f03dced9ca0.json": {
+    "mtime": 1779812772.5482492,
+    "ast_hash": "921ac801082a159c153a42080cd73971",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_rnpicker-Debug-ea85be64adc7f3ab0c1b.json": {
+    "mtime": 1779812772.572962,
+    "ast_hash": "1fcde04edc05a279b2f1efb4014a4905",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_rnreanimated-Debug-866213bfadb883024574.json": {
+    "mtime": 1779812772.5789554,
+    "ast_hash": "177288f080c6b955778e54c5d9cb6bc4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_rnscreens-Debug-1e3337faec5d37ae50d0.json": {
+    "mtime": 1779812772.5865068,
+    "ast_hash": "959c8e09f376ceb624f370a203a2d98f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_RNSoundSpec-Debug-c20315bf66ca397b7976.json": {
+    "mtime": 1779812772.5544126,
+    "ast_hash": "f65afe48b2fa0830a78a85468a18795d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_rnsvg-Debug-b96746644e1849cbd228.json": {
+    "mtime": 1779812772.5925066,
+    "ast_hash": "8be126107fe975e31040fb03afb531da",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_rnworklets-Debug-f67e5ad55f4bf56f90e2.json": {
+    "mtime": 1779812772.59751,
+    "ast_hash": "dc7a409dd2813b8821b7aab61fc8f442",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\.cmake\\api\\v1\\reply\\target-react_codegen_safeareacontext-Debug-afbf19391fe1f1321daf.json": {
+    "mtime": 1779812772.602653,
+    "ast_hash": "544996479107d9990bc2bb3866c15bf2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\3.22.1-g37088a8-dirty\\CompilerIdC\\CMakeCCompilerId.c": {
+    "mtime": 1779812767.9475732,
+    "ast_hash": "245b894a1d9b5e1b569506b0cfe5d36b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\3.22.1-g37088a8-dirty\\CompilerIdCXX\\CMakeCXXCompilerId.cpp": {
+    "mtime": 1779812768.5089254,
+    "ast_hash": "493a7cc5e29a3cf2b0d95a50ee58d987",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\foo.cpp": {
+    "mtime": 1779812770.185728,
+    "ast_hash": "bbf8a05ecab16853fd9ad99b367175f8",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\main.cpp": {
+    "mtime": 1779812770.1917255,
+    "ast_hash": "6155bf9e179fd0f9c2529e16119d24d8",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\tools\\debug\\x86_64\\compile_commands.json": {
+    "mtime": 1779812772.4606264,
+    "ast_hash": "92d02a3022e94cb47065010b8b33a5c0",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\e2e-otp\\deno.json": {
+    "mtime": 1779917935.189551,
+    "ast_hash": "95b6778467cc9eaef0f0bf6935d190f9",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\e2e-otp\\index.ts": {
+    "mtime": 1779921699.2564712,
+    "ast_hash": "1bac33799cca0af9fe2556e8cce4f914",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\maestro-report.html": {
+    "mtime": 1779918590.652762,
+    "ast_hash": "9ac8a4e98d8e29854e1aa4fb2701e2bb",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\auth-login-test.yml": {
+    "mtime": 1779916528.863847,
+    "ast_hash": "675b460ab2d4be252083f841d193fa3e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\auth-onboarding-test.yml": {
+    "mtime": 1780224577.0645936,
+    "ast_hash": "a6d859cced26d88dfcd0e9344d97aa10",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\auth-signup-validation-test.yml": {
+    "mtime": 1780224578.5864675,
+    "ast_hash": "92be7424387702b48e9ce55782cfe440",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\complex-flows-test.yml": {
+    "mtime": 1780224632.291149,
+    "ast_hash": "df823da94523af2ea73df47c9f9c0156",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\data-integrity-test.yml": {
+    "mtime": 1780213358.5879445,
+    "ast_hash": "48f502060f2cc514496a9286f6cba3ea",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\edge-cases-test.yml": {
+    "mtime": 1780224634.274968,
+    "ast_hash": "991ee817996e4cd39d0d107793d778c3",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\empty-states-test.yml": {
+    "mtime": 1780213752.4484468,
+    "ast_hash": "a471921095068808cdf37617ed63723e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\minimal-test.yml": {
+    "mtime": 1779842350.7917807,
+    "ast_hash": "0cde9954fb6368eac8ce29ca9cf27b94",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\product-lifecycle-test.yml": {
+    "mtime": 1780224584.2776341,
+    "ast_hash": "b08183099dd110564b5b2c50d8386d53",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\resilience-test.yml": {
+    "mtime": 1780213725.5538397,
+    "ast_hash": "65239376f8e99b7aec7bb57c8f7db6dc",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\system-test.yml": {
+    "mtime": 1780232999.322717,
+    "ast_hash": "512518f49844df663e21f72aa0cef6fe",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\test-appid.yml": {
+    "mtime": 1779840219.3207333,
+    "ast_hash": "1bdc4aee1e8d2e19397fa543b1574b09",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\app-startup.yml": {
+    "mtime": 1780235428.1388,
+    "ast_hash": "45de02cbac3b2354acaccd339e8ea4c8",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\exit-dev-menu.yml": {
+    "mtime": 1779840219.3257399,
+    "ast_hash": "55428081f39299ca0845beb6f1985a1d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\login.yml": {
+    "mtime": 1779916347.2921674,
+    "ast_hash": "bee190c95d2c755fea3cc04bc64892c2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\additional_project_files.txt": {
+    "mtime": 1779812772.7200632,
+    "ast_hash": "8884ea3a272250d0fd8510f745b7ddd1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\build_file_index.txt": {
+    "mtime": 1779812772.7802022,
+    "ast_hash": "5220b6cb50db238f3a36405f8ee64e09",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeCache.txt": {
+    "mtime": 1779812771.4130836,
+    "ast_hash": "2a7345c46d975ecafe40e263eccc509f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\metadata_generation_command.txt": {
+    "mtime": 1779812772.7752051,
+    "ast_hash": "4334aab8426242998a969fc340db475e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\symbol_folder_index.txt": {
+    "mtime": 1779812772.7792087,
+    "ast_hash": "c0529cadf106e881efbaf81debdd7d0c",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\TargetDirectories.txt": {
+    "mtime": 1779812772.4470997,
+    "ast_hash": "88a8da87c34d003eb4965d33c50b27b8",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\_CMakeLTOTest-CXX\\bin\\CMakeCache.txt": {
+    "mtime": 1779812770.2565877,
+    "ast_hash": "de2d63550b313e7013035f936d8a806f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\_CMakeLTOTest-CXX\\bin\\CMakeFiles\\TargetDirectories.txt": {
+    "mtime": 1779812770.2906895,
+    "ast_hash": "bd667461eb7811331478bce98092b750",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\android\\app\\.cxx\\Debug\\4s3w386o\\x86_64\\CMakeFiles\\_CMakeLTOTest-CXX\\src\\CMakeLists.txt": {
+    "mtime": 1779812770.1771765,
+    "ast_hash": "4da62ef32315d0f698473abc5d91ca05",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\.temp\\linked-project.json": {
+    "mtime": 1779921504.3339064,
+    "ast_hash": "dcb95234667be67ecaf2ed12c69ca07b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_015618\\commands-(auth-login-test).json": {
+    "mtime": 1780185444.1791124,
+    "ast_hash": "363f49c2f9574d7fe71b9a4d17eb9c66",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_015829\\commands-(auth-login-test).json": {
+    "mtime": 1780185574.8711598,
+    "ast_hash": "ca523503341056f7e61ae3ccb6cb979d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_015829\\commands-(auth-onboarding-test).json": {
+    "mtime": 1780185639.5021646,
+    "ast_hash": "7a67feed35e95c5e23adb05af6c8b50c",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_015829\\commands-(auth-signup-validation-test).json": {
+    "mtime": 1780185799.1982243,
+    "ast_hash": "576d1936455c44e6fc36302427f013a6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020331\\commands-(complex-flows-test).json": {
+    "mtime": 1780186013.9185388,
+    "ast_hash": "0a4f15efe2b1f4d1c2b53bb636841fcd",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020331\\commands-(data-integrity-test).json": {
+    "mtime": 1780186100.386415,
+    "ast_hash": "5c265c7b01da84e4ccb243919b88c342",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020331\\commands-(product-lifecycle-test).json": {
+    "mtime": 1780185921.628574,
+    "ast_hash": "2382f1b78e9fe4e7d2b402c7482ad76f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020834\\commands-(edge-cases-test).json": {
+    "mtime": 1780186405.5701811,
+    "ast_hash": "fa0496d64f54eff0ed98fab15043619a",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020834\\commands-(resilience-test).json": {
+    "mtime": 1780186313.92098,
+    "ast_hash": "e705ca62cfc076208f0f529b7489ac9c",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020834\\commands-(system-test).json": {
+    "mtime": 1780186219.0483644,
+    "ast_hash": "2c0f56abf20771aeed65cbf1df0c1052",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_021342\\commands-(empty-states-test.yml).json": {
+    "mtime": 1780186528.2977703,
+    "ast_hash": "63a5df5a566e4b2d7bd5c1ce9d368119",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_021536\\commands-(minimal-test).json": {
+    "mtime": 1780186575.1911473,
+    "ast_hash": "54cb7a1228453652bfcb2f08808d60a2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_021536\\commands-(test-appid).json": {
+    "mtime": 1780186582.553025,
+    "ast_hash": "faa75a9656124d6dda32eedcb1d37c6e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\session-ses_1860.md": {
+    "mtime": 1780162493.8704736,
+    "ast_hash": "dd2f879c2062d93425e91c81116bf9e6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_015829\\screenshot-\u274c-1780185799181-(auth-signup-validation-test).png": {
+    "mtime": 1780185799.2002106,
+    "ast_hash": "a97ea61254af580bc9611ba1ef3730b3",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020331\\screenshot-\u274c-1780185921096-(product-lifecycle-test).png": {
+    "mtime": 1780185921.6385672,
+    "ast_hash": "bd7a0c2354fba491ab29a338aac4ab9e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020331\\screenshot-\u274c-1780186013906-(complex-flows-test).png": {
+    "mtime": 1780186013.9235444,
+    "ast_hash": "169a1a0e938fa662b58fc5b1f6df093e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020331\\screenshot-\u274c-1780186100379-(data-integrity-test).png": {
+    "mtime": 1780186100.3884163,
+    "ast_hash": "45529e39cba48af18709eb06a8861dc6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020834\\screenshot-\u274c-1780186218486-(system-test).png": {
+    "mtime": 1780186219.0563686,
+    "ast_hash": "0b81921d0cec222d3b8062d9441c50c1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020834\\screenshot-\u274c-1780186313903-(resilience-test).png": {
+    "mtime": 1780186313.9219851,
+    "ast_hash": "48eaedab903ed28859c5bb1514ee34c8",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_020834\\screenshot-\u274c-1780186405564-(edge-cases-test).png": {
+    "mtime": 1780186405.5761764,
+    "ast_hash": "e653cf5e8acbf7798fc3acb161fe196c",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\output\\2026-05-31_021342\\screenshot-\u274c-1780186527703-(empty-states-test.yml).png": {
+    "mtime": 1780186528.3117719,
+    "ast_hash": "0697c124305ea40d124c4277c27f501f",
     "semantic_hash": ""
   }
 }

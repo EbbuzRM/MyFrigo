@@ -614,4 +614,154 @@ describe('useProductInitialization', () => {
       });
     });
   });
+
+  // --- Regression tests for image-persistence fixes (2026-06-02) ---
+
+  describe('Loop Prevention (Fix #2: isInitialized removed from deps)', () => {
+    it('should call loadData exactly once on mount, not in a loop', async () => {
+      const mockInitializeForm = jest.fn();
+      const mockSetIsInitialized = jest.fn();
+      mockedUseManualEntry.mockReturnValue({
+        ...mockManualEntryContext,
+        initializeForm: mockInitializeForm,
+        setIsInitialized: mockSetIsInitialized,
+      });
+
+      mockedUseLocalSearchParams.mockReturnValue({ barcode: '123456' });
+
+      renderHook(() =>
+        useProductInitialization({ setIsLoading, categories, categoriesLoading })
+      );
+
+      // Wait for initial load to complete
+      await waitFor(() => {
+        expect(mockInitializeForm).toHaveBeenCalled();
+      });
+
+      // Wait additional time to ensure no loop re-triggers loadData
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Without the fix, isInitialized would be in useCallback deps and
+      // setIsInitialized(true) would re-create loadData, re-triggering the
+      // useEffect and calling loadData again, infinitely. We assert
+      // initializeForm is called exactly once.
+      expect(mockInitializeForm).toHaveBeenCalledTimes(1);
+      expect(mockSetIsInitialized).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Race Condition Fix in EDIT mode (Fix #3)', () => {
+    it('should use new imageUrl from params in EDIT mode + photo capture (override OLD DB value)', async () => {
+      const mockInitializeForm = jest.fn();
+      const mockSetImageUrl = jest.fn();
+      mockedUseManualEntry.mockReturnValue({
+        ...mockManualEntryContext,
+        initializeForm: mockInitializeForm,
+        setImageUrl: mockSetImageUrl,
+      });
+
+      const newImageUrl = 'file:///tmp/NEW.jpg';
+      mockedUseLocalSearchParams.mockReturnValue({
+        productId: 'test-123',
+        fromPhotoCapture: 'true',
+        imageUrl: newImageUrl,
+      });
+      mockedGetProductById.mockResolvedValue({ success: true, data: mockProduct });
+
+      const { result } = renderHook(() =>
+        useProductInitialization({ setIsLoading, categories, categoriesLoading })
+      );
+
+      await act(async () => {
+        await result.current.loadData();
+      });
+
+      // initializeForm should be called with the product from DB
+      expect(mockInitializeForm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          product: mockProduct,
+          isEditMode: true,
+          originalProductId: 'test-123',
+          hasManuallySelectedCategory: true,
+        })
+      );
+
+      // setImageUrl should be called with the NEW URL (override)
+      expect(mockSetImageUrl).toHaveBeenCalledWith(newImageUrl);
+
+      // The setImageUrl override call (the LAST invocation, coming from
+      // loadData) must happen AFTER initializeForm so it wins over the OLD
+      // imageUrl coming from the product in the DB. Note: setImageUrl is
+      // also called earlier by the dedicated photo-capture effect, so we
+      // specifically check the LAST invocation here.
+      const initializeFormOrder = mockInitializeForm.mock.invocationCallOrder[0];
+      const setImageUrlOrders = mockSetImageUrl.mock.invocationCallOrder;
+      const lastSetImageUrlOrder = setImageUrlOrders[setImageUrlOrders.length - 1];
+      expect(lastSetImageUrlOrder).toBeGreaterThan(initializeFormOrder);
+    });
+
+    it('should handle array imageUrl override in EDIT mode + photo capture', async () => {
+      const mockInitializeForm = jest.fn();
+      const mockSetImageUrl = jest.fn();
+      mockedUseManualEntry.mockReturnValue({
+        ...mockManualEntryContext,
+        initializeForm: mockInitializeForm,
+        setImageUrl: mockSetImageUrl,
+      });
+
+      mockedUseLocalSearchParams.mockReturnValue({
+        productId: 'test-123',
+        fromPhotoCapture: 'true',
+        imageUrl: ['file:///tmp/NEW-array.jpg'],
+      });
+      mockedGetProductById.mockResolvedValue({ success: true, data: mockProduct });
+
+      const { result } = renderHook(() =>
+        useProductInitialization({ setIsLoading, categories, categoriesLoading })
+      );
+
+      await act(async () => {
+        await result.current.loadData();
+      });
+
+      // Array imageUrl should be unwrapped to first element
+      expect(mockSetImageUrl).toHaveBeenCalledWith('file:///tmp/NEW-array.jpg');
+    });
+
+    it('should NOT override imageUrl in EDIT mode when fromPhotoCapture is not true', async () => {
+      const mockInitializeForm = jest.fn();
+      const mockSetImageUrl = jest.fn();
+      mockedUseManualEntry.mockReturnValue({
+        ...mockManualEntryContext,
+        initializeForm: mockInitializeForm,
+        setImageUrl: mockSetImageUrl,
+      });
+
+      // No fromPhotoCapture flag: plain EDIT mode (no new photo)
+      mockedUseLocalSearchParams.mockReturnValue({
+        productId: 'test-123',
+      });
+      mockedGetProductById.mockResolvedValue({ success: true, data: mockProduct });
+
+      const { result } = renderHook(() =>
+        useProductInitialization({ setIsLoading, categories, categoriesLoading })
+      );
+
+      await act(async () => {
+        await result.current.loadData();
+      });
+
+      // initializeForm should be called with the product from DB
+      expect(mockInitializeForm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          product: mockProduct,
+          isEditMode: true,
+        })
+      );
+
+      // setImageUrl should NOT be called from loadData (only from the
+      // dedicated photo-capture effect, which doesn't trigger here)
+      expect(mockSetImageUrl).not.toHaveBeenCalled();
+    });
+  });
 });

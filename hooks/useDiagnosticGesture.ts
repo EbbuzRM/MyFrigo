@@ -33,7 +33,7 @@ export interface UseDiagnosticGestureReturn {
 export function useDiagnosticGesture(
   options: UseDiagnosticGestureOptions
 ): UseDiagnosticGestureReturn {
-  const { onActivate, requiredTaps = 5, tapWindow = 3000 } = options;
+  const { onActivate, requiredTaps = 5, tapWindow = 10000 } = options;
 
   const [tapCount, setTapCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -19,9 +19,11 @@ import { Barcode, Keyboard } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AddMethodCard } from '@/components/AddMethodCard';
 import { useTheme } from '@/context/ThemeContext';
+import { LoggingService } from '@/services/LoggingService';
 
 // Componente per l'aggiunta di prodotti
 const AddProduct = () => {
+  LoggingService.info('DEBUG_CRASH', 'AddProduct component mounting');
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();

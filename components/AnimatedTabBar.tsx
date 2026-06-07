@@ -96,7 +96,7 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
             onLongPress={onLongPress}
             tabBarIcon={descriptor.options.tabBarIcon}
             tabBarAccessibilityLabel={descriptor.options.tabBarAccessibilityLabel}
-            tabBarTestID={`${route.name}-tab`}
+            tabBarTestID={`tab-${route.name}`}
           />
         );
       })}

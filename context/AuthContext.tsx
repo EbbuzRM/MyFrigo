@@ -20,6 +20,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo, useCall
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, getCachedSession } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
+import { OneSignalService } from '@/services/OneSignalService';
 import { useRouter } from 'expo-router';
 
 // Definizione del tipo per il profilo utente
@@ -135,6 +136,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(currentSession.user);
           await fetchUserProfile(currentSession.user);
           setSession(currentSession);
+          // Register the device for push notifications. Fire-and-forget: the
+          // OneSignal service logs its own errors and uses an async listener
+          // as a fallback when the OneSignal ID is not yet available.
+          OneSignalService.configureForUser({
+            userId: currentSession.user.id,
+            email: currentSession.user.email,
+            firstName: currentSession.user.user_metadata?.first_name as string | undefined,
+            lastName: currentSession.user.user_metadata?.last_name as string | undefined,
+          }).catch((err) => {
+            LoggingService.error('AuthProvider', 'OneSignalService.configureForUser failed (init)', err);
+          });
           LoggingService.info('AuthProvider', 'Session restored', { userId: currentSession.user.id });
         } else {
           LoggingService.info('AuthProvider', 'No active session found.');
@@ -155,23 +167,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(currentSession);
 
       if (event === 'SIGNED_IN') {
-        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
+        const isResetting = currentSession?.user?.user_metadata?.is_resetting_password;
         if (isResetting) {
-          LoggingService.info('AuthProvider', 'User signed in for reset. Skipping profile fetch.');
+          LoggingService.info('AuthProvider', 'User signed in for reset. Skipping profile fetch and OneSignal config.');
           router.replace('/password-reset-form');
         } else {
           await fetchUserProfile(currentSession?.user ?? null);
+          // Register the device for push notifications. The user is in a real
+          // login state here (not a transient password-recovery flow), so we
+          // associate the OneSignal device_id with this user. Fire-and-forget.
+          if (currentSession?.user) {
+            OneSignalService.configureForUser({
+              userId: currentSession.user.id,
+              email: currentSession.user.email,
+              firstName: currentSession.user.user_metadata?.first_name as string | undefined,
+              lastName: currentSession.user.user_metadata?.last_name as string | undefined,
+            }).catch((err) => {
+              LoggingService.error('AuthProvider', 'OneSignalService.configureForUser failed (sign-in)', err);
+            });
+          }
           router.replace('/(tabs)');
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
+        // Disconnect OneSignal from the previous user. Covers both manual
+        // signOut and session-expiry paths. Fire-and-forget.
+        OneSignalService.logout().catch((err) => {
+          LoggingService.error('AuthProvider', 'OneSignalService.logout failed', err);
+        });
         router.replace('/login');
       } else if (event === 'PASSWORD_RECOVERY') {
         LoggingService.info('AuthProvider', 'PASSWORD_RECOVERY event received, redirecting to password reset form');
         router.replace('/password-reset-form');
       } else if (event === 'USER_UPDATED') {
         setSession(currentSession);
-        const isResetting = currentSession?.user.user_metadata?.is_resetting_password;
+        const isResetting = currentSession?.user?.user_metadata?.is_resetting_password;
         LoggingService.info('AuthProvider', 'USER_UPDATED event received', { isResetting });
 
         if (isResetting) {

@@ -37,7 +37,8 @@ module.exports = {
       eas: {
         "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"
       },
-oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || (() => { throw new Error('EXPO_PUBLIC_ONESIGNAL_APP_ID is required'); })()
+      oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || (() => { throw new Error('EXPO_PUBLIC_ONESIGNAL_APP_ID is required'); })(),
+      e2eTestMode: process.env.EXPO_PUBLIC_E2E_TEST_MODE === 'true'
      },
     icon: "./assets/images/icon.png",
     splash: {

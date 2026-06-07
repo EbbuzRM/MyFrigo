@@ -68,12 +68,31 @@ export const useProductInitialization = ({
       if (productId) {
         const { data: productToEdit, success } = await ProductStorage.getProductById(productId);
         if (success && productToEdit) {
+          // Race condition fix (EDIT mode + photo capture):
+          // Capture the new imageUrl from params BEFORE initializeForm so we can
+          // apply it atomically afterwards, overriding the OLD imageUrl coming
+          // from the loaded product. Without this override, initializeForm
+          // would set imageUrl to the DB value and the newly captured photo
+          // would never be shown.
+          const overrideImageUrl =
+            currentParams.fromPhotoCapture === 'true' && currentParams.imageUrl
+              ? Array.isArray(currentParams.imageUrl)
+                ? currentParams.imageUrl[0]
+                : currentParams.imageUrl
+              : undefined;
+
           initializeForm({
             product: productToEdit,
             isEditMode: true,
             originalProductId: productToEdit.id,
             hasManuallySelectedCategory: true,
           });
+
+          // Apply the imageUrl override immediately after initializeForm to
+          // ensure the new photo is displayed instead of the stale DB value.
+          if (overrideImageUrl) {
+            setImageUrl(overrideImageUrl);
+          }
         } else {
           LoggingService.error('useProductInitialization', `Product with ID ${productId} not found`);
         }
@@ -95,7 +114,7 @@ export const useProductInitialization = ({
     } finally {
       setIsLoading(false);
     }
-  }, [productId, initializeForm, isInitialized, categoriesLoading, scannerDataKey, setIsLoading, setIsInitialized]);
+  }, [productId, initializeForm, categoriesLoading, scannerDataKey, setIsLoading, setIsInitialized, setImageUrl]);
 
   // Effect for loading data on mount
   useEffect(() => {

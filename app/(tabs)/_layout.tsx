@@ -24,7 +24,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
+          tabBarAccessibilityLabel: 'Tab Home',
 
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} />
@@ -35,7 +36,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="products"
         options={{
-          title: 'Prodotti',
+          title: 'Scanner',
+          tabBarAccessibilityLabel: 'Tab Scanner',
           tabBarIcon: ({ color, size }) => (
             <Package size={size} color={color} />
           ),
@@ -45,6 +47,7 @@ const TabLayout = () => {
         name="add"
         options={{
           title: 'Aggiungi',
+          tabBarAccessibilityLabel: 'Tab Aggiungi',
           tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} />
           ),
@@ -54,6 +57,7 @@ const TabLayout = () => {
         name="history"
         options={{
           title: 'Storico',
+          tabBarAccessibilityLabel: 'Tab Storico',
           tabBarIcon: ({ color, size }) => (
             <History size={size} color={color} />
           ),
@@ -63,6 +67,7 @@ const TabLayout = () => {
         name="settings"
         options={{
           title: 'Impostazioni',
+          tabBarAccessibilityLabel: 'Tab Impostazioni',
           tabBarIcon: ({ color, size }) => (
             <Settings size={size} color={color} />
           ),

@@ -148,7 +148,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <Text style={styles.secondaryButtonText}>Registrati</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity accessibilityLabel="Hai dimenticato la password?" accessibilityRole="link" onPress={onForgotPasswordPress}>
+      <TouchableOpacity testID="forgot-password-link" accessibilityLabel="Hai dimenticato la password?" accessibilityRole="link" onPress={onForgotPasswordPress}>
         <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
       </TouchableOpacity>
     </View>

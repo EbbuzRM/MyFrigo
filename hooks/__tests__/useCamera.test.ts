@@ -9,6 +9,7 @@ import { useCamera, CaptureMode } from '../useCamera';
 import { useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { saveImagePermanently } from '@/utils/imageStorage';
 import { Alert } from 'react-native';
 
 // Mock expo-camera
@@ -45,10 +46,43 @@ jest.mock('@/services/LoggingService', () => ({
   },
 }));
 
+// Mock imageStorage so the test does not need a real expo-file-system.
+// The camera ref is null in these tests, so saveImagePermanently is never
+// actually executed, but the import must resolve cleanly.
+jest.mock('@/utils/imageStorage', () => ({
+  saveImagePermanently: jest.fn((uri: string) => Promise.resolve(uri)),
+  deleteProductImage: jest.fn(() => Promise.resolve()),
+}));
+
 const mockedUseCameraPermissions = useCameraPermissions as jest.Mock;
 const mockedUseMediaLibraryPermissions = ImagePicker.useMediaLibraryPermissions as jest.Mock;
 const mockedLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.Mock;
 const mockedManipulateAsync = ImageManipulator.manipulateAsync as jest.Mock;
+const mockedSaveImagePermanently = saveImagePermanently as jest.Mock;
+
+/**
+ * Helper: installs a mock takePictureAsync on the hook's camera ref and
+ * restores the original ref to null in an afterEach hook. This lets the
+ * caller simulate a working camera without re-rendering the hook.
+ */
+const installMockCameraRef = (takePictureImpl: () => Promise<any>) => {
+  const mockTakePictureAsync = jest.fn(takePictureImpl);
+  let ref: any = null;
+  const originalAfterEach = () => {
+    if (ref) {
+      ref.current = null;
+      ref = null;
+    }
+  };
+  return {
+    mockTakePictureAsync,
+    attach: (cameraRef: any) => {
+      ref = cameraRef;
+      cameraRef.current = { takePictureAsync: mockTakePictureAsync };
+    },
+    cleanup: originalAfterEach,
+  };
+};
 
 describe('useCamera', () => {
   const mockCameraPermission = { granted: true, canAskAgain: true };
@@ -142,6 +176,155 @@ describe('useCamera', () => {
       });
 
       expect(result.current.isProcessingImage).toBe(false);
+    });
+  });
+
+  /**
+   * Fix #6: modalita productPhoto deve ridimensionare la foto a 1200px
+   * prima di salvarla permanentemente. Senza resize, foto a piena
+   * risoluzione (12-48 MP) causano decode lento e memory pressure.
+   */
+  describe('takePicture - productPhoto resize (Fix #6)', () => {
+    const originalPhoto = {
+      uri: 'file:///tmp/camera/original.jpg',
+      width: 4032,
+      height: 3024,
+    };
+    const resizedPhoto = {
+      uri: 'file:///tmp/camera/resized.jpg',
+      width: 1200,
+      height: 900,
+    };
+
+    afterEach(() => {
+      // Ripristina sempre lo stato del ref dopo ogni test di questa suite
+      // per non interferire con altri describe.
+      jest.restoreAllMocks();
+    });
+
+    it('should call ImageManipulator.manipulateAsync with width 1200 in productPhoto mode', async () => {
+      mockedManipulateAsync.mockResolvedValueOnce(resizedPhoto);
+      mockedSaveImagePermanently.mockResolvedValueOnce(
+        'file:///documents/products/product_123.jpg'
+      );
+
+      const { result } = renderHook(() => useCamera('productPhoto'));
+      const { mockTakePictureAsync, attach, cleanup } = installMockCameraRef(() =>
+        Promise.resolve(originalPhoto)
+      );
+      attach(result.current.cameraRef);
+
+      let photoUri: string | null = null;
+      await act(async () => {
+        photoUri = await result.current.takePicture();
+      });
+
+      cleanup();
+
+      expect(mockTakePictureAsync).toHaveBeenCalled();
+      expect(mockedManipulateAsync).toHaveBeenCalledTimes(1);
+      const [uriArg, opsArg, optsArg] = mockedManipulateAsync.mock.calls[0];
+      expect(uriArg).toBe(originalPhoto.uri);
+
+      // Verifica resize a 1200px
+      const resizeOp = opsArg.find((op: any) => op.resize);
+      expect(resizeOp).toEqual({ resize: { width: 1200 } });
+
+      // Verifica opzioni: JPEG, compress 0.85, no base64
+      expect(optsArg.format).toBe('jpeg');
+      expect(optsArg.compress).toBe(0.85);
+      expect(optsArg.base64).toBe(false);
+      expect(photoUri).toBe('file:///documents/products/product_123.jpg');
+    });
+
+    it('should pass the RESIZED uri to saveImagePermanently, not the original', async () => {
+      mockedManipulateAsync.mockResolvedValueOnce(resizedPhoto);
+      mockedSaveImagePermanently.mockResolvedValueOnce(
+        'file:///documents/products/persistent.jpg'
+      );
+
+      const { result } = renderHook(() => useCamera('productPhoto'));
+      const { attach, cleanup } = installMockCameraRef(() =>
+        Promise.resolve(originalPhoto)
+      );
+      attach(result.current.cameraRef);
+
+      await act(async () => {
+        await result.current.takePicture();
+      });
+
+      cleanup();
+
+      // saveImagePermanently deve ricevere resizedPhoto.uri, NON originalPhoto.uri
+      expect(mockedSaveImagePermanently).toHaveBeenCalledTimes(1);
+      expect(mockedSaveImagePermanently).toHaveBeenCalledWith(resizedPhoto.uri);
+      expect(mockedSaveImagePermanently).not.toHaveBeenCalledWith(originalPhoto.uri);
+    });
+
+    it('should fall back to original uri if manipulateAsync throws', async () => {
+      mockedManipulateAsync.mockRejectedValueOnce(new Error('Manipulation failed'));
+      mockedSaveImagePermanently.mockResolvedValueOnce(
+        'file:///documents/products/original-fallback.jpg'
+      );
+
+      const { result } = renderHook(() => useCamera('productPhoto'));
+      const { attach, cleanup } = installMockCameraRef(() =>
+        Promise.resolve(originalPhoto)
+      );
+      attach(result.current.cameraRef);
+
+      let photoUri: string | null = null;
+      await act(async () => {
+        photoUri = await result.current.takePicture();
+      });
+
+      cleanup();
+
+      // In caso di errore su manipulate, deve salvare l'URI originale
+      expect(mockedSaveImagePermanently).toHaveBeenCalledTimes(1);
+      expect(mockedSaveImagePermanently).toHaveBeenCalledWith(originalPhoto.uri);
+      expect(photoUri).toBe('file:///documents/products/original-fallback.jpg');
+    });
+
+    it('should not call productPhoto resize in expirationDateOnly mode (no-regression)', async () => {
+      // In expirationDateOnly, prepareImageForOCR gestisce tutto: usa
+      // manipulateAsync con crop+resize a 1200px ma NON chiama saveImagePermanently.
+      // Questo test verifica che il flusso expirationDateOnly resti invariato.
+      mockedManipulateAsync.mockResolvedValueOnce({
+        uri: 'file:///tmp/ocr-ready.jpg',
+        width: 1200,
+        height: 700,
+      });
+
+      const { result } = renderHook(() => useCamera('expirationDateOnly'));
+      const { attach, cleanup } = installMockCameraRef(() =>
+        Promise.resolve({
+          uri: 'file:///tmp/camera/original.jpg',
+          width: 4032,
+          height: 3024,
+        })
+      );
+      attach(result.current.cameraRef);
+
+      let photoUri: string | null = null;
+      await act(async () => {
+        photoUri = await result.current.takePicture();
+      });
+
+      cleanup();
+
+      // expirationDateOnly chiama manipulateAsync UNA volta (via prepareImageForOCR)
+      expect(mockedManipulateAsync).toHaveBeenCalledTimes(1);
+      const [, opsArg] = mockedManipulateAsync.mock.calls[0];
+      // prepareImageForOCR fa crop+resize (3 ops) — diverso dal productPhoto
+      // che fa solo resize (2 ops, no crop).
+      const hasCrop = opsArg.some((op: any) => op.crop);
+      expect(hasCrop).toBe(true);
+
+      // expirationDateOnly NON deve chiamare saveImagePermanently
+      // (l'immagine OCR-ready non è persistente in questo flusso)
+      expect(mockedSaveImagePermanently).not.toHaveBeenCalled();
+      expect(photoUri).toBe('file:///tmp/ocr-ready.jpg');
     });
   });
 

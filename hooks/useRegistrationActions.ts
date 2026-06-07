@@ -11,10 +11,22 @@
 import { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
+import Constants from 'expo-constants';
 import { AUTH_CONSTANTS } from '@/constants/auth';
 import { RegistrationData, RegistrationResult } from './useRegistration.types';
 
 const LOG_TAG = AUTH_CONSTANTS.LOG_TAGS.SIGNUP;
+
+// E2E test mode flag — checks build-time env var AND runtime Constants.extra
+// (so it works both when .env.e2e is used at build time and via app.config.js extra)
+const isE2ETest = (): boolean => {
+  if ((process as any).env?.EXPO_PUBLIC_E2E_TEST_MODE === 'true') return true;
+  try {
+    return Constants.expoConfig?.extra?.e2eTestMode === true;
+  } catch {
+    return false;
+  }
+};
 
 export function useEmailCheck() {
   return useCallback(async (email: string): Promise<boolean> => {
@@ -91,14 +103,16 @@ export function useAccountCreation(onProfileCreated: (userId: string, firstName:
       emailConfirmed: authData.user.email_confirmed_at,
     });
 
-    if (authData.user.email_confirmed_at) {
+    const isEmailConfirmed = !!authData.user.email_confirmed_at || isE2ETest();
+
+    if (isEmailConfirmed) {
       await onProfileCreated(authData.user.id, trimmedFirstName, trimmedLastName);
     }
 
     return {
       success: true,
       userId: authData.user.id,
-      emailConfirmed: !!authData.user.email_confirmed_at,
+      emailConfirmed: isEmailConfirmed,
     };
   }, [onProfileCreated]);
 }

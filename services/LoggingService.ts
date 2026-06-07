@@ -158,7 +158,7 @@ class Logger {
     this.config = {
       minLevel: __DEV__ ? LogLevel.DEBUG : LogLevel.INFO,
       enableConsole: true,
-      enableFileLogging: !__DEV__,
+      enableFileLogging: true,
       batchInterval: 1000,
       batchSize: 10
     };
