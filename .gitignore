@@ -214,3 +214,5 @@ graphify-out/manifest.json
 graphify-out/cache/stat-index.json
 graphify-out/graph.html
 /graphify-out
+.env
+.env

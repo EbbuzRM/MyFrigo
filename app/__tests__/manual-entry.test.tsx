@@ -309,7 +309,7 @@ describe('ManualEntryScreen', () => {
       mockUseProductForm.mockReturnValue({
         ...createDefaultUseProductForm(),
         isEditMode: true,
-        originalProductId: '123',
+        originalProductId: '123' as any,
         name: 'Prodotto Edit',
       });
 
@@ -335,7 +335,7 @@ describe('ManualEntryScreen', () => {
     it('should render with imageUrl', () => {
       mockUseProductForm.mockReturnValue({
         ...createDefaultUseProductForm(),
-        imageUrl: 'file://test-image.jpg',
+        imageUrl: 'file://test-image.jpg' as any,
       });
 
       const { getByTestId } = renderManualEntryScreen();

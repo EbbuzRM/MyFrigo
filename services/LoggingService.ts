@@ -178,6 +178,8 @@ class Logger {
         this.fileManager = new LogFileManager();
         await this.fileManager.initialize();
         this.batchTimer = setInterval(() => this.flushQueue(), this.config.batchInterval);
+        // Apply log retention on startup (keep last 7 days or 1000 lines)
+        await this.fileManager.applyRetention(7, 1000);
       }
       this.isInitialized = true;
       this.log(LogLevel.INFO, 'LoggingService', 'Logger initialized successfully');
@@ -268,6 +270,15 @@ public info(tag: string, message: string, data?: unknown): void {
     }
     // In dev mode or when file logging is disabled, return memory buffer
     return this.memoryLogBuffer.join('\n') || 'Nessun log disponibile';
+  }
+
+  public async getRecentLogs(maxLines: number = 500): Promise<string> {
+    if (this.fileManager) {
+      await this.flushQueue();
+      return this.fileManager.getRecentLogs(maxLines);
+    }
+    // In dev mode or when file logging is disabled, return memory buffer (last maxLines)
+    return this.memoryLogBuffer.slice(-maxLines).join('\n') || 'Nessun log disponibile';
   }
 
 public async clearLogs(): Promise<void> {

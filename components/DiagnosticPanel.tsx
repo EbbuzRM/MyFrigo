@@ -9,7 +9,7 @@
 // message: 
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useDiagnosticTests } from '@/hooks/useDiagnosticTests';
 import { AuthTestSection } from '@/components/diagnostic/AuthTestSection';
@@ -39,7 +39,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
   const loadLogs = async () => {
     try {
       setLoadingLogs(true);
-      const logData = await LoggingService.getLogs();
+      const logData = await LoggingService.getRecentLogs(500);
       setLogs(logData);
     } catch (error) {
       console.error('Errore nel caricamento dei log:', error);
@@ -59,6 +59,13 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
     } finally {
       setLoadingLogs(false);
     }
+  };
+
+  const truncateLogs = (logText: string): string => {
+    if (!logText) return '';
+    const MAX_CHARS = 10000;
+    if (logText.length <= MAX_CHARS) return logText;
+    return '... (troncato - mostra ultimi 10.000 caratteri)\n' + logText.slice(-MAX_CHARS);
   };
 
   const handleResetTestUsers = async () => {
@@ -155,7 +162,14 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
             </TouchableOpacity>
           </View>
           <View style={styles.logContainer}>
-            <Text style={styles.logText}>{logs || 'Nessun log disponibile'}</Text>
+            <TextInput
+              style={styles.logText}
+              value={truncateLogs(logs) || 'Nessun log disponibile'}
+              multiline
+              editable={false}
+              numberOfLines={0}
+              testID="diagnostic-logs-text"
+            />
           </View>
         </View>
 

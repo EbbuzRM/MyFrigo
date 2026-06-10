@@ -22,6 +22,9 @@ import {
 } from './update/UpdateService.metadata';
 import { UpdateDownloadService } from './update/UpdateService.download';
 import { UpdateNotificationService, UpdateEventEmitter } from './update/UpdateService.notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const UPDATE_APPLIED_KEY = '@myfrigo_update_applied';
 
 export type { ExpoUpdatesManifest, UpdateInfo, UpdateSettings, DownloadProgress };
 export { UpdateEventEmitter };

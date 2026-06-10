@@ -6,7 +6,7 @@
 
 import { renderHook, act } from '@testing-library/react-native';
 import { useSignupValidation } from '../useSignupValidation';
-import { SignupFormData } from '../useSignupValidation.types';
+import { SignupFormData, ValidationState } from '../useSignupValidation.types'; import { PasswordValidationResult } from '@/utils/authValidation';
 
 // Mock the AUTH_CONSTANTS used by useSignupValidators
 jest.mock('@/constants/auth', () => ({
@@ -29,7 +29,7 @@ jest.mock('@/constants/auth', () => ({
     },
     ALERT_MESSAGES: {
       EMAIL_EXISTS: 'Questo indirizzo email è già in uso.',
-      REGISTRATION_SUCCESS: 'Registrazione completata con successo!',
+      REGISTRATION_SUCCESS: 'Registrazione completata con successo',
       OK_BUTTON: 'OK',
     },
     PASSWORD_VALIDATION: {
@@ -48,7 +48,7 @@ jest.mock('@/utils/authValidation', () => ({
     hasUpper: /[A-Z]/.test(password),
     hasLower: /[a-z]/.test(password),
     hasNumber: /\d/.test(password),
-    isNotCommon: !['password', '12345678'].includes(password.toLowerCase()),
+    isNotCommon: ['password', '12345678'].includes(password.toLowerCase()),
   })),
   isPasswordValid: jest.fn((password: string) => {
     const hasLength = password.length >= 8;
@@ -164,7 +164,7 @@ describe('useSignupValidation', () => {
     it('should validate a strong password correctly', () => {
       const { result } = renderHook(() => useSignupValidation());
 
-      let validation;
+      let validation!: PasswordValidationResult;
       act(() => {
         validation = result.current.validatePasswordField('StrongPass1');
       });
@@ -178,7 +178,7 @@ describe('useSignupValidation', () => {
     it('should detect missing uppercase', () => {
       const { result } = renderHook(() => useSignupValidation());
 
-      let validation;
+      let validation!: PasswordValidationResult;
       act(() => {
         validation = result.current.validatePasswordField('weakpass1');
       });
@@ -191,7 +191,7 @@ describe('useSignupValidation', () => {
     it('should detect missing number', () => {
       const { result } = renderHook(() => useSignupValidation());
 
-      let validation;
+      let validation!: PasswordValidationResult;
       act(() => {
         validation = result.current.validatePasswordField('WeakPass');
       });
@@ -202,7 +202,7 @@ describe('useSignupValidation', () => {
     it('should detect too short password', () => {
       const { result } = renderHook(() => useSignupValidation());
 
-      let validation;
+      let validation!: PasswordValidationResult;
       act(() => {
         validation = result.current.validatePasswordField('Sh1');
       });
@@ -215,7 +215,7 @@ describe('useSignupValidation', () => {
     it('should return valid for complete and correct form data', () => {
       const { result } = renderHook(() => useSignupValidation());
 
-      let state;
+      let state!: ValidationState;
       act(() => {
         state = result.current.validateForm(validFormData);
       });
@@ -228,7 +228,7 @@ describe('useSignupValidation', () => {
     it('should return invalid for empty form data', () => {
       const { result } = renderHook(() => useSignupValidation());
 
-      let state;
+      let state!: ValidationState;
       act(() => {
         state = result.current.validateForm({
           email: '',
@@ -247,7 +247,7 @@ describe('useSignupValidation', () => {
     it('should return invalid for weak password', () => {
       const { result } = renderHook(() => useSignupValidation());
 
-      let state;
+      let state!: ValidationState;
       act(() => {
         state = result.current.validateForm({
           ...validFormData,

@@ -103,6 +103,8 @@ describe('ProductCard', () => {
     expirationDate: '2026-12-31',
     purchaseDate: '2026-05-01',
     quantity: 2,
+    quantities: [{ quantity: 1, unit: 'pz' }],
+    addedMethod: 'manual' as const,
     status: 'active' as const,
     notes: '',
     userId: 'user-1',

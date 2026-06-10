@@ -312,7 +312,7 @@ describe('SignupScreen', () => {
         register: mockRegister,
         handlePostRegistration: mockHandlePostRegistration,
         isLoading: false,
-        error: 'Email già registrata',
+        error: 'Email già registrata' as any,
         registrationComplete: false,
         resetError: jest.fn(),
       });

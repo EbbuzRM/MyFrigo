@@ -116,7 +116,7 @@ jest.mock('@/hooks/usePhotoActions', () => ({
 
 // Import DOPO i mock
 import React from 'react';
-import { render, act, waitFor, screen, queryByTestId, fireEvent } from '@testing-library/react-native';
+import { render, act, waitFor, screen, fireEvent } from '@testing-library/react-native';
 import PhotoCaptureScreen from '../photo-capture';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';

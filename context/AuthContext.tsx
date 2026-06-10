@@ -136,17 +136,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(currentSession.user);
           await fetchUserProfile(currentSession.user);
           setSession(currentSession);
-          // Register the device for push notifications. Fire-and-forget: the
-          // OneSignal service logs its own errors and uses an async listener
-          // as a fallback when the OneSignal ID is not yet available.
-          OneSignalService.configureForUser({
-            userId: currentSession.user.id,
-            email: currentSession.user.email,
-            firstName: currentSession.user.user_metadata?.first_name as string | undefined,
-            lastName: currentSession.user.user_metadata?.last_name as string | undefined,
-          }).catch((err) => {
-            LoggingService.error('AuthProvider', 'OneSignalService.configureForUser failed (init)', err);
-          });
+            // Register the device for push notifications. Fire-and-forget: the
+            // OneSignal service logs its own errors and uses an async listener
+            // as a fallback when the OneSignal ID is not yet available.
+            OneSignalService.configureForUser({
+              userId: currentSession.user.id,
+              email: currentSession.user.email,
+              firstName: currentSession.user.user_metadata?.first_name as string | undefined,
+              lastName: currentSession.user.user_metadata?.last_name as string | undefined,
+            }).catch((err) => {
+              LoggingService.error('AuthProvider', 'OneSignalService.configureForUser failed (init)', err);
+            });
+
           LoggingService.info('AuthProvider', 'Session restored', { userId: currentSession.user.id });
         } else {
           LoggingService.info('AuthProvider', 'No active session found.');
@@ -173,19 +174,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           router.replace('/password-reset-form');
         } else {
           await fetchUserProfile(currentSession?.user ?? null);
-          // Register the device for push notifications. The user is in a real
-          // login state here (not a transient password-recovery flow), so we
-          // associate the OneSignal device_id with this user. Fire-and-forget.
-          if (currentSession?.user) {
-            OneSignalService.configureForUser({
-              userId: currentSession.user.id,
-              email: currentSession.user.email,
-              firstName: currentSession.user.user_metadata?.first_name as string | undefined,
-              lastName: currentSession.user.user_metadata?.last_name as string | undefined,
-            }).catch((err) => {
-              LoggingService.error('AuthProvider', 'OneSignalService.configureForUser failed (sign-in)', err);
-            });
-          }
+           // Register the device for push notifications. The user is in a real
+           // login state here (not a transient password-recovery flow), so we
+           // associate the OneSignal device_id with this user. Fire-and-forget.
+           if (currentSession?.user) {
+              OneSignalService.configureForUser({
+                userId: currentSession.user.id,
+                email: currentSession.user.email,
+                firstName: currentSession.user.user_metadata?.first_name as string | undefined,
+                lastName: currentSession.user.user_metadata?.last_name as string | undefined,
+              }).catch((err) => {
+                LoggingService.error('AuthProvider', 'OneSignalService.configureForUser failed (sign-in)', err);
+              });
+           }
+
           router.replace('/(tabs)');
         }
       } else if (event === 'SIGNED_OUT') {

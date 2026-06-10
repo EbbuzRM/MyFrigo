@@ -29,6 +29,7 @@ import { LoggingService } from './LoggingService';
 import { EventEmitter, eventEmitter } from './EventEmitter';
 import { NotificationPermissionService } from './NotificationPermissionService';
 import { NotificationCoreService } from './NotificationCoreService';
+import { OneSignalService } from './OneSignalService';
 
 /**
  * Configura il gestore notifiche per Expo Notifications.
@@ -50,7 +51,7 @@ export class NotificationService {
    * Inizializza il sistema di notifiche.
    * Configura OneSignal per le notifiche push e crea il canale Android.
    */
-  static initialize(): void {
+  static async initialize(): Promise<void> {
     if (this.isInitialized || Platform.OS === 'web') {
       return;
     }
@@ -77,10 +78,12 @@ export class NotificationService {
         LoggingService.info('NotificationService', 'Default notification channel created.');
       }
 
-      OneSignal.initialize(oneSignalAppId);
-      OneSignal.Notifications.requestPermission(true);
+      // Delega l'inizializzazione al OneSignalService robusto
+      await OneSignalService.initialize();
+      await OneSignalService.requestPermission();
+      
       this.isInitialized = true;
-      LoggingService.info('NotificationService', 'OneSignal SDK initialized successfully.');
+      LoggingService.info('NotificationService', 'OneSignal SDK initialized successfully via OneSignalService.');
     } catch (error: unknown) {
       LoggingService.error('NotificationService', 'Error initializing OneSignal:', error);
     }

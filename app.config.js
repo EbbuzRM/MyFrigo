@@ -1,4 +1,5 @@
 // app.config.js — app.config module.
+// OTA Test Update - 2026-06-07 - Triggering automatic notification test
 //
 // exports: none
 // used_by: none
@@ -18,7 +19,7 @@ module.exports = {
   expo: {
     name: "MyFrigo",
     slug: "myfrigoapp",
-    version: "1.0.3",
+    version: "1.0.3.1",
     runtimeVersion: "1.0.3",
     orientation: "portrait",
     scheme: "myfrigo",

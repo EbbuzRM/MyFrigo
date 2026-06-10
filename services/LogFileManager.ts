@@ -111,6 +111,48 @@ export class LogFileManager {
     }
   }
 
+  async getRecentLogs(maxLines: number = 500): Promise<string> {
+    if (Platform.OS === 'web') return 'File logging is not supported on web platform';
+    try {
+      if (!this.logFile || !this.logFile.exists) return 'No log file exists';
+      const fullContent = await this.logFile.text();
+      const lines = fullContent.split('\n').filter(line => line.trim() !== '');
+      const recentLines = lines.slice(-maxLines);
+      return recentLines.join('\n');
+    } catch (error) {
+      console.error('Failed to read recent logs:', error);
+      return `Error reading logs: ${error}`;
+    }
+  }
+
+  async applyRetention(maxDays: number = 7, maxLines: number = 1000): Promise<void> {
+    if (Platform.OS === 'web' || !this.logFile || !this.logFile.exists) return;
+    try {
+      const fullContent = await this.logFile.text();
+      const lines = fullContent.split('\n').filter(line => line.trim() !== '');
+      
+      // Filter by date (keep last maxDays)
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - maxDays);
+      
+      const recentLines = lines.filter(line => {
+        const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/);
+        if (timestampMatch) {
+          const logDate = new Date(timestampMatch[1]);
+          return logDate >= cutoffDate;
+        }
+        return true; // Keep lines without timestamps (e.g., stack traces)
+      });
+      
+      // Also limit by max lines
+      const finalLines = recentLines.slice(-maxLines);
+      
+      await this.logFile.write(finalLines.join('\n') + '\n', { encoding: 'utf8' as const });
+    } catch (error) {
+      console.error('Failed to apply log retention:', error);
+    }
+  }
+
   async clear(): Promise<void> {
     if (Platform.OS === 'web' || !this.logFile) return;
     try {
