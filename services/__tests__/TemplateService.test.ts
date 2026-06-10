@@ -126,6 +126,8 @@ describe('TemplateService', () => {
       createdAt: '2026-05-01',
       updatedAt: '2026-05-01',
       isFrozen: false,
+      quantities: [{ quantity: 1, unit: 'pz' }],
+      addedMethod: 'barcode' as const,
     };
 
     it('should save product template with upsert', async () => {
@@ -202,3 +204,4 @@ describe('TemplateService', () => {
     });
   });
 });
+

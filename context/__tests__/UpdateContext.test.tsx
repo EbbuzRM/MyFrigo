@@ -141,7 +141,7 @@ describe('UpdateContext', () => {
     mockedUpdateService.isReady.mockReturnValue(true);
     mockedUpdateService.isCheckingForUpdates.mockReturnValue(false);
     mockedUpdateService.isDownloadingUpdate.mockReturnValue(false);
-    mockedUpdateService.getCurrentBuildInfo.mockReturnValue({ version: '1.0.0', buildNumber: '1' });
+    mockedUpdateService.getCurrentBuildInfo.mockReturnValue({ runtimeVersion: '1.0.0', updateId: null, isEmbeddedLaunch: false });
     mockedUpdateService.resetState.mockImplementation(() => {});
 
     // Mock di AsyncStorage
@@ -241,8 +241,8 @@ describe('UpdateContext', () => {
   });
 
   it('should show toast in development mode when checking for updates', async () => {
-    const originalDev = global.__DEV__;
-    global.__DEV__ = true;
+    const originalDev = (global as any).__DEV__;
+    (global as any).__DEV__ = true;
 
     const { getByTestId } = render(
       <UpdateProvider>
@@ -254,7 +254,7 @@ describe('UpdateContext', () => {
       expect(getByTestId('test-component')).toBeTruthy();
     });
 
-    global.__DEV__ = originalDev;
+    (global as any).__DEV__ = originalDev;
   });
 
   it('should update settings correctly', async () => {

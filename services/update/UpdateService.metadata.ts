@@ -80,9 +80,13 @@ export class UpdateMetadataService {
     }
 
     try {
+      LoggingService.info('UpdateService', `[DEBUG] Runtime Version: ${Updates.runtimeVersion}`);
+      LoggingService.info('UpdateService', `[DEBUG] Update ID: ${Updates.updateId}`);
       LoggingService.info('UpdateService', 'Inizio check aggiornamenti...');
       const updateResult = await Updates.checkForUpdateAsync() as ExpoUpdateCheckResult;
+      LoggingService.info('UpdateService', `[DEBUG] checkForUpdateAsync result: ${JSON.stringify(updateResult)}`);
       const manifest = updateResult.manifest;
+
 
       return {
         isAvailable: updateResult.isAvailable,

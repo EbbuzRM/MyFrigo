@@ -45,7 +45,7 @@ jest.mock('@/services/LoggingService', () => ({
 const mockedUseLocalSearchParams = useLocalSearchParams as jest.Mock;
 const mockedUseManualEntry = useManualEntry as jest.Mock;
 const mockedGetProductById = ProductStorage.getProductById as jest.Mock;
-const mockedLoggingService = LoggingService as jest.MockedType<typeof LoggingService>;
+const mockedLoggingService = LoggingService as jest.Mocked<typeof LoggingService>;
 
 // Mock dei dati di default per ManualEntryContext
 const mockManualEntryContext = {
@@ -93,6 +93,7 @@ const mockProduct: Product = {
   expirationDate: '2024-12-31',
   status: 'active',
   isFrozen: false,
+  addedMethod: 'manual',
 };
 
 describe('useProductInitialization', () => {

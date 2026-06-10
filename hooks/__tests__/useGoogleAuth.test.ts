@@ -162,8 +162,8 @@ describe('useGoogleAuth', () => {
         authResult = await result.current.performGoogleSignIn();
       });
 
-      expect(authResult.success).toBe(false);
-      expect(authResult.error).toBe('Piattaforma non supportata');
+      expect(authResult!.success).toBe(false);
+      expect(authResult!.error).toBe('Piattaforma non supportata');
     });
 
     it('should handle configuration error when native module is not linked', async () => {
@@ -177,7 +177,7 @@ describe('useGoogleAuth', () => {
       });
 
       // On iOS, we always get piattaforma non supportata
-      expect(authResult.success).toBe(false);
+      expect(authResult!.success).toBe(false);
     });
   });
 
@@ -224,7 +224,7 @@ describe('useGoogleAuth', () => {
       expect(result.current.retryAttemptNumber).toBe(0);
       expect(result.current.googleRetryInProgress).toBe(false);
 
-      rerender();
+      rerender(undefined);
 
       expect(result.current.retryAttemptNumber).toBe(0);
       expect(result.current.googleRetryInProgress).toBe(false);

@@ -232,6 +232,7 @@ const defaultActionsHook = {
   handleDirectConsume: jest.fn(),
   handleDelete: jest.fn(),
   handleConsumeConfirm: jest.fn(),
+  handleShowConsumeModal: jest.fn(),
 };
 
 const defaultRefreshHook = {

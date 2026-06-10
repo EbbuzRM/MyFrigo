@@ -84,7 +84,7 @@ describe('useEmailAuth', () => {
       });
 
       expect(mockedSignInWithEmail).toHaveBeenCalledWith(testEmail, testPassword);
-      expect(loginResult.success).toBe(true);
+      expect(loginResult!.success).toBe(true);
       expect(result.current.error).toBeNull();
       expect(result.current.loading).toBe(false);
     });
@@ -106,7 +106,7 @@ describe('useEmailAuth', () => {
         loginResult = await result.current.handleLogin(testPassword);
       });
 
-      expect(loginResult.success).toBe(false);
+      expect(loginResult!.success).toBe(false);
       expect(result.current.error).toBe('Credenziali non valide');
     });
 
@@ -124,8 +124,8 @@ describe('useEmailAuth', () => {
         loginResult = await result.current.handleLogin(testPassword);
       });
 
-      expect(loginResult.success).toBe(false);
-      expect(loginResult.error).toBe('Network error');
+      expect(loginResult!.success).toBe(false);
+      expect(loginResult!.error).toBe('Network error');
       expect(result.current.error).toBe('Network error');
     });
 
@@ -143,8 +143,8 @@ describe('useEmailAuth', () => {
         loginResult = await result.current.handleLogin(testPassword);
       });
 
-      expect(loginResult.success).toBe(false);
-      expect(loginResult.error).toBe('Errore sconosciuto');
+      expect(loginResult!.success).toBe(false);
+      expect(loginResult!.error).toBe('Errore sconosciuto');
     });
 
     it('should set loading state during login', async () => {

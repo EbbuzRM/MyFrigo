@@ -184,19 +184,7 @@ export class AuthService {
 
         const errMsg = (error.message?.toLowerCase() || '').trim();
 
-        // Caso 1: Email non confermata → messaggio specifico (informativo, non rivela esistenza account)
-        if (errMsg.includes('email') && errMsg.includes('confirm')) {
-          LoggingService.warning('AuthService', 'Login failed - email not confirmed', {
-            duration,
-          });
-
-          return {
-            success: false,
-            error: 'Se le credenziali sono corrette, riceverai un\'email di conferma.'
-          };
-        }
-
-        // Caso 2: Credenziali non valide → messaggio generico (previene enumerazione email)
+        // Caso 1: Credenziali non valide → messaggio generico (previene enumerazione email)
         // Supabase restituisce "Invalid login credentials" per password errata o email inesistente
         if (errMsg.includes('invalid') && (errMsg.includes('credentials') || errMsg.includes('login'))) {
           LoggingService.warning('AuthService', 'Login failed - invalid credentials', {
@@ -206,6 +194,18 @@ export class AuthService {
           return {
             success: false,
             error: 'Email o password non validi.'
+          };
+        }
+
+        // Caso 2: Email non confermata → messaggio specifico (informativo, non rivela esistenza account)
+        if (errMsg.includes('email') && errMsg.includes('confirm')) {
+          LoggingService.warning('AuthService', 'Login failed - email not confirmed', {
+            duration,
+          });
+
+          return {
+            success: false,
+            error: 'Se le credenziali sono corrette, riceverai un\'email di conferma.'
           };
         }
 

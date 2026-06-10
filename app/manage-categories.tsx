@@ -114,6 +114,7 @@ export default function ManageCategoriesScreen() {
   const [isEditModalVisible, setEditModalVisible] = useState(false);
   const [editCategoryNameInput, setEditCategoryNameInput] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [createCategoryName, setCreateCategoryName] = useState('');
   const editInputRef = useRef<TextInput>(null);
 
   const customCategories = categories.filter(sc => !PRODUCT_CATEGORIES.some(dc => dc.id === sc.id));

@@ -16,8 +16,8 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
-        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "your-onesignal-app-id",
-        "EXPO_PUBLIC_OCR_SPACE_API_KEY": "your-ocr-space-api-key"
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "0be59062-4413-49d5-b301-7038c3a0de1e",
+        "EXPO_PUBLIC_OCR_SPACE_API_KEY": "REDACTED_OCR_KEY"
       }
     },
     "release-apk": {
@@ -29,7 +29,7 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
-        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "your-onesignal-app-id"
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "0be59062-4413-49d5-b301-7038c3a0de1e"
       }
     },
     "production": {
@@ -38,7 +38,7 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
-        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "your-onesignal-app-id"
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "0be59062-4413-49d5-b301-7038c3a0de1e"
       }
     },
     "updates": {
