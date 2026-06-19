@@ -125,13 +125,13 @@ describe('extractImageUrl', () => {
         expect(extractImageUrl({ barcode: '1234567890123' })).toBe('');
     });
 
-    it('dovrebbe rispettare la priorità: image_url > image_front_url > image_front_small_url', () => {
+    it('dovrebbe rispettare la priorità: image_front_small_url > image_front_url > image_url', () => {
         expect(extractImageUrl({
             barcode: '1234567890123',
             image_url: 'https://img.off/1.jpg',
             image_front_url: 'https://img.off/front.jpg',
             image_front_small_url: 'https://img.off/small.jpg',
-        })).toBe('https://img.off/1.jpg');
+        })).toBe('https://img.off/small.jpg');
     });
 
     it('dovrebbe fare fallback a image_front_url quando image_url è vuoto', () => {
@@ -153,12 +153,12 @@ describe('extractImageUrl', () => {
         expect(extractImageUrl({ barcode: '1234567890127' })).toBe('');
     });
 
-    it('dovrebbe rispettare la priorità: image_url > image_front_url > image_front_small_url', () => {
+    it('dovrebbe rispettare la priorità: image_front_small_url > image_front_url > image_url', () => {
         expect(extractImageUrl({
             barcode: '1234567890128',
             image_url: 'https://img.off/1.jpg',
             image_front_url: 'https://img.off/front.jpg',
             image_front_small_url: 'https://img.off/small.jpg',
-        })).toBe('https://img.off/1.jpg');
+        })).toBe('https://img.off/small.jpg');
     });
 });

@@ -8,10 +8,11 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Text, TouchableOpacity, Image, View, AccessibilityProps } from 'react-native';
 import { usePhotoNavigation, PhotoNavigationParams } from '@/hooks/usePhotoNavigation';
 import { getPhotoCaptureStyles, getButtonStyles } from './ProductFormHeader.styles';
+import { LoggingService } from '@/services/LoggingService';
 
 // ============================================================================
 // EXPIRATION DATE BUTTON (for Footer)
@@ -101,6 +102,7 @@ export const ProductPhotoButton = React.memo(({
   testID = 'photo-capture-button',
 }: ProductPhotoButtonProps) => {
   const styles = getPhotoCaptureStyles(isDarkMode);
+  const [imageLoading, setImageLoading] = useState(false);
 
   const handlePress = useCallback(() => {
     onPhotoPress();
@@ -141,6 +143,12 @@ export const ProductPhotoButton = React.memo(({
           style={styles.productImage}
           resizeMode="contain"
           accessibilityIgnoresInvertColors={true}
+          onLoadStart={() => setImageLoading(true)}
+          onLoadEnd={() => setImageLoading(false)}
+          onError={() => {
+            setImageLoading(false);
+            LoggingService.warning('PhotoCaptureButton', 'Failed to load product image', { imageUrl });
+          }}
         />
       </TouchableOpacity>
     </View>

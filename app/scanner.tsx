@@ -8,7 +8,7 @@
 // message: 
 
 import React, { useState, useCallback } from 'react';
-import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, Platform, ActivityIndicator, Image } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { router } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
@@ -63,6 +63,9 @@ export default function BarcodeScannerScreen() {
           onPress: () => {
             LoggingService.info('Scanner', `Navigating to manual-entry with params: ${JSON.stringify(result.params)}`);
             router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
+            if (result.params?.imageUrl) {
+              Image.prefetch(result.params.imageUrl);
+            }
           }
         },
         {
@@ -84,6 +87,9 @@ export default function BarcodeScannerScreen() {
           onPress: () => {
             LoggingService.info('Scanner', `Navigating to manual-entry with online params: ${JSON.stringify(result.params)}`);
             router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
+            if (result.params?.imageUrl) {
+              Image.prefetch(result.params.imageUrl);
+            }
           }
         },
         {

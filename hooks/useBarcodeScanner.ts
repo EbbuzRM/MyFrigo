@@ -73,7 +73,7 @@ export const extractBrand = (product: OpenFoodFactsProduct): string => {
 };
 
 export const extractImageUrl = (product: OpenFoodFactsProduct): string => {
-  return product.image_url || product.image_front_url || product.image_front_small_url || '';
+  return product.image_front_small_url || product.image_front_url || product.image_url || '';
 };
 
 const isBarcodeInFrame = (

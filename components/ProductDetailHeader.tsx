@@ -7,11 +7,12 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { Product } from '@/types/Product';
+import { LoggingService } from '@/services/LoggingService';
 
 interface ProductDetailHeaderProps {
   product: Product;
@@ -21,6 +22,7 @@ export const ProductDetailHeader: React.FC<ProductDetailHeaderProps> = memo(({ p
   const { isDarkMode } = useTheme();
   const { getCategoryById } = useCategories();
   const styles = getStyles(isDarkMode);
+  const [imageLoading, setImageLoading] = useState(false);
 
   const categoryInfo = product.category ? getCategoryById(product.category) : null;
   const displayName = typeof product.name === 'string' ? product.name : 'Nome non disponibile';
@@ -81,6 +83,12 @@ export const ProductDetailHeader: React.FC<ProductDetailHeaderProps> = memo(({ p
           style={styles.productImage}
           accessibilityLabel={`Immagine di ${product.name}`}
           accessibilityRole="image"
+          onLoadStart={() => setImageLoading(true)}
+          onLoadEnd={() => setImageLoading(false)}
+          onError={() => {
+            setImageLoading(false);
+            LoggingService.warning('ProductDetailHeader', 'Failed to load product image', { imageUrl: product.imageUrl });
+          }}
         />
       )}
     </View>
