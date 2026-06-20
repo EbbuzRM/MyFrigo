@@ -36,8 +36,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="products"
         options={{
-          title: 'Scanner',
-          tabBarAccessibilityLabel: 'Tab Scanner',
+          title: 'Prodotti',
+          tabBarAccessibilityLabel: 'Tab Prodotti',
           tabBarIcon: ({ color, size }) => (
             <Package size={size} color={color} />
           ),
