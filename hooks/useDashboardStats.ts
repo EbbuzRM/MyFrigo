@@ -43,7 +43,7 @@ export function useDashboardStats({ allProducts, notificationDays = 7 }: UseDash
                 // Calculate days until expiration using local dates
                 const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / msPerDay);
 
-                return daysUntilExpiration >= 0 && daysUntilExpiration <= notificationDays && !p.consumedDate && !p.isFrozen;
+                return daysUntilExpiration >= 0 && daysUntilExpiration <= notificationDays && p.status !== 'consumed' && !p.isFrozen;
             })
             .sort((a, b) => {
                 const dateA = new Date(a.expirationDate + 'T00:00:00');

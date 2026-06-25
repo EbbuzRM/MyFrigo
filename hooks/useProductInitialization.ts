@@ -97,13 +97,23 @@ export const useProductInitialization = ({
           LoggingService.error('useProductInitialization', `Product with ID ${productId} not found`);
         }
       } else {
-        const initialData = { ...currentParams };
+        const initialData: Record<string, unknown> = { ...currentParams };
         delete initialData.productId;
 
         // IMPORTANT: If fromPhotoCapture, don't pass expirationDate to initializeForm
         // We'll handle it separately in the dedicated effect to avoid race conditions
         if (currentParams.fromPhotoCapture === 'true') {
           delete initialData.expirationDate;
+        }
+
+        // Normalize expo-router params: useLocalSearchParams() can return string[]
+        // when params have potential URL encoding ambiguities. Must convert to string
+        // before passing to initializeForm to prevent silent Image component failures.
+        for (const key of Object.keys(initialData)) {
+          const value = initialData[key];
+          if (Array.isArray(value)) {
+            initialData[key] = value[0] ?? '';
+          }
         }
 
         initializeForm(initialData as Partial<ManualEntryFormData>);
@@ -114,7 +124,7 @@ export const useProductInitialization = ({
     } finally {
       setIsLoading(false);
     }
-  }, [productId, initializeForm, categoriesLoading, scannerDataKey, setIsLoading, setIsInitialized, setImageUrl]);
+  }, [productId, initializeForm, scannerDataKey, setIsLoading, setIsInitialized, setImageUrl]);
 
   // Effect for loading data on mount
   useEffect(() => {

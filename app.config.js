@@ -20,7 +20,7 @@ module.exports = {
     name: "MyFrigo",
     slug: "myfrigoapp",
     version: "1.0.3.1",
-    runtimeVersion: "1.0.3",
+    runtimeVersion: "1.0.3.1",
     orientation: "portrait",
     scheme: "myfrigo",
     updates: {

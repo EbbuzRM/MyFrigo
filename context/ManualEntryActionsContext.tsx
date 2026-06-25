@@ -66,7 +66,7 @@ function processScannedData(data: InitializeFormData): Partial<FormState> {
     brand: data.brand || '',
     barcode: data.barcode || '',
     selectedCategory: data.category || data.selectedCategory || '',
-    imageUrl: data.imageUrl || null,
+    imageUrl: (Array.isArray(data.imageUrl) ? data.imageUrl[0] : data.imageUrl) || null,
     expirationDate: data.expirationDate || '',
     purchaseDate: data.purchaseDate || '',
     notes: data.notes || '',
