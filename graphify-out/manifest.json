@@ -1,7 +1,7 @@
 {
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\app.config.js": {
-    "mtime": 1781891881.3295486,
-    "ast_hash": "4db3f168a1a422f63e4938eb06e2a211",
+    "mtime": 1782661143.8544004,
+    "ast_hash": "8d7e480c78bb4ae5056d10bdc447c3fa",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\babel.config.js": {
@@ -910,9 +910,9 @@
     "semantic_hash": "201950ed2f53db1e67a526beb5af014f"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\functions\\send-expiration-notifications\\index.ts": {
-    "mtime": 1779319573.7489676,
-    "ast_hash": "36f0368b03c95ec996008f052e5a171d",
-    "semantic_hash": "36f0368b03c95ec996008f052e5a171d"
+    "mtime": 1782657288.28204,
+    "ast_hash": "4e18421460f81cba953bc9d42207d5d4",
+    "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\functions\\src\\index.ts": {
     "mtime": 1778846537.4856832,
@@ -1285,8 +1285,8 @@
     "semantic_hash": "c7845872a2d481d0449c7161549c6387"
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\services\\NotificationService.ts": {
-    "mtime": 1781079978.934025,
-    "ast_hash": "60d0c45c593893bf9789b6ea7a89fed4",
+    "mtime": 1782661203.9415872,
+    "ast_hash": "044cdd4e4ba6b86c2b8823e791ccc495",
     "semantic_hash": ""
   },
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\services\\OneSignalService.ts": {
@@ -3472,6 +3472,16 @@
   "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\.maestro\\flows\\reset-test-users.yml": {
     "mtime": 1780236303.0530684,
     "ast_hash": "ca9f4f24726a0cd0f0270a8025009f30",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\opencode.json": {
+    "mtime": 1782656035.3722005,
+    "ast_hash": "1a19a80abe06aa544bf860fefe041091",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ebby\\Trae Projects\\myfrigo\\supabase\\functions\\send-expiration-notifications\\index.ts": {
+    "mtime": 1782657358.0609436,
+    "ast_hash": "4e18421460f81cba953bc9d42207d5d4",
     "semantic_hash": ""
   }
 }

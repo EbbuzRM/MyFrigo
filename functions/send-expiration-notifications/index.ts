@@ -3,8 +3,6 @@
 // exports: none
 // used_by: none
 // rules:   none
-// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -29,14 +27,17 @@ interface UserNotifications {
   preWarning: ExpiringProduct[];
 }
 
-interface UserDevice {
-  device_id: string;
-}
-
 interface OneSignalResponse {
   errors?: string[];
   id?: string;
   recipients?: number;
+}
+
+interface SendResult {
+  success: boolean;
+  recipients: number;
+  errors?: string[];
+  notificationId?: string;
 }
 
 interface SuccessResponse {
@@ -90,19 +91,30 @@ const supabase = createClient(SUPABASE_URL, secretKey);
 
 // ─── OneSignal ────────────────────────────────────────────────────────────────
 
+/**
+ * Invia notifica push tramite external_id alias.
+ *
+ * OneSignal docs (https://documentation.onesignal.com/reference/create-notification):
+ * - include_aliases è il metodo corretto per targetare utenti specifici
+ * - include_player_ids NON è più un metodo valido
+ * - target_channel è richiesto quando si usa include_aliases
+ */
 async function sendPushNotification(
-  playerIds: string[],
+  externalUserId: string,
   title: string,
   body: string,
   data: PushNotificationData = {}
-): Promise<void> {
-  if (!playerIds || playerIds.length === 0) return;
+): Promise<SendResult> {
+  if (!externalUserId) {
+    return { success: false, recipients: 0, errors: ['No external user ID provided'] };
+  }
 
   const message = {
-    app_id:             ONESIGNAL_APP_ID,
-    include_player_ids: playerIds,
-    headings:           { en: title },
-    contents:           { en: body },
+    app_id:          ONESIGNAL_APP_ID,
+    target_channel:  'push',
+    include_aliases: { external_id: [externalUserId] },
+    headings:        { en: title },
+    contents:        { en: body },
     data,
   };
 
@@ -118,17 +130,30 @@ async function sendPushNotification(
 
     const responseData: OneSignalResponse = await response.json();
 
-    if (responseData.errors) {
-      log('error', 'OneSignal API returned errors', { errors: responseData.errors });
-    } else {
-      log('info', `OneSignal notification sent`, {
-        recipients: responseData.recipients ?? playerIds.length,
-        notificationId: responseData.id,
-      });
+    if (!response.ok) {
+      log('error', 'OneSignal API HTTP error', { status: response.status, body: responseData });
+      return { success: false, recipients: 0, errors: [`HTTP ${response.status}`] };
     }
+
+    if (responseData.errors && responseData.errors.length > 0) {
+      log('error', 'OneSignal API returned errors', { errors: responseData.errors });
+      return { success: false, recipients: 0, errors: responseData.errors };
+    }
+
+    // When using include_aliases, OneSignal may not return recipients.
+    // A successful response with an id means the notification was created.
+    const recipients = responseData.recipients ?? (responseData.id ? 1 : 0);
+    log('info', 'OneSignal notification sent', { recipients, notificationId: responseData.id, externalUserId });
+
+    if (recipients === 0) {
+      log('warning', 'OneSignal accepted notification but delivered to 0 devices', { externalUserId });
+    }
+
+    return { success: true, recipients, notificationId: responseData.id };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', 'Error sending push notification', { error: errorMessage });
+    return { success: false, recipients: 0, errors: [errorMessage] };
   }
 }
 
@@ -206,65 +231,57 @@ serve(async (request: Request) => {
       }
     }
 
-    // 3. Per ogni utente: recupera device e invia notifiche
+    // 3. Per ogni utente: invia notifiche usando external_id alias
+    //    (non serve più query user_devices — l'external_id è già il userId Supabase)
+    let actualUsersNotified = 0;
+
     for (const [userId, { expired, preWarning }] of notificationsByUser) {
-      const { data: devices, error: devicesError } = await supabase
-        .from('user_devices')
-        .select('device_id')
-        .eq('user_id', userId);
-
-      if (devicesError) {
-        log('error', `Failed to fetch devices for user`, { userId, error: devicesError.message });
-        continue;
-      }
-
-      const playerIds = (devices as UserDevice[]).map(d => d.device_id);
-
-      if (playerIds.length === 0) {
-        log('warning', `No registered devices for user, skipping`, { userId });
-        continue;
-      }
+      let userNotified = false;
 
       // Notifica prodotti scaduti oggi
       if (expired.length > 0) {
         const productNames = expired.map(p => `"${p.product_name}"`).join(', ');
-        await sendPushNotification(
-          playerIds,
+        const result = await sendPushNotification(
+          userId,
           'Prodotti Scaduti!',
           expired.length === 1
             ? `Il prodotto ${productNames} è scaduto oggi.`
             : `${expired.length} prodotti scaduti oggi: ${productNames}`,
           { productIds: expired.map(p => p.product_id) }
         );
+        if (result.success && result.recipients > 0) userNotified = true;
       }
 
       // Notifica prodotti in scadenza imminente
       if (preWarning.length > 0) {
         const productNames = preWarning.map(p => `"${p.product_name}"`).join(', ');
         const days = preWarning[0].notification_days;
-        await sendPushNotification(
-          playerIds,
+        const result = await sendPushNotification(
+          userId,
           'Prodotti in Scadenza!',
           preWarning.length === 1
             ? `Il prodotto ${productNames} scadrà tra ${days} giorni.`
             : `${preWarning.length} prodotti scadranno tra ${days} giorni: ${productNames}`,
           { productIds: preWarning.map(p => p.product_id) }
         );
+        if (result.success && result.recipients > 0) userNotified = true;
       }
 
-      log('info', `Notifications sent for user`, {
+      log('info', `Notification result for user`, {
         userId,
         expiredCount:    expired.length,
         preWarningCount: preWarning.length,
-        devicesCount:    playerIds.length,
+        userNotified,
       });
+
+      if (userNotified) actualUsersNotified++;
     }
 
     return new Response(
       JSON.stringify({
         message:          'Notification checks completed.',
         productsProcessed: expiringProducts.length,
-        usersNotified:    notificationsByUser.size,
+        usersNotified:    actualUsersNotified,
       } as SuccessResponse),
       { headers: { 'Content-Type': 'application/json' }, status: 200 }
     );

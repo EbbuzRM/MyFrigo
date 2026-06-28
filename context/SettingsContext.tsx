@@ -20,10 +20,10 @@ import { SettingsService, AppSettings } from '@/services/SettingsService';
 import { useAuth } from './AuthContext';
 import { eventEmitter } from '@/services/NotificationService';
 import { NotificationService } from '@/services/NotificationService'; // Importa il servizio
-import * as Notifications from 'expo-notifications'; // Importa per il tipo
+import { OneSignal } from 'react-native-onesignal';
 import { LoggingService } from '@/services/LoggingService';
 
-type PermissionStatus = Notifications.PermissionStatus | 'granted';
+type PermissionStatus = boolean;
 
 interface SettingsContextType {
   settings: AppSettings | null;
@@ -39,24 +39,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { user } = useAuth();
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [permissionStatus, setPermissionStatus] = useState<Notifications.PermissionStatus | null>(null);
+  const [permissionStatus, setPermissionStatus] = useState<boolean | null>(null);
 
   const checkAndRequestPermissions = useCallback(async () => {
     LoggingService.info('SettingsContext', 'Checking notification permissions...');
-    const { status } = await Notifications.getPermissionsAsync();
-    setPermissionStatus(status as Notifications.PermissionStatus | null);
+    const hasPermission = await OneSignal.Notifications.getPermissionAsync();
+    setPermissionStatus(hasPermission);
 
-    if (status !== 'granted') {
+    if (!hasPermission) {
       const requested = await NotificationService.getOrRequestPermissionsAsync();
       if (requested) {
-        setPermissionStatus('granted' as Notifications.PermissionStatus);
+        setPermissionStatus(true);
       }
     }
   }, []);
 
   const refreshPermissions = useCallback(async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setPermissionStatus(status as Notifications.PermissionStatus | null);
+    const hasPermission = await OneSignal.Notifications.getPermissionAsync();
+    setPermissionStatus(hasPermission);
   }, []);
 
   useEffect(() => {

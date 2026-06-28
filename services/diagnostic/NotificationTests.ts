@@ -11,7 +11,7 @@
 import { LoggingService } from '@/services/LoggingService';
 import { NotificationService } from '@/services/NotificationService';
 import { Alert, Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import { OneSignal } from 'react-native-onesignal';
 
 export interface DiagnosticData {
   [key: string]: unknown;
@@ -47,11 +47,11 @@ export class NotificationTests {
             const hasPermissions = await NotificationService.getOrRequestPermissionsAsync();
 
             // Ottieni lo stato corrente dei permessi per il report dettagliato
-            const { status } = await Notifications.getPermissionsAsync();
+            const permissionStatus = await OneSignal.Notifications.getPermissionAsync();
 
             const testData = {
                 hasPermissions,
-                permissionStatus: status,
+                permissionStatus: permissionStatus ? 'granted' : 'denied',
                 platform: Platform.OS
             };
 
@@ -60,12 +60,12 @@ export class NotificationTests {
             if (hasPermissions) {
                 Alert.alert(
                     'Test Permessi Completato',
-                    `✅ Permessi Notifiche: ${status}\n\nIl sistema di notifiche è configurato correttamente!`
+                    `✅ Permessi Notifiche: ${permissionStatus ? 'granted' : 'denied'}\n\nIl sistema di notifiche è configurato correttamente!`
                 );
             } else {
                 Alert.alert(
                     'Test Permessi Fallito',
-                    `❌ Permessi Notifiche: ${status}\n\nI permessi per le notifiche non sono stati concessi. Attivali nelle impostazioni del dispositivo.`
+                    `❌ Permessi Notifiche: ${permissionStatus ? 'granted' : 'denied'}\n\nI permessi per le notifiche non sono stati concessi. Attivali nelle impostazioni del dispositivo.`
                 );
             }
 

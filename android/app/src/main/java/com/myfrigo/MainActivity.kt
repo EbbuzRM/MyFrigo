@@ -1,13 +1,4 @@
 package com.myfrigo
-
-// MainActivity.kt — MainActivity module.
-//
-// exports: MainActivity | MainActivity.onCreate | MainActivity.getMainComponentName | MainActivity.createReactActivityDelegate | MainActivity.invokeDefaultOnBackPressed
-// used_by: none
-// rules:   none
-// agent:   codedna-cli (no-llm) | codedna-cli | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
-
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
@@ -21,9 +12,6 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 import expo.modules.ReactActivityDelegateWrapper
 
 class MainActivity : ReactActivity() {
-  /**
-   * Rules:   Must call `super.onCreate(null)` instead of `super.onCreate(savedInstanceState)` to ensure proper splash screen behavior.
-   */
   override fun onCreate(savedInstanceState: Bundle?) {
     // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
@@ -60,7 +48,6 @@ class MainActivity : ReactActivity() {
     * Align the back button behavior with Android S
     * where moving root activities to background instead of finishing activities.
     * @see <a href="https://developer.android.com/reference/android/app/Activity#onBackPressed()">onBackPressed</a>
-   * Rules:   Behavior differs based on Android SDK version. On API <= 30, attempts to move task to back; on API > 30, uses default back button implementation.
     */
   override fun invokeDefaultOnBackPressed() {
       if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {

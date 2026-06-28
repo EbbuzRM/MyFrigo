@@ -58,7 +58,7 @@ function Dashboard() {
   useAppLifecycle(refreshPermissions);
 
   const handleBellPress = () => {
-    if (permissionStatus === 'denied') {
+    if (permissionStatus === false) {
       showNotificationPermissionsAlert();
     }
   };

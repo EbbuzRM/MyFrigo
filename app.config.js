@@ -119,11 +119,7 @@ module.exports = {
       favicon: "./assets/images/favicon.png",
       index: "./index.html"
     },
-    notification: {
-      "icon": "./assets/images/notification_icon.png",
-      "color": "#ffffff",
-      "iosDisplayInForeground": true
-    },
+
     assetBundlePatterns: [
       "**/*",
       "icon_products/*"
@@ -144,10 +140,10 @@ module.exports = {
       [
         "onesignal-expo-plugin",
         {
-          "mode": "development"
+          "mode": "production"
         }
       ],
-      "expo-notifications",
+
       "expo-updates",
       "expo-font",
       "expo-web-browser",
