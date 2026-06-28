@@ -1,0 +1,17 @@
+### Today's Fixes (Jun 28, 2026) — Notifiche Push Duplicate risolte
+
+**Problema**: L'utente riceveva 2 notifiche push identiche per ogni push inviata dal server.
+
+**Causa**: `expo-notifications` e `onesignal-expo-plugin` coesistevano nello stesso APK. Su Android, entrambi registrano un proprio receiver FCM nativo — quando FCM consegnava una push, entrambi la intercettavano e la mostravano → 2 notifiche.
+
+**Fix applicati**:
+
+| # | Fix | File | Dettaglio |
+|---|-----|------|-----------|
+| 1 | Sostituito `expo-notifications` con API OneSignal | `services/NotificationPermissionService.ts`, `services/NotificationCoreService.ts`, `context/SettingsContext.tsx`, `services/diagnostic/NotificationTests.ts` | `getPermissionAsync()` al posto di `getPermissionsAsync()` |
+| 2 | `npx expo prebuild --clean` | - | Ricostruzione nativi senza il secondo receiver FCM |
+| 3 | `onesignal-expo-plugin` mode → production | `app.config.js` | Da `development` a `production` |
+
+**Verifica**: Build EAS `6a892131` installata su Sony BVL-N49 → **1 sola notifica** ✅
+
+**Commit**: `118dd31` su master
