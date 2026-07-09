@@ -1,72 +1,8 @@
-// expo-winter.js — expo-winter module.
+// __mocks__/expo-winter.js
 //
-// exports: none
-// used_by: none
-// rules:   none
-// agent:   codedna-cli (no-llm) | codedna-cli | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
-
-// Mock for Expo Winter APIs (structuredClone, fetch, etc.)
-// This prevents "import outside test scope" errors in Jest
-
-// Mock installGlobal module
-const installGlobal = {
-  installGlobal: jest.fn((name, getValue) => {
-    // Don't actually install globals, just mock the function
-  }),
-};
-
-// Mock TextDecoder
-const TextDecoder = jest.fn();
-const TextDecoderStream = jest.fn();
-const TextEncoderStream = jest.fn();
-
-// Mock URL
-const URL = jest.fn();
-const URLSearchParams = jest.fn();
-
-// Mock ImportMetaRegistry
-const ImportMetaRegistry = jest.fn();
-
-// Mock FormData patch
-const installFormDataPatch = jest.fn();
-
-// Mock structuredClone
-const structuredClone = jest.fn((obj) => JSON.parse(JSON.stringify(obj)));
-
-// Default export for the main winter module
-module.exports = {
-  // For installGlobal.ts
-  installGlobal: installGlobal.installGlobal,
-  
-  // For TextDecoder.ts
-  TextDecoder,
-  
-  // For TextDecoderStream.ts  
-  TextDecoderStream,
-  TextEncoderStream,
-  
-  // For url.ts
-  URL,
-  URLSearchParams,
-  
-  // For ImportMetaRegistry.ts
-  ImportMetaRegistry,
-  
-  // For FormData.ts
-  installFormDataPatch,
-  
-  // Direct export for structuredClone
-  structuredClone,
-  
-  // Default export
-  default: {
-    structuredClone,
-    installGlobal: installGlobal.installGlobal,
-  },
-};
-
-// Also set up global mocks
-if (typeof global !== 'undefined') {
-  global.structuredClone = global.structuredClone || structuredClone;
-}
+// Stub per il modulo `expo/src/winter`, referenziato dalla `moduleNameMapper`
+// in jest.config.js (v. righe 36-37). Il modulo reale installa polyfill web
+// via JSI (non disponibili in jest); qui forniamo un no-op coerente con il
+// `jest.doMock('expo/src/winter/FormData', ...)` già eseguito dal preset jest-expo.
+// In questo modo `require('expo/src/winter')` si risolve senza errori di config.
+module.exports = {};

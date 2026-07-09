@@ -21,7 +21,7 @@ jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: {
     DATE: 'date',
   },
-}));
+}), { virtual: true });
 
 // ─── Mock dei servizi locali ────────────────────────────────────────────────
 jest.mock('../LoggingService', () => ({

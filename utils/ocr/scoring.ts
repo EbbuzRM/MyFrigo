@@ -28,6 +28,30 @@ import { LoggingService } from '@/services/LoggingService';
 const TAG = 'OCR_Scoring';
 
 /**
+ * Priority for representative-match selection.
+ * Standard/Textual > Sequence > Derived/MonthYear.
+ */
+const matchPriority = (match: DateMatch): number => {
+    if (match.isMonthYear) return 0;
+    if (match.isDerived) return 0;
+    if (match.isSequence) return 1;
+    return 2; // standard or textual
+};
+
+/**
+ * Among the matches that normalize to `dateStr`, pick the one with the highest priority
+ * (standard/textual > sequence > derived/monthYear) so the correct date anchors the
+ * standard match and claims the full score bonus.
+ */
+const findRepresentativeMatch = (matches: DateMatch[], dateStr: string): DateMatch | undefined => {
+    const candidates = matches.filter(m => normalizeDate(m) === dateStr);
+    if (candidates.length === 0) return undefined;
+    return candidates.reduce((best, current) =>
+        matchPriority(current) > matchPriority(best) ? current : best
+    );
+};
+
+/**
  * Normalizes a match string into a formatted date string.
  */
 const normalizeDate = (match: DateMatch): string | null => {
@@ -105,10 +129,7 @@ export const selectBestDate = (
         const dateStr = toLocalISOString(date);
         let score = 0;
 
-        const match = matches.find(m => {
-            const norm = normalizeDate(m);
-            return norm === dateStr;
-        });
+        const match = findRepresentativeMatch(matches, dateStr);
 
         // Spatial Boost
         if (matchingContexts.get(dateStr)) {
@@ -147,10 +168,7 @@ export const selectBestDate = (
     LoggingService.info(TAG, `Date chosen (score ${finalScore}): ${finalDate}`);
 
     // 6. Calculate Confidence
-    const winningMatch = matches.find(m => {
-        const norm = normalizeDate(m);
-        return norm === finalDate;
-    });
+    const winningMatch = findRepresentativeMatch(matches, finalDate);
 
     const dynamicConfidence = calculateConfidence({
         matchType: winningMatch?.isTextual ? 'textual'

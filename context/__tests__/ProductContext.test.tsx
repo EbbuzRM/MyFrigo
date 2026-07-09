@@ -37,7 +37,7 @@ jest.mock('@/services/ProductStorage', () => ({
 // Mock di expo-notifications
 jest.mock('expo-notifications', () => ({
   cancelAllScheduledNotificationsAsync: jest.fn(),
-}));
+}), { virtual: true });
 
 // Mock dell'event emitter
 const mockEventEmitter = {

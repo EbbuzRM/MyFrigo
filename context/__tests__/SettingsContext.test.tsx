@@ -20,7 +20,7 @@ jest.mock('expo-notifications', () => ({
   addEventListener: jest.fn(),
   setNotificationHandler: jest.fn(),
   cancelAllScheduledNotificationsAsync: jest.fn(),
-}));
+}), { virtual: true });
 
 jest.mock('@/services/SettingsService', () => ({
   SettingsService: {

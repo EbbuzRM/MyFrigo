@@ -274,16 +274,22 @@ jest.mock('expo-constants', () => ({
 }));
 
 // Mock expo-notifications
+// virtual: true -> il modulo non deve essere installato fisicamente (l'utente non vuole expo-notifications)
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
   getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'mock-token' })),
   addNotificationReceivedListener: jest.fn(),
   addNotificationResponseReceivedListener: jest.fn(),
+  removeNotificationSubscription: jest.fn(),
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
+  getNotificationChannelsAsync: jest.fn(() => Promise.resolve([])),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('mock-id')),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+  cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
+  presentNotificationAsync: jest.fn(() => Promise.resolve()),
   AndroidImportance: {
     MAX: 4,
     HIGH: 3,
@@ -291,7 +297,7 @@ jest.mock('expo-notifications', () => ({
     LOW: 1,
     MIN: 0,
   },
-}));
+}), { virtual: true });
 
 // Mock expo-task-manager
 jest.mock('expo-task-manager', () => ({
@@ -562,6 +568,22 @@ jest.mock('react-native-onesignal', () => ({
     setLocationShared: jest.fn(),
     promptLocation: jest.fn(),
     setRequiresUserPrivacyConsent: jest.fn(),
+    Notifications: {
+      getPermissionAsync: jest.fn(() => Promise.resolve(true)),
+      requestPermission: jest.fn(() => Promise.resolve(true)),
+      hasNotificationPermission: jest.fn(() => Promise.resolve(true)),
+      clearAll: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      removeAllListeners: jest.fn(),
+      getDevicePushToken: jest.fn(() => Promise.resolve({ token: 'mock-token' })),
+      addPermissionObserver: jest.fn(),
+      removePermissionObserver: jest.fn(),
+      addForegroundLifecycleListener: jest.fn(),
+      removeForegroundLifecycleListener: jest.fn(),
+      setNotificationWillShowInForegroundHandler: jest.fn(),
+      setNotificationOpenedHandler: jest.fn(),
+    },
     userPushSubscription: {
       addEmailSubscriptionObserver: jest.fn(),
       removeEmailSubscriptionObserver: jest.fn(),

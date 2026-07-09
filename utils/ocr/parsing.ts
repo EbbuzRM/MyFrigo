@@ -92,9 +92,35 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
         }
 
         // Month/Year Patterns
+        // FIX (Bug A): if a COMPLETE standard date (day+month+year, e.g. "15/08/26") already
+        // exists in the SAME text block, exclude the inner month-year match (e.g. "08/26"
+        // matched inside "15/08/26") so it cannot steal the month and resolve to the last
+        // day of the month via parseMonthYearDate.
+        // - The filter is PER-BLOCK (uses `text`, not the combined fullText) so a legitimate
+        //   standalone "08/26" in another block is preserved.
+        // - The regex is intentionally NOT anchored to the start of the string (preserves
+        //   "SCAD 08/26", "FINE: 08/26", "ENTRO 08 26").
+        const hasCompleteStandardDate = STANDARD_DATE_PATTERNS.some(pattern => {
+            const regex = new RegExp(pattern.source, pattern.flags);
+            return regex.test(text);
+        });
         const monthYearMatches = text.match(new RegExp(MONTH_YEAR_PATTERN.source, MONTH_YEAR_PATTERN.flags));
         if (monthYearMatches) {
-            matches.push(...monthYearMatches.map(m => ({
+            const filteredMonthYear = hasCompleteStandardDate
+                ? monthYearMatches.filter(m => {
+                      // Exclude a month-year match only if its normalized form is contained
+                      // within an already-extracted standard match value in this same block.
+                      // This prevents the inner "08/26" of "15/08/26" from being added, while
+                      // keeping a genuinely separate standalone "08/26" in another block.
+                      const myNormalized = m.replace(/[\s.\-\/\\]/g, '');
+                      const isInnerOfStandard = matches.some(existing =>
+                          !existing.isMonthYear &&
+                          existing.value.replace(/[\s.\-\/\\]/g, '').includes(myNormalized)
+                      );
+                      return !isInnerOfStandard;
+                  })
+                : monthYearMatches;
+            matches.push(...filteredMonthYear.map(m => ({
                 value: m, isSequence: false, isMonthYear: true, isTextual: false, isDerived: false, frame
             })));
         }

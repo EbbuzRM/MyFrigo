@@ -21,7 +21,7 @@ jest.mock('expo-notifications', () => ({
   requestPermissionsAsync: jest.fn(),
   scheduleNotificationAsync: jest.fn(),
   cancelScheduledNotificationAsync: jest.fn(),
-}));
+}), { virtual: true });
 
 jest.mock('../LoggingService', () => ({
   LoggingService: {
@@ -62,7 +62,7 @@ describe('checkExpoNotificationsAvailability', () => {
         requestPermissionsAsync: jest.fn(),
         // scheduleNotificationAsync intentionally omitted
         cancelScheduledNotificationAsync: jest.fn(),
-      }));
+      }), { virtual: true });
 
       const NPS = require('../NotificationPermissionService').NotificationPermissionService;
       const LoggingServiceMock = require('../LoggingService').LoggingService;
@@ -87,7 +87,7 @@ describe('checkExpoNotificationsAvailability', () => {
           throw new Error('native module not available');
         }),
         cancelScheduledNotificationAsync: jest.fn(),
-      }));
+      }), { virtual: true });
 
       const NPS = require('../NotificationPermissionService').NotificationPermissionService;
       const LoggingServiceMock = require('../LoggingService').LoggingService;
@@ -118,9 +118,9 @@ describe('checkExpoNotificationsAvailability', () => {
       jest.doMock('expo-notifications', () => ({
         getPermissionsAsync: jest.fn(),
         requestPermissionsAsync: jest.fn(),
-        scheduleNotificationAsync: jest.fn(),
-        // cancelScheduledNotificationAsync intentionally omitted
-      }));
+        // scheduleNotificationAsync intentionally omitted
+        cancelScheduledNotificationAsync: jest.fn(),
+      }), { virtual: true });
 
       const NPS = require('../NotificationPermissionService').NotificationPermissionService;
       const LoggingServiceMock = require('../LoggingService').LoggingService;
@@ -144,7 +144,7 @@ describe('checkExpoNotificationsAvailability', () => {
           throw new Error('unexpected error');
         }),
         cancelScheduledNotificationAsync: jest.fn(),
-      }));
+      }), { virtual: true });
 
       const NPS = require('../NotificationPermissionService').NotificationPermissionService;
       const LoggingServiceMock = require('../LoggingService').LoggingService;
@@ -191,8 +191,8 @@ describe('clearAvailabilityCache', () => {
         getPermissionsAsync: jest.fn(),
         requestPermissionsAsync: jest.fn(),
         scheduleNotificationAsync: jest.fn(),
-        cancelScheduledNotificationAsync: jest.fn(),
-      }));
+        // cancelScheduledNotificationAsync intentionally omitted
+      }), { virtual: true });
       NPS.clearAvailabilityCache();
 
       const result = NPS.checkExpoNotificationsAvailability();
@@ -317,7 +317,7 @@ describe('checkPermissionsAsync', () => {
         requestPermissionsAsync: jest.fn(),
         // scheduleNotificationAsync intentionally omitted
         cancelScheduledNotificationAsync: jest.fn(),
-      }));
+      }), { virtual: true });
 
       const NPS = require('../NotificationPermissionService').NotificationPermissionService;
 

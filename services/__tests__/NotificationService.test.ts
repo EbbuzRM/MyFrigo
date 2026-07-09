@@ -34,7 +34,7 @@ jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: {
     DATE: 'date',
   },
-}));
+}), { virtual: true });
 jest.mock('expo-constants', () => ({
   expoConfig: {
     extra: {
