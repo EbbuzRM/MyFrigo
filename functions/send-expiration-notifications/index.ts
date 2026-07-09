@@ -20,6 +20,7 @@ interface ExpiringProduct {
   product_name: string;
   notification_type: 'expired' | 'pre_warning';
   notification_days: number;
+  days_remaining: number;
 }
 
 interface UserNotifications {
@@ -239,29 +240,35 @@ serve(async (request: Request) => {
       let userNotified = false;
 
       // Notifica prodotti scaduti oggi
+      // Ogni prodotto usa il proprio testo (un prodotto per riga).
       if (expired.length > 0) {
-        const productNames = expired.map(p => `"${p.product_name}"`).join(', ');
+        const body = expired
+          .map((p: ExpiringProduct) => `"${p.product_name}" è scaduto oggi`)
+          .join('\n');
         const result = await sendPushNotification(
           userId,
           'Prodotti Scaduti!',
-          expired.length === 1
-            ? `Il prodotto ${productNames} è scaduto oggi.`
-            : `${expired.length} prodotti scaduti oggi: ${productNames}`,
+          body,
           { productIds: expired.map(p => p.product_id) }
         );
         if (result.success && result.recipients > 0) userNotified = true;
       }
 
       // Notifica prodotti in scadenza imminente
+      // Ogni prodotto usa il PROPRIO days_remaining (non più preWarning[0]).
       if (preWarning.length > 0) {
-        const productNames = preWarning.map(p => `"${p.product_name}"`).join(', ');
-        const days = preWarning[0].notification_days;
+        const body = preWarning
+          .map((p: ExpiringProduct) => {
+            const dayText = p.days_remaining === 1
+              ? 'scade domani'
+              : `scade tra ${p.days_remaining} giorni`;
+            return `"${p.product_name}" ${dayText}`;
+          })
+          .join('\n');
         const result = await sendPushNotification(
           userId,
           'Prodotti in Scadenza!',
-          preWarning.length === 1
-            ? `Il prodotto ${productNames} scadrà tra ${days} giorni.`
-            : `${preWarning.length} prodotti scadranno tra ${days} giorni: ${productNames}`,
+          body,
           { productIds: preWarning.map(p => p.product_id) }
         );
         if (result.success && result.recipients > 0) userNotified = true;
