@@ -84,7 +84,7 @@ describe('usePhotoNavigation', () => {
       const { result } = renderHook(() => usePhotoNavigation());
 
       act(() => {
-        result.current.navigateToPhotoCapture(mockFormData, 'full');
+        result.current.navigateToPhotoCapture(mockFormData);
       });
 
       expect(router.push).toHaveBeenCalledWith({

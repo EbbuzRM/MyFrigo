@@ -23,7 +23,7 @@ export interface PhotoNavigationParams {
 
 export interface UsePhotoNavigationReturn {
   navigatingToPhotoCapture: React.MutableRefObject<boolean>;
-  navigateToPhotoCapture: (formData: PhotoNavigationParams, mode: 'expirationDateOnly' | 'full') => void;
+  navigateToPhotoCapture: (formData: PhotoNavigationParams, mode?: 'expirationDateOnly' | 'full') => void;
 }
 
 export const usePhotoNavigation = (): UsePhotoNavigationReturn => {

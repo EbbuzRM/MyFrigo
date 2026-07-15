@@ -166,6 +166,24 @@ jest.mock('@/components/DiagnosticPanel', () => {
   };
 });
 
+// Mock ChangePasswordModal (uses Modal with accessibilityViewIsModal)
+jest.mock('@/components/settings/ChangePasswordModal', () => {
+  const React = require('react');
+  const { View, Text, TouchableOpacity } = require('react-native');
+  return {
+    ChangePasswordModal: ({ visible, onClose }: any) => {
+      if (!visible) return null;
+      return (
+        <View testID="change-password-modal">
+          <Text>Cambia Password</Text>
+          <TouchableOpacity testID="change-password-close" onPress={onClose}>
+            <Text>Chiudi</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    },
+  };
+});
 // Mock UpdateContext
 jest.mock('@/context/UpdateContext', () => ({
   useUpdate: jest.fn(),
@@ -191,10 +209,16 @@ jest.mock('@/services/LoggingService', () => ({
   },
 }));
 
+
+// Mock AuthContext (useAuth)
+jest.mock('@/context/AuthContext', () => ({
+  useAuth: jest.fn(),
+}));
 // --- Imports for mock configuration ---
 import { useUpdate } from '@/context/UpdateContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 import { router } from 'expo-router';
 
 // Type assertions
@@ -202,6 +226,7 @@ const mockedUseUpdate = useUpdate as jest.Mock;
 const mockedUseSettings = useSettings as jest.Mock;
 const mockedUseTheme = useTheme as jest.Mock;
 const mockedRouterPush = router.push as jest.Mock;
+const mockedUseAuth = useAuth as jest.Mock;
 
 const mockShowToast = jest.fn();
 const mockCheckForUpdates = jest.fn();
@@ -264,6 +289,7 @@ describe('SettingsScreen', () => {
     mockedUseSettings.mockReturnValue({ ...defaultSettingsData });
     mockedUseUpdate.mockReturnValue({ ...defaultUpdateData });
     mockedUseTheme.mockReturnValue({ ...defaultThemeData });
+    mockedUseAuth.mockReturnValue({ changePassword: jest.fn() });
   });
 
   // ── Rendering ──────────────────────────────────────────────────────
