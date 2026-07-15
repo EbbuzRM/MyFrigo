@@ -47,8 +47,9 @@ module.exports = {
       //   eas secret:create --name EXPO_PUBLIC_OCR_SPACE_API_KEY --value "K..." --scope project
       // For local dev (if needed): add to .env (not committed):
       //   EXPO_PUBLIC_OCR_SPACE_API_KEY=your-key-here
-      // SECURITY: The old key REDACTED_OCR_KEY was removed from eas.json (2026-07-15).
-      // It has been exposed in git history — rotate it at https://ocr.space/OCRAPI
+      // SECURITY: API key ocr.space was removed from eas.json (2026-07-15).
+      // Rotate at https://ocr.space/OCRAPI and set via EAS secrets:
+      //   eas secret:create --name EXPO_PUBLIC_OCR_SPACE_API_KEY --value "NEW_KEY" --scope project
       e2eTestMode: process.env.EXPO_PUBLIC_E2E_TEST_MODE === 'true'
      },
     icon: "./assets/images/icon.png",
