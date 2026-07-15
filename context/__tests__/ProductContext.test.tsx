@@ -108,7 +108,7 @@ describe('ProductContext', () => {
     
     // Setup: Simula la risposta del servizio
     const mockProducts: Product[] = [{ id: '1', name: 'Latte' } as Product];
-    mockedGetProducts.mockResolvedValue({ data: mockProducts, error: null });
+    mockedGetProducts.mockResolvedValue({ success: true, data: mockProducts, error: null });
 
     // Renderizza il provider con il componente di test
     const { getByText, queryByTestId, getByTestId } = render(
@@ -135,7 +135,7 @@ describe('ProductContext', () => {
     mockedUseAuth.mockReturnValue({ user: { id: 'test-user' } });
     
     // Setup: Simula un errore dal servizio
-    mockedGetProducts.mockResolvedValue({ data: null, error: { message: 'Fetch failed' } });
+    mockedGetProducts.mockResolvedValue({ success: false, data: null, error: 'Fetch failed' });
 
     // Renderizza
     const { queryByText, queryByTestId, getByTestId } = render(

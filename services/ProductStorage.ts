@@ -31,6 +31,14 @@ import { LoggingService } from './LoggingService';
 import { TemplateService } from './TemplateService';
 import { toLocalISOString, getLocalISODate } from '@/utils/dateUtils';
 
+/** Helper: returns a Date representing N days ago at midnight (00:00:00.000 local time). */
+function getDaysAgo(days: number): Date {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 /**
  * Servizio per la gestione dei prodotti nel database Supabase.
  * Tutti i metodi restituiscono ServiceResult<T> standardizzato per una gestione degli errori consistente.
@@ -112,9 +120,12 @@ export class ProductStorage {
   private static async performUpsert(product: Partial<Product>, userId: string): Promise<void> {
     const productToUpsert = this.prepareProductForUpsert(product);
     const snakeCaseProduct = convertProductToSnakeCase(productToUpsert);
-    (snakeCaseProduct as Record<string, unknown>).user_id = userId;
-    if (productToUpsert.isFrozen !== undefined) (snakeCaseProduct as Record<string, unknown>).is_frozen = productToUpsert.isFrozen;
-    const { error } = await supabase.from('products').upsert(snakeCaseProduct as TablesInsert<'products'>);
+    const upsertPayload: Record<string, unknown> = {
+      ...snakeCaseProduct,
+      user_id: userId,
+      ...(productToUpsert.isFrozen !== undefined && { is_frozen: productToUpsert.isFrozen }),
+    };
+    const { error } = await supabase.from('products').upsert(upsertPayload as TablesInsert<'products'>);
     if (error) throw error;
     if (productToUpsert.barcode) this.saveTemplateNonBlocking(productToUpsert as Product);
   }
@@ -163,9 +174,7 @@ export class ProductStorage {
   static async getExpiredProducts(): Promise<ServiceResult<Product[]>> {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-    twoDaysAgo.setHours(0, 0, 0, 0);
+    const twoDaysAgo = getDaysAgo(2);
     try {
       const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'active').eq('is_frozen', false).lt('expiration_date', toLocalISOString(twoDaysAgo)).order('expiration_date', { ascending: true });
       if (error) throw error;
@@ -207,7 +216,12 @@ export class ProductStorage {
   static async updateProductImage(productId: string, imageUrl: string): Promise<ServiceResult<void>> {
     const idError = this.validateId(productId, 'ID Prodotto');
     if (idError) return createErrorResult(idError);
-    if (!imageUrl?.trim()) return createErrorResult(new Error('URL immagine richiesto'));
+    if (!imageUrl?.trim()) return createErrorResult(new Error('URL immagine non può essere vuoto'));
+    try {
+      new URL(imageUrl);
+    } catch {
+      return createErrorResult(new Error('URL immagine non valido'));
+    }
     try {
       const { error } = await supabase.from('products').update({ image_url: imageUrl } as TablesUpdate<'products'>).eq('id', productId);
       if (error) throw error;

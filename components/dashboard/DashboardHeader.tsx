@@ -15,7 +15,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { DASHBOARD_CONTENT } from '@/constants/content';
 
 interface DashboardHeaderProps {
-    permissionStatus: string | null;
+    permissionStatus: boolean | null;
     onBellPress: () => void;
     onProfilePress: () => void;
     displayInitials?: string;
@@ -35,15 +35,15 @@ export const DashboardHeader = React.memo(function DashboardHeader({
             <TouchableOpacity
                 accessibilityLabel="Notifiche"
                 accessibilityRole="button"
-                accessibilityState={{ disabled: permissionStatus !== 'denied' }}
+                accessibilityState={{ disabled: permissionStatus !== false }}
                 style={styles.titleContainer}
                 onPress={onBellPress}
-                disabled={permissionStatus !== 'denied'}
+                disabled={permissionStatus !== false}
                 testID="bell-button"
             >
                 <Text style={styles.title}>{DASHBOARD_CONTENT.TITLE}</Text>
                 <View style={styles.notificationIconContainer}>
-                    {permissionStatus === 'granted'
+                    {permissionStatus === true
                         ? <Bell size={18} color={isDarkMode ? '#4ade80' : '#16a34a'} />
                         : <BellOff size={18} color={isDarkMode ? '#f87171' : '#dc2626'} />
                     }

@@ -198,12 +198,12 @@ class Logger {
     this.log(LogLevel.DEBUG, tag, message, data);
   }
 
-public info(tag: string, message: string, data?: unknown): void {
-     this.log(LogLevel.INFO, tag, message, data);
-   }
+  public info(tag: string, message: string, data?: unknown): void {
+    this.log(LogLevel.INFO, tag, message, data);
+  }
 
   public warning(tag: string, message: string, data?: unknown): void {
-    if (!__DEV__) return;
+    // Warnings are logged in production for security monitoring
     this.log(LogLevel.WARNING, tag, message, data);
   }
 
@@ -233,9 +233,9 @@ public info(tag: string, message: string, data?: unknown): void {
     }
 
     // Always keep in memory buffer (oldest first, newest last)
-    this.memoryLogBuffer.push(logMessage); // Più vecchi prima
+    this.memoryLogBuffer.push(logMessage); // Older entries first
     if (this.memoryLogBuffer.length > this.MAX_MEMORY_LOGS) {
-      this.memoryLogBuffer.shift(); // Rimuovi il più vecchio dalla cima
+      this.memoryLogBuffer.shift(); // Remove oldest from the top
     }
 
     if (this.config.enableFileLogging && Platform.OS !== 'web') this.queueLog(logMessage);
@@ -281,24 +281,24 @@ public info(tag: string, message: string, data?: unknown): void {
     return this.memoryLogBuffer.slice(-maxLines).join('\n') || 'Nessun log disponibile';
   }
 
-public async clearLogs(): Promise<void> {
-     // Always flush the queue first, regardless of fileManager presence
-     await this.flushQueue();
-     if (this.fileManager) {
-       await this.fileManager.clear();
-     }
-     // Always clear memory buffer
-     this.memoryLogBuffer = [];
-     this.log(LogLevel.INFO, 'LoggingService', 'Logs cleared');
-   }
+  public async clearLogs(): Promise<void> {
+    // Always flush the queue first, regardless of fileManager presence
+    await this.flushQueue();
+    if (this.fileManager) {
+      await this.fileManager.clear();
+    }
+    // Always clear memory buffer
+    this.memoryLogBuffer = [];
+    this.log(LogLevel.INFO, 'LoggingService', 'Logs cleared');
+  }
 
-public async destroy(): Promise<void> {
-     if (this.batchTimer) {
-       clearInterval(this.batchTimer);
-       this.batchTimer = null;
-     }
-     await this.flushQueue();
-   }
+  public async destroy(): Promise<void> {
+    if (this.batchTimer) {
+      clearInterval(this.batchTimer);
+      this.batchTimer = null;
+    }
+    await this.flushQueue();
+  }
 }
 
 export const LoggingService = Logger.getInstance();

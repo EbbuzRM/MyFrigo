@@ -6,7 +6,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import TextRecognition, { TextRecognitionScript, TextBlock } from '@react-native-ml-kit/text-recognition';
 import { LoggingService } from '@/services/LoggingService';
 import { DATE_CONSTANTS } from '@/utils/dateUtils';
@@ -17,6 +17,8 @@ import { findAllMatches } from '@/utils/ocr/parsing';
 import { findSpatiallyAnchoredMatches } from '@/utils/ocr/spatial';
 import { selectBestDate } from '@/utils/ocr/scoring';
 import { ocrSpaceRecognize, convertOcrSpaceToTextBlocks } from '@/utils/ocr/ocrSpaceService';
+
+const TAG = 'PhotoOCR';
 
 export const usePhotoOCR = () => {
   const [ocrProgress, setOcrProgress] = useState<OCRProgress>({
@@ -46,8 +48,6 @@ export const usePhotoOCR = () => {
    * Returns null if no valid date is found.
    */
   const parseBlocksForDate = useCallback((blocks: TextBlock[], rawText: string): OCRResult | null => {
-    const TAG = 'PhotoOCR';
-
     const { matches, anchors } = findAllMatches(blocks);
 
     if (matches.length === 0) {
@@ -68,7 +68,6 @@ export const usePhotoOCR = () => {
   }, []);
 
   const extractExpirationDate = useCallback(async (imageUri: string): Promise<OCRResult> => {
-    const TAG = 'PhotoOCR';
     LoggingService.info(TAG, 'Starting OCR extraction');
     setOcrProgress({ isProcessing: true, progress: 0, currentStep: 'Inizializzazione...' });
 
@@ -153,6 +152,13 @@ export const usePhotoOCR = () => {
       }, 500);
     }
   }, [clearTimers, parseBlocksForDate]);
+
+  // Cleanup timers on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      clearTimers();
+    };
+  }, [clearTimers]);
 
   const resetProgress = useCallback(() => {
     setOcrProgress({ isProcessing: false, progress: 0, currentStep: '' });

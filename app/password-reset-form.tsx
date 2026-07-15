@@ -63,25 +63,24 @@ export default function PasswordResetForm() {
 
         // Refresh session to Ensure we have the latest flags (like is_resetting_password)
         const { error: refreshError } = await supabase.auth.refreshSession();
+        let currentSessionToCheck: Session | null;
         if (refreshError) {
-          LoggingService.warning('PasswordResetForm', 'Session refresh failed', refreshError);
+          LoggingService.warning('PasswordResetForm', 'Session refresh failed, using original session', refreshError);
+          currentSessionToCheck = currentSession;
+        } else {
+          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+          // Se la sessione è esplicitamente null dopo refresh riuscito (senza errori), è scaduta
+          if (!refreshedSession) {
+            LoggingService.error('PasswordResetForm', 'Session expired after refresh.');
+            Alert.alert('Errore', 'Sessione scaduta o non valida. Riprova il login.');
+            router.replace('/login');
+            return;
+          }
+          currentSessionToCheck = refreshedSession;
         }
-
-        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-        // Se il refresh ha fallito (errore di rete), usiamo la sessione più recente disponibile
-        // con la sessione originale come fallback di sicurezza
-        const currentSessionToCheck = refreshedSession ?? currentSession;
 
         if (!currentSessionToCheck) {
           LoggingService.error('PasswordResetForm', 'Critical: No session available.');
-          Alert.alert('Errore', 'Sessione scaduta o non valida. Riprova il login.');
-          router.replace('/login');
-          return;
-        }
-
-        // Se la sessione è esplicitamente null dopo refresh riuscito (senza errori), è scaduta
-        if (!refreshError && !refreshedSession) {
-          LoggingService.error('PasswordResetForm', 'Session expired after refresh.');
           Alert.alert('Errore', 'Sessione scaduta o non valida. Riprova il login.');
           router.replace('/login');
           return;

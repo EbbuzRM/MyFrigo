@@ -6,13 +6,12 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-// @ts-nocheck
 // Unmock ProductStorage to test the real implementation
 jest.unmock('@/services/ProductStorage');
 
 import { ProductStorage } from '../ProductStorage';
 import { supabase, getCachedSession } from '../supabaseClient';
-import { Product } from '@/types/Product';
+import { Product, Quantity } from '@/types/Product';
 
 // Mock di expo-crypto
 jest.mock('expo-crypto', () => ({
@@ -123,7 +122,7 @@ describe('ProductStorage', () => {
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 
-      const newProduct: Partial<Product> = { name: 'Pane', quantity: 1, unit: 'kg' };
+      const newProduct: Partial<Product> = { name: 'Pane', quantities: [{ quantity: 1, unit: 'kg' } as Quantity] };
 
       // Azione
       const result = await ProductStorage.saveProduct(newProduct);

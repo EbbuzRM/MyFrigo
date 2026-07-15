@@ -195,14 +195,16 @@ it('should continue with original session if refresh fails', async () => {
       data: { session: null },
       error: { message: 'Network error' },
     });
-    // Sovrascrivi getSession per restituire SEMPRE defaultSession
-    mockGetSession.mockImplementation(() => Promise.resolve({ data: { session: defaultSession }, error: null }));
+    // getSession: il nuovo codice chiama getSession una sola volta quando refresh fallisce
+    mockGetSession.mockResolvedValueOnce({ data: { session: defaultSession }, error: null });
 
-    const { getByText } = renderForm();
+    const { getByTestId } = renderForm();
 
+    // Verifica che il form sia visibile (non loading, non reindirizzato)
     await waitFor(() => {
-      expect(getByText(/Ciao.*test@example\.com.*inserisci/)).toBeTruthy();
+      expect(getByTestId('new-password-input')).toBeTruthy();
     });
+    expect(mockRouterReplace).not.toHaveBeenCalled();
   });
 });
 

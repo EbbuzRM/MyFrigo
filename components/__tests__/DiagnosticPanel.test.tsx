@@ -87,6 +87,7 @@ jest.mock('@/services/LoggingService', () => ({
     warn: jest.fn(),
     initialize: jest.fn().mockResolvedValue(undefined),
     getLogs: jest.fn().mockResolvedValue('Sample log content'),
+    getRecentLogs: jest.fn().mockResolvedValue('Sample log content'),
     clearLogs: jest.fn().mockResolvedValue(undefined),
   },
 }));
@@ -156,10 +157,10 @@ describe('DiagnosticPanel', () => {
     expect(logButtonText).toBeTruthy();
   });
 
-  it('calls LoggingService.getLogs on mount', () => {
+  it('calls LoggingService.getRecentLogs on mount', () => {
     render(<DiagnosticPanel {...defaultProps} />);
     const { LoggingService } = require('@/services/LoggingService');
-    expect(LoggingService.getLogs).toHaveBeenCalled();
+    expect(LoggingService.getRecentLogs).toHaveBeenCalled();
   });
 
   it('calls LoggingService.clearLogs when "Cancella Log" is pressed', async () => {
@@ -175,8 +176,9 @@ describe('DiagnosticPanel', () => {
   });
 
   it('renders log content or "Nessun log disponibile"', () => {
-    const { getByText } = render(<DiagnosticPanel {...defaultProps} />);
-    expect(getByText(/Nessun log disponibile|Sample log content/)).toBeTruthy();
+    const { getByTestId } = render(<DiagnosticPanel {...defaultProps} />);
+    const logInput = getByTestId('diagnostic-logs-text');
+    expect(logInput.props.value).toMatch(/Nessun log disponibile|Sample log content/);
   });
 
   it('renders correctly in dark mode', () => {

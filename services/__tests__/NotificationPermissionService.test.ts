@@ -6,22 +6,24 @@
 
 import { Platform } from 'react-native';
 import { NotificationPermissionService } from '../NotificationPermissionService';
-import * as Notifications from 'expo-notifications';
+import { OneSignal } from 'react-native-onesignal';
 import { LoggingService } from '../LoggingService';
 
 jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
-    select: jest.fn((obj) => obj.ios || obj.default),
+    select: jest.fn((obj: Record<string, unknown>) => (obj as any).ios || (obj as any).default),
   },
 }));
 
-jest.mock('expo-notifications', () => ({
-  getPermissionsAsync: jest.fn(),
-  requestPermissionsAsync: jest.fn(),
-  scheduleNotificationAsync: jest.fn(),
-  cancelScheduledNotificationAsync: jest.fn(),
-}), { virtual: true });
+jest.mock('react-native-onesignal', () => ({
+  OneSignal: {
+    Notifications: {
+      getPermissionAsync: jest.fn(),
+      requestPermission: jest.fn(),
+    },
+  },
+}));
 
 jest.mock('../LoggingService', () => ({
   LoggingService: {
@@ -36,6 +38,9 @@ jest.mock('../LoggingService', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   NotificationPermissionService.clearAvailabilityCache();
+  // Reset OneSignal mocks to defaults to prevent test pollution
+  (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockReset();
+  (OneSignal.Notifications.requestPermission as jest.Mock).mockReset();
 });
 
 describe('checkExpoNotificationsAvailability', () => {
@@ -49,59 +54,10 @@ describe('checkExpoNotificationsAvailability', () => {
     (Platform as any).OS = originalOS;
   });
 
-  it('should return true when Notifications API is available', () => {
+  it('should return true on native platforms (OneSignal available)', () => {
     const result = NotificationPermissionService.checkExpoNotificationsAvailability();
 
     expect(result).toBe(true);
-  });
-
-  it.skip('should return false when Notifications API is not available (missing scheduleNotificationAsync)', () => {
-    jest.isolateModules(() => {
-      jest.doMock('expo-notifications', () => ({
-        getPermissionsAsync: jest.fn(),
-        requestPermissionsAsync: jest.fn(),
-        // scheduleNotificationAsync intentionally omitted
-        cancelScheduledNotificationAsync: jest.fn(),
-      }), { virtual: true });
-
-      const NPS = require('../NotificationPermissionService').NotificationPermissionService;
-      const LoggingServiceMock = require('../LoggingService').LoggingService;
-
-      NPS.clearAvailabilityCache();
-      const result = NPS.checkExpoNotificationsAvailability();
-
-      expect(result).toBe(false);
-      expect(LoggingServiceMock.error).toHaveBeenCalledWith(
-        'NotificationPermissionService',
-        'Expo Notifications API not available or not properly linked'
-      );
-    });
-  });
-
-  it.skip('should return false when Notifications API throws', () => {
-    jest.isolateModules(() => {
-      jest.doMock('expo-notifications', () => ({
-        getPermissionsAsync: jest.fn(),
-        requestPermissionsAsync: jest.fn(),
-        scheduleNotificationAsync: jest.fn(() => {
-          throw new Error('native module not available');
-        }),
-        cancelScheduledNotificationAsync: jest.fn(),
-      }), { virtual: true });
-
-      const NPS = require('../NotificationPermissionService').NotificationPermissionService;
-      const LoggingServiceMock = require('../LoggingService').LoggingService;
-
-      NPS.clearAvailabilityCache();
-      const result = NPS.checkExpoNotificationsAvailability();
-
-      expect(result).toBe(false);
-      expect(LoggingServiceMock.error).toHaveBeenCalledWith(
-        'NotificationPermissionService',
-        'Error checking Expo Notifications availability:',
-        expect.any(Error)
-      );
-    });
   });
 
   it('should cache result after first call', () => {
@@ -113,51 +69,25 @@ describe('checkExpoNotificationsAvailability', () => {
     expect(LoggingService.error).toHaveBeenCalledTimes(0);
   });
 
-  it.skip('should log error when API not available', () => {
-    jest.isolateModules(() => {
-      jest.doMock('expo-notifications', () => ({
-        getPermissionsAsync: jest.fn(),
-        requestPermissionsAsync: jest.fn(),
-        // scheduleNotificationAsync intentionally omitted
-        cancelScheduledNotificationAsync: jest.fn(),
-      }), { virtual: true });
-
-      const NPS = require('../NotificationPermissionService').NotificationPermissionService;
-      const LoggingServiceMock = require('../LoggingService').LoggingService;
-
-      NPS.clearAvailabilityCache();
-      NPS.checkExpoNotificationsAvailability();
-
-      expect(LoggingServiceMock.error).toHaveBeenCalledWith(
-        'NotificationPermissionService',
-        'Expo Notifications API not available or not properly linked'
-      );
-    });
+  // Legacy tests — testing expo-notifications availability scenarios
+  // that don't apply to OneSignal. Kept as .skip with explanations.
+  it.skip('LEGACY: should return false when Notifications API is not available (missing scheduleNotificationAsync)', () => {
+    // This test was for expo-notifications module availability checks.
+    // OneSignal's availability check is simpler: true on native, false on web.
+    // TODO: Add test for OneSignal SDK initialization failure if/when such logic exists.
   });
 
-  it.skip('should log error when exception occurs', () => {
-    jest.isolateModules(() => {
-      jest.doMock('expo-notifications', () => ({
-        getPermissionsAsync: jest.fn(),
-        requestPermissionsAsync: jest.fn(),
-        scheduleNotificationAsync: jest.fn(() => {
-          throw new Error('unexpected error');
-        }),
-        cancelScheduledNotificationAsync: jest.fn(),
-      }), { virtual: true });
+  it.skip('LEGACY: should return false when Notifications API throws', () => {
+    // OneSignal availability check doesn't call external APIs — always true.
+    // TODO: Add test if OneSignal initialization failure detection is added.
+  });
 
-      const NPS = require('../NotificationPermissionService').NotificationPermissionService;
-      const LoggingServiceMock = require('../LoggingService').LoggingService;
+  it.skip('LEGACY: should log error when API not available', () => {
+    // Not applicable to OneSignal-based implementation.
+  });
 
-      NPS.clearAvailabilityCache();
-      NPS.checkExpoNotificationsAvailability();
-
-      expect(LoggingServiceMock.error).toHaveBeenCalledWith(
-        'NotificationPermissionService',
-        'Error checking Expo Notifications availability:',
-        expect.any(Error)
-      );
-    });
+  it.skip('LEGACY: should log error when exception occurs', () => {
+    // Not applicable to OneSignal-based implementation.
   });
 });
 
@@ -172,32 +102,11 @@ describe('clearAvailabilityCache', () => {
   });
 
   it('should reset availabilityResult to false', () => {
-    jest.isolateModules(() => {
-      jest.doMock('expo-notifications', () => ({
-        getPermissionsAsync: jest.fn(),
-        requestPermissionsAsync: jest.fn(),
-        // scheduleNotificationAsync intentionally omitted
-        cancelScheduledNotificationAsync: jest.fn(),
-      }));
-
-      const NPS = require('../NotificationPermissionService').NotificationPermissionService;
-
-      NPS.clearAvailabilityCache();
-      // First call should cache false
-      NPS.checkExpoNotificationsAvailability();
-
-      // Now restore the API and clear cache
-      jest.doMock('expo-notifications', () => ({
-        getPermissionsAsync: jest.fn(),
-        requestPermissionsAsync: jest.fn(),
-        scheduleNotificationAsync: jest.fn(),
-        // cancelScheduledNotificationAsync intentionally omitted
-      }), { virtual: true });
-      NPS.clearAvailabilityCache();
-
-      const result = NPS.checkExpoNotificationsAvailability();
-      expect(result).toBe(true);
-    });
+    // Cache is reset, should re-evaluate
+    NotificationPermissionService.checkExpoNotificationsAvailability();
+    expect(NotificationPermissionService.checkExpoNotificationsAvailability()).toBe(true);
+    NotificationPermissionService.clearAvailabilityCache();
+    expect(NotificationPermissionService.checkExpoNotificationsAvailability()).toBe(true);
   });
 });
 
@@ -212,65 +121,56 @@ describe('getOrRequestPermissionsAsync', () => {
     (Platform as any).OS = originalOS;
   });
 
-  it('should return false when Expo Notifications not available', async () => {
+  it('should return false when OneSignal not available', async () => {
     const spy = jest.spyOn(NotificationPermissionService as any, 'checkExpoNotificationsAvailability').mockReturnValue(false);
     
     const result = await NotificationPermissionService.getOrRequestPermissionsAsync();
     
     expect(result).toBe(false);
-    expect(LoggingService.error).toHaveBeenCalledWith(
-      'NotificationPermissionService',
-      'Cannot check permissions: Expo Notifications not available'
-    );
+    // The service returns false immediately when availability check fails,
+    // without logging an additional error message.
     
     spy.mockRestore();
   });
 
-  it('should return true when permissions already granted', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+  it('should return true when permission already granted', async () => {
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(true);
 
     const result = await NotificationPermissionService.getOrRequestPermissionsAsync();
 
     expect(result).toBe(true);
-    expect(Notifications.requestPermissionsAsync).not.toHaveBeenCalled();
+    expect(OneSignal.Notifications.requestPermission).not.toHaveBeenCalled();
     expect(LoggingService.info).toHaveBeenCalledWith(
       'NotificationPermissionService',
-      'Permissions are granted.'
+      'Permission already granted'
     );
   });
 
-  it('should request permissions when not granted and return result', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-    (Notifications.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+  it('should request permission when not granted and return true on success', async () => {
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(false);
+    (OneSignal.Notifications.requestPermission as jest.Mock).mockResolvedValue(true);
 
     const result = await NotificationPermissionService.getOrRequestPermissionsAsync();
 
     expect(result).toBe(true);
-    expect(Notifications.requestPermissionsAsync).toHaveBeenCalledWith({
-      ios: {
-        allowAlert: true,
-        allowBadge: true,
-        allowSound: true,
-        provideAppNotificationSettings: true,
-      },
-    });
+    expect(OneSignal.Notifications.requestPermission).toHaveBeenCalledWith(true);
   });
 
   it('should return false when permission denied', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-    (Notifications.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(false);
+    (OneSignal.Notifications.requestPermission as jest.Mock).mockResolvedValue(false);
 
     const result = await NotificationPermissionService.getOrRequestPermissionsAsync();
 
     expect(result).toBe(false);
     expect(LoggingService.info).toHaveBeenCalledWith(
       'NotificationPermissionService',
-      'Permission request denied or failed.'
+      'Permission result: false'
     );
   });
 
   it('should log error on exception', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockRejectedValue(new Error('some error'));
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockRejectedValue(new Error('some error'));
 
     const result = await NotificationPermissionService.getOrRequestPermissionsAsync();
 
@@ -282,20 +182,13 @@ describe('getOrRequestPermissionsAsync', () => {
     );
   });
 
-  it('should request permissions with correct iOS options', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-    (Notifications.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+  it('should call requestPermission with true parameter', async () => {
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(false);
+    (OneSignal.Notifications.requestPermission as jest.Mock).mockResolvedValue(true);
 
     await NotificationPermissionService.getOrRequestPermissionsAsync();
 
-    expect(Notifications.requestPermissionsAsync).toHaveBeenCalledWith({
-      ios: {
-        allowAlert: true,
-        allowBadge: true,
-        allowSound: true,
-        provideAppNotificationSettings: true,
-      },
-    });
+    expect(OneSignal.Notifications.requestPermission).toHaveBeenCalledWith(true);
   });
 });
 
@@ -310,34 +203,26 @@ describe('checkPermissionsAsync', () => {
     (Platform as any).OS = originalOS;
   });
 
-  it('should return false when Expo Notifications not available', async () => {
-    jest.isolateModules(() => {
-      jest.doMock('expo-notifications', () => ({
-        getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'denied' }),
-        requestPermissionsAsync: jest.fn(),
-        // scheduleNotificationAsync intentionally omitted
-        cancelScheduledNotificationAsync: jest.fn(),
-      }), { virtual: true });
+  it('should return false when OneSignal not available', async () => {
+    const spy = jest.spyOn(NotificationPermissionService as any, 'checkExpoNotificationsAvailability').mockReturnValue(false);
 
-      const NPS = require('../NotificationPermissionService').NotificationPermissionService;
+    const result = await NotificationPermissionService.checkPermissionsAsync();
 
-      NPS.clearAvailabilityCache();
-      return NPS.checkPermissionsAsync().then((result: boolean) => {
-        expect(result).toBe(false);
-      });
-    });
+    expect(result).toBe(false);
+
+    spy.mockRestore();
   });
 
-  it('should return true when permissions granted', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+  it('should return true when permission granted', async () => {
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(true);
 
     const result = await NotificationPermissionService.checkPermissionsAsync();
 
     expect(result).toBe(true);
   });
 
-  it('should return false when permissions not granted', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+  it('should return false when permission not granted', async () => {
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(false);
 
     const result = await NotificationPermissionService.checkPermissionsAsync();
 
@@ -345,7 +230,7 @@ describe('checkPermissionsAsync', () => {
   });
 
   it('should log error on exception', async () => {
-    (Notifications.getPermissionsAsync as jest.Mock).mockRejectedValue(new Error('some error'));
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockRejectedValue(new Error('some error'));
 
     const result = await NotificationPermissionService.checkPermissionsAsync();
 

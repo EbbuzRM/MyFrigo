@@ -3,7 +3,6 @@
 // exports: none
 // used_by: components\CustomDatePicker.tsx
 //         context\ManualEntryFormContext.tsx
-//         hooks\usePhotoOCR.backup.ts
 //         hooks\usePhotoOCR.ts
 //         services\ProductStorage.ts
 // rules:   none

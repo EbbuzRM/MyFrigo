@@ -135,6 +135,8 @@ export class AuthService {
    * Valida il formato dell'email
    */
   static validateEmail(email: string): boolean {
+    // NOTE: Basic email validation. Does not support multi-part TLDs (.co.uk) or +aliases.
+    // Supabase handles full validation server-side.
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
@@ -142,16 +144,17 @@ export class AuthService {
    * Esegue il login con email e password
    */
   static async signInWithEmail(email: string, password: string): Promise<AuthResult> {
+    // Validation — return user-friendly messages before entering the try block
+    if (!this.validateEmail(email)) {
+      return { success: false, error: 'Formato email non valido' };
+    }
+
+    if (!email || !password) {
+      authLogger.errorStep('LOGIN_VALIDATION', new Error('Email e password sono richieste'));
+      return { success: false, error: 'Email e password sono richieste' };
+    }
+
     try {
-      if (!this.validateEmail(email)) {
-        throw new Error('Formato email non valido');
-      }
-
-      if (!email || !password) {
-        authLogger.errorStep('LOGIN_VALIDATION', new Error('Email e password sono richieste'));
-        throw new Error('Email e password sono richieste');
-      }
-
       // Rate limiting check
       const rateCheck = checkRateLimit(email);
       if (!rateCheck.allowed) {
@@ -233,13 +236,12 @@ export class AuthService {
       return { success: true, duration };
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
       LoggingService.error('AuthService', 'Login failed', error);
       authLogger.completeAuth(false);
 
       return {
         success: false,
-        error: errorMessage
+        error: 'Si è verificato un errore durante il login. Riprova.'
       };
     }
   }

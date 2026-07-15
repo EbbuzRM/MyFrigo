@@ -4,6 +4,7 @@
 // used_by: services\NotificationCoreService.ts
 //         services\NotificationService.ts
 // rules:   - Permissions are now managed through OneSignal SDK (expo-notifications removed)
+// TODO(MED-12): Add test coverage for null returns from native APIs (OneSignal.Notifications.getPermissionAsync, requestPermission)
 
 import { Platform } from 'react-native';
 import { OneSignal } from 'react-native-onesignal';

@@ -41,8 +41,8 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
       setLoadingLogs(true);
       const logData = await LoggingService.getRecentLogs(500);
       setLogs(logData);
-    } catch (error) {
-      console.error('Errore nel caricamento dei log:', error);
+    } catch (error: unknown) {
+      LoggingService.error('DiagnosticPanel', 'Errore nel caricamento dei log:', error);
       setLogs('Errore nel caricamento dei log');
     } finally {
       setLoadingLogs(false);
@@ -54,8 +54,8 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
       setLoadingLogs(true);
       await LoggingService.clearLogs();
       setLogs('');
-    } catch (error) {
-      console.error('Errore nella cancellazione dei log:', error);
+    } catch (error: unknown) {
+      LoggingService.error('DiagnosticPanel', 'Errore nella cancellazione dei log:', error);
     } finally {
       setLoadingLogs(false);
     }
@@ -84,9 +84,9 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
               });
               if (error) throw error;
               Alert.alert('Successo', 'Tutti gli utenti di test sono stati rimossi.');
-            } catch (error: any) {
-              console.error('Errore durante il reset degli utenti:', error);
-              Alert.alert('Errore', `Impossibile resettare gli utenti: ${error.message || 'Errore sconosciuto'}`);
+            } catch (error: unknown) {
+              LoggingService.error('DiagnosticPanel', 'Errore durante il reset degli utenti:', error);
+              Alert.alert('Errore', `Impossibile resettare gli utenti: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
             }
           },
         },

@@ -372,7 +372,6 @@ export {
   formatErrorForDebug,
   getErrorTitle,
   getErrorSuggestions,
-  formatErrorCode,
 } from './errorFormatters';
 
 // Legacy class for backward compatibility

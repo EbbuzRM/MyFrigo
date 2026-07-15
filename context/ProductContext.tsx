@@ -44,15 +44,12 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isFetchingRef.current = true;
     setLoading(true);
     try {
-      const { data, error } = await ProductStorage.getProducts() as {
-        data: Product[] | null;
-        error: { message: string } | null;
-      };
-      if (error) {
-        LoggingService.error('ProductContext', `Failed to fetch products: ${error.message}`);
-        setProducts([]);
+      const result = await ProductStorage.getProducts();
+      if (result.success) {
+        setProducts(result.data || []);
       } else {
-        setProducts(data || []);
+        LoggingService.error('ProductContext', `Failed to fetch products: ${result.error}`);
+        setProducts([]);
       }
     } catch (e) {
       LoggingService.error('ProductContext', `Unexpected error in fetchProducts: ${e}`);
@@ -61,7 +58,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [user?.id ?? null]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -112,7 +109,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }
     };
-  }, [user?.id ?? null, fetchProducts]);
+  }, [user?.id, fetchProducts]);
 
   const contextValue = React.useMemo(() => ({
     products,

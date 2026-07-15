@@ -185,7 +185,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Network error');
+      expect(result.error).toBe('Si è verificato un errore durante il login. Riprova.');
       expect(LoggingService.error).toHaveBeenCalled();
     });
 
@@ -195,7 +195,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Errore sconosciuto');
+      expect(result.error).toBe('Si è verificato un errore durante il login. Riprova.');
     });
   });
 

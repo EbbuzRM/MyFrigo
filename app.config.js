@@ -11,9 +11,10 @@
 // when running `expo config --json` during `eas update`
 require('dotenv').config(); 
 
-// TODO(S-18): Certificate pinning non implementato. Per produzione, configurare
-// certificate pinning per prevenire attacchi man-in-the-middle. Richiede configurazione
-// nativa (Android: network_security_config.xml, iOS: Info.plist con NSPinnedDomains).
+// TODO(#security): Certificate pinning non implementato.
+// Per produzione: Android → network_security_config.xml con <pin-set>
+// iOS → Info.plist con NSPinnedDomains per supabase.co e onesignal.com
+// Vedi: https://docs.expo.dev/guides/security/#certificate-pinning
 
 module.exports = {
   expo: {
@@ -34,11 +35,20 @@ module.exports = {
         origin: false,
         scheme: "myfrigo"
       },
+      // Public OAuth client ID — safe to commit (designed to be public)
       googleWebClientId: "849503699357-sauspamk0vl73ofrscs1jnuvsrje9pko.apps.googleusercontent.com",
       eas: {
         "projectId": "6120f00b-d739-4a6d-886f-e96cf23c12fb"
       },
       oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || (() => { throw new Error('EXPO_PUBLIC_ONESIGNAL_APP_ID is required'); })(),
+      // IMPORTANT: ocr.space API key is handled server-side via Supabase Edge Function proxy (ocr-proxy).
+      // The client never needs this key — do NOT add it to eas.json env block.
+      // If the proxy is ever removed: set via EAS secrets, NOT in eas.json:
+      //   eas secret:create --name EXPO_PUBLIC_OCR_SPACE_API_KEY --value "K..." --scope project
+      // For local dev (if needed): add to .env (not committed):
+      //   EXPO_PUBLIC_OCR_SPACE_API_KEY=your-key-here
+      // SECURITY: The old key REDACTED_OCR_KEY was removed from eas.json (2026-07-15).
+      // It has been exposed in git history — rotate it at https://ocr.space/OCRAPI
       e2eTestMode: process.env.EXPO_PUBLIC_E2E_TEST_MODE === 'true'
      },
     icon: "./assets/images/icon.png",

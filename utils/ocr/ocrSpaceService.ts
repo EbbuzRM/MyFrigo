@@ -9,6 +9,9 @@
 import { File } from 'expo-file-system';
 import { TextBlock } from '@react-native-ml-kit/text-recognition';
 import { LoggingService } from '@/services/LoggingService';
+// TODO(#perf): Questo import tira dentro l'intero client Supabase (~50KB).
+// Ottimizzazione futura: usare fetch() diretta a SUPABASE_URL/functions/v1/ocr-proxy
+// con header Authorization: Bearer SUPABASE_ANON_KEY
 import { supabase } from '@/services/supabaseClient';
 
 const TAG = 'OCR_Space';

@@ -1,4 +1,4 @@
-node_modules/
+ node_modules/
 .expo/
 .git/
 graphify-out/
@@ -9,3 +9,7 @@ coverage/
 *.test.tsx
 *.spec.ts
 __tests__/
+
+# Session export transcriptions (not source code - exclude from graph)
+session-*.md
+*ses_*.md

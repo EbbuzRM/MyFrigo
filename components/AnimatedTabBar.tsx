@@ -15,7 +15,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
 import AnimatedTabItem from './AnimatedTabItem';
 import { Route } from '@react-navigation/native';
-import { BottomTabBarProps, BottomTabNavigationEventMap } from '@react-navigation/bottom-tabs';
+import { BottomTabBarProps, BottomTabNavigationEventMap, BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import { NavigationHelpers, ParamListBase } from '@react-navigation/native';
 
 interface TabPressEvent {
@@ -43,12 +43,13 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
         const descriptor = descriptors[route.key];
         
         // Salta il rendering se href è esplicitamente null (standard Expo Router)
-        // @ts-ignore - href non è tipizzato in BottomTabNavigationOptions ma è usato da Expo Router
-        if (descriptor.options.href === null) {
+        type ExtendedOptions = BottomTabNavigationOptions & { href?: string | null };
+        const options = descriptor.options as ExtendedOptions;
+        if (options.href === null) {
           return null;
         }
 
-        const label = descriptor.options.title !== undefined ? descriptor.options.title : route.name;
+        const label = options.title !== undefined ? options.title : route.name;
         const isFocused = state.index === index;
 
         const onPress = () => {
@@ -94,8 +95,8 @@ const AnimatedTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navig
             label={label}
             onPress={onPress}
             onLongPress={onLongPress}
-            tabBarIcon={descriptor.options.tabBarIcon}
-            tabBarAccessibilityLabel={descriptor.options.tabBarAccessibilityLabel}
+            tabBarIcon={options.tabBarIcon}
+            tabBarAccessibilityLabel={options.tabBarAccessibilityLabel}
             tabBarTestID={`tab-${route.name}`}
           />
         );

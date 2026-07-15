@@ -18,7 +18,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, getCachedSession } from '@/services/supabaseClient';
+import { supabase, getCachedSession, clearCachedSession } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { OneSignalService } from '@/services/OneSignalService';
 import { useRouter } from 'expo-router';
@@ -104,6 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .update({
           first_name: firstName,
           last_name: lastName,
+          // Supabase gestisce automaticamente la conversione stringa ISO → timestamptz
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -272,6 +273,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       LoggingService.info('AuthProvider', 'Password updated successfully', { userId: user.id });
+
+      // Invalidate the cached session so the next auth check re-fetches from Supabase
+      clearCachedSession();
     } catch (error) {
       LoggingService.error('AuthProvider', 'Error during changePassword', error);
 

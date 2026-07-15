@@ -123,7 +123,7 @@ function Dashboard() {
         {expiringProducts.length > 0 ? (
           <FlashList
             data={expiringProducts}
-            // @ts-ignore: estimatedItemSize error due to React 19 typing mismatch with FlashList
+            // @ts-expect-error - FlashList estimatedItemSize accetta number ma i tipi potrebbero non rifletterlo
             estimatedItemSize={120}
             // renderItem prop for FlashList
 renderItem={({ item }) => (

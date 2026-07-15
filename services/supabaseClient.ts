@@ -1,6 +1,6 @@
 // supabaseClient.ts — supabaseClient module.
 //
-// exports: getCachedSession | supabase | refreshAuthSession | clearSession | forceRefreshToken
+// exports: getCachedSession | supabase | refreshAuthSession | clearSession | forceRefreshToken | clearCachedSession
 // used_by: app\(tabs)\index.tsx
 //         app\+not-found.tsx
 //         app\auth\reset-password.tsx
@@ -49,10 +49,14 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 // In test environment, provide mock values to avoid initialization errors
 if (!supabaseUrl || !supabaseAnonKey) {
   LoggingService.error('SupabaseClient', 'Supabase init error: URL or Anon Key is missing.');
+  // IMPORTANT: Never log the actual values of environment variables
   LoggingService.error('SupabaseClient', 'EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Present' : 'Missing');
   LoggingService.error('SupabaseClient', 'EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present' : 'Missing');
 
   // In test environment, don't throw error but return mock client
+  // TODO(LOW-08): Make mock client configurable in tests via __setMockBehavior()
+  // Currently always returns { data: [], error: null }, which prevents
+  // testing error scenarios from the database layer.
   if (process.env.NODE_ENV === 'test') {
     // Create mock supabase client for tests
     const mockSupabase = {
@@ -132,6 +136,15 @@ export const getCachedSession = async () => {
   }
   return { data, error };
 };
+
+/**
+ * Clears the cached session, forcing the next getCachedSession() call
+ * to re-fetch from Supabase. Call after password change or other auth mutations.
+ */
+export function clearCachedSession(): void {
+  cachedSession = null;
+  cacheTimestamp = 0;
+}
 
 export { supabase };
 

@@ -30,7 +30,7 @@ jest.mock('@/context/ThemeContext', () => ({
 
 describe('DashboardHeader', () => {
     const defaultProps = {
-        permissionStatus: 'granted',
+        permissionStatus: true,
         onBellPress: jest.fn(),
         onProfilePress: jest.fn(),
     };
@@ -62,25 +62,25 @@ describe('DashboardHeader', () => {
     });
 
     it('calls onBellPress when title container is tapped and permission is denied', () => {
-        const { getByText } = renderComponent({ permissionStatus: 'denied' });
+        const { getByText } = renderComponent({ permissionStatus: false });
         fireEvent.press(getByText(DASHBOARD_CONTENT.TITLE));
         expect(defaultProps.onBellPress).toHaveBeenCalled();
     });
 
     it('disables bell press when permission is granted', () => {
-        const { getByTestId } = renderComponent({ permissionStatus: 'granted' });
+        const { getByTestId } = renderComponent({ permissionStatus: true });
         expect(getByTestId('bell-button').props.accessibilityState?.disabled || getByTestId('bell-button').props.disabled).toBe(true);
     });
 
     it('shows Bell icon when permission is granted', () => {
-        const { getByTestId } = renderComponent({ permissionStatus: 'granted' });
+        const { getByTestId } = renderComponent({ permissionStatus: true });
         // Bell icon should be rendered (not BellOff)
         const bellButton = getByTestId('bell-button');
         expect(bellButton).toBeTruthy();
     });
 
     it('shows BellOff icon when permission is denied', () => {
-        const { getByTestId } = renderComponent({ permissionStatus: 'denied' });
+        const { getByTestId } = renderComponent({ permissionStatus: false });
         const bellButton = getByTestId('bell-button');
         expect(bellButton).toBeTruthy();
         // Bell button should be enabled when permission is denied (tapping enables it)

@@ -16,8 +16,7 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
-        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "0be59062-4413-49d5-b301-7038c3a0de1e",
-        "EXPO_PUBLIC_OCR_SPACE_API_KEY": "REDACTED_OCR_KEY"
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "0be59062-4413-49d5-b301-7038c3a0de1e"
       }
     },
     "release-apk": {
@@ -42,7 +41,8 @@
       }
     },
     "updates": {
-      "channel": "preview"
+      "channel": "preview",
+      "_comment": "TODO(LOW-09): Verify if updates build profile is still needed — has only channel config"
     }
   },
   "submit": {

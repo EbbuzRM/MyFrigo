@@ -9,6 +9,26 @@
 import { Paths, Directory, File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
+// Buffer statico per errori, accessibile da LoggingService
+const errorBuffer: Array<{ timestamp: string; message: string; error?: unknown }> = [];
+const MAX_BUFFER_SIZE = 50;
+
+function logError(message: string, error?: unknown): void {
+  console.error(message, error);
+  errorBuffer.push({ timestamp: new Date().toISOString(), message, error });
+  if (errorBuffer.length > MAX_BUFFER_SIZE) errorBuffer.shift();
+}
+
+/** Accessibile da LoggingService per recuperare gli errori del LogFileManager */
+export function getLogFileManagerErrors() {
+  return [...errorBuffer];
+}
+
+/** Accessibile da LoggingService per svuotare il buffer errori */
+export function clearLogFileManagerErrors() {
+  errorBuffer.length = 0;
+}
+
 interface LogFileManagerConfig {
   maxFileSize: number;
   maxFiles: number;
@@ -48,7 +68,7 @@ export class LogFileManager {
       }
       this.isInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize LogFileManager:', error);
+      logError('Failed to initialize LogFileManager:', error);
       this.isInitialized = false;
     }
   }
@@ -64,7 +84,7 @@ export class LogFileManager {
         await this.rotate();
       }
     } catch (error) {
-      console.error('Failed to write to log file:', error);
+      logError('Failed to write to log file:', error);
     }
   }
 
@@ -79,7 +99,7 @@ export class LogFileManager {
         await this.rotate();
       }
     } catch (error) {
-      console.error('Failed to write batch to log file:', error);
+      logError('Failed to write batch to log file:', error);
     }
   }
 
@@ -96,7 +116,7 @@ export class LogFileManager {
       this.logFile = new File(this.logsDirectory, this.config.logFileName);
       this.logFile.write('', { encoding: 'utf8' as const });
     } catch (error) {
-      console.error('Failed to rotate log files:', error);
+      logError('Failed to rotate log files:', error);
     }
   }
 
@@ -106,7 +126,7 @@ export class LogFileManager {
       if (!this.logFile || !this.logFile.exists) return 'No log file exists';
       return await this.logFile.text();
     } catch (error) {
-      console.error('Failed to read log file:', error);
+      logError('Failed to read log file:', error);
       return `Error reading logs: ${error}`;
     }
   }
@@ -120,7 +140,7 @@ export class LogFileManager {
       const recentLines = lines.slice(-maxLines);
       return recentLines.join('\n');
     } catch (error) {
-      console.error('Failed to read recent logs:', error);
+      logError('Failed to read recent logs:', error);
       return `Error reading logs: ${error}`;
     }
   }
@@ -149,7 +169,7 @@ export class LogFileManager {
       
       await this.logFile.write(finalLines.join('\n') + '\n', { encoding: 'utf8' as const });
     } catch (error) {
-      console.error('Failed to apply log retention:', error);
+      logError('Failed to apply log retention:', error);
     }
   }
 
@@ -158,7 +178,7 @@ export class LogFileManager {
     try {
       this.logFile.write('', { encoding: 'utf8' as const });
     } catch (error) {
-      console.error('Failed to clear logs:', error);
+      logError('Failed to clear logs:', error);
     }
   }
 

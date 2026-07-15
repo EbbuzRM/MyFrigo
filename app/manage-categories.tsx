@@ -9,7 +9,7 @@
 // message: 
 
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { PRODUCT_CATEGORIES } from '@/types/Product';
@@ -23,7 +23,7 @@ interface CreateCategoryModalProps {
   isVisible: boolean;
   onClose: () => void;
   isDarkMode: boolean;
-  styles: any;
+  styles: Record<string, ViewStyle | TextStyle>;
 }
 
 function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateCategoryModalProps) {
