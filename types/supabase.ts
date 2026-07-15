@@ -224,6 +224,24 @@ export interface Database {
         }
         Relationships: []
       }
+      user_notification_settings: {
+        Row: {
+          notification_days: number
+          notifications_enabled: boolean
+          user_id: string
+        }
+        Insert: {
+          notification_days?: number
+          notifications_enabled?: boolean
+          user_id: string
+        }
+        Update: {
+          notification_days?: number
+          notifications_enabled?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

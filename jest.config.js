@@ -20,7 +20,6 @@ module.exports = {
     '!**/node_modules/**',
     '!**/android/**',
     '!**/ios/**',
-    '!**/RA.Aid/**',
     '!jest.config.js',
     '!jest.setup.js',
   ],
@@ -38,11 +37,6 @@ module.exports = {
   },
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
-  },
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-    },
   },
   testPathIgnorePatterns: [
     '/node_modules/',

@@ -9,25 +9,6 @@
 // Jest setup file
 // Note: Expo Winter API mocks are configured in jest.config.js moduleNameMapper
 
-// Mock DevMenu TurboModule BEFORE any imports to prevent errors
-jest.mock('react-native/Libraries/NativeModules/specs/NativeDevMenu', () => ({
-  __esModule: true,
-  default: {
-    show: jest.fn(),
-    reload: jest.fn(),
-    debugRemotely: jest.fn(),
-    setProfilingEnabled: jest.fn(),
-  },
-}), { virtual: true });
-
-// Mock DevMenu module
-jest.mock('react-native/src/private/devsupport/devmenu/DevMenu', () => ({
-  show: jest.fn(),
-  reload: jest.fn(),
-  debugRemotely: jest.fn(),
-  setProfilingEnabled: jest.fn(),
-}), { virtual: true });
-
 // Mock the specs module
 jest.mock('react-native/src/private/devsupport/devmenu/specs/NativeDevMenu', () => ({
   __esModule: true,
@@ -167,13 +148,6 @@ jest.mock('expo', () => ({
         supabaseAnonKey: 'mock-key',
       },
     },
-  },
-  Notifications: {
-    getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-    requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-    getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'mock-token' })),
-    addNotificationReceivedListener: jest.fn(),
-    addNotificationResponseReceivedListener: jest.fn(),
   },
   TaskManager: {
     defineTask: jest.fn(),

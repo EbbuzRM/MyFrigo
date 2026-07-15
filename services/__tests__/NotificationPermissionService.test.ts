@@ -169,6 +169,17 @@ describe('getOrRequestPermissionsAsync', () => {
     );
   });
 
+  it('should handle null return from getPermissionAsync and requestPermission', async () => {
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(null);
+    (OneSignal.Notifications.requestPermission as jest.Mock).mockResolvedValue(null);
+
+    const result = await NotificationPermissionService.getOrRequestPermissionsAsync();
+
+    // null is falsy → enters request branch; null returned as result
+    expect(OneSignal.Notifications.requestPermission).toHaveBeenCalledWith(true);
+    expect(result).toBeNull();
+  });
+
   it('should log error on exception', async () => {
     (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockRejectedValue(new Error('some error'));
 
@@ -227,6 +238,15 @@ describe('checkPermissionsAsync', () => {
     const result = await NotificationPermissionService.checkPermissionsAsync();
 
     expect(result).toBe(false);
+  });
+
+  it('should handle null return from getPermissionAsync', async () => {
+    (OneSignal.Notifications.getPermissionAsync as jest.Mock).mockResolvedValue(null);
+
+    const result = await NotificationPermissionService.checkPermissionsAsync();
+
+    // null is returned directly — caller should treat as falsy
+    expect(result).toBeNull();
   });
 
   it('should log error on exception', async () => {

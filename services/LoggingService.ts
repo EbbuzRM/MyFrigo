@@ -64,7 +64,6 @@
 //         hooks\useGoogleAuth.ts
 //         hooks\useHistoryData.ts
 //         hooks\usePhotoActions.ts
-//         hooks\usePhotoOCR.backup.ts
 //         hooks\usePhotoOCR.ts
 //         hooks\usePostRegistration.ts
 //         hooks\useProductActions.ts

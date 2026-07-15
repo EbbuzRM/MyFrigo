@@ -3,38 +3,10 @@ import { NotificationService } from '../NotificationService';
 // Mock dependencies
 jest.mock('react-native', () => ({
   Platform: {
-    OS: 'ios', // Default to iOS for testing
+    OS: 'ios',
     select: jest.fn((obj) => obj['ios'] || obj.default),
   },
 }));
-jest.mock('react-native-onesignal', () => ({
-  OneSignal: {
-    initialize: jest.fn(),
-    Notifications: {
-      requestPermission: jest.fn(),
-    },
-    User: {
-      addEventListener: jest.fn(),
-      getOnesignalId: jest.fn(),
-      addTags: jest.fn(),
-      login: jest.fn(),
-      logout: jest.fn(),
-    },
-  },
-}));
-jest.mock('expo-notifications', () => ({
-  setNotificationHandler: jest.fn(),
-  scheduleNotificationAsync: jest.fn(() => Promise.resolve('mock-id')),
-  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  AndroidImportance: {
-    MAX: 'max',
-  },
-  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
-  SchedulableTriggerInputTypes: {
-    DATE: 'date',
-  },
-}), { virtual: true });
 jest.mock('expo-constants', () => ({
   expoConfig: {
     extra: {
@@ -64,6 +36,12 @@ jest.mock('../NotificationCoreService', () => ({
     scheduleTestNotification: jest.fn(),
   },
 }));
+jest.mock('../OneSignalService', () => ({
+  OneSignalService: {
+    initialize: jest.fn(),
+    requestPermission: jest.fn(),
+  },
+}));
 
 describe('NotificationService', () => {
   beforeEach(() => {
@@ -72,76 +50,64 @@ describe('NotificationService', () => {
     (NotificationService as any).isInitialized = false;
     // Reset Platform.OS to default
     require('react-native').Platform.OS = 'ios';
+    // Set default mock implementations (clearAllMocks may clear them)
+    require('../OneSignalService').OneSignalService.initialize.mockResolvedValue(undefined);
+    require('../OneSignalService').OneSignalService.requestPermission.mockResolvedValue(undefined);
   });
 
   describe('initialize', () => {
-    it('should not initialize on web platform', () => {
-      // Mock Platform.OS as 'web'
+    it('should not initialize on web platform', async () => {
       const PlatformMock = require('react-native').Platform;
       PlatformMock.OS = 'web';
 
-      NotificationService.initialize();
+      await NotificationService.initialize();
 
-      // Should not initialize OneSignal or set notification channel
-      expect(require('react-native-onesignal').OneSignal.initialize).not.toHaveBeenCalled();
-      expect(require('expo-notifications').setNotificationChannelAsync).not.toHaveBeenCalled();
+      // Should not call OneSignalService at all
+      expect(require('../OneSignalService').OneSignalService.initialize).not.toHaveBeenCalled();
+      expect(require('../OneSignalService').OneSignalService.requestPermission).not.toHaveBeenCalled();
     });
 
-    it('should initialize OneSignal successfully on Android', () => {
-      // Mock Platform.OS as 'android'
+    it('should initialize OneSignalService successfully', async () => {
       const PlatformMock = require('react-native').Platform;
       PlatformMock.OS = 'android';
 
-      NotificationService.initialize();
+      await NotificationService.initialize();
 
-      // Should set notification channel
-      expect(require('expo-notifications').setNotificationChannelAsync).toHaveBeenCalledWith('default', {
-        name: 'Default',
-        importance: 'max',
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF231F7C',
-      });
+      // Should delegate to OneSignalService
+      expect(require('../OneSignalService').OneSignalService.initialize).toHaveBeenCalledTimes(1);
+      expect(require('../OneSignalService').OneSignalService.requestPermission).toHaveBeenCalledTimes(1);
 
-      // Should initialize OneSignal
-      expect(require('react-native-onesignal').OneSignal.initialize).toHaveBeenCalledWith('test-app-id');
-      expect(require('react-native-onesignal').OneSignal.Notifications.requestPermission).toHaveBeenCalledWith(true);
-      
       // Should mark as initialized
       expect((NotificationService as any).isInitialized).toBe(true);
-      
+
       // Should log success
       expect(require('../LoggingService').LoggingService.info).toHaveBeenCalledWith(
         'NotificationService',
-        'OneSignal SDK initialized successfully.'
+        'OneSignal SDK initialized successfully via OneSignalService.'
       );
     });
 
-    it('should handle OneSignal initialization error', () => {
-      // Mock Platform.OS as 'android'
+    it('should handle OneSignalService initialization error', async () => {
       const PlatformMock = require('react-native').Platform;
       PlatformMock.OS = 'android';
 
-      // Mock OneSignal.initialize to throw an error
-      const oneSignalMock = require('react-native-onesignal').OneSignal;
-      oneSignalMock.initialize.mockImplementation(() => {
-        throw new Error('OneSignal initialization failed');
-      });
+      const mockError = new Error('OneSignal initialization failed');
+      require('../OneSignalService').OneSignalService.initialize.mockRejectedValue(mockError);
 
-      NotificationService.initialize();
+      await NotificationService.initialize();
 
       // Should log error
       expect(require('../LoggingService').LoggingService.error).toHaveBeenCalledWith(
         'NotificationService',
         'Error initializing OneSignal:',
-        expect.any(Error)
+        mockError
       );
-      
+
       // Should not mark as initialized
       expect((NotificationService as any).isInitialized).toBe(false);
     });
 
-    it('should handle missing OneSignal App ID', () => {
-      // Mock Platform.OS as 'android'
+    it('should handle missing OneSignal App ID', async () => {
       const PlatformMock = require('react-native').Platform;
       PlatformMock.OS = 'android';
 
@@ -150,7 +116,7 @@ describe('NotificationService', () => {
       const originalAppId = constantsMock.expoConfig.extra.oneSignalAppId;
       constantsMock.expoConfig.extra.oneSignalAppId = undefined;
 
-      NotificationService.initialize();
+      await NotificationService.initialize();
 
       // Restore for other tests
       constantsMock.expoConfig.extra.oneSignalAppId = originalAppId;
@@ -160,47 +126,34 @@ describe('NotificationService', () => {
         'NotificationService',
         'FATAL: OneSignal App ID not found in app.json.'
       );
-      
-      // Should not initialize OneSignal
-      expect(require('react-native-onesignal').OneSignal.initialize).not.toHaveBeenCalled();
+
+      // Should not call OneSignalService
+      expect(require('../OneSignalService').OneSignalService.initialize).not.toHaveBeenCalled();
     });
 
-    it('should handle missing OneSignal native module', () => {
-      // Mock Platform.OS as 'android'
+    it('should not initialize twice', async () => {
       const PlatformMock = require('react-native').Platform;
       PlatformMock.OS = 'android';
 
-      // Mock missing OneSignal module
-      const oneSignalMock = require('react-native-onesignal').OneSignal;
-      const originalInit = oneSignalMock.initialize;
-      oneSignalMock.initialize = undefined;
+      await NotificationService.initialize();
+      await NotificationService.initialize();
 
-      NotificationService.initialize();
-
-      // Restore
-      oneSignalMock.initialize = originalInit;
-
-      // Should log error
-      expect(require('../LoggingService').LoggingService.error).toHaveBeenCalledWith(
-        'NotificationService',
-        'FATAL: OneSignal native module not linked.'
-      );
-    });
-
-    it.skip('should not initialize twice', () => {
-      // Mock Platform.OS as 'android'
-      const PlatformMock = require('react-native').Platform;
-      PlatformMock.OS = 'android';
-
-      // Ensure app ID is set
-      const ConstantsMock = require('expo-constants');
-      ConstantsMock.expoConfig.extra.oneSignalAppId = 'test-app-id';
-
-      // Initialize
-      NotificationService.initialize();
-      
-      // Should be marked as initialized
+      // OneSignalService.initialize should only be called once
+      expect(require('../OneSignalService').OneSignalService.initialize).toHaveBeenCalledTimes(1);
       expect((NotificationService as any).isInitialized).toBe(true);
+    });
+
+    it('should not reinitialize if already initialized', async () => {
+      const PlatformMock = require('react-native').Platform;
+      PlatformMock.OS = 'android';
+
+      // Set as already initialized
+      (NotificationService as any).isInitialized = true;
+
+      await NotificationService.initialize();
+
+      // Should not call OneSignalService again
+      expect(require('../OneSignalService').OneSignalService.initialize).not.toHaveBeenCalled();
     });
   });
 

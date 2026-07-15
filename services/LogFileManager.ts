@@ -14,6 +14,7 @@ const errorBuffer: Array<{ timestamp: string; message: string; error?: unknown }
 const MAX_BUFFER_SIZE = 50;
 
 function logError(message: string, error?: unknown): void {
+  // Must use console.error to avoid circular dependency with LoggingService (LoggingService imports LogFileManager)
   console.error(message, error);
   errorBuffer.push({ timestamp: new Date().toISOString(), message, error });
   if (errorBuffer.length > MAX_BUFFER_SIZE) errorBuffer.shift();

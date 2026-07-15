@@ -34,7 +34,7 @@ export class UserNotificationSettingsService {
    */
   static async getSettings(userId: string): Promise<UserNotificationSettings> {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('user_notification_settings')
         .select('notifications_enabled, notification_days')
         .eq('user_id', userId)
@@ -74,7 +74,7 @@ export class UserNotificationSettingsService {
         updatePayload.notification_days = settings.notificationDays;
       }
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('user_notification_settings')
         .upsert({ user_id: userId, ...updatePayload })
         .select('notifications_enabled, notification_days')
@@ -110,7 +110,7 @@ export class UserNotificationSettingsService {
 
       const defaultDays = globalSettings?.notification_days ?? DEFAULT_SETTINGS.notificationDays;
 
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabase
          .from('user_notification_settings')
          .upsert(
            {

@@ -4,7 +4,6 @@
 // used_by: services\NotificationCoreService.ts
 //         services\NotificationService.ts
 // rules:   - Permissions are now managed through OneSignal SDK (expo-notifications removed)
-// TODO(MED-12): Add test coverage for null returns from native APIs (OneSignal.Notifications.getPermissionAsync, requestPermission)
 
 import { Platform } from 'react-native';
 import { OneSignal } from 'react-native-onesignal';
@@ -15,22 +14,8 @@ export class NotificationPermissionService {
   private static availabilityResult = false;
 
   static checkExpoNotificationsAvailability(): boolean {
-    if (this.availabilityChecked) return this.availabilityResult;
-    if (Platform.OS === 'web') {
-      this.availabilityChecked = true;
-      this.availabilityResult = false;
-      return false;
-    }
-    try {
-      this.availabilityChecked = true;
-      this.availabilityResult = true;
-      return true;
-    } catch (error: unknown) {
-      LoggingService.error('NotificationPermissionService', 'OneSignal not available', error);
-      this.availabilityChecked = true;
-      this.availabilityResult = false;
-      return false;
-    }
+    // Simplified: OneSignal is always available on native platforms
+    return Platform.OS !== 'web';
   }
 
   static clearAvailabilityCache(): void {
