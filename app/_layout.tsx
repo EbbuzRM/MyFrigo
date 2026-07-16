@@ -19,7 +19,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Toast } from '@/components/Toast';
 import { useUpdate } from '@/context/UpdateContext';
 import { LoggingService } from '@/services/LoggingService';
-import { OneSignalService } from '@/services/OneSignalService';
+import { NotificationService } from '@/services/NotificationService';
 
 /**
  * Componente interno che gestisce il modal degli aggiornamenti.
@@ -78,12 +78,13 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Initialize OneSignal once at app startup. Registers the 'change' listener that
-  // persists the OneSignal device_id to the `user_devices` table as soon as it
-  // becomes available. Non-blocking: the listener handles late ID assignment.
+  // Initialize OneSignal once at app startup via NotificationService, which:
+  // 1. Calls OneSignalService.initialize() → registers 'change' listener + device registration
+  // 2. Calls OneSignalService.requestPermission() → prompts user for push permission
+  // 3. Registers foreground display + click handlers (Fix for notifications only arriving when app is open)
   useEffect(() => {
-    OneSignalService.initialize().catch((err) => {
-      LoggingService.error('RootLayout', 'OneSignalService.initialize failed', err);
+    NotificationService.initialize().catch((err) => {
+      LoggingService.error('RootLayout', 'NotificationService.initialize failed', err);
     });
   }, []);
 

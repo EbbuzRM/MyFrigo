@@ -7,7 +7,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { OneSignal } from 'react-native-onesignal';
+import { OneSignal, type NotificationWillDisplayEvent, type NotificationClickEvent } from 'react-native-onesignal';
 import Constants from 'expo-constants';
 import { supabase } from './supabaseClient';
 import { LoggingService } from './LoggingService';
@@ -46,6 +46,22 @@ export class OneSignalService {
         // Chiamata fondamentale: Inizializza l'SDK con l'App ID
         await OneSignal.initialize(appId);
         LoggingService.info('OneSignalService', 'OneSignal SDK initialize() completed');
+
+        // Foreground notification handler — display notification even when app is in foreground
+        OneSignal.Notifications.addEventListener('foregroundWillDisplay', (event: NotificationWillDisplayEvent) => {
+          LoggingService.info('OneSignalService', 'Notification received in foreground', {
+            notificationId: event.getNotification().notificationId,
+          });
+          event.getNotification().display();
+        });
+
+        // Click notification handler — log when user taps a notification
+        OneSignal.Notifications.addEventListener('click', (event: NotificationClickEvent) => {
+          LoggingService.info('OneSignalService', 'Notification clicked', {
+            notificationId: event.notification.notificationId,
+            url: event.result?.url,
+          });
+        });
 
         // Configura il listener per il cambiamento dell'ID utente
         OneSignal.User.addEventListener('change', async (event) => {
