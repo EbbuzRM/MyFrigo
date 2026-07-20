@@ -98,6 +98,8 @@ jest.mock('react-native', () => {
   const KeyboardAvoidingView = (props) => React.createElement('KeyboardAvoidingView', props);
   
   // Mock per Modal che non dipende da Platform
+  // Note: always renders children regardless of `visible` prop, matching real RN Modal behavior.
+  // Tests that need to verify visibility should check the `visible` prop, not content absence.
   const Modal = (props) => {
     return React.createElement(View, props);
   };
