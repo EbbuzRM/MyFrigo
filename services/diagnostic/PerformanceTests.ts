@@ -2,7 +2,7 @@
 //
 // exports: DiagnosticData | PerformanceTestResult | PerformanceTests
 // used_by: hooks\useDiagnosticTests.ts
-//         services\diagnostic\TestRunner.ts
+//                   services\diagnostic\TestRunner.ts
 // rules:   - Module exposes static class `PerformanceTests` with no constructor; all methods must remain static to maintain existing import pattern.
 //          - Do not add or remove exported interfaces (`DiagnosticData`, `PerformanceTestResult`) without updating all dependent imports in `hooks/useDiagnosticTests.ts` and `services/diagnostic/TestRunner.ts`.
 //          - Performance test operations are async and must preserve the existing `try/catch` pattern for each individual test to ensure partial success reporting.

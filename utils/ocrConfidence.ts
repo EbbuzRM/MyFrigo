@@ -1,7 +1,8 @@
 // ocrConfidence.ts — ocrConfidence module.
 //
 // exports: ConfidenceFactors | calculateConfidence | EXPIRATION_KEYWORDS | hasExpirationKeyword
-// used_by: utils\ocr\scoring.ts
+// used_by: utils\ocr\__tests__\ocrConfidence.test.ts
+//                   utils\ocr\scoring.ts
 // rules:   Module exports must maintain backward compatibility for `ConfidenceFactors` interface shape and `calculateConfidence` function signature as they are consumed by `utils/ocr/scoring.ts`.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

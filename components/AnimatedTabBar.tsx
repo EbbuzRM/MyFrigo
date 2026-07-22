@@ -1,7 +1,8 @@
 // AnimatedTabBar.tsx — AnimatedTabBar module.
 //
 // exports: AnimatedTabBar
-// used_by: app\(tabs)\_layout.tsx
+// used_by: .backup\_layout.tsx
+//                   app\(tabs)\_layout.tsx
 // rules:   - The AnimatedTabBar component must always receive bottomTabNavigator navigation props and must not be used outside a BottomTabNavigator context
 //          - All tab items must be wrapped in AnimatedTabItem components; no direct tab rendering is permitted outside the AnimatedTabItem abstraction
 //          - The component must always use useSafeAreaInsets for bottom padding and never hardcode tab bar bottom spacing

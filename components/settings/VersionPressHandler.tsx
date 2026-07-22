@@ -1,6 +1,6 @@
 // VersionPressHandler.tsx — VersionPressHandler module.
 //
-// exports: VersionPressHandlerProps
+// exports: VersionPressHandlerProps | VersionPressHandler
 // used_by: app\(tabs)\settings.tsx
 // rules:   - The diagnostic activation logic and tap count state must remain externally managed via the `useDiagnosticGesture` hook, not implemented internally within this component
 //          - The `onActivate` callback and `REQUIRED_TAPS` constant are the sole interface for triggering the diagnostic panel and configuring tap sensitivity

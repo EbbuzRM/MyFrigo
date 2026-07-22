@@ -2,9 +2,10 @@
 //
 // exports: ExpoUpdatesManifest | UpdateInfo | UpdateSettings | DownloadProgress | UpdateEventEmitter | UpdateService
 // used_by: components\GlobalUpdateModal.tsx
-//         components\UpdateModal.tsx
-//         components\UpdateStatusMessage.tsx
-//         context\UpdateContext.tsx
+//                   components\UpdateModal.tsx
+//                   components\UpdateStatusMessage.tsx
+//                   context\UpdateContext.tsx
+//                   context\__tests__\UpdateContext.test.tsx
 // rules:   - Module must maintain the singleton-static pattern for UpdateService; all methods and state are static, and instance creation is not supported.
 //          - External file dependencies are strictly structured into three files under `./update/`: `UpdateService.metadata`, `UpdateService.download`, and `UpdateService.notifications`; any new update-related logic must be placed in the appropriate submodule.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

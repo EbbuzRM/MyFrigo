@@ -2,12 +2,12 @@
 //
 // exports: Json | Database | Tables | TablesInsert | TablesUpdate
 // used_by: services\CategoryService.ts
-//         services\IconLoader.ts
-//         services\ProductStorage.ts
-//         services\SettingsService.ts
-//         services\TemplateService.ts
-//         services\UserDeviceService.ts
-//         services\supabaseClient.ts
+//                   services\IconLoader.ts
+//                   services\ProductStorage.ts
+//                   services\SettingsService.ts
+//                   services\TemplateService.ts
+//                   services\UserDeviceService.ts
+//                   services\supabaseClient.ts
 // rules:   - Import types from this file are consumed across the entire app; any changes to table schemas must be coordinated with all query builders and type consumers
 //          - The `Json` type is used recursively for `local_icon` and similar fields; modifications to its definition could cascade to all table definitions
 //          - The `Row`, `Insert`, and `Update` type patterns must remain consistent across all tables to maintain type safety with Supabase client operations

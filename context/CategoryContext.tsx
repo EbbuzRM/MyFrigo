@@ -2,15 +2,17 @@
 //
 // exports: CategoryProvider | useCategories
 // used_by: app\(tabs)\products.tsx
-//         app\manage-categories.tsx
-//         app\scanner.tsx
-//         components\AppProviders.tsx
-//         components\ExpirationCard.tsx
-//         components\HistoryCard.tsx
-//         components\ProductDetailHeader.tsx
-//         hooks\__tests__\useProductForm.test.ts
-//         hooks\useCategorySelection.ts
-//         hooks\useProductForm.ts
+//                   app\__tests__\products.test.tsx
+//                   app\__tests__\scanner.test.tsx
+//                   app\manage-categories.tsx
+//                   app\scanner.tsx
+//                   components\AppProviders.tsx
+//                   components\ExpirationCard.tsx
+//                   components\HistoryCard.tsx
+//                   components\ProductDetailHeader.tsx
+//                   hooks\__tests__\useProductForm.test.ts
+//                   hooks\useCategorySelection.ts
+//                   hooks\useProductForm.ts
 // rules:   - All category mutations MUST go through CategoryService and trigger React state updates; direct state array mutations are prohibited.
 //          - Icon path migration for patterns containing 'icon_products/' MUST be preserved when updating categories.
 //          - All category operations MUST handle null user cases since the context depends on AuthContext.

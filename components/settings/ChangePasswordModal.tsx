@@ -1,27 +1,34 @@
 // ChangePasswordModal.tsx — ChangePasswordModal module.
 //
-// exports: ChangePasswordModalProps
+// exports: ChangePasswordModalProps | ChangePasswordModal
 // used_by: app\(tabs)\settings.tsx
 // rules:   - All state management (visibility, loading, errors) must remain in the parent component; this component must be purely presentational and stateless
 //          - Password validation must use the `usePasswordValidation` hook for consistency with the rest of the app
 //          - Input state (currentPassword, newPassword, confirmPassword) is local to this component and reset when the modal opens
+// agent:   unknown
 
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
   Pressable,
+  StyleSheet,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { scaleFont } from '@/utils/scaleFont';
-import { usePasswordValidation } from '@/hooks/usePasswordValidation';
-import { PasswordValidationDisplay } from '@/components/PasswordValidationDisplay';
+import { usePasswordForm } from '@/hooks/usePasswordForm';
+import { usePasswordVisibility } from '@/hooks/usePasswordVisibility';
+import {
+  validatePassword,
+  validatePasswordMatch,
+  validateCurrentPassword,
+} from '@/utils/validation/passwordValidationRules';
+import { PasswordInput } from '@/components/common/PasswordInput/PasswordInput';
+import { ModalHeader } from '@/components/common/ModalHeader/ModalHeader';
+import { ModalActions } from '@/components/common/ModalActions/ModalActions';
+import { ErrorDisplay } from '@/components/common/ErrorDisplay/ErrorDisplay';
+import { PasswordMatchIndicator } from '@/components/settings/PasswordMatchIndicator/PasswordMatchIndicator';
 
 /**
  * @file components/settings/ChangePasswordModal.tsx
@@ -77,48 +84,61 @@ export function ChangePasswordModal({
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
-  // Local input state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // Form state management
+  const { values, handleChange, resetForm } = usePasswordForm();
 
-  // Password validation hook
-  const {
-    password: validatedPassword,
-    validation,
-    handlePasswordChange,
-    isPasswordValid,
-    setPassword: setValidatedPassword,
-  } = usePasswordValidation();
+  // Password visibility management
+  const currentPasswordVisibility = usePasswordVisibility();
+  const newPasswordVisibility = usePasswordVisibility();
+  const confirmPasswordVisibility = usePasswordVisibility();
+
+  // Validation state
+  const [validation, setValidation] = useState({
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+    passwordsMatch: false,
+  });
 
   // Reset state when modal opens
   useEffect(() => {
     if (visible) {
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setShowCurrentPassword(false);
-      setShowNewPassword(false);
-      setShowConfirmPassword(false);
-      setValidatedPassword('');
+      resetForm();
     }
-  }, [visible, setValidatedPassword]);
+  }, [visible]);
 
-  // Sync newPassword with validation hook
-  const handleNewPasswordChange = (text: string) => {
-    setNewPassword(text);
-    handlePasswordChange(text);
-  };
+  // Update validation when newPassword or confirmPassword changes
+  useEffect(() => {
+    const { validation: passwordValidation } = validatePassword(values.newPassword);
+    const passwordsMatch = validatePasswordMatch(
+      values.newPassword,
+      values.confirmPassword
+    );
 
-  const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
-  const canSubmit = currentPassword.length > 0 && isPasswordValid && passwordsMatch && !isChanging;
+    setValidation({
+      ...passwordValidation,
+      passwordsMatch,
+    });
+  }, [values.newPassword, values.confirmPassword]);
+
+  // Validation checks
+  const isCurrentPasswordValid = validateCurrentPassword(values.currentPassword);
+  const isNewPasswordValid = Object.values(validation)
+    .slice(0, 5)
+    .every((v) => v);
+  const canSubmit =
+    isCurrentPasswordValid && isNewPasswordValid && validation.passwordsMatch && !isChanging;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
-    await onChangePassword(currentPassword, newPassword);
+    await onChangePassword(values.currentPassword, values.newPassword);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   return (
@@ -126,183 +146,73 @@ export function ChangePasswordModal({
       transparent={true}
       animationType="fade"
       visible={visible}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
       accessibilityViewIsModal={true}
       accessibilityLabel="Cambia password"
     >
-      <Pressable
-        style={styles.modalOverlay}
-        onPress={onClose}
-      >
+      <Pressable style={styles.modalOverlay} onPress={handleClose}>
         <Pressable onPress={() => {}} style={styles.modalContainer}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.modalTitle} accessibilityRole="header">
-              Cambia Password
-            </Text>
-            <TouchableOpacity
-              onPress={onClose}
-              accessibilityLabel="Chiudi modal cambio password"
-              accessibilityHint="Tocca per chiudere senza salvare"
-              accessibilityRole="button"
-              style={styles.closeButton}
-            >
-              <FontAwesome name="times" size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Current Password */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Password attuale</Text>
-            <View style={styles.inputWrapper}>
-              <FontAwesome name="lock" size={16} color={isDarkMode ? '#8b949e' : '#64748B'} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Inserisci la password attuale"
-                placeholderTextColor={isDarkMode ? '#8b949e' : '#94a3b8'}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry={!showCurrentPassword}
-                editable={!isChanging}
-                 autoCorrect={false}
-                 testID="current-password-input"
-               />
-              <TouchableOpacity
-                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-                style={styles.eyeButton}
-                accessibilityLabel={showCurrentPassword ? 'Nascondi password attuale' : 'Mostra password attuale'}
-                accessibilityRole="button"
-              >
-                <FontAwesome
-                  name={showCurrentPassword ? 'eye' : 'eye-slash'}
-                  size={18}
-                  color={isDarkMode ? '#8b949e' : '#64748B'}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* New Password */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Nuova password</Text>
-            <View style={styles.inputWrapper}>
-              <FontAwesome name="lock" size={16} color={isDarkMode ? '#8b949e' : '#64748B'} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Inserisci la nuova password"
-                placeholderTextColor={isDarkMode ? '#8b949e' : '#94a3b8'}
-                value={newPassword}
-                onChangeText={handleNewPasswordChange}
-                secureTextEntry={!showNewPassword}
-                editable={!isChanging}
-                 autoCorrect={false}
-                 testID="new-password-input"
-               />
-              <TouchableOpacity
-                onPress={() => setShowNewPassword(!showNewPassword)}
-                style={styles.eyeButton}
-                accessibilityLabel={showNewPassword ? 'Nascondi nuova password' : 'Mostra nuova password'}
-                accessibilityRole="button"
-              >
-                <FontAwesome
-                  name={showNewPassword ? 'eye' : 'eye-slash'}
-                  size={18}
-                  color={isDarkMode ? '#8b949e' : '#64748B'}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Password Validation Display */}
-          <PasswordValidationDisplay
-            validation={validation}
-            visible={newPassword.length > 0}
+          <ModalHeader
+            title="Cambia Password"
+            onClose={handleClose}
+            isDarkMode={isDarkMode}
           />
 
-          {/* Confirm New Password */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Conferma nuova password</Text>
-            <View style={styles.inputWrapper}>
-              <FontAwesome name="lock" size={16} color={isDarkMode ? '#8b949e' : '#64748B'} style={styles.inputIcon} />
-              <TextInput
-                style={[
-                  styles.input,
-                  confirmPassword.length > 0 && !passwordsMatch && styles.inputError,
-                ]}
-                placeholder="Ripeti la nuova password"
-                placeholderTextColor={isDarkMode ? '#8b949e' : '#94a3b8'}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                editable={!isChanging}
-                 autoCorrect={false}
-                 testID="confirm-password-input"
-               />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeButton}
-                accessibilityLabel={showConfirmPassword ? 'Nascondi conferma password' : 'Mostra conferma password'}
-                accessibilityRole="button"
-              >
-                <FontAwesome
-                  name={showConfirmPassword ? 'eye' : 'eye-slash'}
-                  size={18}
-                  color={isDarkMode ? '#8b949e' : '#64748B'}
-                />
-              </TouchableOpacity>
-            </View>
-            {confirmPassword.length > 0 && !passwordsMatch && (
-              <Text style={styles.matchErrorText}>Le password non coincidono</Text>
-            )}
-          </View>
+          <PasswordInput
+            label="Password attuale"
+            value={values.currentPassword}
+            onChangeText={(text) => handleChange('currentPassword', text)}
+            showPassword={currentPasswordVisibility.showPassword}
+            onToggleVisibility={currentPasswordVisibility.togglePasswordVisibility}
+            isDarkMode={isDarkMode}
+            placeholder="Inserisci la password attuale"
+            testID="current-password-input"
+          />
 
-          {/* Error message from parent */}
-          {error && (
-            <Text style={styles.errorText} accessibilityRole="alert">
-              {error}
-            </Text>
+          <PasswordInput
+            label="Nuova password"
+            value={values.newPassword}
+            onChangeText={(text) => handleChange('newPassword', text)}
+            showPassword={newPasswordVisibility.showPassword}
+            onToggleVisibility={newPasswordVisibility.togglePasswordVisibility}
+            isDarkMode={isDarkMode}
+            placeholder="Inserisci la nuova password"
+            testID="new-password-input"
+          />
+
+          {values.newPassword.length > 0 && (
+            <PasswordMatchIndicator
+              newPassword={values.newPassword}
+              confirmPassword={values.confirmPassword}
+              isDarkMode={isDarkMode}
+            />
           )}
 
-          {/* Buttons */}
-          <View style={styles.modalButtonContainer}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonCancel]}
-              onPress={onClose}
-              disabled={isChanging}
-              accessibilityLabel="Annulla cambio password"
-              accessibilityHint="Tocca per chiudere senza cambiare la password"
-              accessibilityRole="button"
-              accessibilityState={{ disabled: isChanging }}
-            >
-              <Text style={styles.modalButtonTextCancel}>Annulla</Text>
-            </TouchableOpacity>
+          <PasswordInput
+            label="Conferma nuova password"
+            value={values.confirmPassword}
+            onChangeText={(text) => handleChange('confirmPassword', text)}
+            showPassword={confirmPasswordVisibility.showPassword}
+            onToggleVisibility={confirmPasswordVisibility.togglePasswordVisibility}
+            isDarkMode={isDarkMode}
+            placeholder="Ripeti la nuova password"
+            error={
+              values.confirmPassword.length > 0 && !validation.passwordsMatch
+                ? 'Le password non coincidono'
+                : undefined
+            }
+            testID="confirm-password-input"
+          />
 
-            <TouchableOpacity
-              style={[
-                styles.modalButton,
-                styles.modalButtonConfirm,
-                !canSubmit && styles.modalButtonDisabled,
-              ]}
-               onPress={handleSubmit}
-               disabled={!canSubmit}
-               testID="confirm-reset-button"
-               accessibilityLabel="Cambia password"
-              accessibilityHint="Tocca per confermare il cambio password"
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !canSubmit }}
-            >
-              {isChanging ? (
-                <View style={styles.saveButtonContent}>
-                  <ActivityIndicator size="small" color="#ffffff" />
-                  <Text style={[styles.modalButtonTextConfirm, styles.saveButtonText]}>
-                    Salvataggio...
-                  </Text>
-                </View>
-              ) : (
-                <Text style={styles.modalButtonTextConfirm}>Cambia Password</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          <ErrorDisplay error={error} isDarkMode={isDarkMode} />
+
+          <ModalActions
+            onCancel={handleClose}
+            onConfirm={handleSubmit}
+            isSubmitting={isChanging}
+            confirmDisabled={!canSubmit}
+            isDarkMode={isDarkMode}
+          />
         </Pressable>
       </Pressable>
     </Modal>
@@ -327,110 +237,5 @@ const getStyles = (isDarkMode: boolean) =>
       width: '85%',
       borderColor: isDarkMode ? '#30363d' : '#e2e8f0',
       borderWidth: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    modalTitle: {
-      fontSize: scaleFont(18),
-      fontFamily: 'Inter-Bold',
-      color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    },
-    closeButton: {
-      padding: 4,
-    },
-    inputContainer: {
-      marginBottom: 12,
-    },
-    inputLabel: {
-      fontSize: scaleFont(14),
-      fontFamily: 'Inter-SemiBold',
-      color: isDarkMode ? '#c9d1d9' : '#374151',
-      marginBottom: 6,
-    },
-    inputWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: isDarkMode ? '#30363d' : '#cbd5e1',
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
-    },
-    inputIcon: {
-      marginRight: 8,
-    },
-    input: {
-      flex: 1,
-      paddingVertical: 12,
-      fontSize: scaleFont(16),
-      fontFamily: 'Inter-Regular',
-      color: isDarkMode ? '#c9d1d9' : '#1e293b',
-    },
-    inputError: {
-      borderColor: '#dc2626',
-    },
-    eyeButton: {
-      padding: 4,
-    },
-    matchErrorText: {
-      fontSize: scaleFont(12),
-      fontFamily: 'Inter-Regular',
-      color: '#dc2626',
-      marginTop: 4,
-    },
-    errorText: {
-      fontSize: scaleFont(14),
-      fontFamily: 'Inter-Regular',
-      color: '#dc2626',
-      marginTop: 8,
-      marginBottom: 8,
-      textAlign: 'center',
-    },
-    modalButtonContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 16,
-    },
-    modalButton: {
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-      flex: 1,
-      alignItems: 'center',
-    },
-    modalButtonCancel: {
-      backgroundColor: isDarkMode ? '#30363d' : '#e5e7eb',
-      marginRight: 8,
-    },
-    modalButtonConfirm: {
-      backgroundColor: '#4f46e5',
-      marginLeft: 8,
-    },
-    modalButtonDisabled: {
-      backgroundColor: '#a5b4fc',
-      opacity: 0.8,
-    },
-    modalButtonTextCancel: {
-      color: isDarkMode ? '#c9d1d9' : '#374151',
-      fontFamily: 'Inter-SemiBold',
-      fontSize: scaleFont(16),
-    },
-    modalButtonTextConfirm: {
-      color: 'white',
-      fontFamily: 'Inter-SemiBold',
-      fontSize: scaleFont(16),
-    },
-    saveButtonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-    },
-    saveButtonText: {
-      marginLeft: 8,
     },
   });

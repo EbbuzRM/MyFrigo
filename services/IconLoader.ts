@@ -2,7 +2,7 @@
 //
 // exports: IconData | IconLoader
 // used_by: services\IconMapper.ts
-//         services\IconService.ts
+//                   services\IconService.ts
 // rules:   - Caching via AsyncStorage must be attempted before any Supabase fetch, with errors caught silently via LoggingService
 //          - The module must always use the 'icon' column (not 'icon_url') when querying categories table
 //          - Return type must always be `Promise<IconData[]>` and never throw exceptions to callers

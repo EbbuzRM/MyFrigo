@@ -2,7 +2,7 @@
 //
 // exports: AnimatedPressable
 // used_by: components\AddMethodCard.tsx
-//         components\QuantityButton.tsx
+//                   components\QuantityButton.tsx
 // rules:   - Always use `useNativeDriver: true` for all `Animated` animations to maintain performance on the native thread.
 //          - Use `useReducedMotion` hook to respect user accessibility preferences; all animation effects must be conditionally disabled when reduced motion is active.
 //          - Combine explicit accessibility props with `accessibilityProps` object, ensuring the direct props take precedence over the object's values.

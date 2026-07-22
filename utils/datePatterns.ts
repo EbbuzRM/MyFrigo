@@ -2,8 +2,8 @@
 //
 // exports: STANDARD_DATE_PATTERNS | MONTH_YEAR_PATTERN | MONTH_YEAR_SPACE_PATTERN | SEQUENCE_PATTERN | TEXTUAL_MONTH_PATTERN | FUZZY_DATE_PATTERN | PARTIAL_DATE_PATTERN | MatchType | DateMatch | MATCH_CONFIDENCE_WEIGHTS
 // used_by: utils\ocrConfidence.ts
-//         utils\ocr\parsing.ts
-//         utils\ocr\types.ts
+//                   utils\ocr\parsing.ts
+//                   utils\ocr\types.ts
 // rules:   - All exported constants and types in this module are immutable and must remain read-only; do not modify, extend, or remove any pattern without updating all consumers listed in the header.
 //          - Date pattern ordering is significant: patterns are evaluated in declaration order and must maintain their relative priority (specific to fuzzy/fallback).
 //          - Any new pattern must preserve the existing match group structure conventions (capture groups for day, month, year fields) to maintain compatibility with downstream parsers.

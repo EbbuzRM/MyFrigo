@@ -2,7 +2,7 @@
 //
 // exports: MetaState | ManualEntryMetaProvider | useManualEntryMeta | MetaContextValue
 // used_by: context\ManualEntryActionsContext.tsx
-//         context\ManualEntryContext.tsx
+//                   context\ManualEntryContext.tsx
 // rules:   - The MetaContext must remain as the single source of truth for edit mode and flag status, with all consumers accessing state through the useManualEntryMeta hook
 //          - All state mutations must use the provided setter callbacks (setEditMode, setOriginalProductId, setManuallySelectedCategory, setInitialized) rather than directly modifying the metaState object
 //          - Reset operations must call resetMeta() to restore all state values to their initial defaults simultaneously

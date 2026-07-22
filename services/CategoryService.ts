@@ -2,8 +2,9 @@
 //
 // exports: CategoryService
 // used_by: context\CategoryContext.tsx
-//         services\diagnostic\DatabaseTests.ts
-//         services\diagnostic\PerformanceTests.ts
+//                   context\__tests__\CategoryContext.test.tsx
+//                   services\diagnostic\DatabaseTests.ts
+//                   services\diagnostic\PerformanceTests.ts
 // rules:   - Use Supabase client for all database operations, never raw SQL queries
 //          - Always convert between camelCase (TypeScript) and snake_case (database) using the provided utility functions
 //          - All service methods must be static and return typed Promises with proper error handling via LoggingService

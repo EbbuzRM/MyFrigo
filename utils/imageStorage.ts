@@ -1,13 +1,13 @@
 // imageStorage.ts — imageStorage module.
 //
-// exports: saveImagePermanently | deleteProductImage
-// used_by: hooks\useCamera.ts
-//          hooks\usePhotoActions.ts
+// exports: SaveImageOptions | saveImagePermanently | deleteProductImage
+// used_by: hooks\__tests__\useCamera.test.ts
+//                   hooks\useCamera.ts
 // rules:   - Non creare cartelle in tmp, URI persistente solo in documentDirectory; le immagini prodotto devono sopravvivere a reinstallazione, OOM e Offload App iOS.
 //          - Eliminare un'immagine prodotto solo se il file è dentro a documentDirectory/products/ (controllo di sicurezza obbligatorio).
 //          - Ignorare silenziosamente gli errori di cancellazione per non bloccare il flusso utente: meglio un'immagine orfana su disco che un crash.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-06-02 | gsd-executor | implement persistent image storage helper
-// message:
+// message: 
 
 import { Paths, Directory, File } from 'expo-file-system';
 import { LoggingService } from '@/services/LoggingService';

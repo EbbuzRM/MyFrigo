@@ -2,9 +2,9 @@
 //
 // exports: getStyles
 // used_by: components\DatePickerRow.tsx
-//         components\FormActionButtons.tsx
-//         components\ProductFormFooter.tsx
-//         components\QuantitySection.tsx
+//                   components\FormActionButtons.tsx
+//                   components\ProductFormFooter.tsx
+//                   components\QuantitySection.tsx
 // rules:   - All style objects must be generated via the `getStyles(isDarkMode: boolean)` factory function to support theme switching; direct `StyleSheet.create()` calls with static styles are not permitted.
 //          - Style properties using color values must reference the `isDarkMode` parameter to toggle between dark and light theme tokens consistently.
 //          - All exported styles must be consumed exclusively through the `getStyles()` return value; individual style objects or constants must not be exported directly.

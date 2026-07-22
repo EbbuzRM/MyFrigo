@@ -1,9 +1,9 @@
 // NotificationPermissionService.ts — NotificationPermissionService module.
 //
 // exports: NotificationPermissionService
-// used_by: services\NotificationCoreService.ts
-//         services\NotificationService.ts
+// used_by: services\NotificationService.ts
 // rules:   - Permissions are now managed through OneSignal SDK (expo-notifications removed)
+// agent:   unknown
 
 import { Platform } from 'react-native';
 import { OneSignal } from 'react-native-onesignal';

@@ -2,9 +2,9 @@
 //
 // exports: getHeaderStyles | getInputStyles | getButtonStyles | getPhotoCaptureStyles
 // used_by: components\BrandInput.tsx
-//         components\PhotoCaptureButton.tsx
-//         components\ProductFormHeader.tsx
-//         components\ProductNameInput.tsx
+//                   components\PhotoCaptureButton.tsx
+//                   components\ProductFormHeader.tsx
+//                   components\ProductNameInput.tsx
 // rules:   - Theme support must be passed as a boolean parameter (`isDarkMode`) to all style factory functions; do not use global theme context or hooks inside style definitions
 //          - All exported style factories (`getHeaderStyles`, `getInputStyles`, `getButtonStyles`) must accept `isDarkMode` as the sole parameter and use `StyleSheet.create()` for returning styles
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

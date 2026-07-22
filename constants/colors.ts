@@ -2,9 +2,9 @@
 //
 // exports: LIGHT | DARK | COMPONENT_COLORS | getThemeColors | withOpacity | COLORS
 // used_by: components\ProductCard.styles.ts
-//         components\ProductCard.tsx
-//         context\ThemeContext.tsx
-//         hooks\useExpirationStatus.ts
+//                   components\ProductCard.tsx
+//                   context\ThemeContext.tsx
+//                   hooks\useExpirationStatus.ts
 // rules:   - Non utilizzare valori esadecimali diretti nei fogli di stile; accedere ai colori esclusivamente tramite gli oggetti LIGHT/DARK o la funzione getThemeColors
 //          - Tutti i colori dell'applicazione devono essere definiti centralmente in questo file e non duplicati altrove
 //          - Mantenere la struttura speculare tra gli oggetti LIGHT e DARK per garantire la coerenza tra temi

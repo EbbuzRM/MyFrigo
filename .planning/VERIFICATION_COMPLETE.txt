@@ -1,3 +1,96 @@
+### 2026-07-16 — OneSignal Notification Initialization Fix
+
+**Problema**: Le notifiche push di OneSignal arrivavano solo quando l'app era aperta. In background/terminated non venivano ricevute.
+
+**Root cause**: `NotificationService.initialize()` non veniva mai chiamato dall'app reale. `_layout.tsx` chiamava solo `OneSignalService.initialize()` che inizializzava l'SDK ma NON richiedeva i permessi push (`requestPermission()`). Senza permessi formali, il push token non veniva registrato correttamente con APNs/FCM.
+
+**Fix applicati**:
+1. `app/_layout.tsx`: Sostituito `OneSignalService.initialize()` con `NotificationService.initialize()` nel useEffect di startup
+2. `services/OneSignalService.ts`: Aggiunti listener `foregroundWillDisplay` (mostra notifica in foreground) e `click` (log click) dopo `OneSignal.initialize()`
+
+**Risultato**: Verifier APPROVED. 0 errori TypeScript. Fix completo e corretto.
+
+**Commit**: `e9c1117` su master
+
+---
+
+### 2026-07-15 — Code Review Fix Verification (36 + 15 findings)
+
+**Verifica completa** di tutti i fix applicati dopo le due code review (38 + 15 = 53 finding totali).
+
+**Risultati**:
+- 0 errori TypeScript totali
+- 1961/1966 test passano (5 skipped legacy), 0 falliti
+- 29 file modificati, 11+ eliminati (functions/, backup files)
+- Verifier APPROVED su tutti i fix
+
+**Commit**: `83262c2` (seconda code review), `b449b03` (prima code review)
+
+---
+
+### 2026-07-09 — OneSignal Notification Fix (1-day reminder)
+
+**Problema**: L'utente non aveva ricevuto la notifica di un prodotto in scadenza "domani".
+
+**Root cause**: RPC `get_expiring_products` selezionava pre-avviso SOLO a `oggi + notification_days` (3) e "scaduto" solo a `oggi` — nessun ramo a 1 giorno.
+
+**Fix applicati**:
+- RPC `get_expiring_products`: aggiunto ramo `pre_warning` a `CURRENT_DATE + INTERVAL '1 day'` + `SELECT DISTINCT`
+- Edge Function `send-expiration-notifications` v22→v23: testo per-prodotto
+
+**Risultato**: Verifier APPROVED (RPC 5/5 PASS + batch 4/4 PASS). Notifica "scade domani" confermata ricevuta dall'utente.
+
+**Commit**: `648ea6b` su master
+
+---
+
+### 2026-07-08 — OCR Date Parsing Fix
+
+**Problema**: Data 15/08/26 letta come 30/08 (poi corretto in 08-31).
+
+**Root cause**: `MONTH_YEAR_PATTERN` matchava "08.26" dentro "15.08.26" risolvendolo come ultimo giorno di agosto = 31.
+
+**Fix applicati**:
+- `utils/ocr/parsing.ts`: filtro per-blocco esclude month-year interno a data completa
+- `utils/ocr/scoring.ts`: `findRepresentativeMatch` con priorità esplicita
+
+**Risultato**: Verifier APPROVED. 165/165 test OCR passati, 0 nuovi errori tsc.
+
+**Commit**: `4d34d8f` su master
+
+---
+
+### 2026-06-17 — Barcode Image Normalization Fix
+
+**Problema**: Foto prodotto da Open Food Facts non visibile nella schermata di compilazione (intermittente: 3-4 su 20 prodotti).
+
+**Root cause**: `imageUrl` non normalizzata da `string[]` a `string` nel flusso barcode non-EDIT.
+
+**Fix applicati**:
+- `hooks/useProductInitialization.ts`: normalizzazione `string[]` → `string` nel ramo barcode
+- `context/ManualEntryActionsContext.tsx`: normalizzazione `imageUrl` in `processScannedData`
+
+**Risultato**: Verifier APPROVED. 0 errori TypeScript. 28/28 test useProductInitialization, 16/16 test ManualEntryActionsContext.
+
+**Commit**: `9fbda40` su master
+
+---
+
+### 2026-06-02 — Product Image Loading Fix
+
+**Problema**: "Certe volte quando vado dentro ai prodotti, non fa vedere l'immagine oppure ci mette tanto tempo."
+
+**Fix applicati**:
+- `utils/imageStorage.ts`: persistenza URI in `documentDirectory/products/`
+- `hooks/useCamera.ts`: resize a 1200px, salvataggio in `Paths.document`
+- `hooks/useProductInitialization.ts`: rimozione loop infinito, race condition EDIT mode
+
+**Risultato**: Verifier APPROVED. 99/99 test passano nei file toccati. 0 errori TypeScript nuovi.
+
+**Commit**: `3d654dc` su master
+
+---
+
 ### Today's Fixes (Jun 28, 2026) — Notifiche Push Duplicate risolte
 
 **Problema**: L'utente riceveva 2 notifiche push identiche per ogni push inviata dal server.

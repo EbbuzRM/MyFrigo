@@ -1,7 +1,8 @@
 // GoogleAuthFeedback.tsx — GoogleAuthFeedback module.
 //
 // exports: GoogleAuthFeedback | useGoogleAuthFeedback
-// used_by: hooks\useGoogleAuth.ts
+// used_by: hooks\__tests__\useGoogleAuth.test.ts
+//                   hooks\useGoogleAuth.ts
 // rules:   The `AuthUIFeedback` interface must be fully implemented without altering its contract, and all UI feedback must use only React Native `Alert` dialogs with no external UI dependencies.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

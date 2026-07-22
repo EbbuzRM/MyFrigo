@@ -2,7 +2,7 @@
 //
 // exports: useExpirationStatus
 // used_by: components\ExpirationCard.tsx
-//         hooks\useProductStatus.ts
+//                   hooks\useProductStatus.ts
 // rules:   - All expiration status logic must use centralized COLORS constants from `@/constants/colors` and respect the `isDarkMode` parameter for theming; hardcoded color values are prohibited.
 //          - The hook must always return the strict `{text: string, color: string, backgroundColor: string}` shape, and status calculation must be memoized via `useMemo` with expirationDate, isDarkMode, and isFrozen as dependencies.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

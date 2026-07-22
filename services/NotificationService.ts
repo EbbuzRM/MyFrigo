@@ -1,8 +1,9 @@
 // NotificationService.ts — NotificationService module.
 //
 // exports: NotificationService | EventEmitter | eventEmitter
-// used_by: context\SettingsContext.tsx
-//         services\diagnostic\NotificationTests.ts
+// used_by: app\_layout.tsx
+//                   context\SettingsContext.tsx
+//                   services\diagnostic\NotificationTests.ts
 // rules:   Only EventEmitter and eventEmitter exported from EventEmitter are allowed for event-based communication; no other custom events or callback registries should be introduced in this module.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

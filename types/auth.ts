@@ -2,9 +2,9 @@
 //
 // exports: GoogleAuthAttempt | GoogleAuthRetryResult | RetryStrategyConfig | DEFAULT_RETRY_CONFIG | ProfileData | AuthStorage | AuthUIFeedback
 // used_by: components\GoogleAuthFeedback.tsx
-//         hooks\useGoogleAuth.ts
-//         utils\GoogleAuthRetryManager.ts
-//         utils\GoogleAuthStorage.ts
+//                   hooks\useGoogleAuth.ts
+//                   utils\GoogleAuthRetryManager.ts
+//                   utils\GoogleAuthStorage.ts
 // rules:   This module defines core interfaces and a default configuration constant; any modification must keep all exports (interfaces and `DEFAULT_RETRY_CONFIG`) compatible with the four files that depend on them. Do not add runtime logic or side effects here—this file must remain a pure type/constant definitions module.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

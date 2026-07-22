@@ -2,8 +2,9 @@
 //
 // exports: ProductProvider | useProducts
 // used_by: app\(tabs)\index.tsx
-//         app\(tabs)\products.tsx
-//         components\AppProviders.tsx
+//                   app\(tabs)\products.tsx
+//                   app\__tests__\products.test.tsx
+//                   components\AppProviders.tsx
 // rules:   - Context providers must use useRef-based debouncing and fetch guards (isFetchingRef) to prevent concurrent data fetches
 //          - All asynchronous operations in context providers must include mounted state checks (isMounted) to prevent state updates on unmounted components
 //          - Error handling in context providers must use LoggingService for structured error logging and set fallback empty states for all data fields

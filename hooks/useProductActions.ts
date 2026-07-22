@@ -2,6 +2,7 @@
 //
 // exports: UseProductActionsParams | UseProductActionsResult | useProductActions
 // used_by: app\(tabs)\products.tsx
+//                   app\__tests__\products.test.tsx
 // rules:   - Must use `ProductStorage` service for all product data mutations, not direct state manipulation
 //          - All action handlers must call `refreshProducts` callback after successful mutations to maintain UI consistency
 //          - Should delegate to `onShowConsumeModal` callback for multi-quantity products instead of implementing modal logic directly

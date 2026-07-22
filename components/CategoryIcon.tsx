@@ -2,8 +2,8 @@
 //
 // exports: CategoryIcon
 // used_by: components\ExpirationCardHeader.tsx
-//         components\HistoryCardHeader.tsx
-//         components\ProductCardHeader.tsx
+//                   components\HistoryCardHeader.tsx
+//                   components\ProductCardHeader.tsx
 // rules:   - CategoryIcon must remain a pure React.memo component with zero side effects across all render paths
 //          - All three icon render paths (local, remote URL, emoji) must be preserved and functionally maintained
 //          - useMemo style calculations require correct dependency arrays to prevent unnecessary re-renders

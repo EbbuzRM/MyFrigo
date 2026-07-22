@@ -2,12 +2,12 @@
 //
 // exports: useReducedMotion
 // used_by: components\AnimatedPressable.tsx
-//         components\AnimatedTabItem.tsx
-//         components\GlobalUpdateModal.tsx
-//         components\HistoryCard.tsx
-//         components\Toast.tsx
-//         hooks\useCardAnimation.ts
-//         hooks\useReducedMotion.test.ts
+//                   components\AnimatedTabItem.tsx
+//                   components\GlobalUpdateModal.tsx
+//                   components\HistoryCard.tsx
+//                   components\Toast.tsx
+//                   hooks\useCardAnimation.ts
+//                   hooks\useReducedMotion.test.ts
 // rules:   Do not remove or modify the `useReducedMotion` hook without also updating every importing component listed in the `used_by` comment to handle the accessibility setting appropriately.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

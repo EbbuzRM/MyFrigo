@@ -2,7 +2,7 @@
 //
 // exports: DiagnosticData | SystemTestResult | SystemTests
 // used_by: hooks\useDiagnosticTests.ts
-//         services\diagnostic\TestRunner.ts
+//                   services\diagnostic\TestRunner.ts
 // rules:   - Do NOT convert static class methods to instance methods; this module is designed for stateless utility-style access throughout the app
 //          - All public API methods must return `SystemTestResult` with consistent timing via `Date.now()` at start and end of each operation
 //          - Network tests must use the shared `supabase` client from `@/services/supabaseClient`; do not create new connections

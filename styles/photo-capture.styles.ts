@@ -2,9 +2,9 @@
 //
 // exports: getStyles | PhotoCaptureStyles
 // used_by: app\photo-capture.tsx
-//         components\CameraView.tsx
-//         components\OCRProgressOverlay.tsx
-//         components\PhotoPreview.tsx
+//                   components\CameraView.tsx
+//                   components\OCRProgressOverlay.tsx
+//                   components\PhotoPreview.tsx
 // rules:   Module exports functional styles via `getStyles(isDarkMode)` — do not convert to static or hook-based style generation.
 //          Container `backgroundColor` must remain `'black'` (not theme-dependent) to ensure camera viewport masking.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

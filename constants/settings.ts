@@ -2,10 +2,10 @@
 //
 // exports: NOTIFICATION_DAYS_OPTIONS | DEFAULT_NOTIFICATION_DAYS | MIN_NOTIFICATION_DAYS | MAX_NOTIFICATION_DAYS | DIAGNOSTIC_LONG_PRESS_DURATION | DIAGNOSTIC_PROGRESS_INTERVAL | CardControlType | SettingsCardConfig | AccountCardConfig | NotificationCardConfig | AppearanceCardConfig | DataManagementCardConfig | UpdateCardConfig | SupportCardConfig | SettingsCardUnion | SettingsSectionConfig | getIconColor | createAccountCards | createNotificationCards | createAppearanceCards | (+4 more)
 // used_by: components\settings\AccountSettingsSection.tsx
-//         components\settings\DiagnosticSettingsSection.tsx
-//         components\settings\NotificationDaysModal.tsx
-//         components\settings\UpdateSettingsSection.tsx
-//         hooks\useSettingsSections.ts
+//                   components\settings\DiagnosticSettingsSection.tsx
+//                   components\settings\NotificationDaysModal.tsx
+//                   components\settings\UpdateSettingsSection.tsx
+//                   hooks\useSettingsSections.ts
 // rules:   This file defines all settings UI structure declaratively; do NOT create new settings components or cards outside of this module—add them only via the factory functions and interfaces defined here. Maintain strict separation between configuration (this file) and rendering logic (components using these exports).
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

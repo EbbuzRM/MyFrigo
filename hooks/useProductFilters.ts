@@ -2,6 +2,7 @@
 //
 // exports: UseProductFiltersParams | UseProductFiltersResult | useProductFilters
 // used_by: app\(tabs)\products.tsx
+//                   app\__tests__\products.test.tsx
 // rules:   The hook must remain a pure computation with no side effects, API calls, or state mutations. All filtering logic must derive exclusively from the input parameters.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

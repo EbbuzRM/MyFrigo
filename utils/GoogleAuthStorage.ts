@@ -2,7 +2,7 @@
 //
 // exports: GoogleAuthStorage | AuthAttemptRepository
 // used_by: hooks\useGoogleAuth.ts
-//         utils\GoogleAuthRetryManager.ts
+//                   utils\GoogleAuthRetryManager.ts
 // rules:   - The `GoogleAuthStorage` class must always implement the `AuthStorage` interface from `@/types/auth` without modifying its contract
 //          - All storage keys must use the `STORAGE_KEY_PREFIX` constant to namespace auth attempts and prevent collisions
 //          - The `AuthAttemptRepository` constructor requires both a valid `AuthStorage` implementation and a `retryWindowMs` parameter at instantiation

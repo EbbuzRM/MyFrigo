@@ -2,6 +2,7 @@
 //
 // exports: useEmailAuth
 // used_by: components\LoginForm.tsx
+//                   components\__tests__\LoginForm.test.tsx
 // rules:   The authentication flow is managed exclusively by AuthContext via expo-router; this hook must never handle navigation or redirection logic.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

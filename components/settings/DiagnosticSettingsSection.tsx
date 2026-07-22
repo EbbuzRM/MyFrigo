@@ -1,6 +1,6 @@
 // DiagnosticSettingsSection.tsx — DiagnosticSettingsSection module.
 //
-// exports: DiagnosticSettingsSectionProps
+// exports: DiagnosticSettingsSectionProps | DiagnosticSettingsSection
 // used_by: app\(tabs)\settings.tsx
 // rules:   - All settings sections (Notifications, Appearance, Data Management, Support) must be rendered as separate `<SettingsSection>` components with distinct `title` props, each containing their respective `<SettingsCard>` children
 //          - The component must maintain a flat prop interface without nesting related props into sub-objects, as all callbacks are passed directly at the top level

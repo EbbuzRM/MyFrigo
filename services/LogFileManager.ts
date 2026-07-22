@@ -1,6 +1,6 @@
 // LogFileManager.ts — LogFileManager module.
 //
-// exports: LogFileManager
+// exports: getLogFileManagerErrors | clearLogFileManagerErrors | LogFileManager
 // used_by: services\LoggingService.ts
 // rules:   The module uses expo-file-system for file operations and must only be initialized on native platforms (iOS/Android), with rotation logic triggered when maxFileSize is exceeded.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

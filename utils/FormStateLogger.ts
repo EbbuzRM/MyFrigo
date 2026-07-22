@@ -2,10 +2,10 @@
 //
 // exports: FormStateLogger | formStateLogger
 // used_by: components\ProductFormHeader.tsx
-//         hooks\usePhotoNavigation.ts
-//         services\diagnostic\AuthTests.ts
-//         services\diagnostic\__tests__\AuthTests.test.ts
-//         utils\DiagnosticTester.ts
+//                   hooks\usePhotoNavigation.ts
+//                   services\diagnostic\AuthTests.ts
+//                   services\diagnostic\__tests__\AuthTests.test.ts
+//                   utils\DiagnosticTester.ts
 // rules:   - The singleton pattern must be preserved; do not allow multiple instances of FormStateLogger to be created.
 //          - All state logging and retrieval must pass through LoggingService for consistent audit trail and debugging.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

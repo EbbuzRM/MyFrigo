@@ -2,9 +2,10 @@
 //
 // exports: PasswordValidationResult | validatePassword | isPasswordValid | validateEmail
 // used_by: app\password-reset-form.tsx
-//         hooks\useSignupValidation.ts
-//         hooks\useSignupValidation.types.ts
-//         hooks\useSignupValidators.ts
+//                   hooks\__tests__\useSignupValidation.test.ts
+//                   hooks\useSignupValidation.ts
+//                   hooks\useSignupValidation.types.ts
+//                   hooks\useSignupValidators.ts
 // rules:   - Password validation must always check all four criteria (length, uppercase, lowercase, digits) simultaneously, never allow partial validation
 //          - Email validation must use the defined regex pattern and cannot be modified without explicit architectural approval
 //          - All validation functions must remain pure, synchronous, and side-effect free

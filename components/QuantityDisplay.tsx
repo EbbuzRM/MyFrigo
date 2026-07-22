@@ -2,8 +2,8 @@
 //
 // exports: QuantityDisplay
 // used_by: components\ExpirationCardDetails.tsx
-//         components\HistoryCardDetails.tsx
-//         components\ProductCardDetails.tsx
+//                   components\HistoryCardDetails.tsx
+//                   components\ProductCardDetails.tsx
 // rules:   - All React Native components must use `React.memo` with a `displayName` for performance and debugging consistency
 //          - Component props must include JSDoc comments for all optional parameters with default values documented
 //          - Non-optional props must use TypeScript interfaces exported from the component file

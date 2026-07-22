@@ -2,6 +2,7 @@
 //
 // exports: UseProductRefreshResult | UseProductRefreshParams | useProductRefresh
 // used_by: app\(tabs)\products.tsx
+//                   app\__tests__\products.test.tsx
 // rules:   - Exported interfaces and functions must maintain backward compatibility as they are consumed by `app\(tabs)\products.tsx`.
 //          - The `AUTO_REFRESH_INTERVAL` constant (2 minutes) drives auto-refresh logic and should not be modified without updating all dependent timing calculations.
 //          - The hook's `refreshProductsFromContext` parameter is required and must always be provided by consumers.

@@ -1,11 +1,11 @@
 // NotificationDaysModal.tsx — NotificationDaysModal module.
 //
-// exports: NotificationDaysModalProps
+// exports: NotificationDaysModalProps | NotificationDaysModal
 // used_by: app\(tabs)\settings.tsx
 // rules:   - All state management (visibility, input value, loading) must remain in the parent component; this component must be purely presentational and stateless
 //          - Input validation boundaries must always reference the imported `MIN_NOTIFICATION_DAYS` and `MAX_NOTIFICATION_DAYS` constants, never hardcoded values
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message:
+// message: 
 
 import React from 'react';
 import {

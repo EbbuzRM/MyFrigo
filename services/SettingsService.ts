@@ -2,11 +2,12 @@
 //
 // exports: AppSettings | SettingsService
 // used_by: context\SettingsContext.tsx
-//         context\ThemeContext.tsx
-//         services\diagnostic\DatabaseTests.ts
-//         services\diagnostic\PerformanceTests.ts
-//         services\diagnostic\SystemTests.ts
-//         utils\caseConverter.ts
+//                   context\ThemeContext.tsx
+//                   context\__tests__\SettingsContext.test.tsx
+//                   services\diagnostic\DatabaseTests.ts
+//                   services\diagnostic\PerformanceTests.ts
+//                   services\diagnostic\SystemTests.ts
+//                   utils\caseConverter.ts
 // rules:   The configuration table `app_settings` is a singleton (single row with id=1). Reading/writing must never assume multiple rows exist.
 //          All data flowing between the service and external callers must use camelCase conversion via `convertSettingsToCamelCase`/`convertSettingsToSnakeCase` utilities.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

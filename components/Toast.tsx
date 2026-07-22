@@ -2,7 +2,7 @@
 //
 // exports: Toast
 // used_by: app\_layout.tsx
-//         app\feedback.tsx
+//                   app\feedback.tsx
 // rules:   - Use `useReducedMotion` hook to conditionally disable opacity animations; always respect reduced motion preferences.
 //          - All toast components must accept `testID` prop for Maestro testability.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

@@ -2,11 +2,11 @@
 //
 // exports: DiagnosticTest | TestResult | useDiagnosticTests
 // used_by: components\DiagnosticPanel.tsx
-//         components\diagnostic\AuthTestSection.tsx
-//         components\diagnostic\DatabaseTestSection.tsx
-//         components\diagnostic\PerformanceTestSection.tsx
-//         context\DiagnosticContext.tsx
-//         services\diagnostic\TestRunner.ts
+//                   components\diagnostic\AuthTestSection.tsx
+//                   components\diagnostic\DatabaseTestSection.tsx
+//                   components\diagnostic\PerformanceTestSection.tsx
+//                   context\DiagnosticContext.tsx
+//                   services\diagnostic\TestRunner.ts
 // rules:   - Module exports (DiagnosticTest, TestResult, useDiagnosticTests) must remain stable and compatible with all consumers listed in used_by
 //          - All test category types defined in DiagnosticTest interface ('auth' | 'database' | 'performance' | 'system' | 'cache') must be supported by corresponding service implementations
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

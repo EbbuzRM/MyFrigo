@@ -1,6 +1,6 @@
 // HistoryCardStatus.tsx — HistoryCardStatus module.
 //
-// exports: HistoryStatus
+// exports: HistoryStatus | useStatusInfo | formatHistoryDate
 // used_by: components\HistoryCard.tsx
 // rules:   - The `StatusInfo` interface and status color objects (`CONSUMED_COLORS`, `EXPIRED_COLORS`) define the canonical data structure for status theming and must remain consistent across all status-related components
 //          - Theme colors are mapped exclusively through the `isDarkMode` boolean pattern; no additional theme provider or context should be introduced for status color resolution

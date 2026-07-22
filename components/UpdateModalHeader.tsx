@@ -1,9 +1,9 @@
 // UpdateModalHeader.tsx — UpdateModalHeader module.
 //
-// exports: UpdateStatus
+// exports: UpdateStatus | UpdateModalHeader
 // used_by: components\UpdateActions.tsx
-//         components\UpdateModal.tsx
-//         components\UpdateStatusMessage.tsx
+//                   components\UpdateModal.tsx
+//                   components\UpdateStatusMessage.tsx
 // rules:   - All style references must come from the `UpdateModalStyles` object passed via props; never use external or inline styles.
 //          - Any new status value added to the `UpdateStatus` type requires corresponding updates to both the switch case in `getStatusIconColor` and the `StatusIcon` component.
 //          - All interactive elements must respect the `isClosable` prop for enabling/disabling close functionality and provide proper accessibility labels.

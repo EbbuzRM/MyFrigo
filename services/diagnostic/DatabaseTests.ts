@@ -2,7 +2,7 @@
 //
 // exports: DiagnosticData | DatabaseTestResult | DatabaseTests
 // used_by: hooks\useDiagnosticTests.ts
-//         services\diagnostic\TestRunner.ts
+//                   services\diagnostic\TestRunner.ts
 // rules:   - This module contains static test methods that must remain stateless; no instance properties or constructor logic should be added.
 //          - All test methods must return a `DatabaseTestResult` object and must not throw unhandled exceptions.
 //          - Imports from external services (LoggingService, supabase, ProductStorage, SettingsService, CategoryService) must not be removed or changed without updating all dependent modules.

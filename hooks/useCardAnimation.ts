@@ -2,6 +2,7 @@
 //
 // exports: useCardAnimation
 // used_by: components\ProductCard.tsx
+//                   components\__tests__\ProductCard.test.tsx
 // rules:   The hook must accept a numeric `index` parameter to support staggered animation timing, and it must respect the user's reduced motion preference by checking `useReducedMotion()` before applying any animation values.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

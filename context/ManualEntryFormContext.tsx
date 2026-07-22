@@ -2,7 +2,7 @@
 //
 // exports: Quantity | FormState | FormAction | ManualEntryFormProvider | useManualEntryForm | FormContextValue
 // used_by: context\ManualEntryActionsContext.tsx
-//         context\ManualEntryContext.tsx
+//                   context\ManualEntryContext.tsx
 // rules:   - The `FormAction` discriminated union type is the sole mechanism for state mutations and must not be extended with direct state assignment patterns
 //          - All state initialization must go through `getInitialState()` to ensure proper default values including UUID generation and local date formatting
 //          - The `FormState` interface is the single source of truth for form data structure and any new fields must be added to both the interface and reducer cases

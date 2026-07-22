@@ -2,7 +2,7 @@
 //
 // exports: DiagnosticData | AuthTestResult | AuthTests
 // used_by: hooks\useDiagnosticTests.ts
-//         services\diagnostic\TestRunner.ts
+//                   services\diagnostic\TestRunner.ts
 // rules:   The AuthTests module must not introduce runtime dependencies on external authentication services or user interface components beyond React Native's Alert and the specified logging utilities (LoggingService, AuthLogger, FormStateLogger). All tests must remain self-contained and stateless, executing without side effects on production authentication state or form data.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

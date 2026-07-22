@@ -2,9 +2,9 @@
 //
 // exports: CaptureMode | useCamera
 // used_by: app\photo-capture.tsx
-//         components\CameraView.tsx
-//         components\PhotoPreview.tsx
-//         hooks\usePhotoActions.ts
+//                   components\CameraView.tsx
+//                   components\PhotoPreview.tsx
+//                   hooks\usePhotoActions.ts
 // rules:   - This hook must remain a pure camera management layer, never containing UI rendering logic or business-specific image processing; all capture mode behaviors must be controlled by the consuming component.
 //          - Camera and gallery permissions must be requested separately and independently, never combined into a single permission request.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

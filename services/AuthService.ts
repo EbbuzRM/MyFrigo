@@ -1,9 +1,11 @@
 // AuthService.ts — AuthService module.
 //
-// exports: AuthResult | AuthService
+// exports: cleanupRateLimiter | AuthResult | AuthService
 // used_by: components\LoginForm.tsx
-//         hooks\useEmailAuth.ts
-//         hooks\useGoogleAuth.ts
+//                   hooks\__tests__\useEmailAuth.test.ts
+//                   hooks\__tests__\useGoogleAuth.test.ts
+//                   hooks\useEmailAuth.ts
+//                   hooks\useGoogleAuth.ts
 // rules:   - All authentication methods must use `AuthLogger` for step tracking and error logging
 //          - Email validation must always run before any Supabase authentication call
 //          - All authentication operations must measure and return duration in `AuthResult`

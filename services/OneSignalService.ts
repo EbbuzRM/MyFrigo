@@ -1,7 +1,9 @@
 // OneSignalService.ts — OneSignalService module.
 //
 // exports: OneSignalUserData | OneSignalService
-// used_by: none
+// used_by: context\AuthContext.tsx
+//                   context\__tests__\AuthContext.test.tsx
+//                   services\NotificationService.ts
 // rules:   - State access in OneSignal event listeners must always include a session check from `supabase.auth.getSession()` before using any user data
 //          - All OneSignal operations must go through this service class; direct OneSignal SDK calls elsewhere in the codebase are prohibited
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass

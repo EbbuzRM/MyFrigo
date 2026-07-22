@@ -2,8 +2,8 @@
 //
 // exports: SettingsCard
 // used_by: components\settings\AccountSettingsSection.tsx
-//         components\settings\DiagnosticSettingsSection.tsx
-//         components\settings\UpdateSettingsSection.tsx
+//                   components\settings\DiagnosticSettingsSection.tsx
+//                   components\settings\UpdateSettingsSection.tsx
 // rules:   - All components must accept and handle `onLongPress` prop with `GestureResponderEvent` type for accessibility support
 //          - Theme consistency must be maintained through `useTheme` hook and dynamic styles based on `isDarkMode`
 //          - Custom accessibility props from `getSettingsCardAccessibilityProps` utility must be applied to all interactive elements

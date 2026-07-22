@@ -2,6 +2,7 @@
 //
 // exports: useProductStatus
 // used_by: components\ProductCard.tsx
+//                   components\__tests__\ProductCard.test.tsx
 // rules:   The `useProductStatus` hook MUST always delegate expiration status calculation to `useExpirationStatus` from `@/hooks/useExpirationStatus` and MUST NOT duplicate or independently reimplement that logic. The safe date parsing memo MUST remain stable and guarded with try-catch for invalid or undefined inputs.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 

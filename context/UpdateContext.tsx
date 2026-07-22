@@ -2,9 +2,10 @@
 //
 // exports: useUpdate | UpdateProvider
 // used_by: app\(tabs)\settings.tsx
-//         app\_layout.tsx
-//         components\AppProviders.tsx
-//         hooks\useSettingsSections.ts
+//                   app\__tests__\settings.test.tsx
+//                   app\_layout.tsx
+//                   components\AppProviders.tsx
+//                   hooks\useSettingsSections.ts
 // rules:   - The UpdateProvider component must remain as a single React context provider wrapping the entire update subsystem; do not split it into multiple providers or mix concerns with other contexts.
 //          - All AsyncStorage read/write operations for update settings must use the UPDATE_SETTINGS_KEY constant exclusively; no hardcoded keys or alternative storage keys allowed.
 //          - The update lifecycle (check, download, install) must be managed through the global UpdateService singleton, not through direct Expo Updates API calls.
