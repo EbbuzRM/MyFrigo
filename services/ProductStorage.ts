@@ -1,20 +1,24 @@
 // ProductStorage.ts — ProductStorage module.
 //
 // exports: ProductStorage
-// used_by: app\consumed-list.tsx
-//         app\history-detail.tsx
-//         context\ProductContext.tsx
-//         context\__tests__\ProductContext.test.tsx
-//         hooks\__tests__\useProductDetail.test.ts
-//         hooks\useHistoryData.ts
-//         hooks\usePhotoActions.ts
-//         hooks\useProductActions.ts
-//         hooks\useProductDetail.ts
-//         hooks\useProductInitialization.ts
-//         hooks\useProductRefresh.ts
-//         hooks\useProductSave.ts
-//         services\diagnostic\DatabaseTests.ts
-//         services\diagnostic\PerformanceTests.ts
+// used_by: app\__tests__\scanner.test.tsx
+//                   app\consumed-list.tsx
+//                   app\history-detail.tsx
+//                   context\ProductContext.tsx
+//                   context\__tests__\ProductContext.test.tsx
+//                   hooks\__tests__\useProductActions.test.ts
+//                   hooks\__tests__\useProductDetail.test.ts
+//                   hooks\__tests__\useProductInitialization.test.ts
+//                   hooks\__tests__\useProductSave.test.ts
+//                   hooks\useHistoryData.ts
+//                   hooks\usePhotoActions.ts
+//                   hooks\useProductActions.ts
+//                   hooks\useProductDetail.ts
+//                   hooks\useProductInitialization.ts
+//                   hooks\useProductRefresh.ts
+//                   hooks\useProductSave.ts
+//                   services\diagnostic\DatabaseTests.ts
+//                   services\diagnostic\PerformanceTests.ts
 // rules:   - All ProductStorage methods must return `ServiceResult<T>` for consistent error handling across all consumers
 //          - Database operations must use the Supabase client obtained via `getCachedSession()` for authenticated access
 //          - All product data transformations between snake_case (database) and camelCase (application) must use the dedicated converter utilities
@@ -46,6 +50,18 @@ function getDaysAgo(days: number): Date {
 export class ProductStorage {
   private static readonly TIMEOUT_MS = 15000;
 
+  /** Shared SELECT fields for product list queries. */
+  private static readonly PRODUCT_SELECT_FIELDS =
+    'id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date';
+
+  /** Builds a base SELECT query for products filtered by user_id. */
+  private static buildBaseQuery(userId: string) {
+    return supabase
+      .from('products')
+      .select(ProductStorage.PRODUCT_SELECT_FIELDS)
+      .eq('user_id', userId);
+  }
+
   /** Ottiene l'ID utente corrente o restituisce errore se non autenticato. */
   private static async getCurrentUserId(): Promise<ServiceResult<string>> {
     try {
@@ -73,7 +89,7 @@ export class ProductStorage {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return userResult as ServiceResult<Product[]>;
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data).order('expiration_date', { ascending: true });
+      const { data, error } = await this.buildBaseQuery(userResult.data).order('expiration_date', { ascending: true });
       if (error) throw error;
       const products = data ? convertProductsToCamelCase(data) : [];
       return createSuccessResult(products);
@@ -176,7 +192,11 @@ export class ProductStorage {
     if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
     const twoDaysAgo = getDaysAgo(2);
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'active').eq('is_frozen', false).lt('expiration_date', toLocalISOString(twoDaysAgo)).order('expiration_date', { ascending: true });
+      const { data, error } = await this.buildBaseQuery(userResult.data!)
+        .eq('status', 'active')
+        .eq('is_frozen', false)
+        .lt('expiration_date', toLocalISOString(twoDaysAgo))
+        .order('expiration_date', { ascending: true });
       if (error) throw error;
       return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
     } catch (error) {
@@ -189,7 +209,7 @@ export class ProductStorage {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'expired');
+      const { data, error } = await this.buildBaseQuery(userResult.data!).eq('status', 'expired');
       if (error) throw error;
       return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
     } catch (error) {
@@ -236,7 +256,9 @@ export class ProductStorage {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return createErrorResult<Product[]>(userResult.error!);
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date').eq('user_id', userResult.data!).eq('status', 'consumed').order('consumed_date', { ascending: false });
+      const { data, error } = await this.buildBaseQuery(userResult.data!)
+        .eq('status', 'consumed')
+        .order('consumed_date', { ascending: false });
       if (error) throw error;
       return createSuccessResult(data ? convertProductsToCamelCase(data) : []);
     } catch (error) {

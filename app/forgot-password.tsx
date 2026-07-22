@@ -90,7 +90,7 @@ export default function ForgotPassword() {
     }
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         // Non specifichiamo redirectTo per ricevere un OTP invece di un link
       });
 

@@ -2,8 +2,7 @@
 //
 // exports: CategoryMatcher
 // used_by: hooks\useBarcodeScanner.ts
-//         hooks\useCategorySelection.ts
-//         hooks\useProductInitialization.ts
+//                   hooks\useCategorySelection.ts
 // rules:   - Module exports must remain as a class named `CategoryMatcher` with only static methods, as it is consumed by multiple hooks as a stateless service
 //          - All category keyword maps must be maintained as private static members to prevent external mutation, with new categories added only via the `italianKeywordMap` structure
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
@@ -11,6 +10,7 @@
 
 import { ProductCategory } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
+import categoryKeywords from './data/categoryKeywords.json';
 
 /**
  * Centralized service for category matching and guessing.
@@ -20,120 +20,42 @@ export class CategoryMatcher {
   /**
    * Keyword map for matching Italian product names to categories.
    * Used primarily in manual entry form.
+   * Data loaded from services/data/categoryKeywords.json
    */
-  private static italianKeywordMap: Record<string, string[]> = {
-    // Dairy (Latticini)
-    'dairy': ['formaggio', 'yogurt', 'mozzarella', 'ricotta', 'burro', 'panna', 'mascarpone', 'parmigiano', 'pecorino', 'gorgonzola'],
-    // Milk (Latte)
-    'milk': ['latte', 'latte intero', 'latte scremato', 'latte parzialmente scremato'],
-    // Meat (Carne)
-    'meat': ['pollo', 'manzo', 'maiale', 'tacchino', 'agnello', 'bistecca', 'hamburger'],
-    // Salumi
-    'salumi': ['prosciutto', 'salame', 'salsiccia', 'wurstel', 'speck', 'mortadella', 'bresaola', 'pancetta', 'coppa', 'culatello', 'guanciale', 'nduja', 'capocollo', 'salumi', 'affettato'],
-    // Fish (Pesce)
-    'fish': ['tonno', 'salmone', 'merluzzo', 'gamber', 'vongole', 'cozze', 'sogliola', 'pesce', 'acciughe', 'sardine'],
-    // Fruits (Frutta)
-    'fruits': ['mela', 'banana', 'arancia', 'fragola', 'uva', 'pesca', 'albicocca', 'kiwi', 'pera', 'limone', 'mandarino', 'anguria', 'melone', 'ciliegia', 'prugna', 'pompelmo'],
-    // Vegetables (Verdure)
-    'vegetables': ['pomodoro', 'insalata', 'zucchina', 'melanzana', 'carota', 'patata', 'cipolla', 'spinaci', 'broccoli', 'cavolfiore', 'peperone', 'cetriolo', 'lattuga', 'radicchio', 'finocchio', 'carciofo'],
-    // Frozen (Surgelati)
-    'frozen': ['gelato', 'pizza surgelata', 'pasta surgelata', 'minestrone', 'patatine fritte', 'surgelato', 'congelato', 'basta', 'crepes'],
-    // Beverages (Bevande)
-    'beverages': ['acqua', 'succo', 'aranciata', 'cola', 'vino', 'birra', 'tè', 'caffè', 'bibita', 'spremuta', 'gassata', 'frizzante', 'mineral'],
-    // Canned (Conserve)
-    'canned': ['conserve', 'pelati', 'legumi', 'fagioli', 'ceci', 'lenticchie', 'tonno in scatola', 'sottolio', 'sottaceto'],
-    // Snacks
-    'snacks': ['patatine', 'cioccolato', 'caramelle', 'merendine', 'cracker', 'taralli', 'chips', 'popcorn', 'pretzel', 'biscotto'],
-    // Grains (Cereali)
-    'grains': ['cereali', 'fette biscottate', 'marmellata', 'croissant', 'brioche', 'pane', 'focaccia'],
-    // Pasta
-    'pasta': ['pasta', 'spaghetti', 'penne', 'fettuccine', 'lasagne', 'tagliatelle', 'fusilli', 'maccheroni', 'rigatoni'],
-    // Rice (Riso)
-    'rice': ['riso', 'basmati', 'arborio', 'carnaroli', 'risotto', 'riso integrale'],
-    // Flour (Farine)
-    'flour': ['farina', 'farina 00', 'farina integrale', 'semola', 'mais'],
-    // Condiments
-    'condiments': ['maionese', 'ketchup', 'senape', 'salsa', 'sugo', 'condimento', 'aceto', 'olio', 'sale'],
-    // Sauces (Sughi)
-    'sauces': ['sugo', 'sugo pronto', 'ragù', 'bolognese', 'pomarola', 'salsa di pomodoro', 'pesto', 'salsa pesto'],
-    // Eggs (Uova)
-    'eggs': ['uova', 'uovo', 'albume', 'tuorlo'],
-    // Sweets (Dolci)
-    'sweets': ['torta', 'crostata', 'budino', 'pasticcini', 'dolce', 'muffin', 'brownie', 'tiramisù', 'crostata'],
-    // Cheese (Formaggi)
-    'cheese': ['formaggio', 'grana', 'parmigiano', 'pecorino', 'fontina', 'asiago', 'taleggio', 'robiola', 'stracchino', 'scamorza', 'provola', 'gorgonzola'],
-    // Legumes (Legumi)
-    'legumes': ['legumi', 'fagioli', 'lenticchie', 'ceci', 'piselli', 'piselli secchi', 'fave', 'soia', 'ceci', 'fagioli'],
-    // Jam (Marmellate)
-    'jam': ['marmellata', 'confettura', 'composta'],
-    // Honey (Miele)
-    'honey': ['miele', 'miel'],
-    // Ice Cream (Gelati)
-    'ice_cream': ['gelato', 'sorbetto', ' semifreddo', 'coppa'],
-    // Pomodoro
-    'pomodoro': ['pomodoro', 'pelati', 'passata', 'concentrato', 'sugo di pomodoro'],
-    // Vegan
-    'vegan': ['vegano', 'vegan', 'vegetale', 'soia', 'tofu', 'seitan', 'tempeh'],
-  };
+  private static italianKeywordMap: Record<string, string[]> = categoryKeywords.italianKeywordMap;
 
   /**
    * Keyword map for matching OpenFoodFacts English categories to app categories.
    * Used primarily in barcode scanner.
+   * Data loaded from services/data/categoryKeywords.json
    */
-  private static offKeywordMap: Record<string, string[]> = {
-    // Dairy (Latticini)
-    'dairy': ['dairy', 'cheeses', 'yogurts', 'milks', 'butters', 'creams', 'milk', 'cheese', 'yogurt', 'butter', 'cream'],
-    // Milk
-    'milk': ['milk', 'milks', 'whole-milk', 'skimmed-milk', 'semi-skimmed-milk'],
-    // Meat
-    'meat': ['meats', 'poultry', 'beef', 'pork', 'turkey', 'lamb', 'chicken', 'steak', 'burger', 'meat'],
-    // Salumi
-    'salumi': ['sausages', 'hams', 'salami', 'bacon', 'ham', 'cold-cuts', 'prosciutto', 'charcuterie'],
-    // Fish
-    'fish': ['seafood', 'fishes', 'tuna', 'salmon', 'cod', 'shrimps', 'clams', 'mussels', 'fish', 'anchovies', 'sardines', 'prawns', 'lobster'],
-    // Fruits
-    'fruits': ['fruits', 'apples', 'bananas', 'oranges', 'strawberries', 'grapes', 'peaches', 'apricots', 'kiwis', 'pear', 'lemon', 'mandarin', 'watermelon', 'melon', 'cherry', 'plum', 'grapefruit'],
-    // Vegetables
-    'vegetables': ['vegetables', 'tomatoes', 'lettuces', 'zucchini', 'eggplants', 'carrots', 'potatoes', 'onions', 'spinach', 'broccoli', 'cauliflower', 'peppers', 'cucumber', 'lettuce', 'fennel', 'artichoke'],
-    // Frozen
-    'frozen': ['frozen-foods', 'ice-creams', 'frozen-pizzas', 'frozen-ready-meals', 'frozen-vegetables', 'frozen', 'ice-cream', 'frozen-pizza', 'freezer'],
-    // Beverages
-    'beverages': ['beverages', 'waters', 'juices', 'sodas', 'wines', 'beers', 'teas', 'coffees', 'water', 'juice', 'soda', 'wine', 'beer', 'tea', 'coffee', 'drink', 'sparkling'],
-    // Canned
-    'canned': ['canned-foods', 'pulses', 'beans', 'chickpeas', 'lentils', 'canned', 'preserve', 'preserves', 'tinned'],
-    // Snacks
-    'snacks': ['snacks', 'crisps', 'chocolates', 'sweets', 'crackers', 'chips', 'popcorn', 'pretzel', 'cookie'],
-    // Grains
-    'grains': ['breakfasts', 'cereals', 'rusks', 'jams', 'croissants', 'cereal', 'rusk', 'jam', 'bread', 'bakery'],
-    // Pasta
-    'pasta': ['pastas', 'spaghetti', 'penne', 'macaroni', 'pasta'],
-    // Rice
-    'rice': ['rices', 'basmati', 'arborio', 'risotto', 'rice'],
-    // Flour
-    'flour': ['flours', 'flour', 'semolina', 'cornmeal'],
-    // Condiments
-    'condiments': ['condiments', 'sauces', 'mayonnaises', 'ketchups', 'mustards', 'mayonnaise', 'ketchup', 'mustard', 'sauce', 'oil', 'vinegar', 'salt', 'oil', 'vinegar'],
-    // Sauces
-    'sauces': ['sauces', 'ragu', 'bolognese', 'pesto', 'tomato-sauce', 'sugo'],
-    // Eggs
-    'eggs': ['eggs', 'egg'],
-    // Sweets
-    'sweets': ['desserts', 'cakes', 'puddings', 'pastries', 'dessert', 'cake', 'pastry', 'muffin', 'brownie', 'tiramisu'],
-    // Cheese
-    'cheese': ['cheeses', 'parmesan', 'pecorino', 'gorgonzola', 'mozzarella', 'grana', 'fontina'],
-    // Legumes
-    'legumes': ['pulses', 'beans', 'lentils', 'chickpeas', 'soy', 'legumes', 'peas', 'green-peas', 'canned-peas'],
-    // Jam
-    'jam': ['jams', 'confiture', 'fruit-spreads'],
-    // Honey
-    'honey': ['honeys', 'honey'],
-    // Ice Cream
-    'ice_cream': ['ice-creams', 'sorbets', 'gelato', 'frozen-desserts'],
-    // Pomodoro
-    'pomodoro': ['tomatoes', 'tomato-sauces', 'tomato-puree', 'passata'],
-    // Vegan
-    'vegan': ['vegan', 'plant-based', 'soy', 'tofu', 'seitan', 'tempeh'],
-  };
+  private static offKeywordMap: Record<string, string[]> = categoryKeywords.offKeywordMap;
+
+  /**
+   * Find the first matching category ID by iterating an ordered list of candidates
+   * and checking their keywords against a match predicate.
+   * @param categoryIds Ordered list of category IDs to try
+   * @param keywordMap Keyword map to search in
+   * @param availableCategories Available categories to validate against
+   * @param isMatch Predicate that returns true if a keyword matches the search input
+   * @returns First matching category ID or null
+   */
+  private static findCategoryFromMap(
+    categoryIds: string[],
+    keywordMap: Record<string, string[]>,
+    availableCategories: ProductCategory[],
+    isMatch: (keyword: string) => boolean
+  ): string | null {
+    for (const categoryId of categoryIds) {
+      const keywords = keywordMap[categoryId];
+      if (keywords && keywords.some(isMatch)) {
+        if (availableCategories.some(cat => cat.id === categoryId)) {
+          return categoryId;
+        }
+      }
+    }
+    return null;
+  }
 
   /**
    * Guess category from product name and brand using Italian keywords.
@@ -151,6 +73,8 @@ export class CategoryMatcher {
 
     LoggingService.info('CategoryMatcher', `🔍 Guess category per: "${name}" (${brand})`);
 
+    const matchesKeyword = (keyword: string) => fullText.includes(keyword);
+
     // Priorità alle categorie più specifiche (ordinamento manuale per importanza)
     const categoryPriority = [
       'legumes', 'cheese', 'frozen', 'dairy', 'salumi', 'meat', 'fish', 'fruits', 'vegetables',
@@ -160,25 +84,17 @@ export class CategoryMatcher {
     ];
 
     // Cerca match seguendo l'ordine di priorità
-    for (const categoryId of categoryPriority) {
-      if (this.italianKeywordMap[categoryId]) {
-        if (this.italianKeywordMap[categoryId].some(keyword => fullText.includes(keyword))) {
-          if (availableCategories.some(cat => cat.id === categoryId)) {
-            LoggingService.info('CategoryMatcher', `✅ Match trovato: "${categoryId}"`);
-            return categoryId;
-          }
-        }
-      }
+    const match = this.findCategoryFromMap(categoryPriority, this.italianKeywordMap, availableCategories, matchesKeyword);
+    if (match) {
+      LoggingService.info('CategoryMatcher', `✅ Match trovato: "${match}"`);
+      return match;
     }
 
     // Fallback: iterazione normale se nessun match con priorità
-    for (const categoryId in this.italianKeywordMap) {
-      if (this.italianKeywordMap[categoryId].some(keyword => fullText.includes(keyword))) {
-        if (availableCategories.some(cat => cat.id === categoryId)) {
-          LoggingService.info('CategoryMatcher', `⚠️ Match fallback: "${categoryId}"`);
-          return categoryId;
-        }
-      }
+    const fallbackMatch = this.findCategoryFromMap(Object.keys(this.italianKeywordMap), this.italianKeywordMap, availableCategories, matchesKeyword);
+    if (fallbackMatch) {
+      LoggingService.info('CategoryMatcher', `⚠️ Match fallback: "${fallbackMatch}"`);
+      return fallbackMatch;
     }
 
     LoggingService.info('CategoryMatcher', '❌ Nessun match trovato');
@@ -233,38 +149,36 @@ export class CategoryMatcher {
     LoggingService.info('CategoryMatcher', '📊 Categorie ordinate per specificità:', sortedCategories);
 
     // Cerca match partendo dalle categorie più specifiche
+    const allOffCategoryIds = Object.keys(this.offKeywordMap);
     for (const offCat of sortedCategories) {
-      for (const categoryId in this.offKeywordMap) {
-        const keywords = this.offKeywordMap[categoryId];
-
-        // Match più preciso: keyword come parola intera o con prefisso/suffisso
-        if (keywords.some(keyword =>
+      const match = this.findCategoryFromMap(
+        allOffCategoryIds,
+        this.offKeywordMap,
+        availableCategories,
+        (keyword) =>
           offCat === keyword ||
           offCat.includes(`-${keyword}`) ||
           offCat.includes(`${keyword}-`) ||
           offCat.endsWith(`-${keyword}`)
-        )) {
-          if (availableCategories.some(cat => cat.id === categoryId)) {
-            LoggingService.info('CategoryMatcher', `✅ Match specifico trovato: "${offCat}" → "${categoryId}"`);
-            return categoryId;
-          }
-        }
+      );
+      if (match) {
+        LoggingService.info('CategoryMatcher', `✅ Match specifico trovato: "${offCat}" → "${match}"`);
+        return match;
       }
     }
 
     // Fallback: cerca generica su tutte le categorie originali (solo se nessun match specifico)
     LoggingService.info('CategoryMatcher', '⚠️ Nessun match specifico, provo fallback generico...');
 
-    for (const categoryId in this.offKeywordMap) {
-      const keywords = this.offKeywordMap[categoryId];
-      if (keywords.some(keyword =>
-        lowerCaseOffCategories.some(offCat => offCat.includes(keyword))
-      )) {
-        if (availableCategories.some(cat => cat.id === categoryId)) {
-          LoggingService.info('CategoryMatcher', `⚠️ Match generico trovato: "${categoryId}"`);
-          return categoryId;
-        }
-      }
+    const fallbackMatch = this.findCategoryFromMap(
+      allOffCategoryIds,
+      this.offKeywordMap,
+      availableCategories,
+      (keyword) => lowerCaseOffCategories.some(offCat => offCat.includes(keyword))
+    );
+    if (fallbackMatch) {
+      LoggingService.info('CategoryMatcher', `⚠️ Match generico trovato: "${fallbackMatch}"`);
+      return fallbackMatch;
     }
 
     LoggingService.warning('CategoryMatcher', '❌ Nessun match trovato per le categorie:', offCategories);
