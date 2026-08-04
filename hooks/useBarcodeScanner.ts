@@ -1,6 +1,6 @@
 // useBarcodeScanner.ts — useBarcodeScanner module.
 //
-// exports: ScanResult | UseBarcodeScannerReturn | extractProductName | extractBrand | extractImageUrl | useBarcodeScanner
+// exports: ScanResult | UseBarcodeScannerReturn | useBarcodeScanner
 // used_by: app\__tests__\scanner.test.tsx
 //                   app\scanner.tsx
 // rules:   - All scanner hooks (useBarcodeCache, useOpenFoodFactsApi, useLocalDatabaseLookup) must be consumed through this module's exports only, never directly imported in other files
@@ -65,15 +65,15 @@ const mapOffCategoryToAppCategory = (
   return CategoryMatcher.mapOpenFoodFactsCategories(offCategories, appCategories);
 };
 
-export const extractProductName = (product: OpenFoodFactsProduct): string => {
+const extractProductName = (product: OpenFoodFactsProduct): string => {
   return product.product_name || product.product_name_it || product.generic_name_it || product.generic_name || product.abbreviated_product_name || '';
 };
 
-export const extractBrand = (product: OpenFoodFactsProduct): string => {
+const extractBrand = (product: OpenFoodFactsProduct): string => {
   return product.brands || (product.brands_tags?.length ? product.brands_tags[0] : '');
 };
 
-export const extractImageUrl = (product: OpenFoodFactsProduct): string => {
+const extractImageUrl = (product: OpenFoodFactsProduct): string => {
   return product.image_front_small_url || product.image_front_url || product.image_url || '';
 };
 
@@ -195,6 +195,7 @@ export function useBarcodeScanner(
 
         setCache(data, result);
         LoggingService.info('BarcodeScanner', `Found template: ${supabaseResult.value.name} (${totalTime}ms)`);
+        setCurrentBarcode(null);
         onProductFound(result, data);
         return;
       }
@@ -223,6 +224,7 @@ export function useBarcodeScanner(
 
           setCache(data, result);
           LoggingService.info('BarcodeScanner', `Found online: ${extractedName} (${totalTime}ms)`);
+          setCurrentBarcode(null);
           onProductFound(result, data);
           return;
         }
@@ -252,6 +254,7 @@ export function useBarcodeScanner(
         };
 
         setCache(data, result);
+        setCurrentBarcode(null);
         onProductFound(result, data);
       } else {
         setLoadingError(`Errore: ${errorMessage}. Riprova o inserisci manualmente.`);
@@ -265,6 +268,7 @@ export function useBarcodeScanner(
   const resetScanner = useCallback(() => {
     setScanned(false);
     setIsLoading(false);
+    setCurrentBarcode(null);
     setLoadingError(null);
     clearApiTimeout();
   }, [clearApiTimeout]);
@@ -293,3 +297,10 @@ export function useBarcodeScanner(
     requestPermission
   };
 }
+
+// Re-export for testing only
+export const __testing = {
+  extractProductName,
+  extractBrand,
+  extractImageUrl,
+};

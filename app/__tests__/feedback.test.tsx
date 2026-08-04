@@ -27,15 +27,17 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-const mockLaunchImageLibraryAsync = jest.fn();
-const mockRequestMediaLibraryPermissions = jest.fn(() =>
-  Promise.resolve({ status: 'granted' })
-);
 jest.mock('expo-image-picker', () => ({
-  launchImageLibraryAsync: (...args: any[]) => mockLaunchImageLibraryAsync(...args),
-  requestMediaLibraryPermissionsAsync: (...args: any[]) => mockRequestMediaLibraryPermissions(...args),
+  launchImageLibraryAsync: jest.fn(),
+  requestMediaLibraryPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted' })
+  ),
   MediaTypeOptions: { Images: 'Images' },
 }));
+
+import * as ImagePicker from 'expo-image-picker';
+const mockLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.Mock;
+const mockRequestMediaLibraryPermissions = ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
 
 jest.mock('expo-file-system', () => ({
   readAsStringAsync: jest.fn(() => Promise.resolve('base64EncodedData')),

@@ -1,9 +1,10 @@
 // errorHandler.ts — errorHandler module.
 //
-// exports: createError | handleError | handleValidationError | normalizeError | handleNetworkErrorCompat | handleDatabaseErrorCompat | handleAuthErrorCompat | ErrorCode | getErrorCategory | isErrorCategory | ErrorCategory | AppError | ErrorConfig | hasErrorCode | hasErrorMessage | isNetworkError | isStandardError | extractErrorMessage | extractErrorCode | handleNetworkError | (+17 more)
+// exports: createError | handleError | handleValidationError | normalizeError | ErrorCode | getErrorCategory | isErrorCategory | ErrorCategory | AppError | ErrorConfig | hasErrorCode | hasErrorMessage | isNetworkError | isStandardError | extractErrorMessage | extractErrorCode | handleNetworkError | (+16 more)
 // used_by: utils\AuthErrorHandler.ts
 //                   utils\DatabaseErrorHandler.ts
 //                   utils\NetworkErrorHandler.ts
+//                   utils\errorFormatters.ts
 // rules:   - All error handling must go through this module as the single facade entry point; specialized handlers (NetworkErrorHandler, DatabaseErrorHandler, AuthErrorHandler) must not be imported directly by other modules.
 //          - The ErrorCode enum and ErrorCategory types are defined externally in '../types/errorCodes' and must remain in sync with this module's error creation and categorization logic.
 //          - Every public export function must have a corresponding import from a specialized handler or formatter; the facade pattern must be consistently maintained.
@@ -11,9 +12,69 @@
 // message: 
 
 /**
- * @fileoverview Centralized error handler - Facade pattern.
- * Aggregates specialized error handlers and provides a unified interface.
- * This is the main entry point for error handling in the application.
+ * @fileoverview Centralized error handler — Facade pattern.
+ *
+ * `errorHandler.ts` is the **single entry point** for all error handling in
+ * the application. It implements the **Facade pattern** by aggregating
+ * specialized handler modules (`NetworkErrorHandler`, `DatabaseErrorHandler`,
+ * `AuthErrorHandler`) and exposing a unified interface (`handleError`,
+ * `normalizeError`, `handleValidationError`, etc.).
+ *
+ * ## When to use it
+ *
+ * Use this module whenever you need to convert a raw `unknown` error into a
+ * structured, application-level `AppError`. Typical scenarios:
+ *
+ * - Inside `catch` blocks in service methods (before wrapping in
+ *   `ServiceResult<T>` via `createErrorResult`).
+ * - In React component error boundaries or top-level promise rejection
+ *   handlers.
+ * - Anywhere an error originates from an external boundary (Supabase,
+ *   fetch, native modules) and needs normalization.
+ *
+ * ## Relationship with ServiceResult<T>
+ *
+ * `errorHandler.ts` and `ServiceResult<T>` (defined in
+ * `types/ServiceResult.ts`) are **complementary, not alternative** error
+ * mechanisms:
+ *
+ * 1. `errorHandler` converts `unknown` → `AppError` (structured, with code,
+ *    category, timestamp, stack).
+ * 2. `ServiceResult<T>` wraps the *outcome* of a service call, carrying
+ *    either typed data or a string error message.
+ *
+ * The typical flow inside a service method is:
+ * ```typescript
+ * try {
+ *   const { data, error } = await supabase.from('products').select();
+ *   if (error) {
+ *     const appError = handleError(error);         // ← errorHandler
+ *     return createErrorResult<Product[]>(appError.message);  // ← ServiceResult
+ *   }
+ *   return createSuccessResult(data);              // ← ServiceResult
+ * } catch (e) {
+ *   return createErrorResult<Product[]>(handleError(e).message);
+ * }
+ * ```
+ *
+ * ## Specialized handlers — Strategy pattern
+ *
+ * The facade delegates to specialized handler modules based on the error
+ * category determined by `determineErrorCategory()`:
+ *
+ * | Category    | Handler module        | Responsibility                          |
+ * |-------------|-----------------------|-----------------------------------------|
+ * | `DATABASE`  | `DatabaseErrorHandler`| Supabase / PostgreSQL errors            |
+ * | `AUTH`      | `AuthErrorHandler`    | JWT, session, credential errors         |
+ * | `VALIDATION`| `handleValidationError` | Input validation failures             |
+ * | `SYSTEM`    | `normalizeError`      | Fallback for unrecognized errors        |
+ *
+ * Network errors are routed through `NetworkErrorHandler` first (even though
+ * they fall under the `DATABASE` category) because they require distinct
+ * retry / offline-handling logic.
+ *
+ * **Rule:** Other modules must import from this facade only — never import
+ * the specialized handlers directly.
  */
 
 import { LoggingService } from '../services/LoggingService';
@@ -189,9 +250,35 @@ function determineErrorCategory(error: unknown): ErrorCategory {
 }
 
 /**
- * Main error handler - routes to specialized handlers
- * @param error - Unknown error to handle
- * @returns Standardized AppError
+ * Main error handler — routes an unknown error to the appropriate
+ * specialized handler based on its category.
+ *
+ * This is the **primary public entry point** of the Facade. Callers pass any
+ * `unknown` error (from a `catch` block, Supabase response, etc.) and
+ * receive a structured `AppError` in return.
+ *
+ * Internally, `determineErrorCategory()` inspects the error and the
+ * appropriate Strategy handler is invoked:
+ * - `AUTH` / `AUTHORIZATION` → `handleAuthError`
+ * - `DATABASE` → `handleNetworkError` (if network-related) or
+ *   `handleDatabaseError`
+ * - `VALIDATION` → `handleValidationError`
+ * - `SYSTEM` / `CONFIGURATION` → `normalizeError` (fallback)
+ *
+ * @param error - Unknown error to handle (from catch blocks, Supabase, etc.)
+ * @returns A standardized `AppError` with `code`, `message`, `details`,
+ *          `timestamp`, and optional `stack`
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await supabase.from('products').insert(newProduct);
+ * } catch (e) {
+ *   const appError = handleError(e);
+ *   // appError.code === ErrorCode.DUPLICATE_ENTRY
+ *   // appError.message === 'A product with this barcode already exists'
+ * }
+ * ```
  */
 export function handleError(error: unknown): AppError {
   const category = determineErrorCategory(error);
@@ -227,9 +314,29 @@ export function handleError(error: unknown): AppError {
 }
 
 /**
- * Handles validation errors
- * @param error - Validation error or field info
- * @returns Standardized AppError
+ * Handles validation errors — either creates a new validation `AppError`
+ * from field/rule info, or normalizes an existing validation error.
+ *
+ * **Two calling conventions:**
+ *
+ * 1. **Create** — pass `field` and `rule` to generate a validation error
+ *    from scratch (useful for form validation in components/hooks):
+ *    ```typescript
+ *    return handleValidationError(inputValue, 'email', 'required');
+ *    ```
+ *
+ * 2. **Normalize** — pass only an `error` to convert a raw validation error
+ *    (e.g., from Yup, Zod, or a backend 400 response) into a standardized
+ *    `AppError`:
+ *    ```typescript
+ *    return handleValidationError(rawValidationError);
+ *    ```
+ *
+ * @param error - Validation error object, or the invalid value when
+ *                creating a new error
+ * @param field - (optional) Field name that failed validation
+ * @param rule - (optional) Validation rule that was violated
+ * @returns A standardized `AppError` with `ErrorCode.VALIDATION_ERROR`
  */
 export function handleValidationError(
   error: unknown,
@@ -264,9 +371,24 @@ export function handleValidationError(
 }
 
 /**
- * Normalizes any error to AppError format
+ * Fallback error normalizer — converts any `unknown` value into a
+ * standardized `AppError`.
+ *
+ * This is the **last-resort Strategy** invoked by `handleError()` when the
+ * error does not match any specialized handler (network, auth, database,
+ * validation). It performs heuristic analysis on the error message to
+ * assign the most appropriate `ErrorCode`, then delegates to
+ * `createError()` for logging.
+ *
  * @param error - Unknown error to normalize
- * @returns Standardized AppError
+ * @returns A standardized `AppError` (never throws)
+ *
+ * @example
+ * ```typescript
+ * const appError = normalizeError('something went wrong');
+ * // appError.code === ErrorCode.SYSTEM_ERROR
+ * // appError.message === 'something went wrong'
+ * ```
  */
 export function normalizeError(error: unknown): AppError {
   let code = ErrorCode.SYSTEM_ERROR;
@@ -308,32 +430,6 @@ export function normalizeError(error: unknown): AppError {
   return createError(code, message, details, error);
 }
 
-// ==================== BACKWARD COMPATIBILITY ====================
-
-/**
- * @deprecated Use handleError() instead
- * Handles network errors - delegates to NetworkErrorHandler
- */
-export function handleNetworkErrorCompat(error: unknown): AppError {
-  return handleNetworkError(error);
-}
-
-/**
- * @deprecated Use handleError() instead
- * Handles database errors - delegates to DatabaseErrorHandler
- */
-export function handleDatabaseErrorCompat(error: unknown): AppError {
-  return handleDatabaseError(error);
-}
-
-/**
- * @deprecated Use handleAuthError() from AuthErrorHandler instead
- * Handles auth errors - delegates to AuthErrorHandler
- */
-export function handleAuthErrorCompat(error: unknown): AppError {
-  return handleAuthError(error);
-}
-
 // ==================== EXPORTS ====================
 
 // Re-export all types for convenience
@@ -373,23 +469,3 @@ export {
   getErrorTitle,
   getErrorSuggestions,
 } from './errorFormatters';
-
-// Legacy class for backward compatibility
-/**
- * @deprecated Use the exported functions directly instead
- * Legacy ErrorHandler class maintained for backward compatibility
- */
-export class ErrorHandler {
-  static createError = createError;
-  static normalizeError = normalizeError;
-  static handleNetworkError = handleNetworkError;
-  static handleDatabaseError = handleDatabaseError;
-  static handleAuthError = handleAuthError;
-  static handleValidationError = handleValidationError;
-  static isSessionExpired = isSessionExpired;
-  static isUnauthorized = isUnauthorized;
-  static formatForUI = formatErrorForUI;
-}
-
-// Default export for backward compatibility
-export default ErrorHandler;

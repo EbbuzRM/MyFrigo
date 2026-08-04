@@ -556,6 +556,46 @@ describe('ForgotPassword', () => {
       });
     });
 
+    it('should trim email before verifying OTP', async () => {
+      const { getByPlaceholderText, getByText, getByTestId } = renderForgotPassword();
+
+      mockResetPasswordForEmail.mockResolvedValue({ error: null });
+
+      await act(async () => {
+        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), '  user@example.com  ');
+      });
+
+      await act(async () => {
+        fireEvent.press(getByText('Invia Codice OTP'));
+      });
+
+      await waitFor(() => {
+        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+      });
+
+      mockVerifyOtp.mockResolvedValue({
+        data: { user: { id: 'u1' }, session: { access_token: 't' } },
+        error: null,
+      });
+      mockUpdateUser.mockResolvedValue({ error: null });
+
+      await act(async () => {
+        fireEvent.changeText(getByTestId('otp-input'), '123456');
+      });
+
+      await act(async () => {
+        fireEvent.press(getByText('Verifica Codice'));
+      });
+
+      await waitFor(() => {
+        expect(mockVerifyOtp).toHaveBeenCalledWith({
+          email: 'user@example.com',
+          token: '123456',
+          type: 'recovery',
+        });
+      });
+    });
+
     it('should navigate to /password-reset-form after success', async () => {
       const { getByPlaceholderText, getByText, getByTestId } = renderForgotPassword();
       await setupOtpSection(getByPlaceholderText, getByText);

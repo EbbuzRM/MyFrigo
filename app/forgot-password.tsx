@@ -135,7 +135,7 @@ export default function ForgotPassword() {
 
     try {
       const { data, error } = await supabase.auth.verifyOtp({
-        email,
+        email: email.trim(),
         token: otp,
         type: 'recovery'
       });
