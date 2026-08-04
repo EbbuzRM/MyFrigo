@@ -117,7 +117,8 @@ DerivedData/
 *.dSYM.zip
 
 # Supabase
-supabase/
+supabase/.temp/
+supabase/.branches/
 
 # Temporary folders
 tmp/
