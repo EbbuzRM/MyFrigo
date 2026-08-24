@@ -54,12 +54,29 @@ export class ProductStorage {
   private static readonly PRODUCT_SELECT_FIELDS =
     'id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date';
 
+  /** SELECT fields for recent products picker (minimal columns). */
+  private static readonly RECENT_SELECT_FIELDS =
+    'id, name, brand, category, image_url, purchase_date, created_at, notes, is_frozen, barcode';
+
   /** Builds a base SELECT query for products filtered by user_id. */
   private static buildBaseQuery(userId: string) {
     return supabase
       .from('products')
       .select(ProductStorage.PRODUCT_SELECT_FIELDS)
       .eq('user_id', userId);
+  }
+
+  private static normalizeIsFrozen(products: Product[]): Product[] {
+    return products.map((p) => {
+      const raw = (p as unknown as Record<string, unknown>).isFrozen;
+      if (raw === 'true') (p as unknown as Record<string, unknown>).isFrozen = true;
+      else if (raw === 'false') (p as unknown as Record<string, unknown>).isFrozen = false;
+      return p;
+    });
+  }
+
+  private static escapeIlike(query: string): string {
+    return query.replace(/[%_\\]/g, '\\$&');
   }
 
   /** Ottiene l'ID utente corrente o restituisce errore se non autenticato. */
@@ -272,5 +289,54 @@ export class ProductStorage {
     if (result.success) LoggingService.info('ProductStorage', `Prodotto ${productId} ripristinato con successo`);
     else LoggingService.error('ProductStorage', `Errore nel ripristino prodotto ${productId}`, result.error);
     return result;
+  }
+
+  /** Recupera i prodotti recenti con foto, ordinati per purchase_date DESC + created_at DESC, max LIMIT. */
+  static async getRecentProducts(limit = 10): Promise<ServiceResult<Product[]>> {
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<Product[]>;
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(this.RECENT_SELECT_FIELDS)
+        .eq('user_id', userResult.data)
+        .not('image_url', 'is', null)
+        .neq('image_url', '')
+        .order('purchase_date', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false, nullsFirst: false })
+        .limit(limit);
+      if (error) throw error;
+      const products = data ? convertProductsToCamelCase(data as unknown as Record<string, unknown>[]) : [];
+      return createSuccessResult(this.normalizeIsFrozen(products));
+    } catch (error) {
+      return createErrorResult(this.handleError('Errore nel recupero prodotti recenti', error).message);
+    }
+  }
+
+  /** Cerca prodotti recenti per nome o marca con ilike, stesso WHERE+ORDER del getRecent. */
+  static async searchRecentProducts(query: string, limit = 10): Promise<ServiceResult<Product[]>> {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return createSuccessResult([]);
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<Product[]>;
+    try {
+      const escaped = this.escapeIlike(trimmed);
+      const pattern = `%${escaped}%`;
+      const { data, error } = await supabase
+        .from('products')
+        .select(this.RECENT_SELECT_FIELDS)
+        .eq('user_id', userResult.data)
+        .not('image_url', 'is', null)
+        .neq('image_url', '')
+        .or(`name.ilike.${pattern},brand.ilike.${pattern}`)
+        .order('purchase_date', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false, nullsFirst: false })
+        .limit(limit);
+      if (error) throw error;
+      const products = data ? convertProductsToCamelCase(data as unknown as Record<string, unknown>[]) : [];
+      return createSuccessResult(this.normalizeIsFrozen(products));
+    } catch (error) {
+      return createErrorResult(this.handleError('Errore nella ricerca prodotti recenti', error).message);
+    }
   }
 }
