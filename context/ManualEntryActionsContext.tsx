@@ -61,6 +61,7 @@ function processProductData(product: Product): Partial<FormState> {
 }
 
 function processScannedData(data: InitializeFormData): Partial<FormState> {
+  const isFrozenValue = data.isFrozen === true || String(data.isFrozen) === 'true';
   const state: Partial<FormState> = {
     name: data.name || data.productName || '',
     brand: data.brand || '',
@@ -70,6 +71,7 @@ function processScannedData(data: InitializeFormData): Partial<FormState> {
     expirationDate: data.expirationDate || '',
     purchaseDate: data.purchaseDate || '',
     notes: data.notes || '',
+    isFrozen: isFrozenValue,
   };
   if (data.quantity != null) {
     state.quantities = [{ id: uuidv4(), quantity: String(data.quantity), unit: data.unit || 'pz' }];
