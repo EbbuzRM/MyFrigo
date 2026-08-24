@@ -8,7 +8,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,8 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  FlatList
+  FlatList,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -28,6 +29,7 @@ import ProductFormHeader from '@/components/ProductFormHeader';
 import ProductFormFooter from '@/components/ProductFormFooter';
 import { ProductCategory } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
+import { recentProductQueue } from '@/utils/recentProductQueue';
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
@@ -172,6 +174,17 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
 export default function ManualEntryScreen() {
   const { isDarkMode } = useTheme();
   const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
+
+  // Spec: back while queue active -> clear queue (no URL, in-memory)
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!recentProductQueue.isEmpty()) {
+        recentProductQueue.clear();
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, []);
   const {
     name, setName,
     brand, setBrand,

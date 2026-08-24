@@ -13,6 +13,9 @@ import { ProductStorage } from '@/services/ProductStorage';
 import { useManualEntry } from '@/context/ManualEntryContext';
 import { LoggingService } from '@/services/LoggingService';
 import { Product } from '@/types/Product';
+import { recentProductQueue } from '@/utils/recentProductQueue';
+import { saveImagePermanently } from '@/utils/imageStorage';
+import { getLocalISODate } from '@/utils/dateUtils';
 
 export interface UseProductSaveReturn {
   handleSaveProduct: () => Promise<void>;
@@ -103,6 +106,17 @@ export const useProductSave = (): UseProductSaveReturn => {
       return;
     }
 
+    // Handle image copy: https passthrough, file:// -> try copy, fail->null
+    let finalImageUrl: string | undefined = currentImageUrl || undefined;
+    if (finalImageUrl && !finalImageUrl.startsWith('http')) {
+      try {
+        finalImageUrl = await saveImagePermanently(finalImageUrl);
+      } catch (e) {
+        LoggingService.warning('useProductSave', 'Image copy failed, fallback to null', e);
+        finalImageUrl = undefined;
+      }
+    }
+
     const productData: Partial<Product> & { quantities: Product['quantities'] } = {
       name: currentName,
       brand: currentBrand || '',
@@ -114,7 +128,7 @@ export const useProductSave = (): UseProductSaveReturn => {
       status: 'active',
       addedMethod: currentAddedMethod === 'photo' ? 'photo' : currentBarcode ? 'barcode' : 'manual',
       barcode: currentBarcode || '',
-      imageUrl: currentImageUrl || undefined,
+      imageUrl: finalImageUrl,
       isFrozen: currentIsFrozen,
     };
 
@@ -138,6 +152,31 @@ export const useProductSave = (): UseProductSaveReturn => {
         return;
       }
 
+      // Queue branch BEFORE normal Alert (spec :141)
+      if (!recentProductQueue.isEmpty()) {
+        recentProductQueue.advance();
+        const next = recentProductQueue.peekNext();
+        if (next) {
+          const params: Record<string, string> = {
+            name: next.name,
+            purchaseDate: getLocalISODate(),
+            resetForm: 'true',
+          };
+          if (next.brand) params.brand = next.brand;
+          if (next.barcode) params.barcode = next.barcode;
+          if (next.imageUrl) params.imageUrl = next.imageUrl;
+          if (next.selectedCategory) params.selectedCategory = next.selectedCategory;
+          if (next.notes) params.notes = next.notes;
+          if (next.isFrozen) params.isFrozen = String(next.isFrozen);
+          // Suppress form clear: next screen will initialize via useProductInitialization
+          router.replace({ pathname: '/manual-entry', params });
+        } else {
+          currentClearForm();
+          router.replace('/(tabs)/products');
+        }
+        return;
+      }
+
       LoggingService.info('useProductSave', 'Showing success alert for new product');
       Alert.alert(
         'Prodotto Salvato',
@@ -154,6 +193,11 @@ export const useProductSave = (): UseProductSaveReturn => {
       LoggingService.error('useProductSave', 'Errore durante il salvataggio del prodotto:', error);
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
       LoggingService.error('useProductSave', `Save failed with error: ${errorMessage}`);
+
+      // Queue active: clear queue and show Alert per spec
+      if (!recentProductQueue.isEmpty() && !formValuesRef.current.isEditMode) {
+        recentProductQueue.clear();
+      }
 
       if (errorMessage.includes('Timeout')) {
         Alert.alert(
