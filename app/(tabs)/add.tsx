@@ -8,18 +8,52 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { useEffect } from 'react'; // Consolidated React imports
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Barcode, Keyboard } from 'lucide-react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { AddMethodCard } from '@/components/AddMethodCard';
+import { RecentsPicker } from '@/components/RecentsPicker';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
+import { ProductStorage } from '@/services/ProductStorage';
+import { Product } from '@/types/Product';
+import { recentProductQueue, RecentQueueItem } from '@/utils/recentProductQueue';
+import { getLocalISODate } from '@/utils/dateUtils';
+
+// Helper: map Product -> RecentQueueItem for clone
+function toQueueItem(p: Product): RecentQueueItem {
+  return {
+    name: p.name,
+    brand: p.brand,
+    barcode: p.barcode,
+    imageUrl: p.imageUrl ?? null,
+    selectedCategory: p.category,
+    notes: p.notes,
+    isFrozen: p.isFrozen,
+  };
+}
+
+function toManualEntryParams(item: RecentQueueItem): Record<string, string> {
+  const params: Record<string, string> = {
+    name: item.name,
+    purchaseDate: getLocalISODate(),
+    resetForm: 'true',
+  };
+  if (item.brand) params.brand = item.brand;
+  if (item.barcode) params.barcode = item.barcode;
+  if (item.imageUrl) params.imageUrl = item.imageUrl;
+  if (item.selectedCategory) params.selectedCategory = item.selectedCategory;
+  if (item.notes) params.notes = item.notes;
+  if (item.isFrozen) params.isFrozen = String(item.isFrozen);
+  return params;
+}
 
 // Componente per l'aggiunta di prodotti
 const AddProduct = () => {
@@ -27,7 +61,14 @@ const AddProduct = () => {
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
-  // const [someState, setSomeState] = useState(''); // Example if useState was needed
+
+  const [recents, setRecents] = useState<Product[]>([]);
+  const [recentsLoading, setRecentsLoading] = useState(false);
+  const [recentsError, setRecentsError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     // Check if we have barcode data, implying we came from the scanner
@@ -57,6 +98,90 @@ const AddProduct = () => {
     }
   }, [params]);
 
+  const fetchRecents = useCallback(async () => {
+    setRecentsLoading(true);
+    setRecentsError(null);
+    const currentId = ++requestIdRef.current;
+    const result = await ProductStorage.getRecentProducts(10);
+    if (currentId !== requestIdRef.current) return;
+    if (result.success) {
+      setRecents(result.data ?? []);
+    } else {
+      setRecentsError(result.error ?? 'Errore caricamento recents');
+    }
+    setRecentsLoading(false);
+  }, []);
+
+  const fetchSearch = useCallback(async (q: string) => {
+    setRecentsLoading(true);
+    setRecentsError(null);
+    const currentId = ++requestIdRef.current;
+    const result = await ProductStorage.searchRecentProducts(q, 10);
+    if (currentId !== requestIdRef.current) return;
+    if (result.success) {
+      setRecents(result.data ?? []);
+    } else {
+      setRecentsError(result.error ?? 'Errore ricerca');
+    }
+    setRecentsLoading(false);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRecents();
+      // cancel debounce on blur
+      return () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        requestIdRef.current++;
+      };
+    }, [fetchRecents])
+  );
+
+  const handleSearchChange = useCallback(
+    (text: string) => {
+      setSearchQuery(text);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      const trimmed = text.trim();
+      if (trimmed.length === 0) {
+        debounceRef.current = setTimeout(() => fetchRecents(), 300);
+        return;
+      }
+      if (trimmed.length === 1) {
+        // hint only, no query
+        return;
+      }
+      // >=2
+      debounceRef.current = setTimeout(() => fetchSearch(trimmed), 300);
+    },
+    [fetchRecents, fetchSearch]
+  );
+
+  const hintText = searchQuery.trim().length === 1 ? 'Digita ancora…' : null;
+
+  const handleToggle = useCallback((product: Product) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(product.id)) next.delete(product.id);
+      else {
+        if (next.size >= 10) return next;
+        next.add(product.id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleContinue = useCallback(() => {
+    const selected = recents.filter((p) => selectedIds.has(p.id)).slice(0, 10);
+    if (selected.length === 0) return;
+    const items = selected.map(toQueueItem);
+    recentProductQueue.clear();
+    recentProductQueue.push(items);
+    const first = recentProductQueue.peekNext();
+    if (!first) return;
+    const entryParams = toManualEntryParams(first);
+    router.replace({ pathname: '/manual-entry', params: entryParams });
+  }, [recents, selectedIds]);
+
   const handleBarcodeScanner = () => {
     router.push('/scanner');
   };
@@ -69,7 +194,7 @@ const AddProduct = () => {
 
   return (
     <SafeAreaView style={styles.container} testID="add-product-screen">
-      <View style={{ flex: 1, marginBottom: 60 + insets.bottom }}>
+      <ScrollView style={{ flex: 1, marginBottom: 60 + insets.bottom }} contentContainerStyle={{ gap: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.title}>Aggiungi Prodotto</Text>
           <Text style={styles.subtitle}>
@@ -97,6 +222,18 @@ const AddProduct = () => {
           />
         </View>
 
+        <RecentsPicker
+          products={recents}
+          selectedIds={selectedIds}
+          onToggle={handleToggle}
+          onContinue={handleContinue}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          loading={recentsLoading}
+          error={recentsError}
+          hintText={hintText}
+        />
+
         <View style={styles.infoSection}>
           <Text style={styles.infoTitle}>Suggerimenti</Text>
           <View style={styles.tipContainer}>
@@ -111,7 +248,7 @@ const AddProduct = () => {
             </Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
