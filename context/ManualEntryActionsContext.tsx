@@ -125,7 +125,12 @@ export const ManualEntryActionsProvider = ({ children }: { children: ReactNode }
 
       const editMode = String(initialData.isEditMode) === 'true';
       const originalId = initialData.originalProductId || null;
-      const manuallySelected = String(initialData.hasManuallySelectedCategory) === 'true';
+      // Fix rescan overwrite: if a category was supplied by template/OFF (via
+      // category or selectedCategory, or product.category), treat it as
+      // manually selected so auto-guess does not overwrite it 500ms later.
+      // This covers scanner -> manual-entry flow where String(undefined)==='true'→false.
+      const hasCategoryFromTemplate = !!newState.selectedCategory;
+      const manuallySelected = String(initialData.hasManuallySelectedCategory) === 'true' || hasCategoryFromTemplate;
 
       resetMetaState(editMode, originalId, manuallySelected);
     } catch (error) {

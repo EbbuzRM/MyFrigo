@@ -2,7 +2,7 @@
   "italianKeywordMap": {
     "dairy": ["formaggio", "yogurt", "mozzarella", "ricotta", "burro", "panna", "mascarpone", "parmigiano", "pecorino", "gorgonzola"],
     "milk": ["latte", "latte intero", "latte scremato", "latte parzialmente scremato"],
-    "meat": ["pollo", "manzo", "maiale", "tacchino", "agnello", "bistecca", "hamburger"],
+    "meat": ["pollo", "manzo", "maiale", "tacchino", "agnello", "bistecca", "hamburger", "cotoletta", "cotolette", "carne"],
     "salumi": ["prosciutto", "salame", "salsiccia", "wurstel", "speck", "mortadella", "bresaola", "pancetta", "coppa", "culatello", "guanciale", "nduja", "capocollo", "salumi", "affettato"],
     "fish": ["tonno", "salmone", "merluzzo", "gamber", "vongole", "cozze", "sogliola", "pesce", "acciughe", "sardine"],
     "fruits": ["mela", "banana", "arancia", "fragola", "uva", "pesca", "albicocca", "kiwi", "pera", "limone", "mandarino", "anguria", "melone", "ciliegia", "prugna", "pompelmo"],

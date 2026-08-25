@@ -14,7 +14,6 @@ interface RecentsPickerProps {
   products: Product[];
   selectedIds: Set<string>;
   onToggle: (product: Product) => void;
-  onContinue: () => void;
   searchQuery: string;
   onSearchChange: (text: string) => void;
   loading: boolean;
@@ -26,7 +25,6 @@ export function RecentsPicker({
   products,
   selectedIds,
   onToggle,
-  onContinue,
   searchQuery,
   onSearchChange,
   loading,
@@ -35,7 +33,6 @@ export function RecentsPicker({
 }: RecentsPickerProps) {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const selectedCount = selectedIds.size;
 
   const renderItem = ({ item }: { item: Product }) => {
     const selected = selectedIds.has(item.id);
@@ -116,17 +113,6 @@ export function RecentsPicker({
         />
       )}
 
-      {selectedCount > 0 && (
-        <TouchableOpacity
-          testID="recents-continue-button"
-          style={styles.continueButton}
-          onPress={onContinue}
-          accessibilityLabel={`Continua con ${selectedCount} prodotti`}
-          accessibilityRole="button"
-        >
-          <Text style={styles.continueText}>Continua ({selectedCount})</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -229,16 +215,5 @@ const getStyles = (isDarkMode: boolean) =>
       color: isDarkMode ? '#c9d1d9' : '#1e293b',
       textAlign: 'center',
     },
-    continueButton: {
-      backgroundColor: isDarkMode ? '#238636' : '#10b981',
-      borderRadius: 10,
-      paddingVertical: 12,
-      alignItems: 'center',
-      marginTop: 4,
-    },
-    continueText: {
-      color: '#ffffff',
-      fontFamily: 'Inter-SemiBold',
-      fontSize: 14,
-    },
+
   });

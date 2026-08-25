@@ -69,8 +69,9 @@ export class ProductStorage {
   private static normalizeIsFrozen(products: Product[]): Product[] {
     return products.map((p) => {
       const raw = (p as unknown as Record<string, unknown>).isFrozen;
-      if (raw === 'true') (p as unknown as Record<string, unknown>).isFrozen = true;
-      else if (raw === 'false') (p as unknown as Record<string, unknown>).isFrozen = false;
+      if (raw === 'true' || raw === 'false') {
+        return { ...p, isFrozen: raw === 'true' };
+      }
       return p;
     });
   }

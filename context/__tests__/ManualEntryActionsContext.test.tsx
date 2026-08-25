@@ -272,7 +272,7 @@ describe('ManualEntryActionsContext', () => {
     // Verifica che il meta stato sia stato resettato correttamente
     expect(mockSetEditMode).toHaveBeenCalledWith(false);
     expect(mockSetOriginalProductId).toHaveBeenCalledWith(null);
-    expect(mockSetManuallySelectedCategory).toHaveBeenCalledWith(false);
+    expect(mockSetManuallySelectedCategory).toHaveBeenCalledWith(true);
     expect(mockSetInitialized).toHaveBeenCalledWith(true);
   });
 
@@ -341,7 +341,7 @@ describe('ManualEntryActionsContext', () => {
 
     expect(mockSetEditMode).toHaveBeenCalledWith(true);
     expect(mockSetOriginalProductId).toHaveBeenCalledWith('prod-1');
-    expect(mockSetManuallySelectedCategory).toHaveBeenCalledWith(false);
+    expect(mockSetManuallySelectedCategory).toHaveBeenCalledWith(true);
     expect(mockSetInitialized).toHaveBeenCalledWith(true);
   });
 

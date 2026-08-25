@@ -104,7 +104,10 @@ export const useCategorySelection = ({
       clearTimeout(guessTimeoutRef.current);
     }
 
-    if (!isEditMode && !hasManuallySelectedCategory && (name || brand) && !categoriesLoading) {
+    // Defense-in-depth: do not auto-guess if a category is already set
+    // (e.g. from template/OFF via initializeForm). Prevents debounced 500ms
+    // overwrite on rescan before save (template sweets vs guess pasta).
+    if (!isEditMode && !hasManuallySelectedCategory && !selectedCategory && (name || brand) && !categoriesLoading) {
       guessTimeoutRef.current = setTimeout(() => {
         const guessedCategoryId = guessCategory(name, brand, categories);
         if (guessedCategoryId && guessedCategoryId !== selectedCategory) {

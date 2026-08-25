@@ -4,7 +4,7 @@
 // used_by: none
 // rules:   - This module uses router.replace() to navigate to manual-entry after barcode scanning; do not change navigation strategy without updating scanner.tsx and manual-entry.tsx flow.
 //          - All forwarded barcode parameters (barcode, barcodeType, productName, brand, imageUrl) must be preserved as-is when routing to manual-entry.
-//          - The add screen must remain a lightweight pass-through/dumb component only responsible for parameter forwarding and should not contain form logic.
+//          - RecentsPicker estratto, add gestisce solo orchestrazione queue+nav (push queue, peek/advance/clear, routing a manual-entry); non contiene form logic diretta.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
@@ -14,6 +14,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Barcode, Keyboard } from 'lucide-react-native';
@@ -70,12 +71,13 @@ const AddProduct = () => {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
 
+  const barcode = params.barcode;
   useEffect(() => {
     // Check if we have barcode data, implying we came from the scanner
-    if (params.barcode && typeof params.barcode === 'string') {
+    if (barcode && typeof barcode === 'string') {
       // Prepare all parameters to forward to the manual entry screen
       const forwardParams: { [key: string]: string | undefined | string[] } = {
-        barcode: params.barcode,
+        barcode,
         resetForm: 'true',
       };
       if (params.barcodeType && typeof params.barcodeType === 'string') {
@@ -96,7 +98,7 @@ const AddProduct = () => {
       // Using replace to prevent going back to this intermediate 'add' screen
       router.replace({ pathname: '/manual-entry', params: forwardParams });
     }
-  }, [params]);
+  }, [barcode, params.barcodeType, params.productName, params.brand, params.imageUrl]);
 
   const fetchRecents = useCallback(async () => {
     setRecentsLoading(true);
@@ -140,6 +142,7 @@ const AddProduct = () => {
   const handleSearchChange = useCallback(
     (text: string) => {
       setSearchQuery(text);
+      setSelectedIds(new Set()); // clear selection on search change
       if (debounceRef.current) clearTimeout(debounceRef.current);
       const trimmed = text.trim();
       if (trimmed.length === 0) {
@@ -192,63 +195,80 @@ const AddProduct = () => {
 
   const styles = getStyles(isDarkMode);
 
+  const selectedCount = selectedIds.size;
+
   return (
     <SafeAreaView style={styles.container} testID="add-product-screen">
-      <ScrollView style={{ flex: 1, marginBottom: 60 + insets.bottom }} contentContainerStyle={{ gap: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={styles.title}>Aggiungi Prodotto</Text>
-          <Text style={styles.subtitle}>
-            Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
-          </Text>
-        </View>
-
-        <View style={styles.methodsContainer}>
-          <AddMethodCard
-            testID="barcode-scanner-button"
-            title="Scansiona Codice a Barre"
-            description="Usa la fotocamera per una scansione rapida"
-            icon={<Barcode size={28} />}
-            onPress={handleBarcodeScanner}
-            variant="barcode"
-          />
-
-          <AddMethodCard
-            testID="manual-entry-button"
-            title="Inserimento Manuale"
-            description="Aggiungi i dettagli del prodotto manualmente"
-            icon={<Keyboard size={28} />}
-            onPress={handleManualEntry}
-            variant="manual"
-          />
-        </View>
-
-        <RecentsPicker
-          products={recents}
-          selectedIds={selectedIds}
-          onToggle={handleToggle}
-          onContinue={handleContinue}
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          loading={recentsLoading}
-          error={recentsError}
-          hintText={hintText}
-        />
-
-        <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>Suggerimenti</Text>
-          <View style={styles.tipContainer}>
-            <Text style={styles.tipText}>
-              • Puoi inserire la data di scadenza anche da un'immagine della galleria.Assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
-            </Text>
-            <Text style={styles.tipText}>
-              • L'inserimento manuale ti permette il controllo completo sui dettagli
-            </Text>
-            <Text style={styles.tipText}>
-
+      <View style={styles.contentWrapper}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={{ gap: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
+            <Text style={styles.title}>Aggiungi Prodotto</Text>
+            <Text style={styles.subtitle}>
+              Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
             </Text>
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={styles.methodsContainer}>
+            <AddMethodCard
+              testID="barcode-scanner-button"
+              title="Scansiona Codice a Barre"
+              description="Usa la fotocamera per una scansione rapida"
+              icon={<Barcode size={28} />}
+              onPress={handleBarcodeScanner}
+              variant="barcode"
+            />
+
+            <AddMethodCard
+              testID="manual-entry-button"
+              title="Inserimento Manuale"
+              description="Aggiungi i dettagli del prodotto manualmente"
+              icon={<Keyboard size={28} />}
+              onPress={handleManualEntry}
+              variant="manual"
+            />
+          </View>
+
+          <RecentsPicker
+            products={recents}
+            selectedIds={selectedIds}
+            onToggle={handleToggle}
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            loading={recentsLoading}
+            error={recentsError}
+            hintText={hintText}
+          />
+
+          <View style={styles.infoSection}>
+            <Text style={styles.infoTitle}>Suggerimenti</Text>
+            <View style={styles.tipContainer}>
+              <Text style={styles.tipText}>
+                • Puoi inserire la data di scadenza anche da un'immagine della galleria.Assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
+              </Text>
+              <Text style={styles.tipText}>
+                • L'inserimento manuale ti permette il controllo completo sui dettagli
+              </Text>
+              <Text style={styles.tipText}>
+
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {selectedCount > 0 && (
+          <View style={[styles.footer, { paddingBottom: 12 + insets.bottom }]}>
+            <TouchableOpacity
+              testID="recents-continue-button"
+              style={styles.continueButton}
+              onPress={handleContinue}
+              accessibilityLabel={`Continua con ${selectedCount} prodotti`}
+              accessibilityRole="button"
+            >
+              <Text style={styles.continueText}>Continua ({selectedCount})</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -261,7 +281,26 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flex: 1,
     backgroundColor: isDarkMode ? '#0d1117' : '#ffffff',
     padding: 20,
-    gap: 24,
+  },
+  contentWrapper: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  footer: {
+    paddingTop: 12,
+  },
+  continueButton: {
+    backgroundColor: isDarkMode ? '#238636' : '#10b981',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  continueText: {
+    color: '#ffffff',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
   },
   header: {
     // No specific padding needed if container has it

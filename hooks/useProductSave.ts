@@ -15,6 +15,7 @@ import { LoggingService } from '@/services/LoggingService';
 import { Product } from '@/types/Product';
 import { recentProductQueue } from '@/utils/recentProductQueue';
 import { saveImagePermanently } from '@/utils/imageStorage';
+import { Paths } from 'expo-file-system';
 import { getLocalISODate } from '@/utils/dateUtils';
 
 export interface UseProductSaveReturn {
@@ -109,11 +110,14 @@ export const useProductSave = (): UseProductSaveReturn => {
     // Handle image copy: https passthrough, file:// -> try copy, fail->null
     let finalImageUrl: string | undefined = currentImageUrl || undefined;
     if (finalImageUrl && !finalImageUrl.startsWith('http')) {
-      try {
-        finalImageUrl = await saveImagePermanently(finalImageUrl);
-      } catch (e) {
-        LoggingService.warning('useProductSave', 'Image copy failed, fallback to null', e);
-        finalImageUrl = undefined;
+      const productsDir = Paths.document.uri + 'products/';
+      if (!finalImageUrl.startsWith(productsDir)) {
+        try {
+          finalImageUrl = await saveImagePermanently(finalImageUrl);
+        } catch (e) {
+          LoggingService.warning('useProductSave', 'Image copy failed, fallback to null', e);
+          finalImageUrl = undefined;
+        }
       }
     }
 
@@ -148,14 +152,21 @@ export const useProductSave = (): UseProductSaveReturn => {
 
       if (currentIsEditMode) {
         Alert.alert('Prodotto Aggiornato', `${savedProductName} è stato aggiornato con successo.`);
-        router.replace('/(tabs)/products');
+        try {
+          router.replace('/(tabs)/products');
+        } catch (navError) {
+          LoggingService.error('useProductSave', 'Edit mode navigation failed', navError);
+        }
         return;
       }
 
       // Queue branch BEFORE normal Alert (spec :141)
       if (!recentProductQueue.isEmpty()) {
+        LoggingService.info('useProductSave', `Queue advance: queue size before advance=${recentProductQueue.size()}`);
         recentProductQueue.advance();
         const next = recentProductQueue.peekNext();
+        LoggingService.info('useProductSave', `Queue after advance: next product=${next?.name || 'null'}, remaining=${recentProductQueue.size()}`);
+        
         if (next) {
           const params: Record<string, string> = {
             name: next.name,
@@ -168,11 +179,30 @@ export const useProductSave = (): UseProductSaveReturn => {
           if (next.selectedCategory) params.selectedCategory = next.selectedCategory;
           if (next.notes) params.notes = next.notes;
           if (next.isFrozen) params.isFrozen = String(next.isFrozen);
+          
           // Suppress form clear: next screen will initialize via useProductInitialization
-          router.replace({ pathname: '/manual-entry', params });
+          try {
+            LoggingService.info('useProductSave', `Navigating to next product: ${next.name}`);
+            router.replace({ pathname: '/manual-entry', params });
+          } catch (navError) {
+            LoggingService.error('useProductSave', 'Queue advance navigation failed', navError);
+            currentClearForm();
+            try {
+              router.replace('/(tabs)/products');
+            } catch (fallbackNavError) {
+              LoggingService.error('useProductSave', 'Fallback navigation also failed', fallbackNavError);
+            }
+            Alert.alert('Errore', 'Impossibile aprire il prodotto successivo. Torna alla schermata prodotti.');
+          }
         } else {
+          LoggingService.info('useProductSave', 'Queue empty after advance, navigating to products');
           currentClearForm();
-          router.replace('/(tabs)/products');
+          try {
+            router.replace('/(tabs)/products');
+          } catch (navError) {
+            LoggingService.error('useProductSave', 'Final navigation failed after queue completion', navError);
+            Alert.alert('Errore', 'Impossibile tornare alla lista prodotti.');
+          }
         }
         return;
       }
@@ -183,8 +213,24 @@ export const useProductSave = (): UseProductSaveReturn => {
         `${savedProductName} è stato aggiunto. Cosa vuoi fare ora?`,
         [
           { text: 'Aggiungi Manualmente', onPress: () => { LoggingService.info('useProductSave', 'User chose to add manually'); currentClearForm(); } },
-          { text: 'Scansiona Codice', onPress: () => { LoggingService.info('useProductSave', 'User chose to scan barcode'); currentClearForm(); router.replace('/scanner'); } },
-          { text: 'Finito', onPress: () => { LoggingService.info('useProductSave', 'User chose to finish'); currentClearForm(); router.replace('/(tabs)/products'); }, style: 'cancel' },
+          { text: 'Scansiona Codice', onPress: () => { 
+            LoggingService.info('useProductSave', 'User chose to scan barcode'); 
+            currentClearForm(); 
+            try {
+              router.replace('/scanner');
+            } catch (navError) {
+              LoggingService.error('useProductSave', 'Navigation to scanner failed', navError);
+            }
+          } },
+          { text: 'Finito', onPress: () => { 
+            LoggingService.info('useProductSave', 'User chose to finish'); 
+            currentClearForm(); 
+            try {
+              router.replace('/(tabs)/products');
+            } catch (navError) {
+              LoggingService.error('useProductSave', 'Navigation to products failed', navError);
+            }
+          }, style: 'cancel' },
         ],
         { cancelable: false }
       );

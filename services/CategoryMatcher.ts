@@ -76,8 +76,9 @@ export class CategoryMatcher {
     const matchesKeyword = (keyword: string) => fullText.includes(keyword);
 
     // Priorità alle categorie più specifiche (ordinamento manuale per importanza)
+    // Nota: carne/salumi prima di formaggi/latticini — una "cotoletta di pollo con scamorza" è carne, non formaggio
     const categoryPriority = [
-      'legumes', 'cheese', 'frozen', 'dairy', 'salumi', 'meat', 'fish', 'fruits', 'vegetables',
+      'legumes', 'frozen', 'salumi', 'meat', 'fish', 'cheese', 'dairy', 'fruits', 'vegetables',
       'pasta', 'rice', 'flour', 'grains', 'beverages', 'canned',
       'snacks', 'sweets', 'condiments', 'sauces', 'eggs', 'jam', 'honey',
       'ice_cream', 'pomodoro', 'vegan', 'milk'
