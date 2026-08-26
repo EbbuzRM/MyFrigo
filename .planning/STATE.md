@@ -78,7 +78,12 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Supabase Auth Rate Limits server-side consigliati come difesa in profondità: `10,30,150,10,30,15,30` (vs default `30/5min` troppo permissivo; `sign-ins 15/5min`, `token verifications 10/5min`).
 
 ## Last Commit
-Hash: ab44414
-Message: "chore: track supabase migrations and functions in repo"
-(fix sessione 2026-08-04 — CLAUDE.md, forgot-password.tsx, forgot-password.test.tsx, feedback.test.tsx — non ancora committati)
-> **Placeholder**: fix sessione 2026-08-27 (brute force login — AuthService, AuthContext, useEmailAuth, LoginForm, forgot-password, jest.setup.js, AuthService.bruteForce 17 test) non ancora committati — verrà aggiornato dopo commit.
+Hash: 5055a7c (5055a7c778502f2aa7b44ce3dabf206b8b80b112)
+Message: "fix(auth): brute force rate limiting 5/15min + OTP limit + UX block + demo tests"
+- AuthService persistenza AsyncStorage myfrigo:rateLimitStore, email normalize trim+lowercase, OTP :otp bucket
+- AuthContext.changePassword delega a AuthService (chiusura bypass)
+- useEmailAuth rateLimitedUntil/remainingMs/isRateLimited + countdown 1s
+- LoginForm blocco bottone + warning countdown
+- forgot-password OTP rate limit
+- 17 test dimostrativi AuthService.bruteForce
+- Hardening Supabase consigliato: token verifications 10/5min, sign-ins 15/5min
