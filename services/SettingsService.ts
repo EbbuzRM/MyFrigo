@@ -22,6 +22,56 @@ import {
 import { LoggingService } from './LoggingService';
 import { UserNotificationSettingsService } from './UserNotificationSettingsService';
 
+/** Max retries for transient JWT clock-skew errors (PGRST303). */
+const MAX_JWT_RETRIES = 2;
+/** Base delay in ms for exponential backoff on PGRST303 retries (1 s, 2 s). */
+const JWT_RETRY_BASE_DELAY_MS = 1000;
+
+/**
+ * Returns true if the error is a PGRST303 ("JWT issued at … is in the future").
+ * This is a transient clock-skew error that can be resolved by refreshing the token.
+ */
+function isJwtClockSkewError(error: unknown): boolean {
+  if (error && typeof error === 'object' && 'code' in error) {
+    return (error as { code: string }).code === 'PGRST303';
+  }
+  return false;
+}
+
+/**
+ * Executes an async operation with automatic retry on PGRST303 (JWT clock skew).
+ * Before each retry, refreshes the Supabase session and waits with exponential backoff.
+ */
+async function withJwtRetry<T>(
+  operation: () => Promise<T>,
+  context: string
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_JWT_RETRIES; attempt++) {
+    try {
+      return await operation();
+    } catch (error: unknown) {
+      lastError = error;
+      if (!isJwtClockSkewError(error) || attempt === MAX_JWT_RETRIES) {
+        throw error;
+      }
+      LoggingService.warning(
+        'SettingsService',
+        `${context}: PGRST303 detected, refreshing session (attempt ${attempt + 1}/${MAX_JWT_RETRIES})`
+      );
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        LoggingService.error('SettingsService', `${context}: session refresh failed`, refreshError);
+        throw error;
+      }
+      const delay = JWT_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  // Unreachable, but TypeScript needs it
+  throw lastError;
+}
+
 /**
  * Interfaccia per le impostazioni dell'app
  */
@@ -61,40 +111,43 @@ export class SettingsService {
 
   /**
    * Recupera le impostazioni dell'app dalla tabella globale app_settings.
+   * Retries automatically on PGRST303 (JWT clock skew) after refreshing the session.
    * @returns Promise con le impostazioni dell'app
    */
   static async getSettings(): Promise<AppSettings> {
     try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('*')
-        .eq('id', 1)
-        .single();
+      return await withJwtRetry(async () => {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('*')
+          .eq('id', 1)
+          .single();
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
 
-      if (data) {
-        return convertSettingsToCamelCase(data);
-      }
+        if (data) {
+          return convertSettingsToCamelCase(data);
+        }
 
-      LoggingService.info('SettingsService', 'No settings found, creating default settings');
-      const defaultSettings = {
-        id: 1,
-        notification_days: 3,
-        theme: 'auto',
-      };
+        LoggingService.info('SettingsService', 'No settings found, creating default settings');
+        const defaultSettings = {
+          id: 1,
+          notification_days: 3,
+          theme: 'auto',
+        };
 
-      const { error: insertError } = await supabase
-        .from('app_settings')
-        .insert(defaultSettings as unknown as TablesInsert<'app_settings'>);
+        const { error: insertError } = await supabase
+          .from('app_settings')
+          .insert(defaultSettings as unknown as TablesInsert<'app_settings'>);
 
-      if (insertError) {
-        throw insertError;
-      }
+        if (insertError) {
+          throw insertError;
+        }
 
-      return convertSettingsToCamelCase(defaultSettings);
+        return convertSettingsToCamelCase(defaultSettings);
+      }, 'getSettings');
 
     } catch (error: unknown) {
       LoggingService.error('SettingsService', 'Error getting or creating settings in Supabase', error);
@@ -118,30 +171,32 @@ export class SettingsService {
    */
   static async updateSettings(newSettings: Partial<AppSettings>): Promise<AppSettings | null> {
     try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .upsert({ id: 1, ...convertSettingsToSnakeCase(newSettings) } as unknown as TablesUpdate<'app_settings'>)
-        .select()
-        .single();
+      return await withJwtRetry(async () => {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .upsert({ id: 1, ...convertSettingsToSnakeCase(newSettings) } as unknown as TablesUpdate<'app_settings'>)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const updatedSettings = convertSettingsToCamelCase(data);
+        const updatedSettings = convertSettingsToCamelCase(data);
 
-      // Sincronizza notification_days anche nella tabella per-utente
-      if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await UserNotificationSettingsService.updateSettings(user.id, {
-            notificationDays: newSettings.notificationDays,
-          });
-          LoggingService.info('SettingsService', 'User notification settings synced', { userId: user.id });
-        } else {
-          LoggingService.warning('SettingsService', 'No authenticated user found, skipping user_notification_settings sync');
+        // Sincronizza notification_days anche nella tabella per-utente
+        if (Object.prototype.hasOwnProperty.call(newSettings, 'notificationDays')) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await UserNotificationSettingsService.updateSettings(user.id, {
+              notificationDays: newSettings.notificationDays,
+            });
+            LoggingService.info('SettingsService', 'User notification settings synced', { userId: user.id });
+          } else {
+            LoggingService.warning('SettingsService', 'No authenticated user found, skipping user_notification_settings sync');
+          }
         }
-      }
 
-      return updatedSettings;
+        return updatedSettings;
+      }, 'updateSettings');
     } catch (error: unknown) {
       LoggingService.error('SettingsService', 'Error updating settings in Supabase', error);
       throw error;

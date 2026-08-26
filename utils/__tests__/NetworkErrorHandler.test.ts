@@ -54,6 +54,21 @@ describe('isSessionExpired', () => {
     const error = { code: 'OTHER_CODE' };
     expect(isSessionExpired(error)).toBe(false);
   });
+
+  it('should return true for error with code PGRST303 (JWT clock skew)', () => {
+    const error = { code: 'PGRST303' };
+    expect(isSessionExpired(error)).toBe(true);
+  });
+
+  it('should return true for error with message containing "issued at" and "future"', () => {
+    const error = { message: 'JWT issued at timestamp is in the future' };
+    expect(isSessionExpired(error)).toBe(true);
+  });
+
+  it('should return false for error with message containing only "issued at" without "future"', () => {
+    const error = { message: 'JWT issued at timestamp is valid' };
+    expect(isSessionExpired(error)).toBe(false);
+  });
 });
 
 describe('isUnauthorized', () => {
@@ -221,6 +236,12 @@ describe('handleNetworkError', () => {
 
   it('should route session expired to SESSION_EXPIRED code', () => {
     const error = { code: 'PGRST301' };
+    const result = handleNetworkError(error);
+    expect(result.code).toBe(ErrorCode.SESSION_EXPIRED);
+  });
+
+  it('should route PGRST303 (JWT clock skew) to SESSION_EXPIRED code', () => {
+    const error = { code: 'PGRST303', message: 'JWT issued at ... is in the future' };
     const result = handleNetworkError(error);
     expect(result.code).toBe(ErrorCode.SESSION_EXPIRED);
   });

@@ -47,7 +47,9 @@ const mockGetSession = jest.fn();
 const mockGetCachedSession = jest.fn();
 const mockOnAuthStateChange = jest.fn();
 const mockSignOut = jest.fn();
+const mockUpdateUser = jest.fn();
 const mockFrom = jest.fn();
+const mockClearCachedSession = jest.fn();
 
 jest.mock('@/services/supabaseClient', () => ({
   supabase: {
@@ -55,15 +57,29 @@ jest.mock('@/services/supabaseClient', () => ({
       getSession: () => mockGetSession(),
       onAuthStateChange: (callback: Function) => mockOnAuthStateChange(callback),
       signOut: () => mockSignOut(),
+      updateUser: (attrs: Record<string, unknown>) => mockUpdateUser(attrs),
     },
     from: (table: string) => mockFrom(table),
   },
   getCachedSession: () => mockGetCachedSession(),
+  clearCachedSession: () => mockClearCachedSession(),
 }));
+
+// Mock AuthService
+const mockSignInWithEmail = jest.fn();
+jest.mock('@/services/AuthService', () => ({
+  AuthService: {
+    signInWithEmail: (...args: unknown[]) => mockSignInWithEmail(...args),
+  },
+}));
+
+// Mock global fetch
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
 
 // --- Componente di Test ---
 const TestComponent = () => {
-  const { session, user, profile, loading, signOut, refreshUserProfile, updateProfile } = useAuth();
+  const { session, user, profile, loading, signOut, refreshUserProfile, updateProfile, changePassword } = useAuth();
   
   return (
     <View>
@@ -74,6 +90,7 @@ const TestComponent = () => {
       <Text testID="actions" onPress={() => signOut()}>signOut</Text>
       <Text testID="refresh" onPress={() => refreshUserProfile()}>refresh</Text>
       <Text testID="update" onPress={() => updateProfile('John', 'Doe')}>update</Text>
+      <Text testID="change-password" onPress={() => changePassword('old', 'new')}>changePassword</Text>
     </View>
   );
 };
@@ -130,6 +147,10 @@ describe('AuthContext', () => {
       };
     });
     mockSignOut.mockResolvedValue({ error: null });
+    mockUpdateUser.mockResolvedValue({ error: null });
+    mockClearCachedSession.mockImplementation(() => {});
+    mockSignInWithEmail.mockResolvedValue({ success: true });
+    mockFetch.mockResolvedValue({ ok: true, text: async () => '' });
     mockFrom.mockReturnValue({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
@@ -765,6 +786,161 @@ describe('AuthContext', () => {
       await new Promise((r) => setTimeout(r, 50));
 
       expect(OneSignalService.configureForUser).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('changePassword', () => {
+    const setupLoggedInUser = () => {
+      // AuthContext reads EXPO_PUBLIC_SUPABASE_URL at runtime for revoke call
+      process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+
+      const mockUser = createMockUser('user-123');
+      const mockSession = createMockSession(mockUser);
+
+      mockGetCachedSession.mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      mockGetSession.mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { id: 'user-123', first_name: 'Test' },
+          error: null,
+        }),
+      });
+
+      return { mockUser, mockSession };
+    };
+
+    afterEach(() => {
+      delete process.env.EXPO_PUBLIC_SUPABASE_URL;
+    });
+
+    it('dovrebbe verificare la password corrente prima di aggiornare', async () => {
+      setupLoggedInUser();
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      await act(async () => {
+        getByTestId('change-password').props.onPress();
+      });
+
+      expect(mockSignInWithEmail).toHaveBeenCalledWith('user-123@test.com', 'old');
+      expect(mockUpdateUser).toHaveBeenCalledWith({ password: 'new' });
+    });
+
+    it('dovrebbe lanciare errore se la password corrente è errata', async () => {
+      setupLoggedInUser();
+      mockSignInWithEmail.mockResolvedValue({ success: false, error: 'Invalid credentials' });
+
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      await act(async () => {
+        await expect(getByTestId('change-password').props.onPress()).rejects.toThrow('Password attuale errata');
+      });
+
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+    });
+
+    it('dovrebbe chiamare Edge Function per revocare sessioni dopo cambio password', async () => {
+      setupLoggedInUser();
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      await act(async () => {
+        getByTestId('change-password').props.onPress();
+      });
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/functions/v1/revoke-user-sessions'),
+          expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ user_id: 'user-123' }),
+          })
+        );
+      });
+
+      // Verify Authorization header contains the access token
+      const fetchCall = mockFetch.mock.calls[0];
+      expect(fetchCall[1].headers.Authorization).toBe('Bearer mock-token');
+    });
+
+    it('dovrebbe chiamare clearCachedSession dopo cambio password', async () => {
+      setupLoggedInUser();
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      await act(async () => {
+        getByTestId('change-password').props.onPress();
+      });
+
+      await waitFor(() => {
+        expect(mockClearCachedSession).toHaveBeenCalled();
+      });
+    });
+
+    it('NON dovrebbe bloccare cambio password se revoke fallisce', async () => {
+      setupLoggedInUser();
+      mockFetch.mockResolvedValue({ ok: false, text: async () => 'Server error' });
+
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      // Should not throw even though fetch fails
+      await act(async () => {
+        getByTestId('change-password').props.onPress();
+      });
+
+      await waitFor(() => {
+        expect(mockUpdateUser).toHaveBeenCalledWith({ password: 'new' });
+        expect(mockClearCachedSession).toHaveBeenCalled();
+      });
+    });
+
+    it('NON dovrebbe chiamare revoke se non c\'è sessione dopo updateUser', async () => {
+      setupLoggedInUser();
+      // After updateUser, getSession returns null
+      mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
+
+      const { getByTestId } = renderAuthProvider();
+
+      await waitFor(() => {
+        expect(getByTestId('loading').props.children).toBe('false');
+      });
+
+      await act(async () => {
+        getByTestId('change-password').props.onPress();
+      });
+
+      await waitFor(() => {
+        expect(mockUpdateUser).toHaveBeenCalled();
+      });
+
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 });

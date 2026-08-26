@@ -18,17 +18,14 @@ export default function ResetPassword() {
 
   // Log di diagnostica spostati e convertiti
   LoggingService.debug('ResetPassword', 'Component MOUNTED');
-  LoggingService.debug('ResetPassword', 'Raw params', params);
 
   const token_hash = params.token_hash || params.token; // Gestione ibrida
   const [diagnosticToken, setDiagnosticToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  LoggingService.info('ResetPassword', 'Parametri ricevuti', params);
-
   useEffect(() => {
     const handleReset = async () => {
-      LoggingService.info('ResetPassword', 'Avvio processo reset', { token_hash });
+      LoggingService.info('ResetPassword', 'Avvio processo reset', { hasToken: !!token_hash });
 
       if (!token_hash) {
         LoggingService.error('ResetPassword', 'Token mancante');
@@ -48,10 +45,7 @@ export default function ResetPassword() {
 
 
         // Verifica esplicita del token di recovery
-        LoggingService.info('ResetPassword', 'Verifica token', { 
-          token_length: token_hash.toString().length,
-          token_prefix: token_hash.toString().substring(0, 6)
-        });
+        LoggingService.info('ResetPassword', 'Verifica token in corso');
         
         const { data, error: verifyError } = await supabase.auth.verifyOtp({
           token_hash: token_hash.toString(),

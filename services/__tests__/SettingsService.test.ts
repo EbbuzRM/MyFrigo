@@ -15,6 +15,7 @@ jest.mock('../supabaseClient', () => {
       removeChannel: mockRemoveChannel,
       auth: {
         getUser: jest.fn(),
+        refreshSession: jest.fn().mockResolvedValue({ data: { session: {} }, error: null }),
       },
     },
   };
@@ -306,13 +307,129 @@ describe('SettingsService', () => {
         subscribe: jest.fn().mockReturnThis(),
       };
 
-      jest.spyOn(SettingsService, 'getSettings').mockResolvedValue(defaultSettings);
+      const spy = jest.spyOn(SettingsService, 'getSettings').mockResolvedValue(defaultSettings);
       (supabase.channel as jest.Mock).mockReturnValue(mockChannel);
+      try {
+        const unsubscribe = SettingsService.listenToSettings(jest.fn());
+        unsubscribe();
+        expect(supabase.removeChannel).toHaveBeenCalledWith(mockChannel);
+      } finally {
+        spy.mockRestore();
+      }
+    });
+  });
 
-      const unsubscribe = SettingsService.listenToSettings(jest.fn());
-      unsubscribe();
+  // ── PGRST303 retry logic ──────────────────────────────────────────
+  describe('PGRST303 retry', () => {
+    let timeoutSpy: jest.SpyInstance;
 
-      expect(supabase.removeChannel).toHaveBeenCalledWith(mockChannel);
+    beforeEach(() => {
+      timeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(((cb: any) => {
+        if (typeof cb === 'function') cb();
+        return 0 as unknown as NodeJS.Timeout;
+      }) as unknown as typeof setTimeout);
+    });
+
+    afterEach(() => {
+      timeoutSpy.mockRestore();
+    });
+
+    it('getSettings should retry on PGRST303 and succeed after session refresh', async () => {
+      const pgrst303Error = { code: 'PGRST303', message: 'JWT issued at ... is in the future' };
+      const mockDbData = { id: 1, notification_days: 5, theme: 'dark' };
+
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn()
+          .mockRejectedValueOnce(pgrst303Error)
+          .mockResolvedValueOnce({ data: mockDbData, error: null }),
+      };
+
+      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (supabase.auth.refreshSession as jest.Mock).mockResolvedValue({
+        data: { session: {} },
+        error: null,
+      });
+
+      const result = await SettingsService.getSettings();
+
+      expect(result).toEqual({ notificationDays: 5, theme: 'dark' });
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+      expect(LoggingService.warning).toHaveBeenCalledWith(
+        'SettingsService',
+        expect.stringContaining('PGRST303 detected'),
+      );
+      expect(mockQueryBuilder.single).toHaveBeenCalledTimes(2);
+    });
+
+    it('updateSettings should retry on PGRST303 and succeed after session refresh', async () => {
+      const pgrst303Error = { code: 'PGRST303', message: 'JWT issued at ... is in the future' };
+      const mockUpdatedDbData = { id: 1, notification_days: 7, theme: 'light' };
+
+      const mockQueryBuilder = {
+        upsert: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        single: jest.fn()
+          .mockRejectedValueOnce(pgrst303Error)
+          .mockResolvedValueOnce({ data: mockUpdatedDbData, error: null }),
+      };
+
+      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({ data: { user: null } });
+      (supabase.auth.refreshSession as jest.Mock).mockResolvedValue({
+        data: { session: {} },
+        error: null,
+      });
+
+      const result = await SettingsService.updateSettings({ notificationDays: 7, theme: 'light' });
+
+      expect(result).toEqual({ notificationDays: 7, theme: 'light' });
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+      expect(mockQueryBuilder.single).toHaveBeenCalledTimes(2);
+    });
+
+    it('getSettings should NOT retry on non-PGRST303 errors', async () => {
+      const otherError = { code: '42P01', message: 'relation does not exist' };
+
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockRejectedValue(otherError),
+      };
+
+      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+
+      const result = await SettingsService.getSettings();
+
+      // Should return defaults (caught by outer catch), no retry
+      expect(result).toEqual(defaultSettings);
+      expect(supabase.auth.refreshSession).not.toHaveBeenCalled();
+      expect(mockQueryBuilder.single).toHaveBeenCalledTimes(1);
+    });
+
+    it('getSettings should give up after MAX_JWT_RETRIES and return defaults', async () => {
+      const pgrst303Error = { code: 'PGRST303', message: 'JWT issued at ... is in the future' };
+
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockRejectedValue(pgrst303Error),
+      };
+
+      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (supabase.auth.refreshSession as jest.Mock).mockResolvedValue({
+        data: { session: {} },
+        error: null,
+      });
+
+      const result = await SettingsService.getSettings();
+
+      // Should return defaults after exhausting retries
+      expect(result).toEqual(defaultSettings);
+      // 1 initial + 2 retries = 3 attempts
+      expect(mockQueryBuilder.single).toHaveBeenCalledTimes(3);
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(2);
     });
   });
 });

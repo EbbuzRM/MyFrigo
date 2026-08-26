@@ -26,7 +26,7 @@ const ValidationCheck = ({ text, isValid }: { text: string; isValid: boolean }) 
 );
 
 export default function ProfileScreen() {
-  const { user, profile, refreshUserProfile, changePassword } = useAuth();
+  const { user, profile, refreshUserProfile, changePassword, signOut } = useAuth();
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -101,12 +101,13 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     setSaving(true);
-    const { error } = await supabase.auth.signOut();
-    setSaving(false);
-    if (error) {
-      Alert.alert('Errore', 'Impossibile effettuare il logout: ' + error.message);
-    } else {
-      router.replace('/login');
+    try {
+      await signOut();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+      Alert.alert('Errore', 'Impossibile effettuare il logout: ' + errorMessage);
+    } finally {
+      setSaving(false);
     }
   };
 

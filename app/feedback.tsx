@@ -33,7 +33,7 @@ import { Toast } from '@/components/Toast';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { ChevronLeft } from 'lucide-react-native';
-import { getStyles } from './feedback.styles';
+import { getStyles } from '@/styles/feedback.styles';
 
 const FeedbackScreen = () => {
   const { isDarkMode } = useTheme();

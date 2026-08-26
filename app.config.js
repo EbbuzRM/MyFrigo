@@ -158,7 +158,8 @@ module.exports = {
       "expo-updates",
       "expo-font",
       "expo-web-browser",
-      "expo-background-task"
+      "expo-background-task",
+      "expo-secure-store"
     ],
   }
 };

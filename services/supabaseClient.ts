@@ -30,14 +30,15 @@
 //                   utils\ocr\ocrSpaceService.ts
 // rules:   - Module exports a shared `supabase` client instance; do not create additional Supabase clients or duplicate the initialization elsewhere in the codebase
 //          - Session caching logic (`cachedSession`, `cacheTimestamp`) is module-scoped state that must remain synchronous and accessed only through the exported session functions, not directly mutated
+//          - Auth tokens are stored in encrypted SecureStorage (expo-secure-store), NOT plaintext AsyncStorage. Migration from AsyncStorage happens automatically on first getCachedSession() call.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
 import 'react-native-url-polyfill/auto';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, Session } from '@supabase/supabase-js';
 import { LoggingService } from './LoggingService';
 import { Database } from '@/types/supabase';
+import { SecureStorage, migrateTokensFromAsyncStorage } from './SecureStorage';
 
 // Get environment variables directly from process.env
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -49,6 +50,14 @@ let supabase: ReturnType<typeof createClient<Database>>;
 let cachedSession: Session | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Migration flag: ensures token migration from AsyncStorage runs at most once
+let migrationAttempted = false;
+
+// Clock skew tolerance: accept JWTs whose exp is up to 30 s in the past
+// to avoid PGRST303 ("JWT issued at … is in the future") on devices
+// whose clock is slightly ahead of the server.
+const CLOCK_SKEW_BUFFER_MS = 30 * 1000;
 
 // In test environment, provide mock values to avoid initialization errors
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -99,7 +108,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
     supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
-        storage: AsyncStorage,
+        storage: SecureStorage,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
@@ -119,13 +128,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 /**
  * Returns the current session, using a 5-minute cache to reduce API calls.
  * Before returning a cached session, verifies the JWT is not expired.
+ * On first call, migrates tokens from AsyncStorage (plaintext) to SecureStore (encrypted).
  */
 export const getCachedSession = async () => {
+  // Run one-time migration from AsyncStorage to encrypted SecureStorage
+  if (!migrationAttempted) {
+    migrationAttempted = true;
+    await migrateTokensFromAsyncStorage();
+  }
+
   const now = Date.now();
   if (cachedSession && (now - cacheTimestamp < CACHE_DURATION)) {
     try {
       const payload = JSON.parse(atob(cachedSession.access_token.split('.')[1]));
-      if (payload.exp * 1000 > now) {
+      // Apply clock skew buffer: treat token as valid if exp is within
+      // CLOCK_SKEW_BUFFER_MS of now (prevents PGRST303 on slightly fast clocks).
+      if (payload.exp * 1000 > (now - CLOCK_SKEW_BUFFER_MS)) {
         return { data: { session: cachedSession }, error: null };
       }
     } catch {

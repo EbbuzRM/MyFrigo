@@ -25,19 +25,28 @@ import {
 import { createError } from './errorHandler';
 
 /**
- * Checks if an error is a session expired error (PGRST301)
+ * Checks if an error is a session expired error (PGRST301) or a
+ * transient JWT clock-skew error (PGRST303 — "JWT issued at … is in the future").
+ * PGRST303 is treated as session-expired so callers trigger a token refresh.
  * @param error - Unknown error to check
  * @returns True if session is expired
  */
 export function isSessionExpired(error: unknown): boolean {
+  if (hasErrorCode(error)) {
+    if (error.code === 'PGRST301' || error.code === 'PGRST303') {
+      return true;
+    }
+  }
+
   if (hasErrorMessage(error)) {
     const msg = error.message.toLowerCase();
     return (
       (msg.includes('session') && (msg.includes('expired') || msg.includes('invalid'))) ||
-      (hasErrorCode(error) && error.code === 'PGRST301')
+      (msg.includes('issued at') && msg.includes('future'))
     );
   }
-  return hasErrorCode(error) && error.code === 'PGRST301';
+
+  return false;
 }
 
 /**

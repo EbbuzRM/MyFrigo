@@ -177,13 +177,17 @@ export default function ManualEntryScreen() {
 
   // Spec: back while queue active -> clear queue (no URL, in-memory)
   useEffect(() => {
+    if (!BackHandler?.addEventListener) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (!recentProductQueue.isEmpty()) {
         recentProductQueue.clear();
       }
       return false;
     });
-    return () => sub.remove();
+    return () => {
+      if (sub?.remove) sub.remove();
+      else (BackHandler as unknown as { removeEventListener?: (...a: unknown[]) => void }).removeEventListener?.('hardwareBackPress', () => false);
+    };
   }, []);
   const {
     name, setName,

@@ -18,7 +18,7 @@ import { useCategories } from '@/context/CategoryContext';
 import { Product } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
 import { useBarcodeScanner, ScanResult } from '@/hooks/useBarcodeScanner';
-import { styles } from './scanner.styles';
+import { styles } from '@/styles/scanner.styles';
 
 interface FrameLayout {
   x: number;

@@ -22,7 +22,6 @@ import { router } from 'expo-router';
 import { ExpirationCard } from '@/components/ExpirationCard';
 import { StatsCard } from '@/components/StatsCard';
 import { useTheme } from '@/context/ThemeContext';
-import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useProducts } from '@/context/ProductContext';
@@ -38,7 +37,7 @@ import { DASHBOARD_CONTENT } from '@/constants/content';
 
 function Dashboard() {
   const { isDarkMode } = useTheme();
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { settings, permissionStatus, refreshPermissions, loading: settingsLoading } = useSettings();
   const { products: allProducts, loading: productsLoading, refreshProducts } = useProducts();
   const [refreshing, setRefreshing] = useState(false);
@@ -65,8 +64,8 @@ function Dashboard() {
 
   const handleLogout = useCallback(async () => {
     setMenuVisible(false);
-    await supabase.auth.signOut();
-  }, []);
+    await signOut();
+  }, [signOut]);
 
   // Usa l'hook per la logica sulle date
   const { expiringProducts, expiredCount } = useDashboardStats({

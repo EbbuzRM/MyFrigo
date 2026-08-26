@@ -18,7 +18,7 @@ import { X, Plus, Edit2 } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { LoggingService } from '@/services/LoggingService';
-import { getStyles } from './manage-categories.styles';
+import { getStyles } from '@/styles/manage-categories.styles';
 
 interface CreateCategoryModalProps {
   isVisible: boolean;
