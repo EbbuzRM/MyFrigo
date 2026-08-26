@@ -21,6 +21,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, getCachedSession, clearCachedSession } from '@/services/supabaseClient';
+import { AuthService } from '@/services/AuthService';
 import { LoggingService } from '@/services/LoggingService';
 import { OneSignalService } from '@/services/OneSignalService';
 import { useRouter } from 'expo-router';
@@ -256,14 +257,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       LoggingService.info('AuthProvider', 'Verifying current password', { userId: user.id });
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: currentPassword,
-      });
+      // Hardening brute force: use AuthService to enforce persisted + normalized rate limit
+      const verifyResult = await AuthService.signInWithEmail(user.email, currentPassword);
 
-      if (signInError) {
-        LoggingService.error('AuthProvider', 'Current password verification failed', signInError);
-        throw new Error('Password attuale errata');
+      if (!verifyResult.success) {
+        // Map rate-limit / invalid credentials to user-friendly message
+        const isRateLimited = verifyResult.error?.includes('Troppi tentativi');
+        LoggingService.error('AuthProvider', 'Current password verification failed', verifyResult.error);
+        throw new Error(isRateLimited ? verifyResult.error : 'Password attuale errata');
       }
 
       LoggingService.info('AuthProvider', 'Current password verified, updating password');
@@ -275,6 +276,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       LoggingService.info('AuthProvider', 'Password updated successfully', { userId: user.id });
+
+      // Revoke all other sessions server-side so other devices are logged out.
+      // Fire-and-forget: log error but don't block password change if revoke fails.
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession) {
+          const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+          if (supabaseUrl) {
+            const response = await fetch(`${supabaseUrl}/functions/v1/revoke-user-sessions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentSession.access_token}`,
+              },
+              body: JSON.stringify({ user_id: user.id }),
+            });
+            if (!response.ok) {
+              const errorBody = await response.text();
+              LoggingService.error('AuthProvider', 'Failed to revoke sessions', errorBody);
+            } else {
+              LoggingService.info('AuthProvider', 'All other sessions revoked successfully', { userId: user.id });
+            }
+          }
+        }
+      } catch (revokeError) {
+        LoggingService.error('AuthProvider', 'Error revoking sessions after password change', revokeError);
+      }
 
       // Invalidate the cached session so the next auth check re-fetches from Supabase
       clearCachedSession();

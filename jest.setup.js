@@ -90,7 +90,8 @@ jest.mock('react-native', () => {
     alert: jest.fn(),
   };
   const BackHandler = {
-    addEventListener: jest.fn(),
+    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeEventListener: jest.fn(),
   };
   const Keyboard = {
     dismiss: jest.fn(),
@@ -249,6 +250,40 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
+// Mock expo-file-system — needed for utils/imageStorage used by useProductSave (avoid Platform.select crash)
+jest.mock('expo-file-system', () => {
+  const mockPaths = { document: '/tmp/doc' };
+  const MockDirectory = jest.fn().mockImplementation(function (...args) {
+    const uri = args.length === 2 ? `${args[0]}/products` : String(args[0] ?? '/tmp/doc/products');
+    return {
+      exists: false,
+      create: jest.fn(),
+      uri,
+    };
+  });
+  const MockFile = jest.fn().mockImplementation(function (...args) {
+    // new File(sourceUri) or new File(directory, fileName)
+    let uri;
+    if (args.length === 2) {
+      const dirUri = typeof args[0] === 'object' && args[0]?.uri ? args[0].uri : String(args[0]);
+      uri = `${String(dirUri).replace(/\/$/, '')}/${String(args[1])}`;
+    } else {
+      uri = String(args[0] ?? '/tmp/doc/products/product_mock.jpg');
+    }
+    return {
+      exists: false,
+      copy: jest.fn(),
+      delete: jest.fn(),
+      uri,
+    };
+  });
+  return {
+    Paths: mockPaths,
+    Directory: MockDirectory,
+    File: MockFile,
+  };
+}, { virtual: true });
+
 // Mock expo-notifications
 // virtual: true -> il modulo non deve essere installato fisicamente (l'utente non vuole expo-notifications)
 jest.mock('expo-notifications', () => ({
@@ -293,6 +328,13 @@ jest.mock('expo-background-task', () => ({
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
+
+// Mock expo-secure-store (used by SecureStorage adapter for encrypted token storage)
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(() => Promise.resolve(null)),
+  setItemAsync: jest.fn(() => Promise.resolve()),
+  deleteItemAsync: jest.fn(() => Promise.resolve()),
+}));
 
 // Mock react-native-reanimated with a simpler approach
 jest.mock('react-native-reanimated', () => {
@@ -641,6 +683,7 @@ jest.mock('@/services/LoggingService', () => ({
   LoggingService: {
     info: jest.fn(),
     warn: jest.fn(),
+    warning: jest.fn(),
     error: jest.fn(),
     debug: jest.fn(),
   },

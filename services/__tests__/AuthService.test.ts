@@ -48,14 +48,22 @@ jest.mock('@/utils/AuthLogger', () => ({
   },
 }));
 
-import { AuthService } from '../AuthService';
+import { AuthService, cleanupRateLimiter } from '../AuthService';
 import { supabase } from '../supabaseClient';
 import { LoggingService } from '../LoggingService';
 import { authLogger } from '@/utils/AuthLogger';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 describe('AuthService', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    cleanupRateLimiter();
+    await AsyncStorage.clear();
+  });
+
+  afterEach(async () => {
+    cleanupRateLimiter();
+    await AsyncStorage.clear();
   });
 
   // ── validateEmail ──────────────────────────────────────────────────

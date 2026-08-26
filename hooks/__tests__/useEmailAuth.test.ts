@@ -6,7 +6,7 @@
 
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useEmailAuth } from '../useEmailAuth';
-import { AuthService } from '@/services/AuthService';
+import { AuthService, getRateLimitStatus } from '@/services/AuthService';
 
 // Mock LoggingService
 jest.mock('@/services/LoggingService', () => ({
@@ -23,9 +23,22 @@ jest.mock('@/services/AuthService', () => ({
   AuthService: {
     signInWithEmail: jest.fn(),
   },
+  getRateLimitStatus: jest.fn(() => Promise.resolve({ allowed: true, attemptsLeft: 5, remainingMs: 0, attempts: 0 })),
+  getOtpRateLimitStatus: jest.fn(() => Promise.resolve({ allowed: true, attemptsLeft: 5, remainingMs: 0, attempts: 0 })),
+  checkOtpRateLimit: jest.fn(() => Promise.resolve({ allowed: true, attemptsLeft: 5 })),
+  recordOtpFailedAttempt: jest.fn(() => Promise.resolve()),
+  clearOtpRateLimit: jest.fn(() => Promise.resolve()),
+  __testing: {
+    getStore: () => new Map(),
+    getStorageKey: () => 'myfrigo:rateLimitStore',
+    normalizeEmail: (e: string) => e.trim().toLowerCase(),
+    getOtpKey: (e: string) => `${e.trim().toLowerCase()}:otp`,
+    resetLoaded: jest.fn(),
+  },
 }));
 
 const mockedSignInWithEmail = AuthService.signInWithEmail as jest.Mock;
+const mockedGetRateLimitStatus = getRateLimitStatus as jest.Mock;
 
 describe('useEmailAuth', () => {
   const testEmail = 'test@example.com';
@@ -33,6 +46,7 @@ describe('useEmailAuth', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedGetRateLimitStatus.mockResolvedValue({ allowed: true, attemptsLeft: 5, remainingMs: 0, attempts: 0 });
   });
 
   describe('Initial State', () => {

@@ -10,8 +10,9 @@
 
 import { useState } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
-import { styles } from './forgot-password.styles';
+import { styles } from '@/styles/forgot-password.styles';
 import { supabase } from '@/services/supabaseClient';
+import { checkOtpRateLimit, recordOtpFailedAttempt, clearOtpRateLimit } from '@/services/AuthService';
 import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -130,6 +131,15 @@ export default function ForgotPassword() {
       return;
     }
 
+    // Client-side brute-force protection per OTP (persists via AuthService store)
+    const otpCheck = await checkOtpRateLimit(email);
+    if (!otpCheck.allowed) {
+      const minutes = Math.ceil((otpCheck.remainingMs || 0) / 60000);
+      LoggingService.warning('ForgotPassword', 'OTP rate limit blocked', { email: email.trim().toLowerCase(), remainingMs: otpCheck.remainingMs });
+      Alert.alert('Errore', `Troppi tentativi OTP. Riprova tra ${minutes} minuti.`);
+      return;
+    }
+
     setLoading(true);
     LoggingService.info('ForgotPassword', 'Verifying OTP', { email, otpLength: otp.length });
 
@@ -141,6 +151,7 @@ export default function ForgotPassword() {
       });
 
       if (error) {
+        await recordOtpFailedAttempt(email);
         LoggingService.error('ForgotPassword', 'OTP verification failed', error);
         let errorMessage = 'Codice OTP non valido o scaduto.';
 
@@ -148,11 +159,21 @@ export default function ForgotPassword() {
           errorMessage = 'Il codice OTP è scaduto. Richiedi un nuovo codice.';
         } else if (error.message.includes('Invalid token')) {
           errorMessage = 'Il codice OTP inserito non è corretto.';
+        } else {
+          // Check if now rate-limited after recording
+          const after = await checkOtpRateLimit(email);
+          if (!after.allowed) {
+            const m = Math.ceil((after.remainingMs || 0) / 60000);
+            errorMessage = `Troppi tentativi OTP. Riprova tra ${m} minuti.`;
+          }
         }
 
         Alert.alert('Errore', errorMessage);
         return;
       }
+
+      // OTP success -> clear OTP rate limit for this email
+      await clearOtpRateLimit(email);
 
       LoggingService.info('ForgotPassword', 'OTP verified successfully', { userId: data.user?.id });
       // Aggiungi un flag alla sessione per indicare che stiamo facendo il reset password

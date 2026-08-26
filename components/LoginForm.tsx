@@ -23,7 +23,6 @@ import { useEmailAuth } from '@/hooks/useEmailAuth';
 import { usePasswordValidation } from '@/hooks/usePasswordValidation';
 import { PasswordValidationDisplay } from './PasswordValidationDisplay';
 import { EmailVerificationBanner } from './EmailVerificationBanner';
-import { AuthService } from '@/services/AuthService';
 
 interface LoginFormProps {
   onLoginSuccess?: () => void;
@@ -60,6 +59,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   }, []);
 
   const handleLogin = async () => {
+    if (emailAuth.isRateLimited) {
+      const minutes = Math.ceil((emailAuth.remainingMs || 0) / 60000);
+      onLoginError?.(`Troppi tentativi di login. Riprova tra ${minutes} minuti.`);
+      return;
+    }
     if (!passwordValidation.password) {
       onLoginError?.('Inserisci la password');
       return;
@@ -75,6 +79,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   const styles = getStyles(isDarkMode);
+  const isBlocked = !!emailAuth.isRateLimited;
+  const blockedMinutes = isBlocked ? Math.ceil((emailAuth.remainingMs || 0) / 60000) : 0;
+  const isLoginDisabled = emailAuth.loading || isBlocked;
 
   return (
     <View>
@@ -126,15 +133,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <Text style={styles.errorText}>{emailAuth.error}</Text>
       )}
 
+      {isBlocked && (
+        <View testID="rate-limit-warning" style={styles.rateLimitBox} accessibilityRole="alert">
+          <Text style={styles.rateLimitText}>
+            Troppi tentativi. Riprova tra {blockedMinutes} {blockedMinutes === 1 ? 'minuto' : 'minuti'}.
+          </Text>
+          <TouchableOpacity testID="rate-limit-recover-link" onPress={onForgotPasswordPress} accessibilityLabel="Recupera password" accessibilityRole="link">
+            <Text style={styles.rateLimitLink}>Recupera password</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {emailAuth.attemptsLeft != null && !isBlocked && emailAuth.attemptsLeft <= 2 && emailAuth.attemptsLeft > 0 && (
+        <Text testID="attempts-left-hint" style={styles.hintText}>
+          Tentativi rimasti: {emailAuth.attemptsLeft}
+        </Text>
+      )}
+
       <TouchableOpacity
         testID="login-button"
         accessibilityLabel="Accedi"
         accessibilityRole="button"
-        style={[styles.button, emailAuth.loading && styles.buttonDisabled]}
+        style={[styles.button, isLoginDisabled && styles.buttonDisabled]}
         onPress={handleLogin}
-        disabled={emailAuth.loading}
+        disabled={isLoginDisabled}
       >
-        {emailAuth.loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
+        {emailAuth.loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{isBlocked ? `Bloccato (${blockedMinutes}m)` : 'Login'}</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -230,5 +254,32 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     color: '#dc3545',
     textAlign: 'center',
     marginBottom: 15,
+  },
+  rateLimitBox: {
+    backgroundColor: '#fff3cd',
+    borderWidth: 1,
+    borderColor: '#ffc107',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  rateLimitText: {
+    color: '#856404',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  rateLimitLink: {
+    color: '#007bff',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
+  hintText: {
+    color: '#856404',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 13,
   },
 });
