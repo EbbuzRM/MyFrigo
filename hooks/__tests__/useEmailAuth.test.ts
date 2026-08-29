@@ -97,7 +97,12 @@ describe('useEmailAuth', () => {
         loginResult = await result.current.handleLogin(testPassword);
       });
 
-      expect(mockedSignInWithEmail).toHaveBeenCalledWith(testEmail, testPassword);
+      // captchaToken is undefined: handleLogin called without a captcha token
+      expect(mockedSignInWithEmail).toHaveBeenCalledWith(
+        testEmail,
+        testPassword,
+        undefined
+      );
       expect(loginResult!.success).toBe(true);
       expect(result.current.error).toBeNull();
       expect(result.current.loading).toBe(false);

@@ -158,7 +158,8 @@ describe('LoginForm', () => {
     fireEvent.press(getByTestId('login-button'));
 
     await waitFor(() => {
-      expect(handleLogin).toHaveBeenCalledWith('Password123!');
+      // captchaToken is undefined: no hCaptcha token has been solved yet
+      expect(handleLogin).toHaveBeenCalledWith('Password123!', undefined);
       expect(onLoginSuccess).toHaveBeenCalledTimes(1);
     });
   });
