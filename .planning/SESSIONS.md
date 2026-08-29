@@ -1,3 +1,73 @@
+## 2026-08-29 — Audit dipendenze, allineamento SDK 54 e safety net pre-SDK 57
+
+**Contesto**: Utente chiede se i componenti/librerie dell'app sono ancora validi, mostrando l'output Gradle della build: buildTools 36.0.0, minSdk 24, compileSdk 36, targetSdk 36, ndk 27.1.12297006, kotlin 2.1.20, ksp 2.1.20-2.0.1. Sessione di audit + messa in sicurezza prima dell'upgrade a SDK 57.
+
+**Audit dipendenze** (codebase-mapper):
+
+| Voce | Valore | Giudizio |
+|------|--------|----------|
+| SDK in uso | **54** (`expo@54.0.34`) | 3 SDK dietro (ultimo stabile 57) |
+| Pacchetti deprecati | Nessuno | OK |
+| `npm audit --omit=dev` | 19 vuln (2 critical, 16 high) | Quasi tutte transitive nella toolchain Metro / `@expo/cli` |
+
+**Verdetto versioni Gradle**:
+
+| Valore | Fonte | Giudizio |
+|--------|-------|----------|
+| buildTools 36.0.0 | SDK-managed | OK |
+| minSdk 24 | SDK-managed | OK |
+| compileSdk 36 | SDK-managed | OK |
+| targetSdk 36 | SDK-managed | Già compliant con scadenza Play 31/08/2026 |
+| ndk 27.1.12297006 (r27c) | SDK-managed | Dietro, ma gestito da SDK |
+| kotlin 2.1.20 / ksp 2.1.20-2.0.1 | SDK-managed | Dietro, ma gestito da SDK |
+| AGP 8.11 | SDK-managed | Dietro, ma gestito da SDK |
+
+**Punto chiave**: NESSUN pinning di progetto — `expo-build-properties` non è registrato in `plugins[]`. Kotlin 2.1 / NDK r27c / AGP 8.11 sono indietro ma SDK-managed: **non pinnare a mano**.
+
+**Fix applicati**:
+
+| Commit | Messaggio | Dettaglio |
+|--------|-----------|-----------|
+| `4b927f7` | chore: untrack generated artifacts and local env file | `graphify-out/` rimosso dal tracking (381 file, mantenuti su disco), `.env` untracked, `package-lock.json` non più gitignorato, `.gitignore` deduplicato |
+| `6dde8aa` | chore: bump runtimeVersion, add expo-doctor, track lockfile | runtimeVersion 1.0.4→1.0.5, `expo-doctor` devDep, lockfile tracciato, placeholder `.env.example`, planning docs |
+| `ed8ed7e` | chore(deps): align versions to Expo SDK 54 via expo install --fix | 10 downgrade + 3 patch bump |
+| `1c09bfe` | test(auth): fix login call assertions after captchaToken param | 2 assert |
+
+**Downgrade applicati**: `react-native-gesture-handler` 2.28.0, `react-native-screens` 4.16.0, `react-native-svg` 15.12.1, `react-native-webview` 13.15.0, `react-native-worklets` 0.5.1, `@shopify/flash-list` 2.0.2, `@react-native-community/datetimepicker` 8.4.4, `@react-native-picker/picker` 2.11.1, `@react-navigation/native` 7.1.8, `react-native-get-random-values` 1.11.0.
+
+**Patch bump**: `expo` 54.0.37, `expo-router` 6.0.24, `expo-updates` 29.0.20.
+
+**`expo install --fix` exit 1 (non errore bloccante)**: la CLI non può scrivere su `app.config.js` (dynamic config) per aggiungere il plugin `@react-native-community/datetimepicker`. Verificato (explorer): il plugin è un **no-op** senza opzioni Android (`plugin/build/withDateTimePickerStyles.js:79-113` early-return) e il modulo è autolinkato. **Decisione: non aggiunto.**
+
+**2 test falliti pre-esistenti**: `LoginForm.test.tsx:160` e `useEmailAuth.test.ts:100` asserivano arità 2; il commit hCaptcha `d8c50f8` ha aggiunto `captchaToken` come 3° argomento (`LoginForm.tsx:78`, `useEmailAuth.ts:112`, `AuthService.ts:297`). La baseline STATE.md "0 failed" era stale. Fix: assert a 3 argomenti con terzo `undefined` (i test non risolvono il captcha). Verifier: 22/22 green.
+
+**Baseline pre-upgrade certificata** (verifier): 129 suite / 2284 passed / 0 failed / 5 skipped / 2289 total, exit 0 · `tsc --noEmit` 0 errori · `expo-doctor` 15/18 (3 failed invariati: non-CNG config sync, ml-kit New Arch untested, devDeps drift `jest` / `@types/jest` / `jest-expo` / `@types/react`).
+
+**Safety net rollback creato**:
+- Tag annotato `pre-sdk57` + branch `sdk57`, entrambi su `1c09bfe`
+- Zip `android/` (619.55 MiB, 2315 entry) in `C:\Users\Ebby\AppData\Local\Temp\opencode\android-pre-sdk57-20260829-170621.zip`
+- Backup `package.json` / `package-lock.json` con suffisso `.bak-presdk57-20260829-170621`
+- Nulla pushato (6 commit unpushed)
+
+**Runbook rollback**: `git checkout master` (o `git reset --hard pre-sdk57^{commit}`) + ripristino `android/` dallo zip + copia dei due `.bak-presdk57-*`. NOTA: usare `pre-sdk57^{commit}` — `git rev-parse pre-sdk57` restituisce lo SHA dell'oggetto tag annotato (`31dd3df…`), non del commit.
+
+**Decisioni chiave**:
+- Scelto `expo install --fix` intra-SDK 54 (vs upgrade immediato a 57): zero rischio, allinea 16 pacchetti, prerequisito per upgrade pulito
+- Scelto NON aggiungere il plugin datetimepicker: no-op senza opzioni, evita prebuild inutile
+- Scelto fix assert (vs `expect.anything()` o rimozione parametro): assert su valori esatti incluso terzo arg `undefined`, arity-sensitive, non vacuo
+- Scelto tag annotato + branch + zip `android/` come safety net: SDK 57 rigenera `android/` di default in prebuild, serve snapshot
+- Scelto amend di `bb2ffb1`→`ed8ed7e`: messaggio citava 3 patch bump inesistenti (erano già allineati); commit locale non pushato, nessun rewrite remoto
+
+**Note aperte (non bloccanti)**:
+- `EXPO_PUBLIC_OCR_SPACE_API_KEY` finisce nel bundle client (prefisso `EXPO_PUBLIC_`); key server-side/billed → task dedicato dopo upgrade SDK 57
+- devDeps fuori range SDK: `jest` 30.3.0, `jest-expo` 55.0.16, `@types/jest` 30.0.0, `@types/react` 19.2.14 (attesi 29.7.0 / 54.0.18 / 29.5.14 / 19.1.10) — allineare durante upgrade SDK 57, non prima
+- `react-native-get-random-values` 2.0.0 vs 1.11.0 atteso: major drift, ma è la latest su npm e i test passano con `uuid@14`. Non downgradare alla cieca
+- Manca coverage test per path auth CON `captchaToken` valorizzato (`LoginForm.tsx:78-80`)
+- Worker Jest non esce gracefully (pre-esistente)
+- Branch attualmente su `master`, non `sdk57` — da fare `git checkout sdk57` prima dell'upgrade
+
+---
+
 ## 2026-08-29 — Integrazione hCaptcha in form auth
 
 **Contesto**: Utente ha configurato hCaptcha secret in Supabase dashboard. Richiesta integrazione frontend hCaptcha in form auth (login, signup, forgot-password).

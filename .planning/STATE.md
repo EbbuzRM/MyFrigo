@@ -1,9 +1,11 @@
 # GSD State
 
-Last updated: 2026-08-27
+Last updated: 2026-08-29
 
 ## Current Phase
 Active Development
+
+**Next step**: upgrade Expo SDK 54 → 57 (branch `sdk57`, baseline pre-upgrade certificata su `1c09bfe`). Safety net rollback disponibile: tag annotato `pre-sdk57` + branch `sdk57` + zip `android/` + backup `package.json` / `package-lock.json` con suffisso `.bak-presdk57-20260829-170621`. Runbook completo in SESSIONS.md `#2026-08-29--audit-dipendenze-allineamento-sdk-54-e-safety-net-pre-sdk-57`.
 
 ## Session Log Index
 
@@ -11,6 +13,7 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 
 | Data | Titolo | Link SESSIONS.md |
 |------|--------|------------------|
+| 2026-08-29 | Audit dipendenze, allineamento SDK 54 e safety net pre-SDK 57 | `#2026-08-29--audit-dipendenze-allineamento-sdk-54-e-safety-net-pre-sdk-57` |
 | 2026-08-29 | Integrazione hCaptcha in form auth | `#2026-08-29--integrazione-hcaptcha-in-form-auth` |
 | 2026-08-27 | Security audit token/sessioni: SecureStore + revoke sessions | `#2026-08-27-security-audit-tokensessioni-securestore--revoke-sessions` |
 | 2026-08-27 | Fix brute force login: rate limiting 5/15min + test dimostrativo + hardening Supabase | `#2026-08-27-fix-brute-force-login-rate-limiting-515min--test-dimostrativo--hardening-supabase` |
@@ -50,6 +53,10 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
   - `parsing.ts` filtro per sottostringa: edge case raro di blocco singolo con data standard + month-year legittimo distinto (es. "SCAD 08/26 15/08/26") escluderebbe anche il legittimo. Non impatta i casi reali (blocchi separati).
   - Manca test dedicato per "ENTRO 08 26" (comportamento preservato ma non coperto da test).
 - **`EXPO_PUBLIC_OCR_SPACE_API_KEY` embedded in client bundle** (EXPO_PUBLIC_ prefix ships it in JS bundle; ocr.space key is server-side/billed). Deferred: dedicated task after SDK 57 upgrade.
+- **devDeps drift fuori range SDK 54** (2026-08-29): `jest` 30.3.0, `jest-expo` 55.0.16, `@types/jest` 30.0.0, `@types/react` 19.2.14 (attesi 29.7.0 / 54.0.18 / 29.5.14 / 19.1.10). Allineare durante upgrade SDK 57, non prima. `expo-doctor` 15/18 per questo.
+- **Manca coverage test auth CON `captchaToken` valorizzato** (`LoginForm.tsx:78-80`): i test passano il terzo argomento come `undefined`, nessuno copre il path con token risolto.
+- **Worker Jest non esce gracefully** (pre-esistente, non bloccante).
+- **Branch attualmente su `master`, non `sdk57`** — da fare `git checkout sdk57` prima dell'upgrade SDK 57.
 
 ### Risolti
 - **2026-08-04**: `feedback.test.tsx` 14 fallimenti (mock hoisting `expo-image-picker`); `forgot-password.tsx` trim mancante in `handleVerifyOTP`; RPC `get_expiring_products` chiusa (già sincronizzata con prod, `days_remaining` presente, commit `ab44414`).
@@ -58,7 +65,8 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - **2026-07-15**: `DashboardHeader.tsx` permissionStatus `boolean|null`; `jest.setup.js` mock `expo-notifications` con `{ virtual: true }`; `password-reset-form.tsx` 37/37 test riparati; `settings.test.tsx` 32/32 test riparati; `usePhotoNavigation.test.ts` 8/8 test riparati; **0 errori TypeScript**; **0 test falliti**.
 
 ## Test Suite Summary
-- **Ultimo (2026-08-27)**: 2278/2283 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
+- **Ultimo (2026-08-29)**: 2284/2289 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
+- **Nota**: la figura precedente 2278/2283 era stale — antecedeva il commit `bf12252` che ha aggiunto test. Baseline aggiornata e certificata dal verifier il 2026-08-29 su `1c09bfe`.
 - Test riparati nel tempo: settings (28), usePhotoNavigation (1), password-reset-form (37), feedback (14), forgot-password (1 nuovo regressione).
 - Test coperti di recente: AuthService.bruteForce (17 nuovo), imageStorage (15), useCamera (19), useProductInitialization (28), useProductForm consumer (41), useBarcodeScanner (58), scanner (82).
 - Helper di test: `installMockCameraRef` per mocking atomico di cameraRef con cleanup automatico.
@@ -78,11 +86,15 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Scelto countdown UX 1s `remainingMs` + `isRateLimited`/`rateLimitedUntil` (vs messaggio statico): bottone disabilitato + banner `Riprova tra Xs` previene retry inutili.
 - Scelto delega `AuthContext.changePassword()` → `AuthService.updatePassword()` (vs `supabase.auth.updateUser` diretto): chiude bypass limiter su closure.
 - Supabase Auth Rate Limits server-side consigliati come difesa in profondità: `10,30,150,10,30,15,30` (vs default `30/5min` troppo permissivo; `sign-ins 15/5min`, `token verifications 10/5min`).
+- Scelto `expo install --fix` intra-SDK 54 (vs upgrade immediato a 57): zero rischio, allinea 16 pacchetti, prerequisito per upgrade pulito.
+- Scelto NON aggiungere il plugin `@react-native-community/datetimepicker` (vs aggiungerlo): no-op senza opzioni Android, modulo autolinkato, evita prebuild inutile.
+- Scelto fix assert arità (vs `expect.anything()` o rimozione parametro): assert su valori esatti incluso terzo arg `undefined`, arity-sensitive, non vacuo.
+- Scelto tag annotato `pre-sdk57` + branch `sdk57` + zip `android/` come safety net: SDK 57 rigenera `android/` di default in prebuild, serve snapshot.
+- Scelto amend di `bb2ffb1`→`ed8ed7e`: messaggio citava 3 patch bump inesistenti; commit locale non pushato, nessun rewrite remoto.
 
 ## Last Commit
-Hash: 4b927f7 (4b927f70d17d78463fb36d628802864a5ef8e578)
-Message: "chore: untrack generated artifacts and local env file"
-- graphify-out/ rimosso dal tracking git (381 file, mantenuti su disco)
-- file env locale untracked (valori environment-specific)
-- package-lock.json non più gitignorato (build riproducibili)
-- .gitignore deduplicato
+Hash: 1c09bfe (1c09bfe976b422056054758cae973e7c8f32467a)
+Message: "test(auth): fix login call assertions after captchaToken param"
+- `LoginForm.test.tsx:160`: assert aggiornato a 3 argomenti (era arità 2)
+- `useEmailAuth.test.ts:100`: assert aggiornato a 3 argomenti (era arità 2)
+- Terzo argomento asserito `undefined` — i test non risolvono il captcha, il path con token risolto resta da coprire
