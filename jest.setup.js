@@ -542,15 +542,6 @@ jest.mock('@react-native-community/datetimepicker', () => ({
   default: 'DateTimePicker',
 }));
 
-// Mock react-native-sound
-jest.mock('react-native-sound', () => ({
-  default: jest.fn().mockImplementation(() => ({
-    play: jest.fn(),
-    stop: jest.fn(),
-    release: jest.fn(),
-  })),
-}));
-
 // Mock react-native-onesignal
 jest.mock('react-native-onesignal', () => ({
   OneSignal: {
