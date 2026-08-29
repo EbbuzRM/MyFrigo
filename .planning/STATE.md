@@ -11,6 +11,7 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 
 | Data | Titolo | Link SESSIONS.md |
 |------|--------|------------------|
+| 2026-08-29 | Integrazione hCaptcha in form auth | `#2026-08-29--integrazione-hcaptcha-in-form-auth` |
 | 2026-08-27 | Security audit token/sessioni: SecureStore + revoke sessions | `#2026-08-27-security-audit-tokensessioni-securestore--revoke-sessions` |
 | 2026-08-27 | Fix brute force login: rate limiting 5/15min + test dimostrativo + hardening Supabase | `#2026-08-27-fix-brute-force-login-rate-limiting-515min--test-dimostrativo--hardening-supabase` |
 | 2026-08-09 | Refactoring bookkeeping: SESSIONS.md unico log, STATE.md dashboard | `#2026-08-09-refactoring-bookkeeping-sessionsmd-unico-log-sessioni-statemd-dashboard-di-stato` |
@@ -48,6 +49,7 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - **Note aperte OCR fix 2026-07-08 (LOW)**:
   - `parsing.ts` filtro per sottostringa: edge case raro di blocco singolo con data standard + month-year legittimo distinto (es. "SCAD 08/26 15/08/26") escluderebbe anche il legittimo. Non impatta i casi reali (blocchi separati).
   - Manca test dedicato per "ENTRO 08 26" (comportamento preservato ma non coperto da test).
+- **`EXPO_PUBLIC_OCR_SPACE_API_KEY` embedded in client bundle** (EXPO_PUBLIC_ prefix ships it in JS bundle; ocr.space key is server-side/billed). Deferred: dedicated task after SDK 57 upgrade.
 
 ### Risolti
 - **2026-08-04**: `feedback.test.tsx` 14 fallimenti (mock hoisting `expo-image-picker`); `forgot-password.tsx` trim mancante in `handleVerifyOTP`; RPC `get_expiring_products` chiusa (già sincronizzata con prod, `days_remaining` presente, commit `ab44414`).
@@ -78,12 +80,9 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Supabase Auth Rate Limits server-side consigliati come difesa in profondità: `10,30,150,10,30,15,30` (vs default `30/5min` troppo permissivo; `sign-ins 15/5min`, `token verifications 10/5min`).
 
 ## Last Commit
-Hash: 5055a7c (5055a7c778502f2aa7b44ce3dabf206b8b80b112)
-Message: "fix(auth): brute force rate limiting 5/15min + OTP limit + UX block + demo tests"
-- AuthService persistenza AsyncStorage myfrigo:rateLimitStore, email normalize trim+lowercase, OTP :otp bucket
-- AuthContext.changePassword delega a AuthService (chiusura bypass)
-- useEmailAuth rateLimitedUntil/remainingMs/isRateLimited + countdown 1s
-- LoginForm blocco bottone + warning countdown
-- forgot-password OTP rate limit
-- 17 test dimostrativi AuthService.bruteForce
-- Hardening Supabase consigliato: token verifications 10/5min, sign-ins 15/5min
+Hash: 4b927f7 (4b927f70d17d78463fb36d628802864a5ef8e578)
+Message: "chore: untrack generated artifacts and local env file"
+- graphify-out/ rimosso dal tracking git (381 file, mantenuti su disco)
+- file env locale untracked (valori environment-specific)
+- package-lock.json non più gitignorato (build riproducibili)
+- .gitignore deduplicato

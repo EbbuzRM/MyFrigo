@@ -133,6 +133,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
+    "expo-doctor": "^1.20.4",
     "globals": "^16.5.0",
     "jest": "^30.3.0",
     "jest-expo": "^55.0.16",

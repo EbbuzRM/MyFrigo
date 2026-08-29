@@ -1,3 +1,50 @@
+## 2026-08-29 — Integrazione hCaptcha in form auth
+
+**Contesto**: Utente ha configurato hCaptcha secret in Supabase dashboard. Richiesta integrazione frontend hCaptcha in form auth (login, signup, forgot-password).
+
+**Documentazione seguita**: https://supabase.com/docs/guides/auth/auth-captcha?queryGroups=captcha-method&captcha-method=hcaptcha-1
+
+**Fix applicati**:
+
+| # | Fix | File | Dettaglio |
+|---|-----|------|-----------|
+| 1 | Install pacchetto | `package.json` | `@hcaptcha/react-hcaptcha@^2.2.0` |
+| 2 | Sitekey config | `app.config.js:54` | `hcaptchaSitekey: 'd69c1bae-86c0-41b2-8350-4a48810e5fbc'` in extra |
+| 3 | EAS env | `eas.json` | `EXPO_PUBLIC_HCAPTCHA_SITEKEY` aggiunto a preview, release-apk, production |
+| 4 | LoginForm | `components/LoginForm.tsx` | HCaptcha component + state token + reset dopo attempt |
+| 5 | AuthService | `services/AuthService.ts:328-332` | `signInWithEmail` accetta `captchaToken?`, passa a `signInWithPassword` options |
+| 6 | useEmailAuth | `hooks/useEmailAuth.ts:112` | `handleLogin` passa `captchaToken` a AuthService |
+| 7 | Signup | `app/signup.tsx` | HCaptcha component + passa token a useRegistration |
+| 8 | useRegistrationActions | `hooks/useRegistrationActions.ts:77` | `signUp` options include `captchaToken` |
+| 9 | Forgot-password | `app/forgot-password.tsx:97-104` | HCaptcha component + passa token a `resetPasswordForEmail` + reset |
+
+**Catena auth token**:
+- Login: LoginForm → useEmailAuth.handleLogin → AuthService.signInWithEmail → supabase.auth.signInWithPassword({options: {captchaToken}})
+- Signup: signup.tsx → useRegistration → useRegistrationActions.signUp → supabase.auth.signUp({options: {captchaToken}})
+- Forgot-password: forgot-password.tsx → supabase.auth.resetPasswordForEmail(email, {captchaToken})
+
+**Conditional render**: HCaptcha renderizzato solo se `sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY'` — evita widget rotto con key finto.
+
+**Risultato**: Verifier APPROVED. 0 errori TypeScript. Pacchetto installato. Sitekey configurato. Token passato lungo tutta catena auth. Reset captcha dopo ogni tentativo.
+
+**Azioni richieste utente**:
+1. Aggiungere manualmente a `.env`: `EXPO_PUBLIC_HCAPTCHA_SITEKEY=d69c1bae-86c0-41b2-8350-4a48810e5fbc`
+2. Aggiungere manualmente a `.env.example`: `EXPO_PUBLIC_HCAPTCHA_SITEKEY=your_hcaptcha_sitekey_here`
+3. Rebuild nativo: `npx expo prebuild` + EAS build (necessario per WebView nativa hCaptcha)
+4. Test manuali: verificare widget visibile + token generato + auth funziona con captcha
+
+**Note aperte**:
+- Test esistenti non modificati — da aggiornare se necessario (mock HCaptcha component)
+- hCaptcha secret già configurato in Supabase dashboard (lato utente)
+
+**Decisioni chiave**:
+- Scelto hCaptcha visibile (vs invisible): widget mostra challenge esplicito, più sicuro
+- Scelto conditional render con guard placeholder: previene widget rotto se sitekey non configurato
+- Scelto reset captcha dopo OGNI tentativo (successo/fallito): previene re-use token stale
+- Scelto passare sitekey via Constants.expoConfig.extra: pattern esistente in codebase, coerente con altre config
+
+---
+
 ## 2026-08-27 — Security audit token/sessioni: SecureStore + revoke sessions
 
 **Contesto**: Audit sicurezza gestione token/sessioni. Utente chiede verifica: sessioni infinite, furto sessione, signOut incompleto.
