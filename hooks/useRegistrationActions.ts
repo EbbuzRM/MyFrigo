@@ -75,6 +75,7 @@ export function useAccountCreation(onProfileCreated: (userId: string, firstName:
       email: data.email,
       password: data.password,
       options: {
+        captchaToken: data.captchaToken,
         data: {
           first_name: trimmedFirstName,
           last_name: trimmedLastName,

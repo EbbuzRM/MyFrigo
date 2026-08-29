@@ -7,7 +7,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   Alert,
   View,
@@ -18,6 +18,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { AUTH_CONSTANTS } from '@/constants/auth';
 import { useSignupValidation, SignupFormData } from '@/hooks/useSignupValidation';
 import { useRegistration } from '@/hooks/useRegistration';
@@ -27,7 +29,11 @@ import { signupStyles as styles } from '@/styles/signupStyles';
 export default function SignupScreen() {
   const [formData, setFormData] = useState<SignupFormData>({ email: '', password: '', firstName: '', lastName: '' });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const captchaRef = useRef<HCaptcha>(null);
   const router = useRouter();
+
+  const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
   const { validateForm, validatePasswordField, passwordValidation, isFormValid, clearErrors } = useSignupValidation();
   const handleSuccess = useCallback(() => router.replace('/(tabs)'), [router]);
   const handleEmailNeedsConfirmation = useCallback((email: string) => router.replace({ pathname: '/confirm-email', params: { email } }), [router]);
@@ -51,7 +57,9 @@ export default function SignupScreen() {
       Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.MISSING_DATA, AUTH_CONSTANTS.ERRORS.MISSING_NAMES);
       return;
     }
-    const result = await register({ ...formData, firstName: trimmedFirstName, lastName: trimmedLastName });
+    const result = await register({ ...formData, firstName: trimmedFirstName, lastName: trimmedLastName, captchaToken });
+    captchaRef.current?.resetCaptcha();
+    setCaptchaToken(undefined);
     if (result.error === AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS) {
       Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.EMAIL_EXISTS, AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS);
       return;
@@ -88,6 +96,14 @@ export default function SignupScreen() {
         </View>
       )}
       {error && <Text style={styles.errorText}>{error}</Text>}
+      {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
+        <HCaptcha
+          sitekey={sitekey}
+          onVerify={(token: string) => setCaptchaToken(token)}
+          ref={captchaRef}
+          size="normal"
+        />
+      )}
       <TouchableOpacity testID="signup-button" style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled} accessibilityRole="button" accessibilityLabel="Registrati" accessibilityState={{ disabled: isDisabled }}>
         {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{UI_LABELS.SIGNUP_BUTTON}</Text>}
       </TouchableOpacity>

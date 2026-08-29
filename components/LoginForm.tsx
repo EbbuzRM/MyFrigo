@@ -8,7 +8,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -18,6 +18,8 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { useTheme } from '@/context/ThemeContext';
 import { useEmailAuth } from '@/hooks/useEmailAuth';
 import { usePasswordValidation } from '@/hooks/usePasswordValidation';
@@ -40,6 +42,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const { isDarkMode } = useTheme();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [showVerificationSuccess, setShowVerificationSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const captchaRef = useRef<HCaptcha>(null);
+
+  const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
 
   const emailAuth = useEmailAuth();
   const passwordValidation = usePasswordValidation();
@@ -69,7 +75,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       return;
     }
 
-    const result = await emailAuth.handleLogin(passwordValidation.password);
+    const result = await emailAuth.handleLogin(passwordValidation.password, captchaToken);
+    captchaRef.current?.resetCaptcha();
+    setCaptchaToken(undefined);
 
     if (result.success) {
       onLoginSuccess?.();
@@ -148,6 +156,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <Text testID="attempts-left-hint" style={styles.hintText}>
           Tentativi rimasti: {emailAuth.attemptsLeft}
         </Text>
+      )}
+
+      {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
+        <HCaptcha
+          sitekey={sitekey}
+          onVerify={(token: string) => setCaptchaToken(token)}
+          ref={captchaRef}
+          size="normal"
+        />
       )}
 
       <TouchableOpacity

@@ -92,7 +92,7 @@ export const useEmailAuth = () => {
 
   const isRateLimited = rateLimitedUntil != null && (remainingMs ?? 0) > 0;
 
-  const handleLogin = useCallback(async (password: string): Promise<AuthResult> => {
+  const handleLogin = useCallback(async (password: string, captchaToken?: string): Promise<AuthResult> => {
     try {
       setError(null);
       setLoading(true);
@@ -109,7 +109,7 @@ export const useEmailAuth = () => {
         return { success: false, error: msg };
       }
 
-      const result = await AuthService.signInWithEmail(email, password);
+      const result = await AuthService.signInWithEmail(email, password, captchaToken);
 
       // Refresh state after attempt (success clears, failure updates)
       await refreshRateLimitState(email);

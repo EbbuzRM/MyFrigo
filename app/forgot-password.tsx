@@ -8,8 +8,9 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { styles } from '@/styles/forgot-password.styles';
 import { supabase } from '@/services/supabaseClient';
 import { checkOtpRateLimit, recordOtpFailedAttempt, clearOtpRateLimit } from '@/services/AuthService';
@@ -22,8 +23,12 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const captchaRef = useRef<HCaptcha>(null);
 
   const router = useRouter();
+
+  const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
 
   // E2E test mode flag — checks build-time env var AND runtime Constants.extra
   // (so it works both when .env.e2e is used at build time and via app.config.js extra)
@@ -93,8 +98,11 @@ export default function ForgotPassword() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        captchaToken,
         // Non specifichiamo redirectTo per ricevere un OTP invece di un link
       });
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(undefined);
 
       if (error) {
         LoggingService.error('ForgotPassword', `Error sending password reset email: ${error.message}`, error);
@@ -235,6 +243,14 @@ export default function ForgotPassword() {
           <Text style={styles.infoText}>
             Ti invieremo un codice OTP alla tua email per reimpostare la password.
           </Text>
+          {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
+            <HCaptcha
+              sitekey={sitekey}
+              onVerify={(token: string) => setCaptchaToken(token)}
+              ref={captchaRef}
+              size="normal"
+            />
+          )}
           <View testID="send-otp-button">
             <Button title="Invia Codice OTP" onPress={handleReset} disabled={loading} />
           </View>

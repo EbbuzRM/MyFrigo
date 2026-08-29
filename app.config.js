@@ -50,7 +50,8 @@ module.exports = {
       // SECURITY: API key ocr.space was removed from eas.json (2026-07-15).
       // Rotate at https://ocr.space/OCRAPI and set via EAS secrets:
       //   eas secret:create --name EXPO_PUBLIC_OCR_SPACE_API_KEY --value "NEW_KEY" --scope project
-      e2eTestMode: process.env.EXPO_PUBLIC_E2E_TEST_MODE === 'true'
+      e2eTestMode: process.env.EXPO_PUBLIC_E2E_TEST_MODE === 'true',
+      hcaptchaSitekey: process.env.EXPO_PUBLIC_HCAPTCHA_SITEKEY || 'd69c1bae-86c0-41b2-8350-4a48810e5fbc',
      },
     icon: "./assets/images/icon.png",
     splash: {

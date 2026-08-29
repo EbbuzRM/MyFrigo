@@ -15,6 +15,7 @@ export interface RegistrationData {
   password: string;
   firstName: string;
   lastName: string;
+  captchaToken?: string;
 }
 
 export interface RegistrationResult {

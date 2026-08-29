@@ -294,7 +294,7 @@ export class AuthService {
   /**
    * Esegue il login con email e password
    */
-  static async signInWithEmail(email: string, password: string): Promise<AuthResult> {
+  static async signInWithEmail(email: string, password: string, captchaToken?: string): Promise<AuthResult> {
     // Normalize once — validation + rate limiting + supabase must share same bucket
     const normalizedEmail = normalizeEmail(email);
     // Validation on normalized email (trim+lowercase) so " Test@Example.COM " is valid
@@ -328,6 +328,7 @@ export class AuthService {
       const { error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
+        options: captchaToken ? { captchaToken } : undefined,
       });
 
       const duration = Date.now() - startTime;
