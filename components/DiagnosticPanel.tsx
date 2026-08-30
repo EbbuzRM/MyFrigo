@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '@/context/ThemeContext';
 import { useDiagnosticTests } from '@/hooks/useDiagnosticTests';
 import { AuthTestSection } from '@/components/diagnostic/AuthTestSection';
@@ -59,6 +60,12 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
     } finally {
       setLoadingLogs(false);
     }
+  };
+
+  const handleCopyLogs = async () => {
+    const textToCopy = logs || 'Nessun log disponibile';
+    await Clipboard.setStringAsync(textToCopy);
+    Alert.alert('Copiato', 'Log copiati negli appunti');
   };
 
   const truncateLogs = (logText: string): string => {
@@ -156,6 +163,9 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           <View style={styles.logControls}>
             <TouchableOpacity style={styles.logButton} onPress={loadLogs} disabled={loadingLogs}>
               <Text style={styles.logButtonText}>{loadingLogs ? 'Caricamento...' : 'Aggiorna Log'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.logButton} onPress={handleCopyLogs}>
+              <Text style={styles.logButtonText}>Copia Log</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.logButton, styles.clearButton]} onPress={handleClearLogs}>
               <Text style={[styles.logButtonText, styles.clearButtonText]}>Cancella Log</Text>
