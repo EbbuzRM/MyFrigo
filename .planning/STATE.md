@@ -1,11 +1,11 @@
 # GSD State
 
-Last updated: 2026-08-29
+Last updated: 2026-08-30
 
 ## Current Phase
-Post-Upgrade SDK 57
+Released v1.0.6 (SDK 57)
 
-**Next step**: upgrade Expo SDK 54 → 57 (branch `sdk57`, baseline pre-upgrade certificata su `1c09bfe`). Safety net rollback disponibile: tag annotato `pre-sdk57` + branch `sdk57` + zip `android/` + backup `package.json` / `package-lock.json` con suffisso `.bak-presdk57-20260829-170621`. Runbook completo in SESSIONS.md `#2026-08-29--audit-dipendenze-allineamento-sdk-54-e-safety-net-pre-sdk-57`.
+**Status**: Expo SDK 57 upgrade completato e mergiato su `master` (commit `801d1dd`). Safety net rollback ancora disponibile: tag annotato `pre-sdk57` + branch `sdk57` + zip `android/` + backup `package.json` / `package-lock.json` con suffisso `.bak-presdk57-20260829-170621`. Runbook completo in SESSIONS.md `#2026-08-29--audit-dipendenze-allineamento-sdk-54-e-safety-net-pre-sdk-57`.
 
 ## Session Log Index
 
@@ -57,7 +57,7 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - **devDeps drift fuori range SDK 54** (2026-08-29): `jest` 30.3.0, `jest-expo` 55.0.16, `@types/jest` 30.0.0, `@types/react` 19.2.14 (attesi 29.7.0 / 54.0.18 / 29.5.14 / 19.1.10). Allineare durante upgrade SDK 57, non prima. `expo-doctor` 15/18 per questo.
 - **Manca coverage test auth CON `captchaToken` valorizzato** (`LoginForm.tsx:78-80`): i test passano il terzo argomento come `undefined`, nessuno copre il path con token risolto.
 - **Worker Jest non esce gracefully** (pre-esistente, non bloccante).
-- **Branch attualmente su `master`, non `sdk57`** — da fare `git checkout sdk57` prima dell'upgrade SDK 57.
+- **Branch `sdk57` esiste ancora come safety net** — può essere eliminato dopo conferma stabilità produzione SDK 57.
 
 ### Risolti
 - **2026-08-30**: ML Kit OCR confermato funzionante su RN 0.86 via interop layer. Smoke test: 7 blocchi testo letti, data "21/05/2027" estratta correttamente, anchor OCR trovato, lotto escluso, zero crash.
@@ -103,5 +103,5 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Scelto prebuild --clean (vs prebuild incrementale): android/ rigenerato da zero per SDK 57.
 
 ## Last Commit
-Hash: 492f832
-Message: "fix(navigation): complete migration to expo-router fork"
+Hash: 801d1dd
+Message: "Merge branch 'sdk57' — Expo SDK 57 upgrade (v1.0.6)"
