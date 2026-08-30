@@ -16,7 +16,11 @@ import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
 import AnimatedTabItem from './AnimatedTabItem';
 import { Route } from '@react-navigation/native';
-import { BottomTabBarProps, BottomTabNavigationEventMap, BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
+// SDK 57: expo-router no longer depends on @react-navigation/bottom-tabs. It vendors its own
+// fork under expo-router/build/react-navigation/, and `Tabs` from expo-router is typed against
+// that fork. Importing the standalone package would create a second, structurally incompatible
+// type universe and break the `tabBar` prop in app/(tabs)/_layout.tsx.
+import { BottomTabBarProps, BottomTabNavigationEventMap, BottomTabNavigationOptions } from 'expo-router/build/react-navigation/bottom-tabs';
 import { NavigationHelpers, ParamListBase } from '@react-navigation/native';
 
 interface TabPressEvent {

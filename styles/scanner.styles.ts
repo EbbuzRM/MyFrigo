@@ -103,7 +103,7 @@ export const styles = StyleSheet.create({
     zIndex: 10,
   },
   scanFrameContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },

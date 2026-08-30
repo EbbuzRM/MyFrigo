@@ -4,7 +4,7 @@
 // used_by: none
 // rules:   none
 
-import React from 'react';
+import React, { type ElementType } from 'react';
 import { render, act, waitFor, fireEvent } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import PasswordResetForm from '../password-reset-form';
@@ -119,7 +119,9 @@ describe('PasswordResetForm', () => {
       const { UNSAFE_root } = renderForm();
 
       // ActivityIndicator should be rendered during loading
-      const activityIndicators = UNSAFE_root.findAllByType('ActivityIndicator');
+      // React 19 narrowed ElementType to HTML intrinsic tags + components, so RN host
+      // component names need an explicit assertion. Runtime value is unchanged.
+      const activityIndicators = UNSAFE_root.findAllByType('ActivityIndicator' as ElementType);
       expect(activityIndicators.length).toBeGreaterThan(0);
     });
   });
@@ -678,10 +680,10 @@ it('should continue with original session if refresh fails', async () => {
       // All validation checks should be false for empty password
       // The ValidationCheck component renders FontAwesome icons based on isValid
       // We can verify the text is present
-      const checkTexts = UNSAFE_root.findAllByType('Text');
+      const checkTexts = UNSAFE_root.findAllByType('Text' as ElementType);
       const validationTexts = checkTexts
-        .map((t: { props: { children: string } }) => t.props.children)
-        .filter((t: string) => typeof t === 'string');
+        .map((t): unknown => t.props.children)
+        .filter((t): t is string => typeof t === 'string');
 
       expect(validationTexts).toContain('Almeno 8 caratteri');
       expect(validationTexts).toContain('Una lettera maiuscola');
