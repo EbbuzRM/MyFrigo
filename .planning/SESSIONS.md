@@ -1,3 +1,55 @@
+## 2026-08-29 — Upgrade Expo SDK 54 → 57
+
+**Contesto**: Dopo audit dipendenze e safety net (tag `pre-sdk57`, branch `sdk57`, zip `android/`), upgrade a SDK 57 (RN 0.86.3, React 19.2.3).
+
+**Prerequisiti applicati**:
+
+| # | Fix | Dettaglio |
+|---|-----|-----------|
+| 1 | eas.json node 20.19.4 → 22.18.0 | Tutti i 4 profili (SDK 57 richiede ≥22.13) |
+| 2 | Rimozione dead deps | react-native-sound (zero import), patch-package (nessuna cartella patches/) |
+| 3 | expo-splash-screen plugin | `expo.splash` config key morta in SDK 57; aggiunto plugin con props esplicite (image, resizeMode, backgroundColor) per evitare crash di `SplashScreen.preventAutoHideAsync()` |
+| 4 | runtimeVersion 1.0.5 → 1.0.6 | Native runtime cambiato, OTA incompatibili |
+| 5 | Toolchain allineata | @expo/cli 57, metro trio 0.84.5, jest 29.7, jest-expo 57.0.5, babel-jest 29.7, @react-native/jest-preset 0.86.3 |
+| 6 | TypeScript 5.9.3 | Tentato 6.0.3 (pin SDK 57), rifiutato: errore TS5101 su `baseUrl` deprecato. Rollback a 5.9.3 |
+
+**Dipendenze rimosse da expo 57** (aggiunte come dirette):
+- `@expo/vector-icons` 15.1.1 (expo 57 non lo dichiara più)
+- `@react-navigation/bottom-tabs` NON aggiunto — expo-router 57 forka react-navigation in `expo-router/build/react-navigation/`; import ripuntato al fork (type-only, zero runtime change)
+
+**RN 0.86 breaking changes fixati**:
+- `StyleSheet.absoluteFillObject` → `absoluteFill` (3 siti: scanner.tsx, GlobalUpdateModal.tsx, scanner.styles.ts)
+- Mock path DevMenu: `Libraries/DevMenu/DevMenu` → `src/private/devsupport/devmenu/DevMenu` (jest.setup.js)
+- Mock path AppState: `Libraries/Core/NativeModules/AppState` → `Libraries/AppState/AppState` (scanner.test.tsx)
+
+**Commit**:
+
+| Hash | Messaggio | Dettaglio |
+|------|-----------|-----------|
+| `e0efd91` | chore: prepare for Expo SDK 57 upgrade | eas.json node, rimozione dead deps, cleanup test config |
+| `13d267d` | chore(deps): upgrade to Expo SDK 57 | expo 57.0.18, RN 0.86.3, React 19.2.3, runtimeVersion 1.0.6, plugin splash |
+| `56fa8f9` | fix(sdk57): restore dropped deps and RN 0.86 API changes | @expo/vector-icons, absoluteFill, type imports expo-router fork |
+| `64b4279` | fix(tests): update RN 0.86 mock paths | DevMenu + AppState mock paths |
+| `0cb4f97` | chore(deps): install jest preset peer for RN 0.86 | @react-native/jest-preset 0.86.3, babel-jest 29.7 |
+| `c4baa37` | chore(android): regenerate native for Expo SDK 57 | prebuild --clean |
+
+**Baseline finale** (verifier): 129 suite / 2284 passed / 0 failed / 5 skipped / 2289 total, exit 0 · tsc 0 errori · expo-doctor 18/21 (3 failed: native folder sync, ML Kit New Arch, TypeScript 5.9.3 vs 6.0.3 atteso).
+
+**Decisioni chiave**:
+- Scelto `expo-splash-screen` con props esplicite (vs forma nuda `{}`): forma nuda cancella immagini ma genera stile che le referenzia → build Android rotta
+- Scelto import dal fork expo-router (vs installare @react-navigation/bottom-tabs): due universi di tipi incompatibili, type-only import risolve
+- Scelto TypeScript 5.9.3 (vs 6.0.3): errore TS5101 su `baseUrl` deprecato, richiede decisione su tsconfig (rimozione o `ignoreDeprecations: "6.0"`)
+- Scelto NON aggiungere datetimepicker/build-properties/status-bar plugin: certificati no-op come stringhe nude
+- Scelto prebuild --clean (vs prebuild incrementale): android/ rigenerato da zero per SDK 57
+
+**Note aperte** (non bloccanti):
+- TypeScript 6.0.3: richiede decisione su `baseUrl` in tsconfig.json (rimozione o `ignoreDeprecations: "6.0"`). Non bloccante, tsc passa con 5.9.3
+- `@react-native-ml-kit/text-recognition` 2.0.0: ultimo publish 2025-09-01, nessun codegen, gira via interop layer in RN 0.86. Da smoke-testare su device (OCR)
+- `@react-navigation/native` ancora diretto: expo-router forka anche quello, ma types compatibili. Da valutare migrazione
+- Worker Jest non esce gracefully (pre-esistente)
+
+---
+
 ## 2026-08-29 — Integrazione hCaptcha in form auth
 
 **Contesto**: Utente ha configurato hCaptcha secret in Supabase dashboard. Richiesta integrazione frontend hCaptcha in form auth (login, signup, forgot-password).

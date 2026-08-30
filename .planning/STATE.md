@@ -1,9 +1,9 @@
 # GSD State
 
-Last updated: 2026-08-27
+Last updated: 2026-08-29
 
 ## Current Phase
-Active Development
+Post-Upgrade SDK 57
 
 ## Session Log Index
 
@@ -11,6 +11,7 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 
 | Data | Titolo | Link SESSIONS.md |
 |------|--------|------------------|
+| 2026-08-29 | Upgrade Expo SDK 54 → 57 | `#2026-08-29--upgrade-expo-sdk-54--57` |
 | 2026-08-29 | Integrazione hCaptcha in form auth | `#2026-08-29--integrazione-hcaptcha-in-form-auth` |
 | 2026-08-27 | Security audit token/sessioni: SecureStore + revoke sessions | `#2026-08-27-security-audit-tokensessioni-securestore--revoke-sessions` |
 | 2026-08-27 | Fix brute force login: rate limiting 5/15min + test dimostrativo + hardening Supabase | `#2026-08-27-fix-brute-force-login-rate-limiting-515min--test-dimostrativo--hardening-supabase` |
@@ -50,6 +51,8 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
   - `parsing.ts` filtro per sottostringa: edge case raro di blocco singolo con data standard + month-year legittimo distinto (es. "SCAD 08/26 15/08/26") escluderebbe anche il legittimo. Non impatta i casi reali (blocchi separati).
   - Manca test dedicato per "ENTRO 08 26" (comportamento preservato ma non coperto da test).
 - **`EXPO_PUBLIC_OCR_SPACE_API_KEY` embedded in client bundle** (EXPO_PUBLIC_ prefix ships it in JS bundle; ocr.space key is server-side/billed). Deferred: dedicated task after SDK 57 upgrade.
+- **TypeScript 6.0.3 decision pending**: errore TS5101 su `baseUrl` deprecato in tsconfig.json. Richiede decisione: rimozione `baseUrl` o `ignoreDeprecations: "6.0"`. Non bloccante, tsc passa con 5.9.3.
+- **ML Kit smoke test pending**: `@react-native-ml-kit/text-recognition` 2.0.0 gira via interop layer in RN 0.86 (nessun codegen). Da testare su device per confermare OCR funzionante.
 
 ### Risolti
 - **2026-08-04**: `feedback.test.tsx` 14 fallimenti (mock hoisting `expo-image-picker`); `forgot-password.tsx` trim mancante in `handleVerifyOTP`; RPC `get_expiring_products` chiusa (già sincronizzata con prod, `days_remaining` presente, commit `ab44414`).
@@ -58,7 +61,8 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - **2026-07-15**: `DashboardHeader.tsx` permissionStatus `boolean|null`; `jest.setup.js` mock `expo-notifications` con `{ virtual: true }`; `password-reset-form.tsx` 37/37 test riparati; `settings.test.tsx` 32/32 test riparati; `usePhotoNavigation.test.ts` 8/8 test riparati; **0 errori TypeScript**; **0 test falliti**.
 
 ## Test Suite Summary
-- **Ultimo (2026-08-27)**: 2278/2283 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
+- **Ultimo (2026-08-29, post-SDK 57)**: 2284/2289 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
+- expo-doctor: 18/21 (3 failed: native folder sync, ML Kit New Arch, TypeScript 5.9.3 vs 6.0.3 atteso).
 - Test riparati nel tempo: settings (28), usePhotoNavigation (1), password-reset-form (37), feedback (14), forgot-password (1 nuovo regressione).
 - Test coperti di recente: AuthService.bruteForce (17 nuovo), imageStorage (15), useCamera (19), useProductInitialization (28), useProductForm consumer (41), useBarcodeScanner (58), scanner (82).
 - Helper di test: `installMockCameraRef` per mocking atomico di cameraRef con cleanup automatico.
@@ -78,11 +82,13 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Scelto countdown UX 1s `remainingMs` + `isRateLimited`/`rateLimitedUntil` (vs messaggio statico): bottone disabilitato + banner `Riprova tra Xs` previene retry inutili.
 - Scelto delega `AuthContext.changePassword()` → `AuthService.updatePassword()` (vs `supabase.auth.updateUser` diretto): chiude bypass limiter su closure.
 - Supabase Auth Rate Limits server-side consigliati come difesa in profondità: `10,30,150,10,30,15,30` (vs default `30/5min` troppo permissivo; `sign-ins 15/5min`, `token verifications 10/5min`).
+- Scelto `expo-splash-screen` con props esplicite (vs forma nuda `{}`): forma nuda cancella immagini ma genera stile che le referenzia → build Android rotta.
+- Scelto import type-only dal fork expo-router (vs installare @react-navigation/bottom-tabs): due universi di tipi incompatibili, type-only import risolve.
+- Scelto TypeScript 5.9.3 (vs 6.0.3 pin SDK 57): errore TS5101 su `baseUrl` deprecato, richiede decisione su tsconfig.
+- Scelto NON aggiungere datetimepicker/build-properties/status-bar plugin: certificati no-op come stringhe nude.
+- Scelto prebuild --clean (vs prebuild incrementale): android/ rigenerato da zero per SDK 57.
 
 ## Last Commit
-Hash: 4b927f7 (4b927f70d17d78463fb36d628802864a5ef8e578)
-Message: "chore: untrack generated artifacts and local env file"
-- graphify-out/ rimosso dal tracking git (381 file, mantenuti su disco)
-- file env locale untracked (valori environment-specific)
-- package-lock.json non più gitignorato (build riproducibili)
-- .gitignore deduplicato
+Hash: c4baa37
+Message: "chore(android): regenerate native for Expo SDK 57"
+- prebuild --clean per SDK 57
