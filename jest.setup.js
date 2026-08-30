@@ -186,7 +186,7 @@ jest.mock('react-native/Libraries/NativeModules/specs/NativeDevMenu', () => ({
 }), { virtual: true });
 
 // Mock DevMenu
-jest.mock('react-native/Libraries/DevMenu/DevMenu', () => ({
+jest.mock('react-native/src/private/devsupport/devmenu/DevMenu.js', () => ({
   show: jest.fn(),
   reload: jest.fn(),
   debugRemotely: jest.fn(),
@@ -540,15 +540,6 @@ jest.mock('@react-native-picker/picker', () => ({
 // Mock @react-native-community/datetimepicker
 jest.mock('@react-native-community/datetimepicker', () => ({
   default: 'DateTimePicker',
-}));
-
-// Mock react-native-sound
-jest.mock('react-native-sound', () => ({
-  default: jest.fn().mockImplementation(() => ({
-    play: jest.fn(),
-    stop: jest.fn(),
-    release: jest.fn(),
-  })),
 }));
 
 // Mock react-native-onesignal

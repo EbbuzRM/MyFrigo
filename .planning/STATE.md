@@ -3,7 +3,7 @@
 Last updated: 2026-08-29
 
 ## Current Phase
-Active Development
+Post-Upgrade SDK 57
 
 **Next step**: upgrade Expo SDK 54 → 57 (branch `sdk57`, baseline pre-upgrade certificata su `1c09bfe`). Safety net rollback disponibile: tag annotato `pre-sdk57` + branch `sdk57` + zip `android/` + backup `package.json` / `package-lock.json` con suffisso `.bak-presdk57-20260829-170621`. Runbook completo in SESSIONS.md `#2026-08-29--audit-dipendenze-allineamento-sdk-54-e-safety-net-pre-sdk-57`.
 
@@ -14,6 +14,7 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 | Data | Titolo | Link SESSIONS.md |
 |------|--------|------------------|
 | 2026-08-29 | Audit dipendenze, allineamento SDK 54 e safety net pre-SDK 57 | `#2026-08-29--audit-dipendenze-allineamento-sdk-54-e-safety-net-pre-sdk-57` |
+| 2026-08-29 | Upgrade Expo SDK 54 → 57 | `#2026-08-29--upgrade-expo-sdk-54--57` |
 | 2026-08-29 | Integrazione hCaptcha in form auth | `#2026-08-29--integrazione-hcaptcha-in-form-auth` |
 | 2026-08-27 | Security audit token/sessioni: SecureStore + revoke sessions | `#2026-08-27-security-audit-tokensessioni-securestore--revoke-sessions` |
 | 2026-08-27 | Fix brute force login: rate limiting 5/15min + test dimostrativo + hardening Supabase | `#2026-08-27-fix-brute-force-login-rate-limiting-515min--test-dimostrativo--hardening-supabase` |
@@ -59,14 +60,15 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - **Branch attualmente su `master`, non `sdk57`** — da fare `git checkout sdk57` prima dell'upgrade SDK 57.
 
 ### Risolti
+- **2026-08-30**: ML Kit OCR confermato funzionante su RN 0.86 via interop layer. Smoke test: 7 blocchi testo letti, data "21/05/2027" estratta correttamente, anchor OCR trovato, lotto escluso, zero crash.
 - **2026-08-04**: `feedback.test.tsx` 14 fallimenti (mock hoisting `expo-image-picker`); `forgot-password.tsx` trim mancante in `handleVerifyOTP`; RPC `get_expiring_products` chiusa (già sincronizzata con prod, `days_remaining` presente, commit `ab44414`).
 - **2026-07-16**: `NotificationService.initialize()` ora chiamato in `_layout.tsx` (era `OneSignalService.initialize()` che non richiedeva permessi push).
 - **2026-06-28**: `expo-notifications` rimosso per risolvere notifiche duplicate; `onesignal-expo-plugin` mode → production.
 - **2026-07-15**: `DashboardHeader.tsx` permissionStatus `boolean|null`; `jest.setup.js` mock `expo-notifications` con `{ virtual: true }`; `password-reset-form.tsx` 37/37 test riparati; `settings.test.tsx` 32/32 test riparati; `usePhotoNavigation.test.ts` 8/8 test riparati; **0 errori TypeScript**; **0 test falliti**.
 
 ## Test Suite Summary
-- **Ultimo (2026-08-29)**: 2284/2289 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
-- **Nota**: la figura precedente 2278/2283 era stale — antecedeva il commit `bf12252` che ha aggiunto test. Baseline aggiornata e certificata dal verifier il 2026-08-29 su `1c09bfe`.
+- **Ultimo (2026-08-29, post-TS 6.0.3)**: 2284/2289 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
+- expo-doctor: 18/21 (3 failed: native folder sync, ML Kit New Arch, TypeScript 6.0.3 risolto).
 - Test riparati nel tempo: settings (28), usePhotoNavigation (1), password-reset-form (37), feedback (14), forgot-password (1 nuovo regressione).
 - Test coperti di recente: AuthService.bruteForce (17 nuovo), imageStorage (15), useCamera (19), useProductInitialization (28), useProductForm consumer (41), useBarcodeScanner (58), scanner (82).
 - Helper di test: `installMockCameraRef` per mocking atomico di cameraRef con cleanup automatico.
@@ -91,10 +93,15 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Scelto fix assert arità (vs `expect.anything()` o rimozione parametro): assert su valori esatti incluso terzo arg `undefined`, arity-sensitive, non vacuo.
 - Scelto tag annotato `pre-sdk57` + branch `sdk57` + zip `android/` come safety net: SDK 57 rigenera `android/` di default in prebuild, serve snapshot.
 - Scelto amend di `bb2ffb1`→`ed8ed7e`: messaggio citava 3 patch bump inesistenti; commit locale non pushato, nessun rewrite remoto.
+- Scelto `expo-splash-screen` con props esplicite (vs forma nuda `{}`): forma nuda cancella immagini ma genera stile che le referenzia → build Android rotta.
+- Scelto import type-only dal fork expo-router (vs installare @react-navigation/bottom-tabs): due universi di tipi incompatibili, type-only import risolve.
+- Scelto TypeScript 5.9.3 (vs 6.0.3 pin SDK 57): errore TS5101 su `baseUrl` deprecato, richiede decisione su tsconfig.
+- Scelto rimuovere baseUrl da tsconfig.json (vs ignoreDeprecations): paths già relativo al tsconfig, zero impatto funzionale, allinea a best practice TS 6.0.
+- Scelto mantenere @react-navigation/native come devDependency (vs rimuovere): test files importano tipi, non va nel bundle production.
+- Scelto migrare import application code a expo-router/build/react-navigation/native (vs lasciare @react-navigation/native): Expo Router 56+ ha forkato React Navigation, import diretti non supportati.
+- Scelto NON aggiungere datetimepicker/build-properties/status-bar plugin: certificati no-op come stringhe nude.
+- Scelto prebuild --clean (vs prebuild incrementale): android/ rigenerato da zero per SDK 57.
 
 ## Last Commit
-Hash: 1c09bfe (1c09bfe976b422056054758cae973e7c8f32467a)
-Message: "test(auth): fix login call assertions after captchaToken param"
-- `LoginForm.test.tsx:160`: assert aggiornato a 3 argomenti (era arità 2)
-- `useEmailAuth.test.ts:100`: assert aggiornato a 3 argomenti (era arità 2)
-- Terzo argomento asserito `undefined` — i test non risolvono il captcha, il path con token risolto resta da coprire
+Hash: 492f832
+Message: "fix(navigation): complete migration to expo-router fork"

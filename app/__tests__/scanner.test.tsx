@@ -91,7 +91,7 @@ jest.mock('@/context/CategoryContext', () => ({
 }));
 
 // Mock separato per Alert che preserva gli altri moduli React Native
-jest.mock('react-native/Libraries/Core/NativeModules/AppState', () => {}, { virtual: true });
+jest.mock('react-native/Libraries/AppState/AppState.js', () => {}, { virtual: true });
 
 // Type assertion per i mock
 const mockedUseBarcodeScanner = useBarcodeScanner as jest.MockedFunction<typeof useBarcodeScanner>;

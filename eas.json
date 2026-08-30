@@ -7,12 +7,12 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "node": "20.19.4"
+      "node": "22.18.0"
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "node": "20.19.4",
+      "node": "22.18.0",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
@@ -25,7 +25,7 @@
       "android": {
         "buildType": "apk"
       },
-      "node": "20.19.4",
+      "node": "22.18.0",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",
@@ -35,7 +35,7 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "20.19.4",
+      "node": "22.18.0",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://tfhjupcybietwzmnpwfh.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-5ogOycE4JNMwuFCXfYw5Q_ZGN2Esdg",

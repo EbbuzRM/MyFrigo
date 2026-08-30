@@ -20,8 +20,8 @@ module.exports = {
   expo: {
     name: "MyFrigo",
     slug: "myfrigoapp",
-    version: "1.5.0",
-    runtimeVersion: "1.0.5",
+    version: "1.0.6",
+    runtimeVersion: "1.0.6",
     orientation: "portrait",
     scheme: "myfrigo",
     updates: {
@@ -54,11 +54,6 @@ module.exports = {
       hcaptchaSitekey: process.env.EXPO_PUBLIC_HCAPTCHA_SITEKEY || 'd69c1bae-86c0-41b2-8350-4a48810e5fbc',
      },
     icon: "./assets/images/icon.png",
-    splash: {
-      image: "./assets/images/splash.png",
-      resizeMode: "cover",
-      backgroundColor: "#ffffff"
-    },
     backgroundColor: "#ffffff",
     ios: {
       supportsTablet: true,
@@ -160,7 +155,15 @@ module.exports = {
       "expo-font",
       "expo-web-browser",
       "expo-background-task",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#ffffff"
+        }
+      ]
     ],
   }
 };
