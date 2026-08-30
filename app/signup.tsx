@@ -19,7 +19,7 @@ import {
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
+import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { AUTH_CONSTANTS } from '@/constants/auth';
 import { useSignupValidation, SignupFormData } from '@/hooks/useSignupValidation';
 import { useRegistration } from '@/hooks/useRegistration';
@@ -30,10 +30,11 @@ export default function SignupScreen() {
   const [formData, setFormData] = useState<SignupFormData>({ email: '', password: '', firstName: '', lastName: '' });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
-  const captchaRef = useRef<HCaptcha>(null);
+  const captchaRef = useRef<ConfirmHcaptcha>(null);
   const router = useRouter();
 
   const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
+
   const { validateForm, validatePasswordField, passwordValidation, isFormValid, clearErrors } = useSignupValidation();
   const handleSuccess = useCallback(() => router.replace('/(tabs)'), [router]);
   const handleEmailNeedsConfirmation = useCallback((email: string) => router.replace({ pathname: '/confirm-email', params: { email } }), [router]);
@@ -44,6 +45,30 @@ export default function SignupScreen() {
     if (field === 'password') validatePasswordField(value);
   }, [validatePasswordField]);
 
+  const submitSignup = useCallback(async (token?: string) => {
+    const trimmedFirstName = formData.firstName.trim();
+    const trimmedLastName = formData.lastName.trim();
+    const result = await register({ ...formData, firstName: trimmedFirstName, lastName: trimmedLastName, captchaToken: token });
+    if (result.error === AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS) {
+      Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.EMAIL_EXISTS, AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS);
+      return;
+    }
+    handlePostRegistration(result, formData.email);
+  }, [formData, register, handlePostRegistration]);
+
+  const onCaptchaMessage = useCallback((event: { nativeEvent: { data: string }; success: boolean }) => {
+    if (event.success) {
+      const token = event.nativeEvent.data;
+      setCaptchaToken(token);
+      captchaRef.current?.hide();
+      submitSignup(token);
+    } else if (event.nativeEvent.data === 'error') {
+      captchaRef.current?.hide();
+    } else if (event.nativeEvent.data === 'challenge-closed') {
+      captchaRef.current?.hide();
+    }
+  }, [submitSignup]);
+
   const handleSignUp = useCallback(async () => {
     clearErrors();
     const validation = validateForm(formData);
@@ -51,21 +76,18 @@ export default function SignupScreen() {
       Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.MISSING_DATA, AUTH_CONSTANTS.ERRORS.MISSING_FIELDS);
       return;
     }
-    const trimmedFirstName = formData.firstName.trim();
-    const trimmedLastName = formData.lastName.trim();
-    if (!trimmedFirstName || !trimmedLastName) {
+    if (formData.firstName.trim() === '' || formData.lastName.trim() === '') {
       Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.MISSING_DATA, AUTH_CONSTANTS.ERRORS.MISSING_NAMES);
       return;
     }
-    const result = await register({ ...formData, firstName: trimmedFirstName, lastName: trimmedLastName, captchaToken });
-    captchaRef.current?.resetCaptcha();
-    setCaptchaToken(undefined);
-    if (result.error === AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS) {
-      Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.EMAIL_EXISTS, AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS);
+
+    if (sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && !captchaToken) {
+      captchaRef.current?.show();
       return;
     }
-    handlePostRegistration(result, formData.email);
-  }, [formData, clearErrors, validateForm, register, handlePostRegistration]);
+
+    await submitSignup(captchaToken);
+  }, [formData, clearErrors, validateForm, submitSignup, captchaToken, sitekey]);
 
   const isDisabled = !isFormValid(formData) || isLoading;
   const { UI_LABELS, ALERT_TITLES, PASSWORD_VALIDATION } = AUTH_CONSTANTS;
@@ -96,20 +118,22 @@ export default function SignupScreen() {
         </View>
       )}
       {error && <Text style={styles.errorText}>{error}</Text>}
-      {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
-        <HCaptcha
-          sitekey={sitekey}
-          onVerify={(token: string) => setCaptchaToken(token)}
-          ref={captchaRef}
-          size="normal"
-        />
-      )}
       <TouchableOpacity testID="signup-button" style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled} accessibilityRole="button" accessibilityLabel="Registrati" accessibilityState={{ disabled: isDisabled }}>
         {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{UI_LABELS.SIGNUP_BUTTON}</Text>}
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.backText}>{UI_LABELS.BACK_TO_LOGIN}</Text>
       </TouchableOpacity>
+
+      {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
+        <ConfirmHcaptcha
+          ref={captchaRef}
+          siteKey={sitekey}
+          baseUrl="https://hcaptcha.com"
+          onMessage={onCaptchaMessage}
+          size="normal"
+        />
+      )}
     </View>
   );
 }

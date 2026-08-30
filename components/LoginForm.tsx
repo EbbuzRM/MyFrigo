@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
+import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { useTheme } from '@/context/ThemeContext';
 import { useEmailAuth } from '@/hooks/useEmailAuth';
 import { usePasswordValidation } from '@/hooks/usePasswordValidation';
@@ -43,12 +43,36 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [showVerificationSuccess, setShowVerificationSuccess] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
-  const captchaRef = useRef<HCaptcha>(null);
+  const captchaRef = useRef<ConfirmHcaptcha>(null);
+  const emailAuth = useEmailAuth();
+  const passwordValidation = usePasswordValidation();
 
   const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
 
-  const emailAuth = useEmailAuth();
-  const passwordValidation = usePasswordValidation();
+  const submitLogin = async (token?: string) => {
+    const result = await emailAuth.handleLogin(passwordValidation.password, token);
+
+    if (result.success) {
+      onLoginSuccess?.();
+    } else {
+      onLoginError?.(result.error || 'Errore durante il login');
+      setCaptchaToken(undefined);
+      captchaRef.current?.hide();
+    }
+  };
+
+  const onCaptchaMessage = (event: { nativeEvent: { data: string }; success: boolean }) => {
+    if (event.success) {
+      const token = event.nativeEvent.data;
+      setCaptchaToken(token);
+      captchaRef.current?.hide();
+      submitLogin(token);
+    } else if (event.nativeEvent.data === 'error') {
+      captchaRef.current?.hide();
+    } else if (event.nativeEvent.data === 'challenge-closed') {
+      captchaRef.current?.hide();
+    }
+  };
 
   // Controlla se l'utente arriva da una conferma email
   useEffect(() => {
@@ -75,15 +99,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       return;
     }
 
-    const result = await emailAuth.handleLogin(passwordValidation.password, captchaToken);
-    captchaRef.current?.resetCaptcha();
-    setCaptchaToken(undefined);
-
-    if (result.success) {
-      onLoginSuccess?.();
-    } else {
-      onLoginError?.(result.error || 'Errore durante il login');
+    if (sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && !captchaToken) {
+      captchaRef.current?.show();
+      return;
     }
+
+    await submitLogin(captchaToken);
   };
 
   const styles = getStyles(isDarkMode);
@@ -158,15 +179,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </Text>
       )}
 
-      {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
-        <HCaptcha
-          sitekey={sitekey}
-          onVerify={(token: string) => setCaptchaToken(token)}
-          ref={captchaRef}
-          size="normal"
-        />
-      )}
-
       <TouchableOpacity
         testID="login-button"
         accessibilityLabel="Accedi"
@@ -192,6 +204,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       <TouchableOpacity testID="forgot-password-link" accessibilityLabel="Hai dimenticato la password?" accessibilityRole="link" onPress={onForgotPasswordPress}>
         <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
       </TouchableOpacity>
+
+      {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
+        <ConfirmHcaptcha
+          ref={captchaRef}
+          siteKey={sitekey}
+          baseUrl="https://hcaptcha.com"
+          onMessage={onCaptchaMessage}
+          size="normal"
+        />
+      )}
     </View>
   );
 };

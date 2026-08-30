@@ -10,7 +10,7 @@
 
 import { useState, useRef } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
+import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { styles } from '@/styles/forgot-password.styles';
 import { supabase } from '@/services/supabaseClient';
 import { checkOtpRateLimit, recordOtpFailedAttempt, clearOtpRateLimit } from '@/services/AuthService';
@@ -24,11 +24,62 @@ export default function ForgotPassword() {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string>();
-  const captchaRef = useRef<HCaptcha>(null);
+  const captchaRef = useRef<ConfirmHcaptcha>(null);
 
   const router = useRouter();
 
   const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
+
+  const submitReset = async (token?: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        captchaToken: token,
+      });
+
+      if (error) {
+        LoggingService.error('ForgotPassword', `Error sending password reset email: ${error.message}`, error);
+        let errorMessage = 'Errore nell\'invio dell\'email di reset della password. Si prega di riprovare.';
+
+        // Errori specifici di Supabase
+        if (error.message.includes('User not found')) {
+          errorMessage = 'Nessun account trovato con questa email.';
+        } else if (error.message.includes('Rate limit')) {
+          errorMessage = 'Troppe richieste. Attendi qualche minuto prima di riprovare.';
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = 'L\'indirizzo email inserito non è valido.';
+        }
+
+        Alert.alert('Errore', errorMessage);
+        setCaptchaToken(undefined);
+        captchaRef.current?.hide();
+        return;
+      }
+
+      LoggingService.info('ForgotPassword', 'Password reset email sent successfully');
+      Alert.alert('Successo', 'Email di reset della password inviata. Si prega di controllare la posta in arrivo.');
+      setShowOtpInput(true);
+    } catch (error: unknown) {
+      LoggingService.error('ForgotPassword', 'Unexpected error during OTP reset', error);
+      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante l\'invio del codice OTP'));
+      setCaptchaToken(undefined);
+      captchaRef.current?.hide();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onCaptchaMessage = (event: { nativeEvent: { data: string }; success: boolean }) => {
+    if (event.success) {
+      const token = event.nativeEvent.data;
+      setCaptchaToken(token);
+      captchaRef.current?.hide();
+      submitReset(token);
+    } else if (event.nativeEvent.data === 'error') {
+      captchaRef.current?.hide();
+    } else if (event.nativeEvent.data === 'challenge-closed') {
+      captchaRef.current?.hide();
+    }
+  };
 
   // E2E test mode flag — checks build-time env var AND runtime Constants.extra
   // (so it works both when .env.e2e is used at build time and via app.config.js extra)
@@ -96,40 +147,13 @@ export default function ForgotPassword() {
       return;
     }
 
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        captchaToken,
-        // Non specifichiamo redirectTo per ricevere un OTP invece di un link
-      });
-      captchaRef.current?.resetCaptcha();
-      setCaptchaToken(undefined);
-
-      if (error) {
-        LoggingService.error('ForgotPassword', `Error sending password reset email: ${error.message}`, error);
-        let errorMessage = 'Errore nell\'invio dell\'email di reset della password. Si prega di riprovare.';
-
-        // Errori specifici di Supabase
-        if (error.message.includes('User not found')) {
-          errorMessage = 'Nessun account trovato con questa email.';
-        } else if (error.message.includes('Rate limit')) {
-          errorMessage = 'Troppe richieste. Attendi qualche minuto prima di riprovare.';
-        } else if (error.message.includes('Invalid email')) {
-          errorMessage = 'L\'indirizzo email inserito non è valido.';
-        }
-
-        Alert.alert('Errore', errorMessage);
-        return;
-      }
-
-      LoggingService.info('ForgotPassword', 'Password reset email sent successfully');
-      Alert.alert('Successo', 'Email di reset della password inviata. Si prega di controllare la posta in arrivo.');
-      setShowOtpInput(true);
-    } catch (error: unknown) {
-      LoggingService.error('ForgotPassword', 'Unexpected error during OTP reset', error);
-      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante l\'invio del codice OTP'));
-    } finally {
-      setLoading(false);
+    // Real flow: show captcha if configured and not yet solved
+    if (sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && !captchaToken) {
+      captchaRef.current?.show();
+      return;
     }
+
+    await submitReset(captchaToken);
   };
 
   // Verifica OTP e reindirizza al reset form
@@ -243,14 +267,6 @@ export default function ForgotPassword() {
           <Text style={styles.infoText}>
             Ti invieremo un codice OTP alla tua email per reimpostare la password.
           </Text>
-          {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
-            <HCaptcha
-              sitekey={sitekey}
-              onVerify={(token: string) => setCaptchaToken(token)}
-              ref={captchaRef}
-              size="normal"
-            />
-          )}
           <View testID="send-otp-button">
             <Button title="Invia Codice OTP" onPress={handleReset} disabled={loading} />
           </View>
@@ -287,6 +303,16 @@ export default function ForgotPassword() {
             </View>
           </View>
         </View>
+      )}
+
+      {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
+        <ConfirmHcaptcha
+          ref={captchaRef}
+          siteKey={sitekey}
+          baseUrl="https://hcaptcha.com"
+          onMessage={onCaptchaMessage}
+          size="normal"
+        />
       )}
     </View>
   );
