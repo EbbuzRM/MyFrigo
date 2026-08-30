@@ -11,7 +11,7 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { View, Button, BackHandler, Text, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router/build/react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { getStyles } from '@/styles/photo-capture.styles';

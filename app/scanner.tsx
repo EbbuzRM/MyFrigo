@@ -11,7 +11,7 @@ import React, { useState, useCallback } from 'react';
 import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { router } from 'expo-router';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router/build/react-navigation/native';
 import { ArrowLeft, RefreshCw } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCategories } from '@/context/CategoryContext';
