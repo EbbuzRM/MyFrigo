@@ -44,9 +44,34 @@
 
 **Note aperte** (non bloccanti):
 - TypeScript 6.0.3: richiede decisione su `baseUrl` in tsconfig.json (rimozione o `ignoreDeprecations: "6.0"`). Non bloccante, tsc passa con 5.9.3
-- `@react-native-ml-kit/text-recognition` 2.0.0: ultimo publish 2025-09-01, nessun codegen, gira via interop layer in RN 0.86. Da smoke-testare su device (OCR)
+- `@react-native-ml-kit/text-recognition` 2.0.0: ultimo publish 2025-09-01, nessun codegen, gira via interop layer in RN 0.86. Smoke test completato 2026-08-30 (funzionante)
 - `@react-navigation/native` ancora diretto: expo-router forka anche quello, ma types compatibili. Da valutare migrazione
 - Worker Jest non esce gracefully (pre-esistente)
+
+### Refinement post-upgrade (stessa sessione)
+
+**TypeScript 6.0.3** (risolto):
+- Rimosso `baseUrl` da tsconfig.json (deprecato TS 6.0, TS5101)
+- `paths` già relativo al tsconfig (`"@/*": ["./*"]`), zero modifiche
+- Aggiornato TypeScript 5.9.3 → 6.0.3
+- Commit: `b055ea9`
+
+**Migrazione @react-navigation/native** (completata):
+- Audit: 4 import application code da migrare (scanner.tsx, photo-capture.tsx, AnimatedTabBar.tsx)
+- Fix: ripuntati a `expo-router/build/react-navigation/native`
+- `@react-navigation/native` mantenuto come devDependency (test files importano tipi)
+- Commit: `492f832`
+
+**ML Kit OCR** (risolto):
+- `@react-native-ml-kit/text-recognition` 2.0.0 gira via interop layer in RN 0.86
+- Smoke test completato con successo (vedi sotto)
+
+### Smoke test ML Kit OCR (2026-08-30)
+
+- `@react-native-ml-kit/text-recognition` 2.0.0 confermato funzionante su RN 0.86 via interop layer
+- Test: foto confezione con data "21/05/2027" → ML Kit legge 7 blocchi testo, anchor OCR trovato ("Da consumarsi preteribilmente..."), data estratta correttamente (2027-05-21, score 350), lotto "5416 C 15:41" escluso, zero crash
+- Build locale `npx expo run:android` riuscita, tutti i warning deprecazioni innocue da librerie terze
+- Nessuna azione richiesta
 
 ---
 

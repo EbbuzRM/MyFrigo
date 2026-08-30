@@ -51,18 +51,17 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
   - `parsing.ts` filtro per sottostringa: edge case raro di blocco singolo con data standard + month-year legittimo distinto (es. "SCAD 08/26 15/08/26") escluderebbe anche il legittimo. Non impatta i casi reali (blocchi separati).
   - Manca test dedicato per "ENTRO 08 26" (comportamento preservato ma non coperto da test).
 - **`EXPO_PUBLIC_OCR_SPACE_API_KEY` embedded in client bundle** (EXPO_PUBLIC_ prefix ships it in JS bundle; ocr.space key is server-side/billed). Deferred: dedicated task after SDK 57 upgrade.
-- **TypeScript 6.0.3 decision pending**: errore TS5101 su `baseUrl` deprecato in tsconfig.json. Richiede decisione: rimozione `baseUrl` o `ignoreDeprecations: "6.0"`. Non bloccante, tsc passa con 5.9.3.
-- **ML Kit smoke test pending**: `@react-native-ml-kit/text-recognition` 2.0.0 gira via interop layer in RN 0.86 (nessun codegen). Da testare su device per confermare OCR funzionante.
 
 ### Risolti
+- **2026-08-30**: ML Kit OCR confermato funzionante su RN 0.86 via interop layer. Smoke test: 7 blocchi testo letti, data "21/05/2027" estratta correttamente, anchor OCR trovato, lotto escluso, zero crash.
 - **2026-08-04**: `feedback.test.tsx` 14 fallimenti (mock hoisting `expo-image-picker`); `forgot-password.tsx` trim mancante in `handleVerifyOTP`; RPC `get_expiring_products` chiusa (già sincronizzata con prod, `days_remaining` presente, commit `ab44414`).
 - **2026-07-16**: `NotificationService.initialize()` ora chiamato in `_layout.tsx` (era `OneSignalService.initialize()` che non richiedeva permessi push).
 - **2026-06-28**: `expo-notifications` rimosso per risolvere notifiche duplicate; `onesignal-expo-plugin` mode → production.
 - **2026-07-15**: `DashboardHeader.tsx` permissionStatus `boolean|null`; `jest.setup.js` mock `expo-notifications` con `{ virtual: true }`; `password-reset-form.tsx` 37/37 test riparati; `settings.test.tsx` 32/32 test riparati; `usePhotoNavigation.test.ts` 8/8 test riparati; **0 errori TypeScript**; **0 test falliti**.
 
 ## Test Suite Summary
-- **Ultimo (2026-08-29, post-SDK 57)**: 2284/2289 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
-- expo-doctor: 18/21 (3 failed: native folder sync, ML Kit New Arch, TypeScript 5.9.3 vs 6.0.3 atteso).
+- **Ultimo (2026-08-29, post-TS 6.0.3)**: 2284/2289 test passano (129 suites, 5 skipped legacy), 0 falliti, 0 errori TypeScript.
+- expo-doctor: 18/21 (3 failed: native folder sync, ML Kit New Arch, TypeScript 6.0.3 risolto).
 - Test riparati nel tempo: settings (28), usePhotoNavigation (1), password-reset-form (37), feedback (14), forgot-password (1 nuovo regressione).
 - Test coperti di recente: AuthService.bruteForce (17 nuovo), imageStorage (15), useCamera (19), useProductInitialization (28), useProductForm consumer (41), useBarcodeScanner (58), scanner (82).
 - Helper di test: `installMockCameraRef` per mocking atomico di cameraRef con cleanup automatico.
@@ -85,10 +84,12 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Scelto `expo-splash-screen` con props esplicite (vs forma nuda `{}`): forma nuda cancella immagini ma genera stile che le referenzia → build Android rotta.
 - Scelto import type-only dal fork expo-router (vs installare @react-navigation/bottom-tabs): due universi di tipi incompatibili, type-only import risolve.
 - Scelto TypeScript 5.9.3 (vs 6.0.3 pin SDK 57): errore TS5101 su `baseUrl` deprecato, richiede decisione su tsconfig.
+- Scelto rimuovere baseUrl da tsconfig.json (vs ignoreDeprecations): paths già relativo al tsconfig, zero impatto funzionale, allinea a best practice TS 6.0.
+- Scelto mantenere @react-navigation/native come devDependency (vs rimuovere): test files importano tipi, non va nel bundle production.
+- Scelto migrare import application code a expo-router/build/react-navigation/native (vs lasciare @react-navigation/native): Expo Router 56+ ha forkato React Navigation, import diretti non supportati.
 - Scelto NON aggiungere datetimepicker/build-properties/status-bar plugin: certificati no-op come stringhe nude.
 - Scelto prebuild --clean (vs prebuild incrementale): android/ rigenerato da zero per SDK 57.
 
 ## Last Commit
-Hash: c4baa37
-Message: "chore(android): regenerate native for Expo SDK 57"
-- prebuild --clean per SDK 57
+Hash: 492f832
+Message: "fix(navigation): complete migration to expo-router fork"
