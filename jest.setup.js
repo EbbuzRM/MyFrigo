@@ -186,7 +186,7 @@ jest.mock('react-native/Libraries/NativeModules/specs/NativeDevMenu', () => ({
 }), { virtual: true });
 
 // Mock DevMenu
-jest.mock('react-native/Libraries/DevMenu/DevMenu', () => ({
+jest.mock('react-native/src/private/devsupport/devmenu/DevMenu.js', () => ({
   show: jest.fn(),
   reload: jest.fn(),
   debugRemotely: jest.fn(),
