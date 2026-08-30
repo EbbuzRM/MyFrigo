@@ -16,7 +16,6 @@
     "isolatedModules": true,
     "strict": true,
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
