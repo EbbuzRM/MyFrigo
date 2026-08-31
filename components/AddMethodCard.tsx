@@ -13,7 +13,6 @@ import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { AnimatedPressable } from './AnimatedPressable';
-import { LoggingService } from '@/services/LoggingService';
 import { getAnimatedPressableAccessibilityProps } from '@/utils/accessibility';
 
 interface AddMethodCardProps {

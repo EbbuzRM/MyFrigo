@@ -10,13 +10,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
-  View,
-  Text,
   Pressable,
   StyleSheet,
 } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { scaleFont } from '@/utils/scaleFont';
 import { usePasswordForm } from '@/hooks/usePasswordForm';
 import { usePasswordVisibility } from '@/hooks/usePasswordVisibility';
 import {

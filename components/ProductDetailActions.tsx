@@ -78,7 +78,7 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
   );
 });
 
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+const getStyles = (_isDarkMode: boolean) => StyleSheet.create({
   actionsSection: {
     gap: 8,
     marginTop: 10,

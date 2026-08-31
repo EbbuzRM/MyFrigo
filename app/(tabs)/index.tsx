@@ -8,7 +8,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useProducts } from '@/context/ProductContext';
-import { LoggingService } from '@/services/LoggingService';
 import { getStyles } from '@/styles/dashboard.styles';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { ProfileMenu } from '@/components/dashboard/ProfileMenu';

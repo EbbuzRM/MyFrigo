@@ -12,7 +12,6 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
-import { LoggingService } from '@/services/LoggingService';
 import { getCategoryFilterAccessibilityProps } from '@/utils/accessibility';
 
 interface CategoryFilterProps {

@@ -15,7 +15,6 @@ import { StatsCard } from './StatsCard';
 import { useTheme } from '@/context/ThemeContext';
 import { router } from 'expo-router';
 import { Product } from '@/types/Product';
-import { LoggingService } from '@/services/LoggingService';
 
 interface HistoryStatsProps {
   totalProducts: number;

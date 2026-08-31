@@ -11,7 +11,6 @@
 
 import React from 'react';
 import { Pressable, PressableProps, Animated, GestureResponderEvent } from 'react-native';
-import { LoggingService } from '@/services/LoggingService';
 import { AccessibilityAttributes } from '@/utils/accessibility';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 

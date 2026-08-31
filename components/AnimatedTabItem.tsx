@@ -9,10 +9,9 @@
 // message: 
 
 import React from 'react';
-import { View, Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useTheme } from '@/context/ThemeContext';
-import { LoggingService } from '@/services/LoggingService';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface TabBarRoute {

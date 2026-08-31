@@ -11,7 +11,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { LoggingService } from '@/services/LoggingService';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface ToastProps {

@@ -11,7 +11,7 @@
 import React, { memo, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { Play, Square } from 'lucide-react-native';
+import { Play } from 'lucide-react-native';
 
 interface DiagnosticControlsProps {
   isRunning: boolean;

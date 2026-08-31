@@ -7,7 +7,7 @@
 // message: 
 
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, TouchableOpacity, ViewStyle } from 'react-native';
+import { StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { UpdateModal } from './UpdateModal';
 import { UpdateInfo, UpdateSettings } from '@/services/UpdateService';
 import { useReducedMotion } from '@/hooks/useReducedMotion';

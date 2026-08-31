@@ -15,7 +15,6 @@ import { Product, ProductCategory } from '@/types/Product';
 import { CategoryIcon } from './CategoryIcon';
 import { scaleFont } from '@/utils/scaleFont';
 import {
-  getProductCardAccessibilityProps,
   getDeleteButtonAccessibilityProps,
   getActionButtonAccessibilityProps,
 } from '@/utils/accessibility';

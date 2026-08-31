@@ -125,7 +125,7 @@ export function ProductList({
   );
 }
 
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
+const getStyles = (_isDarkMode: boolean) => StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingBottom: 100,

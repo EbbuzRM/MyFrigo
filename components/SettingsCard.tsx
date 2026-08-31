@@ -14,7 +14,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, GestureResponderEvent } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { LoggingService } from '@/services/LoggingService';
 import { getSettingsCardAccessibilityProps } from '@/utils/accessibility';
 import { scaleFont } from '@/utils/scaleFont';
 

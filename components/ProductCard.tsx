@@ -9,7 +9,7 @@
 // message: 
 
 import React, { useMemo } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCardAnimation } from '@/hooks/useCardAnimation';
@@ -20,7 +20,6 @@ import { getProductCardStyles } from './ProductCard.styles';
 import { LoggingService } from '@/services/LoggingService';
 import { getProductCardAccessibilityProps } from '@/utils/accessibility';
 import Animated from 'react-native-reanimated';
-import { COLORS } from '@/constants/colors';
 
 /**
  * Props for ProductCard component

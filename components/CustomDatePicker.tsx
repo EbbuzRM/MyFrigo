@@ -13,7 +13,6 @@ import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Calendar } from 'react-native-calendars';
 import { useTheme } from '@/context/ThemeContext';
-import { LoggingService } from '@/services/LoggingService';
 import { toLocalISOString } from '@/utils/dateUtils';
 
 interface CustomDatePickerProps {

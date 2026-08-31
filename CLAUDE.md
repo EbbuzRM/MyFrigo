@@ -1,127 +1,115 @@
-# CLAUDE.MD
+# CLAUDE.md
 
-## 🔴 STATUS
-- Phase: Active Dev (2026-08-04)
-- Commit: ab44414
-- Tests: 2220/2225 PASS (5 skip legacy)
-- TypeScript: 0 errors
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 📍 COMPLETED JULY
-1. ✅ Refactoring phases 1-3 (styles extraction, test coverage, logic dedup)
-2. ✅ Code review: 36 fixes (11 HIGH + 17 MEDIUM + 8 LOW)
-3. ✅ OCR: date 15/08 fix + dot-matrix fallback (ocr.space)
-4. ✅ Push notifications: OneSignal duplicate fix + RPC days_remaining
-5. ✅ Test suite: 2189/2189 PASS (30 new test files created)
+## Stack
 
-## 📍 COMPLETED AUGUST
-1. ✅ RPC `get_expiring_products` schema synced with prod (`days_remaining` column present, commit `ab44414`)
-2. ✅ `forgot-password.tsx`: `handleVerifyOTP` now trims email before `verifyOtp` call, regression test added
-3. ✅ `feedback.test.tsx`: fixed `expo-image-picker` mock hoisting bug (jest.fn() now declared inline in factory), 14 failures resolved — 55/55 PASS
+- React Native 0.86.3, React 19.2.3, Expo SDK 57 (`expo` ^57.0.17), TypeScript ~6.0 (strict)
+- Expo Router (file-based routing, `app/`)
+- Backend: Supabase (PostgreSQL, Auth, Storage, Edge Functions in Deno) — project ref `tfhjupcybietwzmnpwfh`
+- Push: OneSignal (`react-native-onesignal` SDK, `onesignal-expo-plugin`). `expo-notifications` was removed (caused duplicates).
+- Auth: Supabase email/OTP + Google Sign-in (`@react-native-google-signin`) + hCaptcha (`@hcaptcha/react-native-hcaptcha`) on signup
+- OCR: `@react-native-ml-kit/text-recognition` primary, `ocr.space` Engine 2 fallback (via `ocr-proxy` Edge Function)
+- Lists: `@shopify/flash-list`. Animation: `react-native-reanimated` v4 + `react-native-worklets`
+- Native dirs (`android/`, `ios/`) are checked in — this is a bare/prebuild workflow, not managed. Regenerate with `npx expo prebuild`.
 
-## 🏗️ ARCHITECTURE
-- Stack: React Native 0.81.5, Expo 54.0.34, Supabase (PostgreSQL), OneSignal
-- Pattern: **ServiceResult\<T\>** (CRUD ops) + **AppError** (infrastructure errors)
-- OCR Pipeline: ML Kit primary → ocr.space fallback (dot-matrix Engine 2)
-- Image Storage: Persistent `documentDirectory/products/` (resize 1200px, compress 0.85)
-- God nodes: LoggingService (124 edges), useTheme (116), Product (35), ProductStorage (32)
-- Layer model: Presentation → State (Context) → Business Logic (Services) → Data (Supabase)
-
-## 🔴 CRITICAL ISSUES (OPEN)
-- None open. See COMPLETED AUGUST for recent closures.
-
-## HIGH PRIORITY (NEXT)
-- None queued.
-
-## 🎮 CONVENTIONS
-
-**Naming**: PascalCase (components), camelCase (hooks/utils), SCREAMING_SNAKE (constants).
-**Error handling**: ServiceResult\<T\> for CRUD, AppError for infra.
-**Testing**: Mock globals (jest.setup.js), deferred promise for React 18 act() batching.
-**CodeDNA**: 267 TS/TSX files, all have headers (exports/used_by/rules).
-**Commits**: Conventional (feat/fix/docs/refactor), no force-push, atomic per task.
-
-## 🔧 QUICK REFERENCE
+## Commands
 
 ```bash
-# Test
-npm test                              # all suites
-npm test useBarcodeScanner           # single file
-npm test -- --testNamePattern="OCR"  # by pattern
+npm test                               # full Jest suite (large — 2000+ tests)
+npm test -- path/to/file.test.tsx      # single file
+npm test -- -t "OCR"                   # by test name pattern
+npm run type-check                     # tsc --noEmit  (must be 0 errors)
+npm run lint          / npm run lint:fix
+npm run format        / npm run format:check   # prettier
+npm start  (expo start)  /  npm run start:clear  (reset metro cache)
+npm run android  /  npm run ios         # native run (needs local toolchain)
 
-# Graphify (ALWAYS first for codebase questions)
-python -m graphify query "topic"     # BFS search
-python -m graphify query --dfs "A → B"  # path search
-python -m graphify explain "topic" 
-python -m graphify update .          # rescan (no API cost)
-
-# Build
-eas build --platform android         # dev
-eas build --platform ios --build-type preview  # TestFlight
-
-# Lint
-npm run lint                          # ESLint + Prettier
+eas build --platform android --profile preview      # internal APK/AAB
+eas build --platform android --profile production   # store, autoIncrement
+eas update --branch preview                         # OTA
 ```
 
-## 📚 KEY MODULES (God nodes)
+EAS profiles: `development`, `preview`, `release-apk`, `production`. Public env (`EXPO_PUBLIC_*`) lives in `eas.json`; `.env` is git-ignored (`.env.example` has placeholders).
 
-### LoggingService (124 edges)
-- Memory buffer (1000 logs max), batch write to file
-- DiagnosticPanel access via 5 taps on Settings → Version
-- `clearLogs()` clears memory + file; `getRecentLogs()` retrieves buffer
+### graphify (knowledge graph — see AGENTS.md, MANDATORY per project rule)
 
-### useTheme (116 edges)
-- Dark mode context, color palette, scale font size
-- Consumed by 116+ components; god node — changes affect most screens
+`graphify-out/` holds an AST knowledge graph. Per `AGENTS.md`, run graphify **before** grep/rg for any codebase question. Falls back to grep only if the graph is insufficient.
 
-### ProductStorage (32 edges)
-- Supabase facade: CRUD, real-time subscriptions, query builder
-- Returns ServiceResult\<T\>; all errors typed via ErrorCode
+```bash
+python -m graphify query "<question>"        # BFS context search
+python -m graphify query "<...>" --dfs        # path-style search
+python -m graphify path "NodeA" "NodeB"
+python -m graphify explain "NodeName"
+python -m graphify update .                   # rescan after code changes (AST only, no API cost)
+```
 
-### OCR Pipeline (7 stages)
-1. `prepareImageForOCR` — preprocess, normalize text
-2. `recognizeText` (ML Kit) — extract text blocks
-3. `parseExpirationDates` — regex patterns + scoring
-4. `findRepresentativeMatch` — priority: standard > sequence > monthYear
-5. Fallback: `ocr.space` Engine 2 (dot-matrix) if ML Kit returns 0 dates
-6. `scoring.ts` — confidence + spatial anchoring
-7. Result: DateMatch[] with 0-100 confidence
+## Architecture
 
-## 🚀 DEPLOYMENT
-- EAS profiles: `preview`,`production`.
-- OTA runtime: 1.0.3.1 (latest)
-- OneSignal: app_id `0be59062-4413-49d5-b301-7038c3a0de1e`, mode=production
-- Notifications: 9 AM cron (Supabase) → RPC `get_expiring_products` → Edge Function v23 → OneSignal batch
+Layered: **Presentation** (`app/` screens, `components/`, `hooks/`) → **State** (`context/` — React Context) → **Business Logic** (`services/`) → **Data** (Supabase client, `utils/`). Deeper detail in `.planning/ARCHITECTURE.md`.
 
-## 📖 DOCS
-- `ARCHITECTURE.md` — layer model, data flow diagrams, pattern rationale
-- `STATE.md` — milestone log, fix history, decisions + rationale
-- `SESSIONS.md` — "why" behind key decisions, trade-offs explored
-- `GRAPH_REPORT.md` — 5319 nodes, 517 communities, god nodes ranked by betweenness
-- This file (`CLAUDE.md`) — executor quick ref
+### Directory map
 
-## 🔐 SECURITY NOTES
-- `.env` removed from git; `.env.example` has placeholders
-- Supabase anon key (public) safe; service role key server-side only (Edge Functions)
-- OneSignal app_id public; API key server-side only
-- Rate limiting: 5 req/IP per 15 min on auth endpoints
-- Password: `clearCachedSession()` after change to invalidate JWT cache
+| Path | Contents |
+|------|----------|
+| `app/` | Expo Router screens. `app/_layout.tsx` = root; `app/(tabs)/` = 5-tab navigator; rest are standalone (auth, scanner, photo-capture, manual-entry, etc.) |
+| `context/` | 11 providers. Hierarchy fixed in `components/AppProviders.tsx`: `Auth → Settings → Product → Category → ManualEntry → Update`, all wrapped by `ThemeProvider` + `ErrorBoundary` in `_layout.tsx` |
+| `services/` | Singletons/facades. CRUD returns `ServiceResult<T>`. |
+| `hooks/` | `use[Feature]` custom hooks; `hooks/barcode/` splits barcode lookup (cache / OpenFoodFacts / local DB) |
+| `utils/` | case conversion (camel↔snake for Supabase rows), date parsing (`datePatterns.ts`, `dateUtils/`), OCR (`ocr*.ts`, `utils/ocr/`), error handlers |
+| `types/` | `ServiceResult.ts`, `errorTypes.ts` (`AppError`), `errorCodes.ts` (`ErrorCode` enum), `supabase.ts` (`Database` types), `Product.ts` |
+| `supabase/` | `migrations/` (timestamped SQL), `functions/` (Deno Edge Functions) |
+| `constants/` | `colors.ts`, `auth.ts`, filters, quantities |
 
-## 🧪 TEST INFRASTRUCTURE
-- Framework: Jest + React Native Testing Library
-- Global mocks: `jest.setup.js` (SafeAreaView, Modal, expo modules, Analytics)
-- Patterns: AAA (Arrange-Act-Assert), factory functions, deferred promise for async
-- Coverage: 2220/2225 tests PASS, 5 preexisting skip (legacy)
-- Failing: usePhotoNavigation (1 interface mismatch)
-- **Mock hoisting gotcha**: `jest.mock(module, factory)` runs BEFORE any `const mockX = jest.fn()` declared later in the same file (Babel hoists imports above them). Declare `jest.fn()` inline inside the factory, then grab typed refs via `import * as X from 'module'; const mockFn = X.fn as jest.Mock` AFTER the mock — see `feedback.test.tsx` / `useCamera.test.ts` for the working pattern.
+### Error handling — two patterns, do not mix roles
 
-## 🐛 KNOWN ISSUES (LOW)
-- expo-image migration deferred (only if product list >200 items)
-- Italian/English standardization (owner decision pending)
-- OCR edge case: "ENTRO 08 26" not covered by test (behavior preserved)
-- jest.setup: mock expo-notifications kept as infra (virtual: true)
+- **`ServiceResult<T>`** — public API of services, CRUD. Discriminated union: `{success:true,data:T,error:null} | {success:false,data:null,error:string}`. Factories `createSuccessResult` / `createErrorResult`.
+- **`AppError`** — infrastructure: categorize + log + localize. Facade `utils/errorHandler.ts` routes to `NetworkErrorHandler` / `DatabaseErrorHandler` / `AuthErrorHandler`; formatting in `errorFormatters.ts`.
+- Services use `AppError` internally for logging, expose `ServiceResult<T>` (its `.error` string often = `AppError.message`).
 
+### Data flow
 
-## LAST SYNC
-- Updated: 2026-07-23 (errorHandler analysis + useBarcodeScanner cleanup)
-- Graph: 5319 nodes, 517 communities (built from commit c335edb)
-- Stale if: new commits without `python -m graphify update .`
+- Products: screen → `ProductContext` → `ProductStorage` (Supabase CRUD + realtime subscriptions, `listenToProducts`). Rows converted camelCase via `utils/caseConverter`.
+- Expiration notifications: Supabase daily cron → RPC `get_expiring_products` (returns `days_remaining`) → Edge Function `send-expiration-notifications` → OneSignal batch.
+- OCR: photo → `usePhotoOCR` → ML Kit → parse/score pipeline → if 0 dates, `ocr-proxy` Edge Function (ocr.space Engine 2) → `ManualEntryContext`.
+
+### God nodes (high fan-in — changes ripple widely)
+
+- **`LoggingService`** — central logging. Memory buffer (max 1000, FIFO) in `__DEV__`, `LogFileManager` file writes in prod. `LoggingService.destroy()` on app unmount (timer leak). DiagnosticPanel: Settings → 5 taps on version.
+- **`useTheme` / `ThemeContext`** — dark mode, color palette, font scaling; consumed by 100+ components.
+- **`ProductStorage`** — Supabase facade for products; all errors typed via `ErrorCode`.
+- **`Product` type** — shared shape across the app.
+
+### OCR pipeline stages
+
+1. `prepareImageForOCR` (preprocess/normalize) → 2. `recognizeText` (ML Kit) → 3. `parseExpirationDates` (regex + scoring) → 4. `findRepresentativeMatch` (priority: standard > sequence > monthYear) → 5. `ocr.space` fallback if 0 dates → 6. `scoring.ts` (confidence + spatial anchoring) → 7. `DateMatch[]` with 0-100 confidence.
+
+## Conventions
+
+- Naming: PascalCase components, camelCase hooks/utils, SCREAMING_SNAKE constants.
+- Path alias: `@/*` → repo root (both `tsconfig.json` and jest `moduleNameMapper`).
+- Every `.ts/.tsx` carries a CodeDNA header comment (`exports` / `used_by` / `rules`). Preserve and update it when editing. Guide: `CODEDNA-GUIDE.md`.
+- Commits: Conventional (`feat/fix/docs/refactor/chore`), atomic per task, no force-push.
+- After code changes: run `python -m graphify update .`.
+- Language: codebase mixes Italian (user-facing strings, comments) and English (identifiers). Standardization is a pending owner decision — match the file you're in.
+
+## Testing
+
+- Jest + `jest-expo` preset + React Native Testing Library. Config `jest.config.js`, global mocks `jest.setup.js`. `testMatch`: `**/__tests__/**/*.(test|spec).*`.
+- Patterns: AAA, factory functions, deferred promise for React act() batching.
+- **Mock hoisting gotcha**: `jest.mock(mod, factory)` runs before any `const mockX = jest.fn()` later in the file (Babel hoists imports above). Declare `jest.fn()` inline inside the factory, then grab typed refs via `import * as X from 'module'; const mockFn = X.fn as jest.Mock` AFTER the mock. Working examples: `app/__tests__/feedback.test.tsx`, `hooks/__tests__/useCamera.test.ts`.
+
+## Security
+
+- Supabase anon key + OneSignal app_id + hCaptcha sitekey are public/safe. Service-role key and OneSignal REST key are server-side only (Edge Functions / Supabase secrets), never in client.
+- Auth endpoints rate-limited 5 req/IP per 15 min.
+- After password change: `clearCachedSession()` to invalidate JWT cache.
+- RLS enforced on all user tables; migrations in `supabase/migrations/` include security-hardening passes.
+
+## Reference docs
+
+- `.planning/ARCHITECTURE.md` — layers, data-flow diagrams, pattern rationale (13+ documented abstractions)
+- `.planning/STATE.md`, `.planning/SESSIONS.md` — milestone log, fix history, decision rationale (session-specific status lives here, not in this file)
+- `.planning/{STACK,STRUCTURE,INTEGRATIONS,TESTING,CONVENTIONS}.md`
+- `graphify-out/<date>/GRAPH_REPORT.md` — god nodes ranked by betweenness, communities
+- `AGENTS.md` — graphify-first mandate (applies to all agents)

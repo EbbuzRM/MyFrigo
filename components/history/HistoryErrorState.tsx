@@ -20,7 +20,7 @@ interface HistoryErrorStateProps {
 /**
  * Componente per lo stato di errore della schermata History
  */
-export function HistoryErrorState({ isDarkMode, error, onRetry }: HistoryErrorStateProps) {
+export function HistoryErrorState({ error, onRetry }: HistoryErrorStateProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.errorText}>{error}</Text>

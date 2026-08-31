@@ -26,12 +26,11 @@ interface ThemeColors {
 }
 
 /**
- * Creates ProductCard styles based on theme
- * @param {boolean} isDarkMode - Whether dark mode is enabled
- * @param {ThemeColors} colors - Theme colors object
- * @returns {StyleSheet.NamedStyles} Compiled styles
+ * Creates ProductCard styles. Signature keeps `isDarkMode`/`colors` for call-site
+ * compatibility; current styles are theme-independent (colors are applied inline
+ * by the component via useTheme).
  */
-export const getProductCardStyles = (isDarkMode: boolean, colors: ThemeColors) =>
+export const getProductCardStyles = (_isDarkMode: boolean, _colors: ThemeColors) =>
   StyleSheet.create({
     card: {
       borderRadius: 16,

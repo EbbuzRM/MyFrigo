@@ -7,7 +7,7 @@
 // message: 
 
 import React, { useCallback } from 'react';
-import { View, Text, Switch, ActivityIndicator, StyleSheet } from 'react-native';
+import { Switch, ActivityIndicator } from 'react-native';
 import { SettingsCard } from '@/components/SettingsCard';
 import { SettingsSection } from './SettingsSection';
 import { useTheme } from '@/context/ThemeContext';
