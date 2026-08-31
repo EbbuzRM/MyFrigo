@@ -873,7 +873,7 @@ describe('AuthContext', () => {
           expect.stringContaining('/functions/v1/revoke-user-sessions'),
           expect.objectContaining({
             method: 'POST',
-            body: JSON.stringify({ user_id: 'user-123' }),
+            body: '{}',
           })
         );
       });

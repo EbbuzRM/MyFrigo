@@ -853,6 +853,7 @@ describe('ForgotPassword', () => {
       await waitFor(() => {
         expect(mockFunctionsInvoke).toHaveBeenCalledWith('e2e-otp', {
           body: { email: 'user@example.com', action: 'generate-recovery-token' },
+          headers: { 'x-e2e-secret': expect.any(String) },
         });
         expect(mockResetPasswordForEmail).not.toHaveBeenCalled();
       });

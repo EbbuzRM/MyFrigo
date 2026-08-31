@@ -158,18 +158,18 @@
     "uuid": "^14.0.0",
     "tar": "^7.5.10",
     "lodash.get": "^4.4.2",
-    "postcss": "^8.5.10",
-    "brace-expansion": "^2.0.3",
+    "postcss": "^8.5.26",
+    "brace-expansion": "^2.1.4",
+    "nanoid": "^3.3.18",
     "minimatch": "^9.0.7",
-    "ajv": "^8.17.2",
     "flatted": "^3.4.2",
     "picomatch": "^2.3.2",
     "path-to-regexp": "^8.3.1",
     "undici": "^6.23.1",
     "yaml": "^2.8.3",
     "js-yaml": "^3.14.2",
-    "hono": "^4.12.14",
-    "@hono/node-server": "^1.19.13",
+    "hono": "^4.13.5",
+    "@hono/node-server": "^1.19.15",
     "@tootallnate/once": "^3.0.1"
   }
 }

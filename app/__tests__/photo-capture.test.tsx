@@ -83,7 +83,7 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-jest.mock('@react-navigation/native', () => ({
+jest.mock('expo-router/build/react-navigation/native', () => ({
   useIsFocused: jest.fn(),
 }));
 
@@ -119,7 +119,7 @@ import React from 'react';
 import { render, act, waitFor, screen, fireEvent } from '@testing-library/react-native';
 import PhotoCaptureScreen from '../photo-capture';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router/build/react-navigation/native';
 import { useCamera } from '@/hooks/useCamera';
 import { usePhotoActions } from '@/hooks/usePhotoActions';
 import { useTheme } from '@/context/ThemeContext';

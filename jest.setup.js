@@ -208,6 +208,20 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 
+// Mock @hcaptcha/react-native-hcaptcha (ships untranspiled ESM + native WebView; used by LoginForm)
+jest.mock('@hcaptcha/react-native-hcaptcha', () => {
+  const React = require('react');
+  const ConfirmHcaptcha = React.forwardRef((_props, ref) => {
+    React.useImperativeHandle(ref, () => ({
+      show: jest.fn(),
+      hide: jest.fn(),
+    }));
+    return null;
+  });
+  ConfirmHcaptcha.displayName = 'ConfirmHcaptcha';
+  return { __esModule: true, default: ConfirmHcaptcha };
+});
+
 // Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => ({
   FontAwesome: 'FontAwesome',

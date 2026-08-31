@@ -73,5 +73,18 @@ export default tseslint.config(
         version: "detect"
       }
     }
+  },
+  {
+    // Test files: require() is needed for the mock-hoisting pattern (see CLAUDE.md),
+    // and `any` is acceptable for mock casts / typed refs.
+    files: [
+      "**/__tests__/**",
+      "**/*.{test,spec}.{js,jsx,ts,tsx}",
+      "jest.setup.js"
+    ],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-explicit-any": "off"
+    }
   }
 );

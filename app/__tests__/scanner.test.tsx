@@ -40,8 +40,8 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-// Mock di @react-navigation/native
-jest.mock('@react-navigation/native', () => ({
+// Mock di useIsFocused (importato dal fork expo-router in app/scanner.tsx)
+jest.mock('expo-router/build/react-navigation/native', () => ({
   useIsFocused: jest.fn(() => true),
 }));
 
