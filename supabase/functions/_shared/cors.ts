@@ -1,7 +1,7 @@
 // _shared/cors.ts — shared CORS headers for all edge functions.
 //
 // exports: corsHeaders, handlePreflight
-// used_by: ocr-proxy, send-feedback, ensure-profile, revoke-user-sessions
+// used_by: ocr-proxy, send-feedback, revoke-user-sessions
 // rules:   Keep the header set identical across functions so the client never
 //          hits a preflight mismatch. Origin stays '*' because the caller is a
 //          native app (no browser origin); authorization is still required.

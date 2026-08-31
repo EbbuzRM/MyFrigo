@@ -1,8 +1,7 @@
 // _shared/auth.ts — request authentication helpers for edge functions.
 //
 // exports: requireUser, requireSecret, AuthedUser, UnauthorizedError
-// used_by: ocr-proxy, send-feedback, ensure-profile, revoke-user-sessions,
-//          delete-all-users, e2e-otp
+// used_by: ocr-proxy, send-feedback, revoke-user-sessions, delete-all-users, e2e-otp
 // rules:   - Functions that act on behalf of a signed-in user MUST call
 //            `requireUser` and use the returned id/email — never an id taken
 //            from the request body (prevents IDOR / privilege escalation).
