@@ -9,7 +9,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Resend } from 'npm:resend@4'
-import { decode } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
+import { decodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 import { requireUser, UnauthorizedError } from '../_shared/auth.ts'
 
@@ -75,7 +75,7 @@ serve(async (req: Request) => {
           headers: jsonHeaders,
         })
       }
-      const fileContent = decode(match[2])
+      const fileContent = decodeBase64(match[2])
       if (fileContent.byteLength > MAX_SCREENSHOT_BYTES) {
         return new Response(JSON.stringify({ error: 'Screenshot troppo grande.' }), {
           status: 413,
