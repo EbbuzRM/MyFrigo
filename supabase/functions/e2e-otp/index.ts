@@ -8,21 +8,32 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-27 | codedna-cli | initial creation
 // message:
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from '@supabase/supabase-js'
+import { requireSecret, UnauthorizedError } from '../_shared/auth.ts'
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS pre-flight
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-e2e-secret',
       },
     })
   }
 
   try {
+    // Hard gate: this function mints password-recovery tokens for arbitrary
+    // emails, so it must never be reachable with just the public anon key.
+    if ((Deno.env.get('ENVIRONMENT') ?? 'production').toLowerCase() === 'production') {
+      return new Response(JSON.stringify({ error: 'Disabled in this environment' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    requireSecret(req, 'x-e2e-secret', 'E2E_FUNCTION_SECRET')
+
     const { email, action } = await req.json()
 
     if (action !== 'generate-recovery-token') {
@@ -89,7 +100,7 @@ serve(async (req) => {
 
     // Supabase returns the recovery token hash as `hashed_token`.
     // Some action links also include `token_hash`, so keep URL parsing as a fallback.
-    let tokenHash = data.properties?.hashed_token
+    let tokenHash: string | undefined = data.properties?.hashed_token
     if (!tokenHash && actionLink) {
       const url = new URL(actionLink)
       tokenHash = url.searchParams.get('token_hash') ?? undefined
@@ -107,6 +118,7 @@ serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (err) {
+    if (err instanceof UnauthorizedError) return err.response
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     console.error('Unexpected error:', errorMessage)
     return new Response(JSON.stringify({ error: errorMessage }), {

@@ -109,6 +109,7 @@ export default function ForgotPassword() {
 
         const { data: otpData, error: otpError } = await supabase.functions.invoke('e2e-otp', {
           body: { email: email.trim().toLowerCase(), action: 'generate-recovery-token' },
+          headers: { 'x-e2e-secret': process.env.EXPO_PUBLIC_E2E_FUNCTION_SECRET ?? '' },
         });
 
         if (otpError) {

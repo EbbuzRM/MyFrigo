@@ -1,141 +1,149 @@
-// index.ts — index module.
+// send-feedback/index.ts — receives in-app feedback, stores an optional
+// screenshot in Storage, and emails it to the maintainer via Resend.
 //
 // exports: none
-// used_by: none
-// rules:   none
-// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
+// used_by: app/feedback.tsx
+// rules:   - Requires a valid Supabase user JWT (see _shared/auth); config.toml sets verify_jwt = true.
+//          - feedbackText is user-controlled and ends up in an HTML email — it MUST be escaped.
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
-import { decode } from "https://deno.land/std@0.208.0/encoding/base64.ts";
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Resend } from 'npm:resend@4'
+import { decode } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
+import { requireUser, UnauthorizedError } from '../_shared/auth.ts'
 
-// Inizializza il client di Resend con la chiave API sicura
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const resend = new Resend(RESEND_API_KEY)
 
-// Indirizzo da cui verranno inviate le email (richiesto da Resend)
 const FROM_EMAIL = 'MyFrigo Feedback <onboarding@resend.dev>'
-// Il tuo indirizzo email dove riceverai i feedback
-const TO_EMAIL = 'borlo92@gmail.com'
-
-// Nome del bucket di Supabase Storage
+const TO_EMAIL = Deno.env.get('FEEDBACK_TO_EMAIL') ?? 'borlo92@gmail.com'
 const STORAGE_BUCKET = 'feedback-screenshots'
 
-serve(async (req) => {
-  // Gestisce la richiesta CORS pre-flight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { 
-      headers: { 
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' 
-      } 
-    })
-  }
+const MAX_FEEDBACK_CHARS = 5000
+const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
+const jsonHeaders = { 'Content-Type': 'application/json', ...corsHeaders }
+
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+serve(async (req: Request) => {
+  const preflight = handlePreflight(req)
+  if (preflight) return preflight
 
   try {
+    const user = await requireUser(req)
+
     const { feedbackText, screenshot } = await req.json()
-    let screenshotUrl = null
 
-    if (!feedbackText) {
-      throw new Error('Il testo del feedback è mancante.')
+    if (typeof feedbackText !== 'string' || feedbackText.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Il testo del feedback è mancante.' }), {
+        status: 400,
+        headers: jsonHeaders,
+      })
     }
+    const text = feedbackText.slice(0, MAX_FEEDBACK_CHARS)
 
-    // Se è presente uno screenshot, caricalo su Supabase Storage
+    let screenshotUrl: string | null = null
+
     if (screenshot) {
-      // Crea un client Supabase con i permessi di servizio per l'upload
+      if (typeof screenshot !== 'string') {
+        return new Response(JSON.stringify({ error: 'Formato screenshot non valido.' }), {
+          status: 400,
+          headers: jsonHeaders,
+        })
+      }
+      const match = screenshot.match(/^data:([^;]+);base64,(.+)$/)
+      if (!match) {
+        return new Response(JSON.stringify({ error: 'Formato screenshot non valido. Atteso un data URI base64.' }), {
+          status: 400,
+          headers: jsonHeaders,
+        })
+      }
+      const contentType = match[1]
+      if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
+        return new Response(JSON.stringify({ error: 'Tipo di immagine non supportato.' }), {
+          status: 400,
+          headers: jsonHeaders,
+        })
+      }
+      const fileContent = decode(match[2])
+      if (fileContent.byteLength > MAX_SCREENSHOT_BYTES) {
+        return new Response(JSON.stringify({ error: 'Screenshot troppo grande.' }), {
+          status: 413,
+          headers: jsonHeaders,
+        })
+      }
+
       const supabaseAdmin = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       )
 
-      // Estrai il tipo di contenuto e i dati base64
-      const match = screenshot.match(/^data:(.+);base64,(.+)$/);
-      if (!match) {
-        throw new Error('Formato screenshot non valido. Atteso un data URI base64.');
-      }
-      const contentType = match[1];
-      const base64Data = match[2];
-      const fileContent = decode(base64Data);
+      const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg'
+      const fileName = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`
 
-      const fileName = `feedback-${new Date().toISOString()}.jpg`
-
-      // Esegui l'upload
-      const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from(STORAGE_BUCKET)
-        .upload(fileName, fileContent, {
-          contentType: contentType || 'image/jpeg',
-          upsert: true,
-        })
+        .upload(fileName, fileContent, { contentType, upsert: false })
 
       if (uploadError) {
-        console.error('Errore durante l\'upload dello screenshot:', uploadError)
-        throw new Error(`Impossibile caricare lo screenshot: ${uploadError.message}`)
+        console.error('screenshot upload failed:', uploadError.message)
+        return new Response(JSON.stringify({ error: 'Impossibile caricare lo screenshot.' }), {
+          status: 502,
+          headers: jsonHeaders,
+        })
       }
-      console.log('Upload completato con successo:', uploadData)
 
-      // Ottieni l\'URL pubblico del file caricato
-      const { data: publicUrlData } = supabaseAdmin.storage
-        .from(STORAGE_BUCKET)
-        .getPublicUrl(fileName)
-      
-      console.log('Dati URL pubblico:', publicUrlData)
-
-      // Controlla se l\'URL pubblico è valido
-      if (!publicUrlData || !publicUrlData.publicUrl) {
-        throw new Error('URL pubblico non generato dopo l\'upload.')
-      }
-      
-      screenshotUrl = publicUrlData.publicUrl
-      console.log('URL dello screenshot impostato:', screenshotUrl)
+      const { data: publicUrlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName)
+      screenshotUrl = publicUrlData?.publicUrl ?? null
     }
 
-    // Prepara il corpo dell'email
     let emailHtml = `
       <h1>Nuovo Feedback Ricevuto</h1>
-      <p>Hai ricevuto un nuovo feedback da un utente dell'app MyFrigo:</p>
+      <p>Da utente <code>${escapeHtml(user.id)}</code>${user.email ? ` (${escapeHtml(user.email)})` : ''}:</p>
       <hr>
-      <p><strong>${feedbackText.replace(/\n/g, '<br>')}</strong></p>
+      <p>${escapeHtml(text).replace(/\n/g, '<br>')}</p>
       <hr>
     `
     if (screenshotUrl) {
-      emailHtml += `
-        <h2>Screenshot Allegato:</h2>
-        <img src="${screenshotUrl}" alt="Screenshot del feedback" style="max-width: 100%; border: 1px solid #ccc;"/>
-      `
+      emailHtml += `<h2>Screenshot</h2><p><a href="${escapeHtml(screenshotUrl)}">${escapeHtml(screenshotUrl)}</a></p>`
     }
-    emailHtml += `<p><small>Email inviata automaticamente tramite Supabase Edge Function.</small></p>`
+    emailHtml += `<p><small>Inviata automaticamente tramite Supabase Edge Function.</small></p>`
 
-    // Invia l'email usando Resend
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [TO_EMAIL],
       subject: 'Nuovo Feedback da MyFrigo App',
       html: emailHtml,
     })
 
-    // Se Resend restituisce un errore, loggalo e invialo al client
     if (error) {
-      console.error({ error })
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
+      console.error('resend error:', error)
+      return new Response(JSON.stringify({ error: 'Invio email non riuscito.' }), {
+        status: 502,
+        headers: jsonHeaders,
       })
     }
 
-    // Se tutto va a buon fine, restituisce un messaggio di successo
     return new Response(JSON.stringify({ message: 'Feedback inviato con successo!' }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders,
     })
-
   } catch (err) {
-    // Gestisce altri errori
-    console.error(err)
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
+    if (err instanceof UnauthorizedError) return err.response
+    console.error('send-feedback unexpected error:', err)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: jsonHeaders,
     })
   }
 })

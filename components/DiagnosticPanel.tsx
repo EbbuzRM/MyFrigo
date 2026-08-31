@@ -88,6 +88,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
             try {
               const { data, error } = await supabase.functions.invoke('delete-all-users', {
                 method: 'POST',
+                headers: { 'x-admin-secret': process.env.EXPO_PUBLIC_ADMIN_TASK_SECRET ?? '' },
               });
               if (error) throw error;
               Alert.alert('Successo', 'Tutti gli utenti di test sono stati rimossi.');

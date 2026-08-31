@@ -1,67 +1,52 @@
-// revoke-user-sessions/index.ts — Edge Function to revoke all sessions for a user.
+// revoke-user-sessions/index.ts — revokes every session for the CALLER.
 //
 // exports: serve | function
-// used_by: context\AuthContext.tsx (after password change)
-// rules:   - Requires service_role key (server-side only, never expose to client)
-//          - Revokes ALL sessions globally for the specified user
-//          - Called after successful password change to invalidate other devices
+// used_by: context/AuthContext.tsx (after a password change)
+// rules:   - Requires the service_role key (server-side only, never exposed to the client).
+//          - The target user is taken from the caller's JWT, never from the request
+//            body — otherwise any signed-in user could force-log-out anyone.
+//          - config.toml sets verify_jwt = true.
 // agent:   qwen3.7-plus | 2026-08-27 | initial creation
-// message:
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from '@supabase/supabase-js'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
+import { requireUser, UnauthorizedError } from '../_shared/auth.ts'
 
-serve(async (req) => {
-  // Handle CORS pre-flight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
-    })
-  }
+const jsonHeaders = { 'Content-Type': 'application/json', ...corsHeaders }
+
+serve(async (req: Request) => {
+  const preflight = handlePreflight(req)
+  if (preflight) return preflight
 
   try {
-    const { user_id } = await req.json()
+    const user = await requireUser(req)
 
-    if (!user_id || typeof user_id !== 'string') {
-      return new Response(JSON.stringify({ error: 'user_id is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Create admin client with service role key
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
+      { auth: { persistSession: false } },
     )
 
-    // Revoke all sessions for user (global scope)
-    const { error } = await supabaseAdmin.auth.admin.signOut(user_id, { scope: 'global' })
+    const { error } = await supabaseAdmin.auth.admin.signOut(user.id, { scope: 'global' })
 
     if (error) {
       console.error('Error revoking sessions:', error.message)
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ error: 'Could not revoke sessions' }), {
+        status: 502,
+        headers: jsonHeaders,
       })
     }
 
-    console.log(`Successfully revoked all sessions for user: ${user_id}`)
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    console.log(`Revoked all sessions for user: ${user.id}`)
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders })
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    console.error('Unexpected error:', errorMessage)
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    if (err instanceof UnauthorizedError) return err.response
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    console.error('Unexpected error:', message)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders,
     })
   }
 })

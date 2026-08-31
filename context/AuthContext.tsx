@@ -284,13 +284,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (currentSession) {
           const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
           if (supabaseUrl) {
+            // The target user is derived server-side from this JWT — no body needed.
             const response = await fetch(`${supabaseUrl}/functions/v1/revoke-user-sessions`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${currentSession.access_token}`,
               },
-              body: JSON.stringify({ user_id: user.id }),
+              body: '{}',
             });
             if (!response.ok) {
               const errorBody = await response.text();

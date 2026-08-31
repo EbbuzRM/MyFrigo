@@ -1,0 +1,43 @@
+# Supabase project configuration.
+# Only the sections this project actively manages are listed; the CLI applies
+# defaults for everything else. Committed so edge-function auth posture is
+# reviewable and reproducible instead of living only in the dashboard.
+
+project_id = "tfhjupcybietwzmnpwfh"
+
+# ── Edge functions ───────────────────────────────────────────────────────────
+# verify_jwt = true  -> platform rejects the request unless it carries a valid
+#                       Supabase JWT (defence-in-depth on top of the in-code
+#                       requireUser() check).
+# verify_jwt = false -> function does its own auth (shared secret / cron secret).
+# enabled = false    -> `supabase functions deploy` skips it.
+
+[functions.ocr-proxy]
+verify_jwt = true
+
+[functions.send-feedback]
+verify_jwt = true
+
+[functions.ensure-profile]
+verify_jwt = true
+
+[functions.update-profile]
+verify_jwt = true
+
+[functions.revoke-user-sessions]
+verify_jwt = true
+
+[functions.send-expiration-notifications]
+# Invoked by the daily cron with CRON_SECRET / FUNCTION_SECRET_KEY, not a user JWT.
+verify_jwt = false
+
+[functions.delete-all-users]
+# DESTRUCTIVE dev-only task. Gated by ADMIN_TASK_SECRET + ENVIRONMENT check in code.
+enabled = false
+verify_jwt = false
+
+[functions.e2e-otp]
+# Mints password-recovery tokens for E2E tests. Gated by E2E_FUNCTION_SECRET +
+# ENVIRONMENT check in code. MUST NOT be enabled on the production project.
+enabled = false
+verify_jwt = false
