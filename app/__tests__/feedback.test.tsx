@@ -39,7 +39,7 @@ import * as ImagePicker from 'expo-image-picker';
 const mockLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.Mock;
 const mockRequestMediaLibraryPermissions = ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
 
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   readAsStringAsync: jest.fn(() => Promise.resolve('base64EncodedData')),
 }));
 

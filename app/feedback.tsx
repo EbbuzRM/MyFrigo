@@ -27,7 +27,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+// legacy API: readAsStringAsync was removed from the main entrypoint in SDK 54
+import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from '@/context/ThemeContext';
 import { Toast } from '@/components/Toast';
 import { supabase } from '@/services/supabaseClient';
