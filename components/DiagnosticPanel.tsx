@@ -86,7 +86,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
           style: 'destructive',
           onPress: async () => {
             try {
-              const { data, error } = await supabase.functions.invoke('delete-all-users', {
+              const { error } = await supabase.functions.invoke('delete-all-users', {
                 method: 'POST',
                 headers: { 'x-admin-secret': process.env.EXPO_PUBLIC_ADMIN_TASK_SECRET ?? '' },
               });

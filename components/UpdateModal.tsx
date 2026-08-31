@@ -34,7 +34,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
 }) => {
   const { isDarkMode } = useTheme();
   const styles = useMemo(() => createUpdateModalStyles(isDarkMode), [isDarkMode]);
-  const { progressAnimation, animateProgress, animateFadeIn, resetAnimations } = useUpdateAnimation();
+  const { progressAnimation, animateProgress, resetAnimations } = useUpdateAnimation();
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);

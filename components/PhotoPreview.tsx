@@ -67,7 +67,6 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
   onEditDate,
   captureMode,
 }) => {
-  const isOCRProcessing = ocrProgress.isProcessing;
   const isExpirationMode = captureMode === 'expirationDateOnly';
 
   return (

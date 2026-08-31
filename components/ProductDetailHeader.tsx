@@ -22,7 +22,7 @@ export const ProductDetailHeader: React.FC<ProductDetailHeaderProps> = memo(({ p
   const { isDarkMode } = useTheme();
   const { getCategoryById } = useCategories();
   const styles = getStyles(isDarkMode);
-  const [imageLoading, setImageLoading] = useState(false);
+  const [, setImageLoading] = useState(false);
 
   const categoryInfo = product.category ? getCategoryById(product.category) : null;
   const displayName = typeof product.name === 'string' ? product.name : 'Nome non disponibile';

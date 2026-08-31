@@ -76,7 +76,8 @@ export default tseslint.config(
   },
   {
     // Test files: require() is needed for the mock-hoisting pattern (see CLAUDE.md),
-    // and `any` is acceptable for mock casts / typed refs.
+    // `any` is fine for mock casts, and unused symbols in mock factories / partial
+    // render destructures are not worth chasing.
     files: [
       "**/__tests__/**",
       "**/*.{test,spec}.{js,jsx,ts,tsx}",
@@ -84,7 +85,8 @@ export default tseslint.config(
     ],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
-      "@typescript-eslint/no-explicit-any": "off"
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off"
     }
   }
 );

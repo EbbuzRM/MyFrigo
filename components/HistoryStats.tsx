@@ -12,7 +12,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react-native';
 import { StatsCard } from './StatsCard';
-import { useTheme } from '@/context/ThemeContext';
 import { router } from 'expo-router';
 import { Product } from '@/types/Product';
 
@@ -24,7 +23,6 @@ interface HistoryStatsProps {
 }
 
 export function HistoryStats({ totalProducts, expiredProducts, consumedProducts, allProducts: _allProducts }: HistoryStatsProps) {
-  const theme = useTheme();
   const wastePercentage = totalProducts > 0 ? Math.round((expiredProducts / totalProducts) * 100) : 0;
 
   const handlePress = (type: 'consumed' | 'expired' | 'all', title: string) => {

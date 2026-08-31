@@ -15,22 +15,13 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { LoggingService } from '@/services/LoggingService';
 import { supabase } from '@/services/supabaseClient';
-import { FontAwesome } from '@expo/vector-icons';
-
-// Componente per il check di validazione
-const ValidationCheck = ({ text, isValid }: { text: string; isValid: boolean }) => (
-  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-    <FontAwesome name={isValid ? 'check-circle' : 'times-circle'} size={16} color={isValid ? 'green' : 'red'} />
-    <Text style={{ marginLeft: 8, color: isValid ? 'green' : 'red' }}>{text}</Text>
-  </View>
-);
 
 export default function ProfileScreen() {
-  const { user, profile, refreshUserProfile, changePassword, signOut } = useAuth();
+  const { user, profile, refreshUserProfile, signOut } = useAuth();
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [loading, setLoading] = useState(false); // Inizia come false, i dati arrivano dal contesto
+  const [loading] = useState(false); // Inizia come false, i dati arrivano dal contesto
   const [saving, setSaving] = useState(false);
 
 

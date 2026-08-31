@@ -12,7 +12,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { PasswordValidation } from '@/hooks/usePasswordValidation';
-import { useTheme } from '@/context/ThemeContext';
 
 interface ValidationCheckProps {
   isValid: boolean;
@@ -20,7 +19,6 @@ interface ValidationCheckProps {
 }
 
 const ValidationCheck: React.FC<ValidationCheckProps> = ({ isValid, text }) => {
-  const { isDarkMode } = useTheme();
 
   return (
     <View style={styles.validationCheckContainer}>
@@ -48,7 +46,6 @@ export const PasswordValidationDisplay: React.FC<PasswordValidationDisplayProps>
   validation,
   visible
 }) => {
-  const { isDarkMode } = useTheme();
 
   if (!visible) return null;
 

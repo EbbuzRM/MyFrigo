@@ -49,7 +49,7 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
       }
       setCategoryName('');
       onClose();
-    } catch (error: unknown) {
+    } catch {
       Alert.alert('Errore', 'Si è verificato un errore durante la creazione della categoria.');
     } finally {
       setIsCreating(false);
@@ -110,12 +110,11 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
 
 export default function ManageCategoriesScreen() {
   const { isDarkMode } = useTheme();
-  const { categories, addCategory, deleteCategory, updateCategory } = useCategories();
+  const { categories, deleteCategory, updateCategory } = useCategories();
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
   const [isEditModalVisible, setEditModalVisible] = useState(false);
   const [editCategoryNameInput, setEditCategoryNameInput] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [createCategoryName, setCreateCategoryName] = useState('');
   const editInputRef = useRef<TextInput>(null);
 
   const customCategories = categories.filter(sc => !PRODUCT_CATEGORIES.some(dc => dc.id === sc.id));
@@ -130,23 +129,6 @@ export default function ManageCategoriesScreen() {
         { text: "Elimina", style: "destructive", onPress: () => deleteCategory(categoryId) }
       ]
     );
-  };
-
-  const handleCreate = async () => {
-    try {
-      const newCategory = await addCategory(createCategoryName);
-      if (newCategory) {
-        // Mostra un messaggio aggiuntivo se l'icona non è stata trovata
-        if (newCategory.iconNotFound) {
-          // Il messaggio principale è già mostrato dal context, ma possiamo aggiungere un feedback visivo
-          LoggingService.info('ManageCategories', `Category "${newCategory.name}" created without icon`);
-        }
-      }
-      setCreateCategoryName('');
-      setCreateModalVisible(false);
-    } catch (error: unknown) {
-      Alert.alert('Errore', 'Si è verificato un errore durante la creazione della categoria.');
-    }
   };
 
   const handleEdit = (categoryId: string, currentName: string) => {

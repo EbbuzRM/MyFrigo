@@ -30,6 +30,8 @@ interface CameraViewProps {
   onTakePicture: () => void;
   /** Callback when gallery button is pressed */
   onPickImage: () => void;
+  /** Whether the camera stream should be running (tie to screen focus) */
+  isActive?: boolean;
 }
 
 /**
@@ -43,6 +45,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
   captureMode,
   onTakePicture,
   onPickImage,
+  isActive = true,
 }) => {
   const isExpirationDateMode = captureMode === 'expirationDateOnly';
 
@@ -52,6 +55,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
         ref={cameraRef}
         style={styles.camera}
         facing="back"
+        active={isActive}
         accessibilityLabel="Vista fotocamera"
         accessibilityHint="Inquadra il prodotto e tocca il pulsante centrale per scattare la foto"
         {...(isExpirationDateMode && {

@@ -90,7 +90,7 @@ export default function SignupScreen() {
   }, [formData, clearErrors, validateForm, submitSignup, captchaToken, sitekey]);
 
   const isDisabled = !isFormValid(formData) || isLoading;
-  const { UI_LABELS, ALERT_TITLES, PASSWORD_VALIDATION } = AUTH_CONSTANTS;
+  const { UI_LABELS, PASSWORD_VALIDATION } = AUTH_CONSTANTS;
 
   return (
     <View style={styles.container}>

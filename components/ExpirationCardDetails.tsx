@@ -63,8 +63,6 @@ export const ExpirationCardDetails = React.memo(({
     [isDarkMode]
   );
 
-  const textColor = isDarkMode ? '#8b949e' : '#64748B';
-
   return (
     <View style={styles.details}>
       <View style={styles.detailItem}>

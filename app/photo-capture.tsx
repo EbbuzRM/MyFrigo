@@ -50,8 +50,6 @@ const PhotoCaptureScreen: React.FC = memo(() => {
     return 'productPhoto';
   }, [params.captureMode]);
 
-  const productId = useMemo(() => params.productId as string | undefined, [params.productId]);
-
   // Initialize camera hook
   const {
     cameraRef,
@@ -62,7 +60,6 @@ const PhotoCaptureScreen: React.FC = memo(() => {
     requestGalleryPermission,
     takePicture,
     pickImage,
-    setIsProcessingImage,
   } = useCamera(captureMode);
 
   // Initialize photo actions hook
@@ -266,6 +263,7 @@ const PhotoCaptureScreen: React.FC = memo(() => {
         captureMode={captureMode}
         onTakePicture={handleTakePicture}
         onPickImage={handlePickImage}
+        isActive={isFocused}
       />
     </SafeAreaView>
   );

@@ -11,7 +11,6 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { useTheme } from '@/context/ThemeContext';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface TabBarRoute {
@@ -33,8 +32,6 @@ interface TabItemProps {
 }
 
 const AnimatedTabItem: React.FC<TabItemProps> = ({
-  route,
-  index,
   isFocused,
   label,
   onPress,
@@ -43,7 +40,6 @@ const AnimatedTabItem: React.FC<TabItemProps> = ({
   tabBarAccessibilityLabel,
   tabBarTestID,
 }) => {
-  const { isDarkMode } = useTheme();
   const reducedMotion = useReducedMotion();
 
   // Hook chiamato sempre allo stesso livello - rispetta le Rules of Hooks

@@ -102,7 +102,7 @@ export const ProductPhotoButton = React.memo(({
   testID = 'photo-capture-button',
 }: ProductPhotoButtonProps) => {
   const styles = getPhotoCaptureStyles(isDarkMode);
-  const [imageLoading, setImageLoading] = useState(false);
+  const [, setImageLoading] = useState(false);
 
   const handlePress = useCallback(() => {
     onPhotoPress();
