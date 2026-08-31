@@ -24,7 +24,7 @@ export const cleanBlockText = (text: string): string => {
         .replace(/\b(\d{2}0)[Gg](\d{2})\b/g, '$19$2')
         .replace(/\b(\d{1,2})~(\d{2})(\d{2})\b/g, '$1$2$3')
         .replace(/\b(\d{1,2})[/\\](\d{2})1(\d{4})\b/g, '$1.$2.$3')
-        .replace(/\b[A-ZÀ-Ý]{1,2}(?=\d{1,2}\s*[.\/\\ -]\s*\d{1,2}\s*[.\/\\ -]\s*\d{2,4}\b)/g, '')
+        .replace(/\b[A-ZÀ-Ý]{1,2}(?=\d{1,2}\s*[./\\ -]\s*\d{1,2}\s*[./\\ -]\s*\d{2,4}\b)/g, '')
         .replace(/(?<=\d)O(?=\d)|(?<=\d)O\b|\bO(?=\d)/g, '0')
         .replace(/(?<=\d)S(?=\d)|(?<=\d)S\b|\bS(?=\d)/g, '5')
         .replace(/(?<=\d)B(?=\d)|(?<=\d)B\b|\bB(?=\d)/g, '8')
@@ -41,7 +41,7 @@ export const cleanBlockText = (text: string): string => {
         .replace(/(\d{2}\/\d{3})\s+(\d{1})/g, '$1$2')
         .replace(/(\d{2})\s*\/\s*(\d{2})\s+(\d{1,2})/g, '$1/$2$3')
         // Normalize spaced dates: "06 05 26" or "06 . 05 . 26" or "06/05/26" -> "06.05.26"
-        .replace(/\b(\d{1,2})\s*[.\/\\ -]\s*(\d{1,2})\s*[.\/\\ -]\s*(\d{2,4})\b/g, '$1.$2.$3')
+        .replace(/\b(\d{1,2})\s*[./\\ -]\s*(\d{1,2})\s*[./\\ -]\s*(\d{2,4})\b/g, '$1.$2.$3')
         // Remove noise dots that are not part of a date (e.g. "9636.759")
         .replace(/(?<!\b\d{1,2}\.\d{1,2})\.(?=\d{3,})/g, '');
 };

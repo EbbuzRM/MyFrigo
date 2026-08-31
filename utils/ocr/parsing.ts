@@ -112,10 +112,10 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
                       // within an already-extracted standard match value in this same block.
                       // This prevents the inner "08/26" of "15/08/26" from being added, while
                       // keeping a genuinely separate standalone "08/26" in another block.
-                      const myNormalized = m.replace(/[\s.\-\/\\]/g, '');
+                      const myNormalized = m.replace(/[\s.\-/\\]/g, '');
                       const isInnerOfStandard = matches.some(existing =>
                           !existing.isMonthYear &&
-                          existing.value.replace(/[\s.\-\/\\]/g, '').includes(myNormalized)
+                          existing.value.replace(/[\s.\-/\\]/g, '').includes(myNormalized)
                       );
                       return !isInnerOfStandard;
                   })

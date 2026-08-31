@@ -63,6 +63,9 @@ export default tseslint.config(
       "no-control-regex": "error",
       "require-yield": "error",
       "no-dupe-keys": "error",
+      // TypeScript already reports genuine redeclarations; the JS rule only fires
+      // on harmless clashes between imports and the react-native/browser global sets.
+      "no-redeclare": "off",
       "@typescript-eslint/ban-ts-comment": [
         "error",
         { "ts-ignore": true, "ts-nocheck": true }
@@ -75,9 +78,33 @@ export default tseslint.config(
     }
   },
   {
+    // Node config & script files — require() is a valid module system here,
+    // these never go through Metro.
+    files: [
+      "*.js",
+      "*.cjs",
+      "scripts/**/*.js",
+      "plugins/**/*.js",
+      "__mocks__/**/*.js"
+    ],
+    languageOptions: {
+      globals: { ...globals.node }
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off"
+    }
+  },
+  {
+    // Ambient type declarations: `any` is often the correct escape hatch here.
+    files: ["**/*.d.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off"
+    }
+  },
+  {
     // Test files: require() is needed for the mock-hoisting pattern (see CLAUDE.md),
-    // `any` is fine for mock casts, and unused symbols in mock factories / partial
-    // render destructures are not worth chasing.
+    // `any` / loose `Function` types are fine for mock casts, and unused symbols in
+    // mock factories / partial render destructures are not worth chasing.
     files: [
       "**/__tests__/**",
       "**/*.{test,spec}.{js,jsx,ts,tsx}",
@@ -86,7 +113,8 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "off"
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off"
     }
   }
 );

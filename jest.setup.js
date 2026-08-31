@@ -860,7 +860,7 @@ jest.mock('@/utils/dateUtils', () => ({
     PAST_DATE_FILTER_YEARS: 1,
   },
   parseDateFromString: jest.fn((dateString) => {
-    const match = dateString.toString().match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    const match = dateString.toString().match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})/);
     if (match) {
       const day = parseInt(match[1], 10);
       const month = parseInt(match[2], 10) - 1;

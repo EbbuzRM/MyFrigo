@@ -77,7 +77,7 @@ export class LogFileManager {
   async write(message: string): Promise<void> {
     if (!this.isInitialized || !this.logFile) return;
     try {
-      let content = this.logFile.exists ? await this.logFile.text() : '';
+      const content = this.logFile.exists ? await this.logFile.text() : '';
       const newContent = content + message + '\n';
       this.logFile.write(newContent, { encoding: 'utf8' as const });
       const fileInfo = this.logFile.info();
@@ -92,7 +92,7 @@ export class LogFileManager {
   async writeBatch(messages: string[]): Promise<void> {
     if (!this.isInitialized || !this.logFile || messages.length === 0) return;
     try {
-      let content = this.logFile.exists ? await this.logFile.text() : '';
+      const content = this.logFile.exists ? await this.logFile.text() : '';
       const newContent = content + messages.join('\n') + '\n';
       this.logFile.write(newContent, { encoding: 'utf8' as const });
       const fileInfo = this.logFile.info();

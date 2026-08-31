@@ -12,6 +12,7 @@
 import { IconLoader, IconData } from './IconLoader';
 import { IconMapper } from './IconMapper';
 import { LoggingService } from './LoggingService';
+import openmojiRaw from '../assets/data/openmoji.json';
 // Interfaccia base per la struttura dati OpenMoji
 interface OpenMojiIcon {
   annotation: string;
@@ -21,7 +22,7 @@ interface OpenMojiIcon {
   url?: string;
 }
 
-const openmojiData = require('../assets/data/openmoji.json') as OpenMojiIcon[];
+const openmojiData = openmojiRaw as unknown as OpenMojiIcon[];
 
 // Mappa di traduzione da categorie italiane a inglesi
 const TRANSLATION_MAP: Record<string, string> = {
@@ -65,13 +66,7 @@ export const IconService = {
   },
 
   loadLocalEmojiData(): OpenMojiIcon[] {
-    try {
-      const emojiData = require('../assets/data/openmoji.json');
-      return emojiData as OpenMojiIcon[];
-    } catch (error) {
-      LoggingService.error('IconService', 'Error loading local emoji data', error);
-      return [];
-    }
+    return openmojiData;
   },
 
   /**

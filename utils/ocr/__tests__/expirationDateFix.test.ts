@@ -46,7 +46,7 @@ describe('OCR expiration date fix (Bug A + Bug B)', () => {
         const blocks = [createBlock('15/08/26 L32762 10:63')];
         const { matches } = findAllMatches(blocks);
         // month-year "08/26" must NOT be present as a separate inner match
-        const innerMonthYear = matches.find(m => m.isMonthYear && m.value.replace(/[\s.\-\/\\]/g, '') === '0826');
+        const innerMonthYear = matches.find(m => m.isMonthYear && m.value.replace(/[\s.\-/\\]/g, '') === '0826');
         expect(innerMonthYear).toBeUndefined();
 
         const anchored = new Set<string>();
@@ -83,8 +83,8 @@ describe('OCR expiration date fix (Bug A + Bug B)', () => {
         ];
         const { matches } = findAllMatches(blocks);
         // Both a standard "15/08/26" and a legitimate month-year "08/26" should exist.
-        const hasStandard = matches.some(m => !m.isMonthYear && m.value.replace(/[\s.\-\/\\]/g, '') === '150826');
-        const hasShelfMonthYear = matches.some(m => m.isMonthYear && m.value.replace(/[\s.\-\/\\]/g, '') === '0826');
+        const hasStandard = matches.some(m => !m.isMonthYear && m.value.replace(/[\s.\-/\\]/g, '') === '150826');
+        const hasShelfMonthYear = matches.some(m => m.isMonthYear && m.value.replace(/[\s.\-/\\]/g, '') === '0826');
         expect(hasStandard).toBe(true);
         expect(hasShelfMonthYear).toBe(true);
 

@@ -23,6 +23,8 @@ export interface OneSignalUserData {
   lastName?: string;
 }
 
+// Heterogeneous fire-and-forget SDK calls; the queue never inspects the result.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OneSignalOp = () => Promise<any>;
 
 export class OneSignalService {

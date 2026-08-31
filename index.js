@@ -53,7 +53,7 @@ try {
   }
 } catch (e) {
   // Don't crash the app if logging fails
-  try { console.warn('Accessibility logging failed', e); } catch {}
+  try { console.warn('Accessibility logging failed', e); } catch { /* nothing else we can do */ }
 }
 
 // Importa expo-router dopo che l'ambiente è stato preparato

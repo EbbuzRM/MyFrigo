@@ -392,7 +392,7 @@ export function handleValidationError(
  */
 export function normalizeError(error: unknown): AppError {
   let code = ErrorCode.SYSTEM_ERROR;
-  let message = extractErrorMessage(error, 'Errore sconosciuto');
+  const message = extractErrorMessage(error, 'Errore sconosciuto');
   let details: Record<string, unknown> | undefined;
 
   if (error instanceof Error) {

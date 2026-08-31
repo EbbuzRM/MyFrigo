@@ -145,7 +145,7 @@ jest.mock('../../services/LoggingService', () => ({
 
 // Pull the test helpers for assertion purposes.
 import * as FileSystemModule from 'expo-file-system';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const helpers = (FileSystemModule as any).__testHelpers;
 const { fileSystem, directories, copyCalls, deleteCalls } = helpers;
 

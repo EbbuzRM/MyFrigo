@@ -20,7 +20,8 @@ const LOG_TAG = AUTH_CONSTANTS.LOG_TAGS.SIGNUP;
 // E2E test mode flag — checks build-time env var AND runtime Constants.extra
 // (so it works both when .env.e2e is used at build time and via app.config.js extra)
 const isE2ETest = (): boolean => {
-  if ((process as any).env?.EXPO_PUBLIC_E2E_TEST_MODE === 'true') return true;
+  const env = (process as { env?: Record<string, string | undefined> }).env;
+  if (env?.EXPO_PUBLIC_E2E_TEST_MODE === 'true') return true;
   try {
     return Constants.expoConfig?.extra?.e2eTestMode === true;
   } catch {

@@ -145,7 +145,7 @@ export function handleNotFoundError(error: unknown): AppError {
 export function handleGenericDatabaseError(error: unknown): AppError {
   let message = "Errore durante l'operazione sul database.";
   let code = ErrorCode.DATABASE_ERROR;
-  let details: Record<string, unknown> = {};
+  const details: Record<string, unknown> = {};
 
   // Check for PostgreSQL specific error
   if (hasErrorCode(error)) {

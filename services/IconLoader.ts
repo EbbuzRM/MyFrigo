@@ -13,6 +13,7 @@ import { supabase } from './supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { Database } from '@/types/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import openmojiRaw from '../assets/data/openmoji.json';
 
 export interface IconData {
   id: string;
@@ -71,19 +72,13 @@ export const IconLoader = {
   },
 
   async loadFromOpenMoji(category: string): Promise<IconData[]> {
-    try {
-      const openMojiData = require('../../assets/data/openmoji.json') as OpenMojiEmoji[];
-      const filtered = openMojiData.filter((emoji) => 
-        emoji.category === category
-      );
-      return filtered.map((emoji): IconData => ({
+    const openMojiData = openmojiRaw as unknown as OpenMojiEmoji[];
+    return openMojiData
+      .filter((emoji) => emoji.category === category)
+      .map((emoji): IconData => ({
         id: emoji.id,
         url: emoji.url,
         isValid: true,
       }));
-    } catch (error) {
-      LoggingService.error('IconLoader', 'Errore caricamento OpenMoji', error);
-      return [];
-    }
   },
 };

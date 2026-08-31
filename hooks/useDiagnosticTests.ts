@@ -35,6 +35,8 @@ export interface TestResult {
   success: boolean;
   duration: number;
   error?: string;
+  // Shape varies per test type (auth / db / performance / …); consumers narrow by test.id.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   category?: string;
 }
