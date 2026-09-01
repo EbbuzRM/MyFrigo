@@ -16,7 +16,6 @@ import React, { createContext, useContext, useEffect, useState, useRef, ReactNod
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUpdates, reloadAsync, fetchUpdateAsync } from 'expo-updates';
 import { UpdateService, UpdateInfo, UpdateSettings, UpdateEventEmitter } from '@/services/UpdateService';
-import { UpdateModal } from '@/components/UpdateModal';
 import { LoggingService } from '@/services/LoggingService';
 
 // Chiave per salvare le impostazioni di aggiornamento in AsyncStorage

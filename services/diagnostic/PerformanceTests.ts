@@ -9,7 +9,6 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { LoggingService } from '@/services/LoggingService';
 import { ProductStorage } from '@/services/ProductStorage';
 import { SettingsService } from '@/services/SettingsService';
 import { CategoryService } from '@/services/CategoryService';

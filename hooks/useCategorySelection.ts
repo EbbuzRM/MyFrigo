@@ -8,7 +8,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
 import { useCategories } from '@/context/CategoryContext';
 import { useManualEntry } from '@/context/ManualEntryContext';
@@ -74,7 +74,6 @@ export interface UseCategorySelectionReturn {
 export const useCategorySelection = ({
   categories,
   categoriesLoading,
-  isCategoryModalVisible,
   setIsCategoryModalVisible,
   newCategoryNameInput,
   setNewCategoryNameInput,

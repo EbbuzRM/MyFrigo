@@ -17,11 +17,11 @@ import { Alert } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
-import { AuthTests, AuthTestResult } from '@/services/diagnostic/AuthTests';
-import { DatabaseTests, DatabaseTestResult } from '@/services/diagnostic/DatabaseTests';
-import { PerformanceTests, PerformanceTestResult } from '@/services/diagnostic/PerformanceTests';
-import { SystemTests, SystemTestResult } from '@/services/diagnostic/SystemTests';
-import { NotificationTests, NotificationTestResult } from '@/services/diagnostic/NotificationTests';
+import { AuthTests } from '@/services/diagnostic/AuthTests';
+import { DatabaseTests } from '@/services/diagnostic/DatabaseTests';
+import { PerformanceTests } from '@/services/diagnostic/PerformanceTests';
+import { SystemTests } from '@/services/diagnostic/SystemTests';
+import { NotificationTests } from '@/services/diagnostic/NotificationTests';
 
 export interface DiagnosticTest {
   id: string;
@@ -42,7 +42,7 @@ export interface TestResult {
 }
 
 export const useDiagnosticTests = () => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const { settings } = useSettings();
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);

@@ -7,7 +7,7 @@
 // message: 
 
 import { useCallback } from 'react';
-import { RegistrationData, RegistrationResult, UseRegistrationReturn } from './useRegistration.types';
+import { UseRegistrationReturn } from './useRegistration.types';
 import { useRegistrationState } from './useRegistrationState';
 import { usePostRegistration } from './usePostRegistration';
 import { useRegistrationOrchestrator } from './useRegistrationOrchestrator';

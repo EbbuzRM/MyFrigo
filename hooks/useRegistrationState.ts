@@ -8,7 +8,6 @@
 // message: 
 
 import { useCallback } from 'react';
-import { RegistrationData, RegistrationResult } from './useRegistration.types';
 
 export interface UseRegistrationStateReturn {
   isLoading: boolean;

@@ -88,7 +88,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { Appearance } from 'react-native';
 import { SettingsService } from '@/services/SettingsService';
 import { LoggingService } from '@/services/LoggingService';
-import { COLORS, getThemeColors } from '@/constants/colors';
+import { getThemeColors } from '@/constants/colors';
 
 // Definizione del tipo di tema
 type Theme = 'light' | 'dark';
@@ -118,7 +118,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>('light');
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   // Funzione per ottenere il tema di sistema come fallback
   const getSystemTheme = (): Theme => {

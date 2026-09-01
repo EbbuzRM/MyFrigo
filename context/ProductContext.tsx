@@ -15,7 +15,6 @@ import React, { createContext, useState, useEffect, useContext, useCallback, use
 import { ProductStorage } from '@/services/ProductStorage';
 import { Product } from '@/types/Product';
 import { useAuth } from './AuthContext';
-import { supabase, getCachedSession } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
 interface ProductContextType {

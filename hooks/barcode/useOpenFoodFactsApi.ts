@@ -7,7 +7,6 @@
 // message: 
 
 import { useCallback } from 'react';
-import { LoggingService } from '@/services/LoggingService';
 import { OpenFoodFactsProduct } from '@/types/api';
 
 const API_TIMEOUT = 15000;

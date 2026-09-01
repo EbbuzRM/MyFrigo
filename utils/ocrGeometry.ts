@@ -59,9 +59,8 @@ export function isRightOf(anchor: Frame, target: Frame, tolerancePct: number = 0
 
 /**
  * Checks if rect2 is BELOW rect1, within a reasonable horizontal alignment.
- * @param tolerancePct Horizontal alignment tolerance (percentage of width difference)
  */
-export function isBelow(anchor: Frame, target: Frame, tolerancePct: number = 0.8): boolean {
+export function isBelow(anchor: Frame, target: Frame): boolean {
     const isBelowPosition = target.top > anchor.top;
 
     // Horizontal overlap check
@@ -78,7 +77,7 @@ export function isBelow(anchor: Frame, target: Frame, tolerancePct: number = 0.8
  * Checks if rect2 is ABOVE rect1, within a reasonable horizontal alignment.
  * (Useful for cases where the date is printed above the "SCAD" label)
  */
-export function isAbove(anchor: Frame, target: Frame, tolerancePct: number = 0.8): boolean {
+export function isAbove(anchor: Frame, target: Frame): boolean {
     const isAbovePosition = target.top < anchor.top;
 
     // Reuse same horizontal alignment logic as isBelow

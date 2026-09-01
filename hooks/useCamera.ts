@@ -10,7 +10,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import { useRef, useCallback, useState, useEffect, RefObject } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';

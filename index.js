@@ -16,7 +16,6 @@
  * - We log accessibility info using LoggingService (best-effort).
  */
 
-import React from 'react';
 import { Text, PixelRatio, Dimensions } from 'react-native';
 
 // Configure the global Expo object
@@ -38,7 +37,7 @@ try {
   try {
     const ls = require('./services/LoggingService');
     LoggingService = (ls && (ls.LoggingService || ls.default || ls)) || null;
-  } catch (e) {
+  } catch {
     LoggingService = null;
   }
 

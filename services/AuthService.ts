@@ -408,7 +408,7 @@ export class AuthService {
       authLogger.startStep('SUPABASE_GOOGLE_AUTH');
 
       const startTime = Date.now();
-      const { data, error } = await supabase.auth.signInWithIdToken({
+      const { error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token: idToken,
       });

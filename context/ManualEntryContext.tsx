@@ -19,8 +19,6 @@
 // message: 
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { LoggingService } from '@/services/LoggingService';
-import { Product } from '@/types/Product';
 import { ManualEntryFormProvider, useManualEntryForm, Quantity, FormState } from './ManualEntryFormContext';
 import { ManualEntryActionsProvider, useManualEntryActions, InitializeFormData } from './ManualEntryActionsContext';
 import { ManualEntryMetaProvider, useManualEntryMeta, MetaState } from './ManualEntryMetaContext';

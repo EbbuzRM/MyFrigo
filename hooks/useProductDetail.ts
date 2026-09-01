@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import { ProductStorage } from '@/services/ProductStorage';
-import { Product, ProductDetailState } from '@/types/Product';
+import { ProductDetailState } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
 
 // usa ProductDetailState da types/Product

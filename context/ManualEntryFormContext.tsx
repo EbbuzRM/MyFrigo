@@ -9,10 +9,10 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { createContext, useContext, ReactNode, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useReducer } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import 'react-native-get-random-values';
-import { toLocalISOString, getLocalISODate } from '@/utils/dateUtils';
+import { getLocalISODate } from '@/utils/dateUtils';
 
 /**
  * Represents a single quantity entry

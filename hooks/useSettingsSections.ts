@@ -94,13 +94,12 @@ export interface UseSettingsSectionsReturn {
  */
 export function useSettingsSections(): UseSettingsSectionsReturn {
   const { isDarkMode, setAppTheme } = useTheme();
-  const { settings, updateSettings, loading } = useAppSettings();
+  const { settings, updateSettings } = useAppSettings();
   const {
     checkForUpdates,
     isChecking,
     isDownloading,
     lastUpdateInfo,
-    settings: updateSettingsConfig,
     updateSettings: updateAppUpdateSettings,
     openModal: openUpdateModal,
   } = useUpdate();

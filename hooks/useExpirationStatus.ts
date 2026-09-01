@@ -9,9 +9,6 @@
 // message: 
 
 import { useMemo } from 'react';
-import { useSettings } from '@/context/SettingsContext';
-import { useTheme } from '@/context/ThemeContext';
-import { LoggingService } from '@/services/LoggingService';
 import { COLORS } from '@/constants/colors';
 
 /**

@@ -94,16 +94,8 @@ import {
   isSessionExpired,
   isUnauthorized,
 } from './NetworkErrorHandler';
-import { handleDatabaseError, isNotFoundError, isDuplicateEntryError } from './DatabaseErrorHandler';
+import { handleDatabaseError } from './DatabaseErrorHandler';
 import { handleAuthError, isEmailNotConfirmed, isInvalidCredentials } from './AuthErrorHandler';
-
-// Import formatters
-import {
-  formatErrorForUI,
-  formatErrorForDebug,
-  getErrorTitle,
-  getErrorSuggestions,
-} from './errorFormatters';
 
 // ==================== ERROR CREATION ====================
 

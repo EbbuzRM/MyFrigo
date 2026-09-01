@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 import { RegistrationData, RegistrationResult } from './useRegistration.types';
-import { useRegistrationState, UseRegistrationStateReturn } from './useRegistrationState';
+import { UseRegistrationStateReturn } from './useRegistrationState';
 import { AUTH_CONSTANTS } from '@/constants/auth';
 import { LoggingService } from '@/services/LoggingService';
 

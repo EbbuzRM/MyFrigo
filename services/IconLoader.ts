@@ -11,7 +11,6 @@
 
 import { supabase } from './supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
-import { Database } from '@/types/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import openmojiRaw from '../assets/data/openmoji.json';
 

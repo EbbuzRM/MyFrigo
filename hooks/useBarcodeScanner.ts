@@ -136,7 +136,6 @@ export function useBarcodeScanner(
     }
 
     const startTime = Date.now();
-    const now = Date.now();
 
     LoggingService.info('BarcodeScanner', `Scanning barcode: ${data}`);
 

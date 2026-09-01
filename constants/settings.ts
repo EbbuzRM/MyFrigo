@@ -11,7 +11,6 @@
 // message: 
 
 import { User, Calendar, Moon, ListTree, Trash2, RefreshCw, Download, MessageSquareQuote, Lock } from 'lucide-react-native';
-import { router } from 'expo-router';
 import React from 'react';
 
 /**

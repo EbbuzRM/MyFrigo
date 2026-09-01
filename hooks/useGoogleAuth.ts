@@ -87,7 +87,7 @@ export const useGoogleAuth = () => {
           iosClientId: '',
           googleServicePlistPath: ''
         });
-      } catch (error) {
+      } catch {
         setConfigError('Errore di configurazione Google Sign-In');
       }
     };
@@ -131,7 +131,7 @@ if (retryResult.shouldRetry) {
           setRetryAttemptNumber(0);
         }
 
-      } catch (error) {
+      } catch {
         setGoogleRetryInProgress(false);
         setRetryAttemptNumber(0);
       }

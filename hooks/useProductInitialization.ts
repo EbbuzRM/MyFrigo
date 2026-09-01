@@ -29,12 +29,9 @@ export interface UseProductInitializationReturn {
 
 export const useProductInitialization = ({
   setIsLoading,
-  categories,
-  categoriesLoading,
 }: UseProductInitializationProps): UseProductInitializationReturn => {
   const params = useLocalSearchParams();
   const {
-    isInitialized,
     setIsInitialized,
     initializeForm,
     setImageUrl,

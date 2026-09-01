@@ -8,7 +8,7 @@
 // message: 
 
 import { useEffect } from 'react';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+import { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 /**
