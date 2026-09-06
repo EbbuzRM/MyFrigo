@@ -53,13 +53,13 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - **Note aperte OCR fix 2026-07-08 (LOW)**:
   - `parsing.ts` filtro per sottostringa: edge case raro di blocco singolo con data standard + month-year legittimo distinto (es. "SCAD 08/26 15/08/26") escluderebbe anche il legittimo. Non impatta i casi reali (blocchi separati).
   - Manca test dedicato per "ENTRO 08 26" (comportamento preservato ma non coperto da test).
-- **`EXPO_PUBLIC_OCR_SPACE_API_KEY` embedded in client bundle** (EXPO_PUBLIC_ prefix ships it in JS bundle; ocr.space key is server-side/billed). Deferred: dedicated task after SDK 57 upgrade.
 - **devDeps drift fuori range SDK 54** (2026-08-29): `jest` 30.3.0, `jest-expo` 55.0.16, `@types/jest` 30.0.0, `@types/react` 19.2.14 (attesi 29.7.0 / 54.0.18 / 29.5.14 / 19.1.10). Allineare durante upgrade SDK 57, non prima. `expo-doctor` 15/18 per questo.
 - **Manca coverage test auth CON `captchaToken` valorizzato** (`LoginForm.tsx:78-80`): i test passano il terzo argomento come `undefined`, nessuno copre il path con token risolto.
 - **Worker Jest non esce gracefully** (pre-esistente, non bloccante).
 - **Branch `sdk57` esiste ancora come safety net** — può essere eliminato dopo conferma stabilità produzione SDK 57.
 
 ### Risolti
+- **2026-09-06**: Migrazione EXPO_PUBLIC_OCR_SPACE_API_KEY a proxy completata — utils/ocr/ocrSpaceService.ts invoca supabase.functions.invoke('ocr-proxy') (verify_jwt=true), nessuna key nel bundle client. Chiuso finding SEC-05 (stale).
 - **2026-08-30**: ML Kit OCR confermato funzionante su RN 0.86 via interop layer. Smoke test: 7 blocchi testo letti, data "21/05/2027" estratta correttamente, anchor OCR trovato, lotto escluso, zero crash.
 - **2026-08-04**: `feedback.test.tsx` 14 fallimenti (mock hoisting `expo-image-picker`); `forgot-password.tsx` trim mancante in `handleVerifyOTP`; RPC `get_expiring_products` chiusa (già sincronizzata con prod, `days_remaining` presente, commit `ab44414`).
 - **2026-07-16**: `NotificationService.initialize()` ora chiamato in `_layout.tsx` (era `OneSignalService.initialize()` che non richiedeva permessi push).

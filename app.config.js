@@ -51,7 +51,7 @@ module.exports = {
       // Rotate at https://ocr.space/OCRAPI and set via EAS secrets:
       //   eas secret:create --name EXPO_PUBLIC_OCR_SPACE_API_KEY --value "NEW_KEY" --scope project
       e2eTestMode: process.env.EXPO_PUBLIC_E2E_TEST_MODE === 'true',
-      hcaptchaSitekey: process.env.EXPO_PUBLIC_HCAPTCHA_SITEKEY || 'd69c1bae-86c0-41b2-8350-4a48810e5fbc',
+      hcaptchaSitekey: process.env.EXPO_PUBLIC_HCAPTCHA_SITEKEY || undefined,
       // Disable expo-router runtime check for @react-navigation/native in node_modules
       // (kept as devDependency for test type imports)
       EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK: '1',
