@@ -14,6 +14,9 @@ import { Calendar, Package } from 'lucide-react-native';
 import { QuantityDisplay } from './QuantityDisplay';
 import { Quantity } from '@/types/Product';
 import { scaleFont } from '@/utils/scaleFont';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { formatDisplayDate } from '@/i18n/format';
 
 /**
  * Props for the ExpirationCardDetails component
@@ -37,10 +40,11 @@ export const ExpirationCardDetails = React.memo(({
   expirationDate,
   isDarkMode,
 }: ExpirationCardDetailsProps) => {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const formattedDate = useMemo(() => {
-    const date = expirationDate instanceof Date ? expirationDate : new Date(expirationDate);
-    return date.toLocaleDateString('it-IT');
-  }, [expirationDate]);
+    return formatDisplayDate(expirationDate, language) ?? t('products.dateInvalid');
+  }, [expirationDate, language, t]);
 
   const styles = useMemo(
     () =>
@@ -70,7 +74,7 @@ export const ExpirationCardDetails = React.memo(({
         <QuantityDisplay 
           quantities={quantities} 
           style={styles.detailText}
-          fallbackText="N/A"
+          fallbackText={t('common.notAvailable')}
         />
       </View>
       <View style={[styles.detailItem, { marginLeft: 8 }]}>

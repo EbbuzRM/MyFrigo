@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { Package, AlertTriangle } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ExpirationCard } from '@/components/ExpirationCard';
 import { StatsCard } from '@/components/StatsCard';
 import { useTheme } from '@/context/ThemeContext';
@@ -32,9 +33,9 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { useAppLifecycle } from '@/hooks/useAppLifecycle';
 import { showNotificationPermissionsAlert } from '@/utils/permissions';
-import { DASHBOARD_CONTENT } from '@/constants/content';
 
 function Dashboard() {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const { user, profile, signOut } = useAuth();
   const { settings, permissionStatus, refreshPermissions, loading: settingsLoading } = useSettings();
@@ -90,7 +91,7 @@ function Dashboard() {
   if ((productsLoading || settingsLoading) && allProducts.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Caricamento...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -112,12 +113,12 @@ function Dashboard() {
         onProfilePress={() => setMenuVisible(true)}
         displayInitials={displayInitials}
       />
-      <Text style={styles.subtitle}>{DASHBOARD_CONTENT.SUBTITLE}</Text>
+      <Text style={styles.subtitle}>{t('dashboard.subtitle')}</Text>
 
       <QuickActions />
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{DASHBOARD_CONTENT.TITLE_EXPIRING}</Text>
+        <Text style={styles.sectionTitle}>{t('dashboard.titleExpiring')}</Text>
         {expiringProducts.length > 0 ? (
           <FlashList
             data={expiringProducts}
@@ -127,8 +128,6 @@ function Dashboard() {
 renderItem={({ item }) => (
                <View 
                  style={{ width: 300, marginRight: 16 }}
-                 accessibilityLabel={`Prodotto ${item.name}, scade il ${item.expirationDate}`}
-                 accessibilityRole="button"
                >
                 <ExpirationCard
                   product={item}
@@ -143,16 +142,16 @@ renderItem={({ item }) => (
           />
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>{DASHBOARD_CONTENT.EMPTY_EXPIRING(settings?.notificationDays || 7)}</Text>
+            <Text style={styles.emptyStateText}>{t('dashboard.emptyExpiring', { count: settings?.notificationDays || 7 })}</Text>
           </View>
         )}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{DASHBOARD_CONTENT.TITLE_STATS}</Text>
+        <Text style={styles.sectionTitle}>{t('dashboard.titleStats')}</Text>
         <View style={styles.statsContainer}>
            <StatsCard
-             title={DASHBOARD_CONTENT.STATS_ACTIVE}
+             title={t('dashboard.statsActive')}
              value={activeProductsCount.toString()}
              valueTestId="total-products-count"
              icon={<Package size={24} color="#2563EB" />}
@@ -161,7 +160,7 @@ renderItem={({ item }) => (
              onPress={() => router.push('/(tabs)/products')}
            />
           <StatsCard
-            title={DASHBOARD_CONTENT.STATS_EXPIRED}
+            title={t('dashboard.statsExpired')}
             value={expiredCount.toString()}
             icon={<AlertTriangle size={24} color="#EF4444" />}
             lightBackgroundColor="#FEF2F2"

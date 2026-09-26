@@ -17,18 +17,20 @@ jest.mock('@/constants/auth', () => ({
     ERRORS: {
       MISSING_FIELDS: 'Completa tutti i campi richiesti',
       MISSING_NAMES: 'Per favore, inserisci nome e cognome',
-      EMAIL_CHECK_FAILED: "Errore durante la verifica dell'email.",
       REGISTRATION_FAILED: 'Registrazione fallita',
       UNKNOWN_ERROR: 'Errore sconosciuto',
     },
     ALERT_TITLES: {
       MISSING_DATA: 'Dati Mancanti',
-      EMAIL_EXISTS: 'Email già registrata',
+      CHECK_EMAIL: 'Controlla la tua email',
       REGISTRATION_COMPLETE: 'Registrazione Completata',
       REGISTRATION_ERROR: 'Errore di Registrazione',
     },
     ALERT_MESSAGES: {
-      EMAIL_EXISTS: 'Questo indirizzo email è già in uso.',
+      CHECK_EMAIL_NEUTRAL: 'Se l\'indirizzo può essere registrato, riceverai un codice.',
+      ENTER_CODE_BUTTON: 'Inserisci codice',
+      LOGIN_BUTTON: 'Accedi',
+      RECOVER_PASSWORD_BUTTON: 'Recupera password',
       REGISTRATION_SUCCESS: 'Registrazione completata con successo',
       OK_BUTTON: 'OK',
     },

@@ -97,6 +97,18 @@ jest.mock('react-native', () => {
     dismiss: jest.fn(),
   };
   const KeyboardAvoidingView = (props) => React.createElement('KeyboardAvoidingView', props);
+
+  // AppState mock with a listener registry — used by i18n/sync foreground tests.
+  const AppState = {
+    currentState: 'active',
+    listeners: [],
+    addEventListener: jest.fn((type, handler) => {
+      const subscription = { type, handler, remove: jest.fn() };
+      AppState.listeners.push(subscription);
+      return subscription;
+    }),
+    removeEventListener: jest.fn(),
+  };
   
   // Mock per Modal che non dipende da Platform
   // Note: always renders children regardless of `visible` prop, matching real RN Modal behavior.
@@ -131,6 +143,7 @@ jest.mock('react-native', () => {
     BackHandler,
     Keyboard,
     KeyboardAvoidingView,
+    AppState,
     Platform: require('react-native/Libraries/Utilities/Platform'),
   };
 });
@@ -959,3 +972,17 @@ jest.mock('date-fns', () => {
     }),
   };
 });
+
+// Fase B i18n: bootstrap i18next once for every suite, so components using
+// `useTranslation()` render localized italian texts by default (deterministic:
+// no device read here — suites that mock `expo-localization` re-sync the
+// language through `initI18n()` themselves). Deliberately avoids importing
+// `i18n/index.ts`/`expo-localization`: requiring the real module here would
+// freeze bindings before per-suite `jest.mock` registrations.
+import i18next from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import { createI18nOptions } from '@/i18n/options';
+
+if (!i18next.isInitialized) {
+  i18next.use(initReactI18next).init(createI18nOptions('it'));
+}

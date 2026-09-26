@@ -13,6 +13,8 @@ import { ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { CategoryIcon } from './CategoryIcon';
 import { scaleFont } from '@/utils/scaleFont';
+import { getCategoryLabel } from '@/utils/categoryLabels';
+import { useTranslation } from 'react-i18next';
 
 interface HistoryCardHeaderProps {
   productName: string;
@@ -26,6 +28,7 @@ const SPACING = { xs: 4, sm: 8 };
 export const HistoryCardHeader = React.memo(({
   productName, brand, categoryInfo,
 }: HistoryCardHeaderProps) => {
+  const { i18n } = useTranslation();
   const { isDarkMode } = useTheme();
 
   const styles = useMemo(() => StyleSheet.create({
@@ -58,7 +61,7 @@ export const HistoryCardHeader = React.memo(({
         </Text>
         {brand && <Text style={styles.brandName} numberOfLines={1}>{brand}</Text>}
         <View style={styles.categoryBadge}>
-          <Text style={styles.categoryName}>{categoryInfo.name}</Text>
+          <Text style={styles.categoryName}>{getCategoryLabel(categoryInfo, i18n.language?.startsWith('it') ? 'it' : 'en')}</Text>
         </View>
       </View>
     </View>

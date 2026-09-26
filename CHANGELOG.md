@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-09-26
+
+### Added
+
+- Italian and British English localization across app screens, accessibility, settings, diagnostics, and product flows.
+- Locale-aware date, calendar, and quantity formatting, with Android locale declarations for Italian and English.
+- Push subscription registration with language metadata and notification routing support.
+- Bilingual Italian/English versions of all seven Supabase Auth email templates.
+
+### Changed
+
+- Updated the app version and Android runtime to `1.0.7`; the EAS `preview` profile targets the `preview` channel so OTA updates remain runtime-compatible with each binary.
+- OCR fallback tries the active language first and uses the other supported language only when the first attempt finds no valid expiry date.
+
+### Fixed
+
+- Made OneSignal logout attempt device and push-subscription cleanup independently, while guarding account switches from stale logout work.
+- Localized results from asynchronous barcode lookups and kept the Open Food Facts cache separated by language.
+- Improved barcode product-image loading and persistence of photos captured for products.
+- Replaced deprecated React Native safe-area usage in the app and hCaptcha patch.
+- Corrected expiry-day calculations around daylight-saving transitions.
+
 ## [1.0.6] - 2026-08-30
 
 ### Changed

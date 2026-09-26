@@ -27,6 +27,8 @@ import { IconService } from '@/services/IconService';
 import { useAuth } from './AuthContext';
 import { randomUUID } from 'expo-crypto';
 import { LoggingService } from '@/services/LoggingService';
+import { useTranslation } from 'react-i18next';
+import { getCategoryLabel, sortCategoriesForLanguage } from '@/utils/categoryLabels';
 
 interface CategoryContextType {
   categories: ProductCategory[];
@@ -40,6 +42,8 @@ interface CategoryContextType {
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
 export const CategoryProvider = ({ children }: { children: ReactNode }) => {
+  const { i18n } = useTranslation();
+  const categoryLanguage = i18n.language?.startsWith('it') ? 'it' : 'en';
   const { user } = useAuth();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +119,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     if (trimmedName === '') {
       throw new Error('Il nome della categoria non può essere vuoto.');
     }
-    if (categories.some(cat => cat.name.toLowerCase() === trimmedName.toLowerCase())) {
+    if (categories.some(cat => getCategoryLabel(cat, categoryLanguage).toLocaleLowerCase() === trimmedName.toLocaleLowerCase())) {
       throw new Error('Una categoria con questo nome esiste già.');
     }
 
@@ -195,7 +199,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       setCategories(prev => prev.filter(cat => cat.id !== newCategoryData.id).sort((a, b) => a.name.localeCompare(b.name)));
       throw error;
     }
-  }, [categories, user]);
+  }, [categories, user, categoryLanguage]);
 
   const deleteCategory = useCallback(async (id: string) => {
     const originalCategories = categories;
@@ -218,7 +222,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       throw new Error('Il nome della categoria non può essere vuoto.');
     }
     
-    if (categories.some(cat => cat.id !== id && cat.name.toLowerCase() === trimmedName.toLowerCase())) {
+    if (categories.some(cat => cat.id !== id && getCategoryLabel(cat, categoryLanguage).toLocaleLowerCase() === trimmedName.toLocaleLowerCase())) {
       throw new Error('Una categoria con questo nome esiste già.');
     }
 
@@ -244,20 +248,21 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       LoggingService.error('CategoryContext', `Errore durante l'aggiornamento della categoria: ${error}`);
       throw error;
     }
-  }, [categories, user]);
+  }, [categories, user, categoryLanguage]);
 
   const getCategoryById = useCallback((id: string) => {
     return categories.find(cat => cat.id === id);
   }, [categories]);
 
+  const visibleCategories = React.useMemo(() => sortCategoriesForLanguage(categories, categoryLanguage), [categories, categoryLanguage]);
   const value = React.useMemo(() => ({
-    categories,
+    categories: visibleCategories,
     addCategory,
     deleteCategory,
     updateCategory,
     getCategoryById,
     loading,
-  }), [categories, addCategory, deleteCategory, updateCategory, getCategoryById, loading]);
+  }), [visibleCategories, addCategory, deleteCategory, updateCategory, getCategoryById, loading]);
 
   return (
     <CategoryContext.Provider value={value}>

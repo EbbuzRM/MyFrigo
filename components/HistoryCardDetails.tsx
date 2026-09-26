@@ -15,6 +15,7 @@ import { Quantity } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { QuantityDisplay } from './QuantityDisplay';
 import { scaleFont } from '@/utils/scaleFont';
+import { useTranslation } from 'react-i18next';
 
 interface HistoryCardDetailsProps {
   quantities: Quantity[] | undefined;
@@ -31,6 +32,7 @@ const SPACING = { xs: 4, sm: 8, md: 12 };
 export const HistoryCardDetails = React.memo(({
   quantities, statusText, formattedDate, statusColor, type, onRestore,
 }: HistoryCardDetailsProps) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
 
   const styles = useMemo(() => StyleSheet.create({
@@ -58,20 +60,28 @@ export const HistoryCardDetails = React.memo(({
       <View style={styles.detailRow}>
         <View style={styles.detailItem}>
           <Package size={16} color={iconColor} />
-          <QuantityDisplay quantities={quantities} style={styles.detailText} />
+          <QuantityDisplay
+            quantities={quantities}
+            style={styles.detailText}
+            fallbackText={t('common.notAvailable')}
+          />
         </View>
         <View style={styles.detailItem}>
           <Calendar size={16} color={iconColor} />
-          <Text style={styles.dateText}>{statusText}: {formattedDate}</Text>
+          <Text style={styles.dateText}>
+            {t('history.cardDateLabel', { status: statusText, date: formattedDate })}
+          </Text>
         </View>
       </View>
       {type === 'consumed' && onRestore && (
         <TouchableOpacity
           testID="restore-button" style={styles.restoreButton} onPress={onRestore}
-          accessibilityRole="button" accessibilityLabel="Ripristina prodotto"
+          accessibilityRole="button"
+          accessibilityLabel={t('history.restoreProductLabel')}
+          accessibilityHint={t('history.restoreHint')}
         >
           <RotateCcw size={20} color={statusColor} />
-          <Text style={styles.restoreText}>Ripristina</Text>
+          <Text style={styles.restoreText}>{t('history.restoreProduct')}</Text>
         </TouchableOpacity>
       )}
     </View>

@@ -10,6 +10,8 @@
 
 import { useState, useRef } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
 import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { styles } from '@/styles/forgot-password.styles';
 import { supabase } from '@/services/supabaseClient';
@@ -18,49 +20,69 @@ import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 
+type CaptchaMessageEvent = {
+  nativeEvent: { data: string };
+  success: boolean;
+  markUsed?: () => void;
+};
+
 export default function ForgotPassword() {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string>();
   const captchaRef = useRef<ConfirmHcaptcha>(null);
+  const captchaSubmissionInFlight = useRef(false);
 
   const router = useRouter();
 
   const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
 
   const submitReset = async (token?: string) => {
+    // hCaptcha responses are single-use; never retry a reset with an old token.
+    setCaptchaToken(undefined);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         captchaToken: token,
       });
 
-      if (error) {
-        LoggingService.error('ForgotPassword', `Error sending password reset email: ${error.message}`, error);
-        let errorMessage = 'Errore nell\'invio dell\'email di reset della password. Si prega di riprovare.';
+      const isUnknownAccount = error?.message.includes('User not found') ?? false;
+
+      if (error && !isUnknownAccount) {
+        LoggingService.error('ForgotPassword', 'Error sending password reset email', {
+          message: error.message,
+        });
+        let errorMessage = t('auth.errors_resetEmailSendError');
 
         // Errori specifici di Supabase
-        if (error.message.includes('User not found')) {
-          errorMessage = 'Nessun account trovato con questa email.';
-        } else if (error.message.includes('Rate limit')) {
-          errorMessage = 'Troppe richieste. Attendi qualche minuto prima di riprovare.';
+        if (error.message.includes('Rate limit')) {
+          errorMessage = t('auth.errors_tooManyRequests');
         } else if (error.message.includes('Invalid email')) {
-          errorMessage = 'L\'indirizzo email inserito non è valido.';
+          errorMessage = t('auth.errors_invalidEmailAddress');
         }
 
-        Alert.alert('Errore', errorMessage);
+        Alert.alert(t('auth.alertTitles_error'), errorMessage);
         setCaptchaToken(undefined);
         captchaRef.current?.hide();
         return;
       }
 
+      if (isUnknownAccount) {
+        LoggingService.warning('ForgotPassword', 'Password reset request accepted without account disclosure');
+      }
+
       LoggingService.info('ForgotPassword', 'Password reset email sent successfully');
-      Alert.alert('Successo', 'Email di reset della password inviata. Si prega di controllare la posta in arrivo.');
+      Alert.alert(
+        t('auth.checkEmailAlertTitle'),
+        t('auth.checkEmailAlertMessage')
+      );
       setShowOtpInput(true);
     } catch (error: unknown) {
       LoggingService.error('ForgotPassword', 'Unexpected error during OTP reset', error);
-      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante l\'invio del codice OTP'));
+      Alert.alert(t('auth.alertTitles_error'), t('auth.errors_unexpectedOtpError'));
       setCaptchaToken(undefined);
       captchaRef.current?.hide();
     } finally {
@@ -68,15 +90,25 @@ export default function ForgotPassword() {
     }
   };
 
-  const onCaptchaMessage = (event: { nativeEvent: { data: string }; success: boolean }) => {
+  const onCaptchaMessage = (event: CaptchaMessageEvent) => {
     if (event.success) {
-      const token = event.nativeEvent.data;
-      setCaptchaToken(token);
+      const token = event.nativeEvent.data.trim();
+      // The native package also reports "open" with success=true. Ignore it;
+      // only a passcode is valid input for Supabase Auth.
+      if (token.length <= 35 || captchaSubmissionInFlight.current) return;
+
+      captchaSubmissionInFlight.current = true;
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
-      submitReset(token);
+      void submitReset(token).finally(() => {
+        event.markUsed?.();
+        captchaSubmissionInFlight.current = false;
+      });
     } else if (event.nativeEvent.data === 'error') {
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
     } else if (event.nativeEvent.data === 'challenge-closed') {
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
     }
   };
@@ -95,7 +127,7 @@ export default function ForgotPassword() {
   // Metodo principale: reset con OTP
   const handleResetWithOTP = async () => {
     if (!email.trim()) {
-      Alert.alert('Errore', 'Inserisci la tua email.');
+      Alert.alert(t('auth.alertTitles_error'), t('auth.errors_emailRequired'));
       return;
     }
 
@@ -113,11 +145,14 @@ export default function ForgotPassword() {
         });
 
         if (otpError) {
-          throw new Error(typeof otpError === 'string' ? otpError : otpError.message || 'Errore nella generazione del token');
+          const rawMessage = typeof otpError === 'string' ? otpError : otpError.message;
+          LoggingService.error('ForgotPassword', 'E2E OTP generation failed', { message: rawMessage });
+          throw new Error(t('auth.errors_otpGenerationError'));
         }
 
         if (!otpData?.token_hash) {
-          throw new Error('Token hash non ricevuto dalla Edge Function');
+          Alert.alert(t('auth.alertTitles_error'), t('auth.errors_tokenHashMissing'));
+          return;
         }
 
         LoggingService.info('ForgotPassword', 'Token hash received, verifying OTP');
@@ -129,7 +164,7 @@ export default function ForgotPassword() {
 
         if (error) {
           LoggingService.error('ForgotPassword', 'OTP verification failed in E2E mode', error);
-          Alert.alert('Errore', 'Verifica OTP fallita: ' + error.message);
+          Alert.alert(t('auth.alertTitles_error'), t('auth.errors_otpVerifyFailed'));
           return;
         }
 
@@ -137,11 +172,12 @@ export default function ForgotPassword() {
           LoggingService.info('ForgotPassword', 'Session established in E2E mode, navigating to password reset form');
           router.replace('/password-reset-form');
         } else {
-          throw new Error('Nessuna sessione stabilita');
+          Alert.alert(t('auth.alertTitles_error'), t('auth.errors_noSessionEstablished'));
+          return;
         }
       } catch (error: unknown) {
         LoggingService.error('ForgotPassword', 'E2E test mode error', error);
-        Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante la generazione del token'));
+        Alert.alert(t('auth.alertTitles_error'), t('auth.errors_otpGenerationError'));
       } finally {
         setLoading(false);
       }
@@ -160,7 +196,7 @@ export default function ForgotPassword() {
   // Verifica OTP e reindirizza al reset form
   const handleVerifyOTP = async () => {
     if (!otp.trim() || otp.length !== 6) {
-      Alert.alert('Errore', 'Inserisci un codice OTP valido a 6 cifre.');
+      Alert.alert(t('auth.alertTitles_error'), t('auth.errors_invalidOtpLength'));
       return;
     }
 
@@ -168,8 +204,8 @@ export default function ForgotPassword() {
     const otpCheck = await checkOtpRateLimit(email);
     if (!otpCheck.allowed) {
       const minutes = Math.ceil((otpCheck.remainingMs || 0) / 60000);
-      LoggingService.warning('ForgotPassword', 'OTP rate limit blocked', { email: email.trim().toLowerCase(), remainingMs: otpCheck.remainingMs });
-      Alert.alert('Errore', `Troppi tentativi OTP. Riprova tra ${minutes} minuti.`);
+      LoggingService.warning('ForgotPassword', 'OTP rate limit blocked', { remainingMs: otpCheck.remainingMs });
+      Alert.alert(t('auth.alertTitles_error'), t('auth.errors_otpRateLimit', { count: minutes }));
       return;
     }
 
@@ -186,22 +222,22 @@ export default function ForgotPassword() {
       if (error) {
         await recordOtpFailedAttempt(email);
         LoggingService.error('ForgotPassword', 'OTP verification failed', error);
-        let errorMessage = 'Codice OTP non valido o scaduto.';
+        let errorMessage = t('auth.errors_genericOtpError');
 
         if (error.message.includes('Token has expired')) {
-          errorMessage = 'Il codice OTP è scaduto. Richiedi un nuovo codice.';
+          errorMessage = t('auth.errors_expiredOtp');
         } else if (error.message.includes('Invalid token')) {
-          errorMessage = 'Il codice OTP inserito non è corretto.';
+          errorMessage = t('auth.errors_incorrectOtp');
         } else {
           // Check if now rate-limited after recording
           const after = await checkOtpRateLimit(email);
           if (!after.allowed) {
             const m = Math.ceil((after.remainingMs || 0) / 60000);
-            errorMessage = `Troppi tentativi OTP. Riprova tra ${m} minuti.`;
+            errorMessage = t('auth.errors_otpRateLimit', { count: m });
           }
         }
 
-        Alert.alert('Errore', errorMessage);
+        Alert.alert(t('auth.alertTitles_error'), errorMessage);
         return;
       }
 
@@ -219,7 +255,7 @@ export default function ForgotPassword() {
 
       if (updateError) {
         LoggingService.error('ForgotPassword', 'Failed to update user metadata', updateError);
-        Alert.alert('Errore', 'Impossibile aggiornare lo stato di reset password');
+        Alert.alert(t('auth.alertTitles_error'), t('auth.errors_metadataUpdateError'));
         return;
       }
 
@@ -236,7 +272,7 @@ export default function ForgotPassword() {
 
     } catch (error: unknown) {
       LoggingService.error('ForgotPassword', 'Unexpected error during OTP verification', error);
-      Alert.alert('Errore', (error instanceof Error ? error.message : 'Errore durante la verifica del codice'));
+      Alert.alert(t('auth.alertTitles_error'), t('auth.errors_unexpectedVerifyError'));
     } finally {
       setLoading(false);
     }
@@ -249,13 +285,13 @@ export default function ForgotPassword() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Recupero Password</Text>
+      <Text style={styles.title}>{t('auth.forgotPasswordTitle')}</Text>
 
       {/* Input email */}
       <TextInput
         testID="forgot-password-email-input"
         style={styles.input}
-        placeholder="Inserisci la tua email"
+        placeholder={t('auth.emailInputPlaceholder')}
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
@@ -266,10 +302,10 @@ export default function ForgotPassword() {
       {!showOtpInput && (
         <>
           <Text style={styles.infoText}>
-            Ti invieremo un codice OTP alla tua email per reimpostare la password.
+            {t('auth.otpInfoText')}
           </Text>
           <View testID="send-otp-button">
-            <Button title="Invia Codice OTP" onPress={handleReset} disabled={loading} />
+            <Button title={t('auth.sendOtpButton')} onPress={handleReset} disabled={loading} />
           </View>
         </>
       )}
@@ -277,24 +313,24 @@ export default function ForgotPassword() {
       {showOtpInput && (
         <View>
           <View style={styles.otpSection}>
-            <Text style={styles.otpSectionTitle}>Inserisci il codice OTP</Text>
-            <Text style={styles.otpInfoText}>Controlla la tua email per il codice di verifica a 6 cifre.</Text>
+            <Text style={styles.otpSectionTitle}>{t('auth.enterOtpTitle')}</Text>
+            <Text style={styles.otpInfoText}>{t('auth.checkEmailForCode')}</Text>
 
             <TextInput
               testID="otp-input"
               style={styles.input}
-              placeholder="Codice a 6 cifre"
+              placeholder={t('auth.otpInputPlaceholder')}
               keyboardType="number-pad"
               value={otp}
               onChangeText={setOtp}
               maxLength={6}
             />
             <View testID="verify-otp-button">
-              <Button title="Verifica Codice" onPress={handleVerifyOTP} disabled={loading} />
+              <Button title={t('auth.verifyCodeButton')} onPress={handleVerifyOTP} disabled={loading} />
             </View>
             <View style={styles.backToEmailButton}>
               <Button
-                title="Torna all'email"
+                title={t('auth.backToEmailButton')}
                 onPress={() => {
                   setShowOtpInput(false);
                   setOtp('');
@@ -310,6 +346,7 @@ export default function ForgotPassword() {
         <ConfirmHcaptcha
           ref={captchaRef}
           siteKey={sitekey}
+          languageCode={language}
           baseUrl="https://hcaptcha.com"
           onMessage={onCaptchaMessage}
           size="normal"
@@ -318,4 +355,3 @@ export default function ForgotPassword() {
     </View>
   );
 }
-

@@ -9,6 +9,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { DiagnosticTest, TestResult } from '@/hooks/useDiagnosticTests';
@@ -26,6 +27,7 @@ export const DatabaseTestSection: React.FC<DatabaseTestSectionProps> = ({
   isRunning,
   onRunTest
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -38,7 +40,7 @@ export const DatabaseTestSection: React.FC<DatabaseTestSectionProps> = ({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Test Database</Text>
+      <Text style={styles.sectionTitle}>{t('settings.diagnosticDatabaseSection')}</Text>
 
       {databaseTests.map(test => {
         const result = getTestResult(test.id);

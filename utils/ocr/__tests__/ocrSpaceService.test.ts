@@ -62,11 +62,21 @@ describe('ocrSpaceService', () => {
 
             expect(mockInvoke).toHaveBeenCalledTimes(1);
             expect(mockInvoke).toHaveBeenCalledWith('ocr-proxy', {
-                body: { base64Image: 'data:image/jpeg;base64,dGVzdA==', engine: 2 },
+                body: { base64Image: 'data:image/jpeg;base64,dGVzdA==', engine: 2, language: 'it' },
             });
 
             expect(result).not.toBeNull();
             expect(result?.ParsedResults).toHaveLength(1);
+        });
+
+        it('sends the requested English OCR language to the proxy', async () => {
+            mockInvoke.mockResolvedValue({ data: { ParsedResults: [] }, error: null });
+
+            await ocrSpaceRecognize('file:///path/to/image.jpg', 'en');
+
+            expect(mockInvoke).toHaveBeenCalledWith('ocr-proxy', {
+                body: { base64Image: 'data:image/jpeg;base64,dGVzdA==', engine: 2, language: 'en' },
+            });
         });
 
         it('should return null when proxy returns an error', async () => {

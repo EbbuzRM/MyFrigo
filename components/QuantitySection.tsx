@@ -13,6 +13,9 @@ import { View, Text, TouchableOpacity, AccessibilityProps } from 'react-native';
 import QuantityInputRow from './QuantityInputRow';
 import { Quantity as FormQuantity } from '@/context/ManualEntryContext';
 import { getStyles } from './ProductFormFooter.styles';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { getUnitLabel } from '@/i18n/units';
 
 interface QuantityHandlers {
   updateQuantity: (id: string, field: 'quantity' | 'unit', value: string) => void;
@@ -28,6 +31,8 @@ interface QuantitySectionProps extends AccessibilityProps {
 
 export const QuantitySection: React.FC<QuantitySectionProps> = React.memo(
   ({ quantities, handlers, isDarkMode, accessible = true, accessibilityLabel }) => {
+    const { t } = useTranslation();
+    const language = useAppLanguage();
     const styles = getStyles(isDarkMode);
 
     const handleAddQuantity = useCallback(() => {
@@ -36,11 +41,11 @@ export const QuantitySection: React.FC<QuantitySectionProps> = React.memo(
 
     const totalQuantitiesText = React.useMemo(() => {
       if (quantities.length <= 1) return null;
-      return quantities.map((q) => `${q.quantity} ${q.unit}`).join(', ');
-    }, [quantities]);
+      return quantities.map((q) => `${q.quantity} ${getUnitLabel(q.unit, language)}`).join(', ');
+    }, [quantities, language]);
 
     return (
-      <View accessible={accessible} accessibilityLabel={accessibilityLabel || 'Quantity management section'}>
+      <View accessible={accessible} accessibilityLabel={accessibilityLabel || t('products.quantityManagementLabel')}>
         {quantities.map((item) => (
           <QuantityInputRow
             key={item.id}
@@ -54,7 +59,7 @@ export const QuantitySection: React.FC<QuantitySectionProps> = React.memo(
         {quantities.length > 1 && (
           <View style={styles.quantitiesSummary}>
             <Text style={styles.quantitiesSummaryText}>
-              Quantità totali: {totalQuantitiesText}
+              {t('products.totalQuantities', { quantities: totalQuantitiesText })}
             </Text>
           </View>
         )}
@@ -64,11 +69,11 @@ export const QuantitySection: React.FC<QuantitySectionProps> = React.memo(
           style={styles.addButton}
           onPress={handleAddQuantity}
           accessible={true}
-          accessibilityLabel="Add quantity"
+          accessibilityLabel={t('products.addQuantity')}
           accessibilityRole="button"
-          accessibilityHint="Adds a new quantity entry"
+          accessibilityHint={t('products.addQuantityHint')}
         >
-          <Text style={styles.addButtonText}>Aggiungi quantità</Text>
+          <Text style={styles.addButtonText}>{t('products.addQuantity')}</Text>
         </TouchableOpacity>
       </View>
     );

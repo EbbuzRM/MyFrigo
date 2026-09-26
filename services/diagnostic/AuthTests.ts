@@ -11,6 +11,7 @@ import { LoggingService } from '@/services/LoggingService';
 import { authLogger } from '@/utils/AuthLogger';
 import { formStateLogger } from '@/utils/FormStateLogger';
 import { Alert } from 'react-native';
+import i18next from 'i18next';
 
 export interface DiagnosticData {
   [key: string]: unknown;
@@ -41,8 +42,8 @@ export class AuthTests {
       LoggingService.info('AuthTests', 'Riepilogo del test di autenticazione:', summary);
 
       Alert.alert(
-        'Test Autenticazione Completato',
-        'Il sistema di logging dell\'autenticazione funziona correttamente.'
+        i18next.t('settings.diagnosticAuthCompleted'),
+        i18next.t('settings.diagnosticAuthLoggingWorks')
       );
 
       return {
@@ -54,7 +55,7 @@ export class AuthTests {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
 
-      Alert.alert('Errore nel Test', 'Si è verificato un errore durante il test.');
+      Alert.alert(i18next.t('settings.diagnosticTestError'), i18next.t('settings.diagnosticTestErrorMessage'));
 
       return {
         testId: 'auth-logging',
@@ -92,8 +93,8 @@ export class AuthTests {
       LoggingService.info('AuthTests', 'Riepilogo del test di inserimento prodotti:', summary);
 
       Alert.alert(
-        'Test Inserimento Prodotti Completato',
-        'Il sistema di logging funziona correttamente.'
+        i18next.t('settings.diagnosticFormCompleted'),
+        i18next.t('settings.diagnosticFormLoggingWorks')
       );
 
       return {

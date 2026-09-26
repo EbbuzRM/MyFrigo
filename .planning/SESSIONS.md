@@ -1,3 +1,58 @@
+## 2026-09-23 — Multilingua it/en: Fase B gruppi 1–2 verificati OK
+
+**Perché a pezzi piccoli**: il gruppo 2 ha subito 3 interruzioni (2 abort + 1 silent fail). Strategia che ha funzionato: checkpoint git intermedi (`wip`) prima dei DoD, poi task medi (fix hook/service, consumer+test). Da riusare per i gruppi 3–5.
+
+**Gruppo 1 — UI condivisa (`a572929` + `3c30d27`, verifier OK-GRUPPO-1)**: navigazione tab, +not-found, ErrorBoundary, UpdateModal*, FormActionButtons, ConsumeActions, ModalActions/ModalHeader/PasswordInput, EmptyProductState, HistoryLoading/ErrorState. 44 chiavi `common` + 4 `products` + 2 `history`. Dubbi risolti: testi caricamento dentro le schermate → gruppi 3/4; ConsumeQuantityModal + testi schermata "add" (AddMethodCard, RecentsPicker) → gruppo 3; hint a11y FormActionButtons già in inglese → corretti in italiano (`3c30d27`).
+
+**Gruppo 2 — Auth (`a66befa` + `0226504` + `eb5b40c` + `8664dd4`, re-verifica OK-GRUPPO-2)**: login, signup, forgot-password, password-reset-form, LoginForm, useRegistration* (codici stabili `REGISTRATION_ERROR_CODES`, traduzione al boundary), AuthService (`AUTH_ERROR_CODES` + `errorParams`), consumer mapping (`translateAuthError` in `utils/authErrorI18n.ts`), test auth adattati + 5 nuovi (incluso cambio lingua). Non enumerabilità preservata. Verifier aveva bloccato su `blockedSuffix='m'` → `"m (5m)"` (VER-01) e Alert OTP con `error.message` raw (VER-02): entrambi fixati in `8664dd4` e riverificati. DoD: type-check 0, lint 0, 135 suite / 2339 pass / 5 skip. `AUTH_CONSTANTS` con letterali IT ora morto ma lasciato intatto (pulizia separata futura).
+
+**Gruppo 3a — Dashboard, dispensa e storico (`7af371a` + `494e5d3`, OK-GRUPPO-3A post-commit)**: completati dashboard/dispensa/storico, inclusi i figli diretti pantry `ProductCard`, `HistoryCard`, `ExpirationCard`, `StatsCard`, accessibilità e alert permessi dashboard. Il piano originale suddivideva il gruppo 3 in 2 chunk con checkpoint come il gruppo 2 e includeva anche `ConsumeQuantityModal` e testi `add`. Il verifier iniziale era **COMMIT-BLOCKING** con 2 suite fallite e regressioni logiche/testi residue; corretti preservando comportamento date invalide/freezer, sistemando i mock `HistoryCard`/`useProductStatus`, ripristinando i copy IT originali, usando un loader prodotti specifico, lasciando non tradotti i dati user/product e differendo il date formatting `it-IT`. DoD post-commit: typecheck/lint/test pass; 138 suite, 2355 pass, 5 skip. **Prossimo**: gruppo 3b, dettagli prodotto, inserimento e consumo.
+
+---
+
+## 2026-09-22 — Multilingua it/en: checkpoint + Fase A infrastruttura i18n
+
+**Contesto**: Esecuzione del piano multilingua (it-IT / en-GB, fallback en, nessun selettore, lingua dal dispositivo). Conductor + deleghe executor/verifier, nessuna decisione fuori piano.
+
+**Fase 0 — Situazione iniziale**: type-check 0 errori, 131 suite / 2295 test pass, 5 skip legacy. ~40 file modificati non committati preesistenti → **commit di checkpoint** scelto dall'utente per preservarli prima della migrazione sugli stessi file.
+
+**Fase A completata (verificata COMMIT-READY da verifier)**:
+- Dipendenze: `expo-localization`, `i18next`, `react-i18next` (solo queste 3).
+- `i18n/`: risoluzione lingua centralizzata (it-*→it, en-*→en, prima preferenza supportata, fallback en, formati it-IT/en-GB, zero persistenza), init prima del render in `index.js`, 11 domini × it+en, chiavi tipizzate type-level (`satisfies Record<keyof typeof it, string>`), reattività AppState al foreground senza remount.
+- Test: 4 suite / 37 test (risoluzione, cataloghi/interpolazioni/plurali, init+fallback, reattività con form state preservato).
+- DoD: type-check 0, lint 0 errori, 135/135 suite, 2332 pass.
+
+**Dubbi aperti trasmessi**: plugin `expo-localization` in `app.config.js` → rimandato alla fase "Configurazione piattaforme" del piano; template email Supabase non versionati → blocker fase email.
+
+**Commit**: `e95aa14` (checkpoint), `7fec483` (feat i18n infra), `b107a9c` (chore deps). Nessun push.
+
+**Perché**: checkpoint separato scelto per rollback sicuro; Fase A limitata a sola infrastruttura per non mescolare migrazione testi con fondamenta.
+
+---
+
+## 2026-09-06 — Hardening secret configuration e fallback hCaptcha
+
+**Contesto**: Allineamento della configurazione per evitare che secret E2E/admin vengano trattati come variabili pubbliche e rimozione del fallback hardcoded della sitekey hCaptcha.
+
+**Fix applicati**:
+- Rimosso il prefisso `EXPO_PUBLIC_` dai secret E2E/admin in `.env.example`.
+- Rimosso il fallback hardcoded della sitekey hCaptcha da `app.config.js`.
+- Aggiornati i consumer interessati in `app/forgot-password.tsx` e `components/DiagnosticPanel.tsx`.
+
+**Commit**: `6f4cf4c` — `fix(security): strip EXPO_PUBLIC_ prefix from E2E/admin secrets drop hardcoded hCaptcha sitekey fallback`
+
+---
+
+## 2026-09-01 — Cleanup lint, camera e upload screenshot feedback
+
+**Fix applicati**:
+- Corretto l'upload screenshot usando `expo-file-system/legacy` (`2b17b30`).
+- Collegato lo stato `isFocused` alla camera e ripuliti warning/errori ESLint (`62d26ff`, `863ecad`, `29b13c2`).
+
+**Commit**: `2b17b30`, `62d26ff`, `863ecad`, `29b13c2`.
+
+---
+
 ## 2026-08-29 — Audit dipendenze, allineamento SDK 54 e safety net pre-SDK 57
 
 **Contesto**: Utente chiede se i componenti/librerie dell'app sono ancora validi, mostrando l'output Gradle della build: buildTools 36.0.0, minSdk 24, compileSdk 36, targetSdk 36, ndk 27.1.12297006, kotlin 2.1.20, ksp 2.1.20-2.0.1. Sessione di audit + messa in sicurezza prima dell'upgrade a SDK 57.

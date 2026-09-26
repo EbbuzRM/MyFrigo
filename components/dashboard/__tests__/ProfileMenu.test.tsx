@@ -10,8 +10,13 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ProfileMenu } from '../ProfileMenu';
 import { router } from 'expo-router';
-import { DASHBOARD_CONTENT } from '@/constants/content';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import { ThemeProvider } from '@/context/ThemeContext';
+
+jest.mock('expo-localization', () => ({
+    getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 jest.mock('lucide-react-native', () => ({
     Settings: 'Settings',
@@ -48,6 +53,7 @@ describe('ProfileMenu', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        initI18n();
     });
 
     it('does not render when isVisible is false', () => {
@@ -58,13 +64,13 @@ describe('ProfileMenu', () => {
     it('renders correctly when visible', () => {
         const { getByText } = renderComponent();
         expect(getByText('John Doe')).toBeTruthy();
-        expect(getByText(DASHBOARD_CONTENT.MENU_SETTINGS)).toBeTruthy();
-        expect(getByText(DASHBOARD_CONTENT.MENU_LOGOUT)).toBeTruthy();
+        expect(getByText(itCatalogs.dashboard.menuSettings)).toBeTruthy();
+        expect(getByText(itCatalogs.dashboard.menuLogout)).toBeTruthy();
     });
 
     it('navigates to settings and closes menu on settings press', () => {
         const { getByText } = renderComponent();
-        fireEvent.press(getByText(DASHBOARD_CONTENT.MENU_SETTINGS));
+        fireEvent.press(getByText(itCatalogs.dashboard.menuSettings));
 
         expect(router.push).toHaveBeenCalledWith('/(tabs)/settings');
         expect(defaultProps.onClose).toHaveBeenCalled();

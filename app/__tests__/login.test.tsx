@@ -6,8 +6,19 @@
 
 import React from 'react';
 import { render, act, waitFor, fireEvent } from '@testing-library/react-native';
+import i18next from 'i18next';
 import { Alert, Text } from 'react-native';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
+import { enCatalogs } from '@/i18n/catalogs/en';
+import { cleanupRateLimiter } from '@/services/AuthService';
 import LoginScreen from '../login';
+
+// --- Mocks ---
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 // --- Mocks ---
 
@@ -36,7 +47,7 @@ jest.mock('@/hooks/useGoogleAuth', () => ({
 
 // Mock useEmailAuth hook (used by LoginForm)
 const mockHandleLogin = jest.fn()
-  .mockImplementation((password: string) => Promise.resolve({ success: false, error: 'Messaggio errore predefinito' }));
+  .mockImplementation((password: string) => Promise.resolve({ success: false, error: 'invalid_credentials' }));
 const mockUseEmailAuth = jest.fn(() => ({
   email: '',
   setEmail: jest.fn(),
@@ -114,8 +125,13 @@ const renderLoginScreen = (loginFormProps = {}) => render(
 // --- Test Suite ---
 
 describe('LoginScreen', () => {
+  afterAll(() => {
+    cleanupRateLimiter();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
     // Reset to default mocks
     mockUseGoogleAuth.mockReturnValue({
       performGoogleSignIn: mockPerformGoogleSignIn,
@@ -147,6 +163,10 @@ describe('LoginScreen', () => {
     // Mock Alert.alert globally
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     (Alert.alert as jest.Mock).mockClear();
+  });
+
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
   });
 
   // ── Rendering ──────────────────────────────────────────────────────
@@ -182,16 +202,33 @@ describe('LoginScreen', () => {
       expect(getByTestId('google-login-button')).toBeTruthy();
     });
 
-    it('should render "Hai dimenticato la password?" link', () => {
+    it('should render "Password dimenticata?" link', () => {
       const { getByText } = renderLoginScreen();
 
-      expect(getByText('Hai dimenticato la password?')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.forgotPassword)).toBeTruthy();
     });
 
     it('should render "Registrati" button', () => {
       const { getByText } = renderLoginScreen();
 
-      expect(getByText('Registrati')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.signUp)).toBeTruthy();
+    });
+
+    it('renders texts from the i18n catalogs and updates them on language change', async () => {
+      const screen = renderLoginScreen();
+
+      // Italian (default): texts come from the bundled `it` catalog.
+      expect(screen.getByText(itCatalogs.auth.loginSubtitle)).toBeTruthy();
+
+      // Switch language: the screen re-renders with the `en` catalog.
+      await act(async () => {
+        await i18next.changeLanguage('en');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(enCatalogs.auth.loginSubtitle)).toBeTruthy();
+      });
+      expect(screen.queryByText(itCatalogs.auth.loginSubtitle)).toBeNull();
     });
   });
 
@@ -202,17 +239,17 @@ describe('LoginScreen', () => {
       const { getByText } = renderLoginScreen();
 
       await act(async () => {
-        fireEvent.press(getByText('Registrati'));
+        fireEvent.press(getByText(itCatalogs.auth.signUp));
       });
 
       expect(mockRouterPush).toHaveBeenCalledWith('/signup');
     });
 
-    it('should navigate to forgot-password when "Hai dimenticato la password?" is pressed', async () => {
+    it('should navigate to forgot-password when "Password dimenticata?" is pressed', async () => {
       const { getByText } = renderLoginScreen();
 
       await act(async () => {
-        fireEvent.press(getByText('Hai dimenticato la password?'));
+        fireEvent.press(getByText(itCatalogs.auth.forgotPassword));
       });
 
       expect(mockRouterPush).toHaveBeenCalledWith('/forgot-password');
@@ -250,22 +287,22 @@ describe('LoginScreen', () => {
         email: 'user@example.com',
         setEmail: jest.fn(),
         loading: false,
-        error: 'Email o password non validi.',
+        error: 'invalid_credentials',
         handleLogin: mockHandleLogin,
         clearError: jest.fn(),
       });
 
       const { getByText } = renderLoginScreen();
 
-      expect(getByText('Email o password non validi.')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.errors_invalidCredentials)).toBeTruthy();
     });
 
     it('should show "Email o password non validi." for wrong password (NOT email confirmation message)', async () => {
-      // Simulate wrong password scenario: AuthService returns "Invalid login credentials"
-      // which maps to "Email o password non validi."
+      // Simulate wrong password scenario: the hook returns the stable
+      // `invalid_credentials` code, LoginForm maps it to the catalog text.
       mockHandleLogin.mockResolvedValueOnce({
         success: false,
-        error: 'Email o password non validi.',
+        error: 'invalid_credentials',
       });
 
       const { getByTestId } = renderLoginScreen();
@@ -279,16 +316,16 @@ describe('LoginScreen', () => {
       expect(mockHandleLogin).toHaveBeenCalled();
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Email o password non validi.');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_invalidCredentials);
       });
     });
 
     it('should show "Se le credenziali sono corrette..." for unconfirmed email', async () => {
-      // Simulate unconfirmed email: AuthService returns "Email not confirmed"
-      // which maps to the generic message
+      // Simulate unconfirmed email: the hook returns the stable
+      // `email_not_confirmed` code, LoginForm maps it to the catalog text.
       mockHandleLogin.mockResolvedValueOnce({
         success: false,
-        error: 'Se le credenziali sono corrette, riceverai un\'email di conferma.',
+        error: 'email_not_confirmed',
       });
 
       const { getByTestId } = renderLoginScreen();
@@ -298,14 +335,14 @@ describe('LoginScreen', () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Se le credenziali sono corrette, riceverai un\'email di conferma.');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_emailNotConfirmed);
       });
     });
 
     it('should show Alert when onLoginError is called', async () => {
       mockHandleLogin.mockResolvedValueOnce({
         success: false,
-        error: 'Network error',
+        error: 'login_failed',
       });
 
       const { getByTestId } = renderLoginScreen();
@@ -315,7 +352,7 @@ describe('LoginScreen', () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Network error');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_loginGenericError);
       });
     });
 
@@ -339,11 +376,11 @@ describe('LoginScreen', () => {
         fireEvent.press(getByTestId('login-button'));
       });
 
-      // LoginForm should call onLoginError with "Inserisci la password"
+      // LoginForm should call onLoginError with the catalog text
       // when password is empty
       expect(mockHandleLogin).not.toHaveBeenCalled();
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Inserisci la password');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_emptyPassword);
       });
     });
   });
@@ -365,20 +402,20 @@ describe('LoginScreen', () => {
       mockUseGoogleAuth.mockReturnValue({
         performGoogleSignIn: mockPerformGoogleSignIn,
         loading: false,
-        configError: 'Google Sign-In non configurato',
+        configError: 'google_config_error',
         googleRetryInProgress: false,
         retryAttemptNumber: 0,
       });
 
       const { getByText } = renderLoginScreen();
 
-      expect(getByText('Google Sign-In non configurato')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.errors_googleConfigError)).toBeTruthy();
     });
 
     it('should NOT show configError when there is none', () => {
       const { queryByText } = renderLoginScreen();
 
-      expect(queryByText(/non configurato/)).toBeNull();
+      expect(queryByText(itCatalogs.auth.errors_googleConfigError)).toBeNull();
     });
   });
 
@@ -404,7 +441,7 @@ describe('LoginScreen', () => {
       mockUseGoogleAuth.mockReturnValue({
         performGoogleSignIn: mockPerformGoogleSignIn,
         loading: false,
-        configError: 'Configuration error',
+        configError: 'google_config_error',
         googleRetryInProgress: false,
         retryAttemptNumber: 0,
       });
@@ -429,7 +466,7 @@ describe('LoginScreen', () => {
     it('should show Alert with error message on login failure', async () => {
       mockHandleLogin.mockResolvedValueOnce({
         success: false,
-        error: 'Test error',
+        error: 'invalid_credentials',
       });
 
       const { getByTestId } = renderLoginScreen();
@@ -439,7 +476,24 @@ describe('LoginScreen', () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Test error');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_invalidCredentials);
+      });
+    });
+
+    it('should show unknown-error message when the code is not recognized', async () => {
+      mockHandleLogin.mockResolvedValueOnce({
+        success: false,
+        error: 'not_a_real_code',
+      });
+
+      const { getByTestId } = renderLoginScreen();
+
+      await act(async () => {
+        fireEvent.press(getByTestId('login-button'));
+      });
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_unknownError);
       });
     });
 
@@ -456,7 +510,7 @@ describe('LoginScreen', () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Errore durante il login');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_unknownError);
       });
     });
 
@@ -473,7 +527,7 @@ describe('LoginScreen', () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore nel Login', 'Errore durante il login');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.loginErrorTitle, itCatalogs.auth.errors_unknownError);
       });
     });
   });

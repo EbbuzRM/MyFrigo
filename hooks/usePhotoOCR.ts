@@ -17,10 +17,13 @@ import { findAllMatches } from '@/utils/ocr/parsing';
 import { findSpatiallyAnchoredMatches } from '@/utils/ocr/spatial';
 import { selectBestDate } from '@/utils/ocr/scoring';
 import { ocrSpaceRecognize, convertOcrSpaceToTextBlocks } from '@/utils/ocr/ocrSpaceService';
+import { getCurrentLanguage } from '@/i18n';
+import { useTranslation } from 'react-i18next';
 
 const TAG = 'PhotoOCR';
 
 export const usePhotoOCR = () => {
+  const { t } = useTranslation();
   const [ocrProgress, setOcrProgress] = useState<OCRProgress>({
     isProcessing: false,
     progress: 0,
@@ -69,7 +72,7 @@ export const usePhotoOCR = () => {
 
   const extractExpirationDate = useCallback(async (imageUri: string): Promise<OCRResult> => {
     LoggingService.info(TAG, 'Starting OCR extraction');
-    setOcrProgress({ isProcessing: true, progress: 0, currentStep: 'Inizializzazione...' });
+    setOcrProgress({ isProcessing: true, progress: 0, currentStep: 'initializing' });
 
     timeoutRef.current = setTimeout(() => {
       LoggingService.error(TAG, 'Timeout OCR - resetting progress');
@@ -77,7 +80,7 @@ export const usePhotoOCR = () => {
     }, DATE_CONSTANTS.TIMEOUT_MS);
 
     try {
-      setOcrProgress(prev => ({ ...prev, progress: 25, currentStep: 'Riconoscimento testo...' }));
+      setOcrProgress(prev => ({ ...prev, progress: 25, currentStep: 'recognizing' }));
 
         const textRecognitionResult = await TextRecognition.recognize(imageUri, TextRecognitionScript.LATIN);
 
@@ -92,14 +95,14 @@ export const usePhotoOCR = () => {
           LoggingService.debug(TAG, `Block ${index + 1}: "${block.text}"`);
         });
 
-        setOcrProgress(prev => ({ ...prev, progress: 50, currentStep: 'Pulizia e analisi testo...' }));
+        setOcrProgress(prev => ({ ...prev, progress: 50, currentStep: 'analyzing' }));
 
         const rawText = textRecognitionResult.blocks.map(b => b.text).join(' ');
         const mlKitResult = parseBlocksForDate(textRecognitionResult.blocks, rawText);
 
         if (mlKitResult) {
           // ML Kit found a valid date — use it, no fallback needed
-          setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'Completato!' }));
+          setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'complete' }));
           clearTimers();
           return mlKitResult;
         }
@@ -109,24 +112,26 @@ export const usePhotoOCR = () => {
       }
 
       // === OCR.space fallback for dot-matrix text ===
-      setOcrProgress(prev => ({ ...prev, progress: 55, currentStep: 'Fallback dot-matrix...' }));
+      setOcrProgress(prev => ({ ...prev, progress: 55, currentStep: 'fallback' }));
 
-      const ocrSpaceResponse = await ocrSpaceRecognize(imageUri);
-
-      if (ocrSpaceResponse) {
+      const primaryLanguage = getCurrentLanguage();
+      const languages = [primaryLanguage, primaryLanguage === 'it' ? 'en' : 'it'] as const;
+      for (const language of languages) {
+        const ocrSpaceResponse = await ocrSpaceRecognize(imageUri, language);
+        if (!ocrSpaceResponse) continue;
         const ocrSpaceBlocks = convertOcrSpaceToTextBlocks(ocrSpaceResponse);
 
         if (ocrSpaceBlocks.length > 0) {
           LoggingService.info(TAG, `ocr.space found ${ocrSpaceBlocks.length} text blocks`);
 
-          setOcrProgress(prev => ({ ...prev, progress: 75, currentStep: 'Analisi testo dot-matrix...' }));
+          setOcrProgress(prev => ({ ...prev, progress: 75, currentStep: 'analyzingFallback' }));
 
           const rawText = ocrSpaceBlocks.map(b => b.text).join(' ');
           const fallbackResult = parseBlocksForDate(ocrSpaceBlocks, rawText);
 
           if (fallbackResult) {
             LoggingService.info(TAG, 'ocr.space fallback found a valid date');
-            setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'Completato!' }));
+            setOcrProgress(prev => ({ ...prev, progress: 100, currentStep: 'complete' }));
             clearTimers();
             return fallbackResult;
           }
@@ -166,8 +171,17 @@ export const usePhotoOCR = () => {
 
   return {
     extractExpirationDate,
-    ocrProgress,
+    ocrProgress: {
+      ...ocrProgress,
+      currentStep: ({
+        initializing: t('scanner.ocrInitializing'),
+        recognizing: t('scanner.ocrRecognizing'),
+        analyzing: t('scanner.ocrAnalyzing'),
+        fallback: t('scanner.ocrFallback'),
+        analyzingFallback: t('scanner.ocrAnalyzingFallback'),
+        complete: t('scanner.ocrComplete'),
+      } as Record<string, string>)[ocrProgress.currentStep] ?? '',
+    },
     resetProgress
   };
 };
-

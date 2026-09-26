@@ -17,12 +17,14 @@ import {
   TouchableOpacity,
   ActivityIndicator
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { FontAwesome } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { useTheme } from '@/context/ThemeContext';
 import { useEmailAuth } from '@/hooks/useEmailAuth';
 import { usePasswordValidation } from '@/hooks/usePasswordValidation';
+import { translateAuthError } from '@/utils/authErrorI18n';
 import { PasswordValidationDisplay } from './PasswordValidationDisplay';
 import { EmailVerificationBanner } from './EmailVerificationBanner';
 
@@ -33,43 +35,65 @@ interface LoginFormProps {
   onForgotPasswordPress?: () => void;
 }
 
+type CaptchaMessageEvent = {
+  nativeEvent: { data: string };
+  success: boolean;
+  markUsed?: () => void;
+};
+
 export const LoginForm: React.FC<LoginFormProps> = ({
   onLoginSuccess,
   onLoginError,
   onRegisterPress,
   onForgotPasswordPress
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [showVerificationSuccess, setShowVerificationSuccess] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const captchaRef = useRef<ConfirmHcaptcha>(null);
+  const captchaSubmissionInFlight = useRef(false);
   const emailAuth = useEmailAuth();
   const passwordValidation = usePasswordValidation();
 
   const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
 
   const submitLogin = async (token?: string) => {
+    // hCaptcha responses are single-use. Clear the token before the request
+    // so a failed Auth response can never be retried with the same passcode.
+    setCaptchaToken(undefined);
     const result = await emailAuth.handleLogin(passwordValidation.password, token);
 
     if (result.success) {
       onLoginSuccess?.();
     } else {
-      onLoginError?.(result.error || 'Errore durante il login');
-      setCaptchaToken(undefined);
+      // Boundary: map the stable AuthService/hook code to the localized text.
+      // onLoginError always receives the final user-facing message.
+      onLoginError?.(translateAuthError(t, result.error, result.errorParams));
       captchaRef.current?.hide();
     }
   };
 
-  const onCaptchaMessage = (event: { nativeEvent: { data: string }; success: boolean }) => {
+  const onCaptchaMessage = (event: CaptchaMessageEvent) => {
     if (event.success) {
-      const token = event.nativeEvent.data;
-      setCaptchaToken(token);
+      const token = event.nativeEvent.data.trim();
+      // The native package marks its "open" notification as successful too;
+      // only an actual hCaptcha passcode (>35 chars) may reach Supabase.
+      if (token.length <= 35 || captchaSubmissionInFlight.current) return;
+
+      captchaSubmissionInFlight.current = true;
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
-      submitLogin(token);
+      void submitLogin(token).finally(() => {
+        event.markUsed?.();
+        captchaSubmissionInFlight.current = false;
+      });
     } else if (event.nativeEvent.data === 'error') {
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
     } else if (event.nativeEvent.data === 'challenge-closed') {
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
     }
   };
@@ -91,11 +115,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const handleLogin = async () => {
     if (emailAuth.isRateLimited) {
       const minutes = Math.ceil((emailAuth.remainingMs || 0) / 60000);
-      onLoginError?.(`Troppi tentativi di login. Riprova tra ${minutes} minuti.`);
+      onLoginError?.(t('auth.errors_rateLimitLogin', { count: minutes }));
       return;
     }
     if (!passwordValidation.password) {
-      onLoginError?.('Inserisci la password');
+      onLoginError?.(t('auth.errors_emptyPassword'));
       return;
     }
 
@@ -114,8 +138,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <View>
-      <Text style={styles.header}>MyFrigo</Text>
-      <Text style={styles.subtitle}>Accedi o clicca su Registrati.</Text>
+      <Text style={styles.header}>{t('auth.loginHeader')}</Text>
+      <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
 
       <EmailVerificationBanner
         visible={showVerificationSuccess}
@@ -125,7 +149,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       <TextInput
         testID="email-input"
         style={styles.input}
-        placeholder="Email"
+        placeholder={t('auth.emailPlaceholder')}
         value={emailAuth.email}
         onChangeText={emailAuth.setEmail}
         autoCapitalize="none"
@@ -136,7 +160,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <TextInput
           testID="password-input"
           style={styles.input}
-          placeholder="Password"
+          placeholder={t('auth.passwordPlaceholder')}
           value={passwordValidation.password}
           onChangeText={(value) => {
             passwordValidation.handlePasswordChange(value);
@@ -144,7 +168,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           secureTextEntry={!isPasswordVisible}
         />
         <TouchableOpacity
-          accessibilityLabel="Mostra password"
+          accessibilityLabel={t('auth.showHidePasswordLabel')}
           accessibilityRole="button"
           style={styles.eyeIcon}
           onPress={() => setIsPasswordVisible(!isPasswordVisible)}
@@ -159,50 +183,50 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       />
 
       {emailAuth.error && (
-        <Text style={styles.errorText}>{emailAuth.error}</Text>
+        <Text style={styles.errorText}>{translateAuthError(t, emailAuth.error, emailAuth.errorParams)}</Text>
       )}
 
       {isBlocked && (
         <View testID="rate-limit-warning" style={styles.rateLimitBox} accessibilityRole="alert">
           <Text style={styles.rateLimitText}>
-            Troppi tentativi. Riprova tra {blockedMinutes} {blockedMinutes === 1 ? 'minuto' : 'minuti'}.
+            {t('auth.errors_rateLimitLogin', { count: blockedMinutes })}
           </Text>
-          <TouchableOpacity testID="rate-limit-recover-link" onPress={onForgotPasswordPress} accessibilityLabel="Recupera password" accessibilityRole="link">
-            <Text style={styles.rateLimitLink}>Recupera password</Text>
+          <TouchableOpacity testID="rate-limit-recover-link" onPress={onForgotPasswordPress} accessibilityLabel={t('auth.recoverPasswordLink')} accessibilityRole="link">
+            <Text style={styles.rateLimitLink}>{t('auth.recoverPasswordLink')}</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {emailAuth.attemptsLeft != null && !isBlocked && emailAuth.attemptsLeft <= 2 && emailAuth.attemptsLeft > 0 && (
         <Text testID="attempts-left-hint" style={styles.hintText}>
-          Tentativi rimasti: {emailAuth.attemptsLeft}
+          {t('auth.attemptsLeftHint', { count: emailAuth.attemptsLeft })}
         </Text>
       )}
 
       <TouchableOpacity
         testID="login-button"
-        accessibilityLabel="Accedi"
+        accessibilityLabel={t('auth.signIn')}
         accessibilityRole="button"
         style={[styles.button, isLoginDisabled && styles.buttonDisabled]}
         onPress={handleLogin}
         disabled={isLoginDisabled}
       >
-        {emailAuth.loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{isBlocked ? `Bloccato (${blockedMinutes}m)` : 'Login'}</Text>}
+        {emailAuth.loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{isBlocked ? t('auth.blockedSuffix') + ` (${blockedMinutes}m)` : t('auth.login')}</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity
         testID="signup-button"
-        accessibilityLabel="Registrati"
+        accessibilityLabel={t('auth.signUp')}
         accessibilityRole="button"
         style={[styles.button, styles.secondaryButton]}
         onPress={onRegisterPress}
         disabled={emailAuth.loading}
       >
-        <Text style={styles.secondaryButtonText}>Registrati</Text>
+        <Text style={styles.secondaryButtonText}>{t('auth.signUp')}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity testID="forgot-password-link" accessibilityLabel="Hai dimenticato la password?" accessibilityRole="link" onPress={onForgotPasswordPress}>
-        <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
+      <TouchableOpacity testID="forgot-password-link" accessibilityLabel={t('auth.forgotPassword')} accessibilityRole="link" onPress={onForgotPasswordPress}>
+        <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
       </TouchableOpacity>
 
       {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (

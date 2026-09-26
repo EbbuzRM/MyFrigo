@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="it">
+<head><meta charset="utf-8"><title>MyFrigo: conferma nuova email / Confirm new email</title></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:32px auto;padding:24px;color:#111827;line-height:1.5">
+  <h1>MyFrigo</h1>
+  <p lang="it">È stata richiesta la modifica dell’indirizzo email del tuo account.</p>
+  <p lang="en-GB">A change to your account email address was requested.</p>
+  <p>{{ .Email }} → {{ .NewEmail }}</p>
+  <p lang="it">Conferma la modifica con il pulsante qui sotto.</p>
+  <p lang="en-GB">Confirm the change with the button below.</p>
+  <p><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px">Conferma email / Confirm email</a></p>
+  <p lang="it">Se non hai richiesto la modifica, proteggi il tuo account.</p>
+  <p lang="en-GB">If you did not request the change, secure your account.</p>
+</body>
+</html>

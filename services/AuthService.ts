@@ -158,13 +158,11 @@ async function recordFailedAttempt(email: string): Promise<void> {
   const updated = rateLimitStore.get(key)!;
   if (updated.attempts === RATE_LIMIT_WARNING_THRESHOLD) {
     LoggingService.warning('AuthService', 'Rate limit warning threshold reached', {
-      email: key,
       attempts: updated.attempts,
     });
   }
   if (updated.attempts >= RATE_LIMIT_MAX_ATTEMPTS) {
     LoggingService.error('AuthService', 'Rate limit exceeded - brute force block', {
-      email: key,
       attempts: updated.attempts,
     });
   }
@@ -269,13 +267,52 @@ export const __testing = {
 };
 
 /**
- * Interfaccia per il risultato dell'autenticazione
+ * Interfaccia per il risultato dell'autenticazione.
+ * `error` carries a stable code (see AUTH_ERROR_CODES), never a user-facing
+ * string: the UI layer maps code -> `auth.*` catalog key via
+ * AUTH_ERROR_I18N_KEYS at the boundary. `errorParams` holds interpolation
+ * params (e.g. `{ count }` for pluralized rate-limit messages).
  */
 export interface AuthResult {
   success: boolean;
   error?: string;
+  errorParams?: Record<string, string | number>;
   duration?: number;
 }
+
+/**
+ * Stable error codes emitted by AuthService. Plain strings so
+ * `AuthResult.error` stays `string`-typed.
+ */
+export const AUTH_ERROR_CODES = {
+  INVALID_EMAIL_FORMAT: 'invalid_email_format',
+  MISSING_CREDENTIALS: 'missing_credentials',
+  RATE_LIMITED: 'rate_limited',
+  INVALID_CREDENTIALS: 'invalid_credentials',
+  EMAIL_NOT_CONFIRMED: 'email_not_confirmed',
+  LOGIN_FAILED: 'login_failed',
+  GOOGLE_FAILED: 'google_failed',
+  GOOGLE_CONFIG_ERROR: 'google_config_error',
+} as const;
+
+export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES];
+
+/**
+ * Maps each stable auth error code to its `auth.*` catalog key.
+ * RATE_LIMITED resolves via i18next plural (`errors_rateLimitLogin_one/other`)
+ * using `errorParams.count`. Values stay literal (not widened to `string`) so
+ * UI boundaries can pass them directly to the typed `t()` function.
+ */
+export const AUTH_ERROR_I18N_KEYS = {
+  [AUTH_ERROR_CODES.INVALID_EMAIL_FORMAT]: 'auth.errors_invalidEmailFormat',
+  [AUTH_ERROR_CODES.MISSING_CREDENTIALS]: 'auth.errors_loginGenericError',
+  [AUTH_ERROR_CODES.RATE_LIMITED]: 'auth.errors_rateLimitLogin',
+  [AUTH_ERROR_CODES.INVALID_CREDENTIALS]: 'auth.errors_invalidCredentials',
+  [AUTH_ERROR_CODES.EMAIL_NOT_CONFIRMED]: 'auth.errors_emailNotConfirmed',
+  [AUTH_ERROR_CODES.LOGIN_FAILED]: 'auth.errors_loginGenericError',
+  [AUTH_ERROR_CODES.GOOGLE_FAILED]: 'auth.errors_googleLoginFailed',
+  [AUTH_ERROR_CODES.GOOGLE_CONFIG_ERROR]: 'auth.errors_googleConfigError',
+} as const satisfies Record<AuthErrorCode, string>;
 
 /**
  * Servizio centralizzato per la gestione dell'autenticazione
@@ -299,12 +336,12 @@ export class AuthService {
     const normalizedEmail = normalizeEmail(email);
     // Validation on normalized email (trim+lowercase) so " Test@Example.COM " is valid
     if (!this.validateEmail(normalizedEmail)) {
-      return { success: false, error: 'Formato email non valido' };
+      return { success: false, error: AUTH_ERROR_CODES.INVALID_EMAIL_FORMAT };
     }
 
     if (!normalizedEmail || !password) {
       authLogger.errorStep('LOGIN_VALIDATION', new Error('Email e password sono richieste'));
-      return { success: false, error: 'Email e password sono richieste' };
+      return { success: false, error: AUTH_ERROR_CODES.MISSING_CREDENTIALS };
     }
 
     try {
@@ -314,7 +351,8 @@ export class AuthService {
         const minutes = Math.ceil((rateCheck.remainingMs || 0) / 60000);
         return {
           success: false,
-          error: `Troppi tentativi di login. Riprova tra ${minutes} minuti.`
+          error: AUTH_ERROR_CODES.RATE_LIMITED,
+          errorParams: { count: minutes },
         };
       }
 
@@ -341,7 +379,7 @@ export class AuthService {
 
         const errMsg = (error.message?.toLowerCase() || '').trim();
 
-        // Caso 1: Credenziali non valide → messaggio generico (previene enumerazione email)
+        // Caso 1: Credenziali non valide → codice generico (previene enumerazione email)
         // Supabase restituisce "Invalid login credentials" per password errata o email inesistente
         if (errMsg.includes('invalid') && (errMsg.includes('credentials') || errMsg.includes('login'))) {
           LoggingService.warning('AuthService', 'Login failed - invalid credentials', {
@@ -350,11 +388,11 @@ export class AuthService {
 
           return {
             success: false,
-            error: 'Email o password non validi.'
+            error: AUTH_ERROR_CODES.INVALID_CREDENTIALS
           };
         }
 
-        // Caso 2: Email non confermata → messaggio specifico (informativo, non rivela esistenza account)
+        // Caso 2: Email non confermata → codice specifico (informativo, non rivela esistenza account)
         if (errMsg.includes('email') && errMsg.includes('confirm')) {
           LoggingService.warning('AuthService', 'Login failed - email not confirmed', {
             duration,
@@ -362,11 +400,11 @@ export class AuthService {
 
           return {
             success: false,
-            error: 'Se le credenziali sono corrette, riceverai un\'email di conferma.'
+            error: AUTH_ERROR_CODES.EMAIL_NOT_CONFIRMED
           };
         }
 
-        // Caso 3: Altri errori sconosciuti → messaggio generico di sicurezza
+        // Caso 3: Altri errori sconosciuti → codice generico di sicurezza
         LoggingService.error('AuthService', 'Login failed - unexpected error', {
           duration,
           error: errMsg,
@@ -374,7 +412,7 @@ export class AuthService {
 
         return {
           success: false,
-          error: 'Email o password non validi.'
+          error: AUTH_ERROR_CODES.INVALID_CREDENTIALS
         };
       }
 
@@ -395,7 +433,7 @@ export class AuthService {
 
       return {
         success: false,
-        error: 'Si è verificato un errore durante il login. Riprova.'
+        error: AUTH_ERROR_CODES.LOGIN_FAILED
       };
     }
   }
@@ -417,7 +455,7 @@ export class AuthService {
 
       if (error) {
         authLogger.errorStep('SUPABASE_GOOGLE_AUTH', error);
-        throw new Error(error.message || 'Google login fallito');
+        throw new Error(AUTH_ERROR_CODES.GOOGLE_FAILED);
       }
 
       authLogger.endStep('SUPABASE_GOOGLE_AUTH', { duration });
@@ -427,13 +465,13 @@ export class AuthService {
       return { success: true, duration };
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
+      // Never leak provider messages to UI: always the stable generic code.
       LoggingService.error('AuthService', 'Google login failed', error);
       authLogger.completeAuth(false);
 
       return {
         success: false,
-        error: errorMessage
+        error: AUTH_ERROR_CODES.GOOGLE_FAILED
       };
     }
   }
@@ -442,7 +480,7 @@ export class AuthService {
    * Gestisce gli errori di configurazione di Google Sign-In
    */
   static handleGoogleSignInConfigurationError(): AuthResult {
-    const errorMessage = 'Il modulo nativo di Google Sign-In non è correttamente collegato. Questo problema si verifica solitamente quando si utilizza Expo Go invece di un custom development client.';
+    const errorMessage = AUTH_ERROR_CODES.GOOGLE_CONFIG_ERROR;
 
     LoggingService.error('AuthService', 'Google Sign-In native module error detected', {
       errorMessage,

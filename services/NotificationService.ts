@@ -14,7 +14,7 @@
  * Dopo la migrazione alle push server-side (OneSignal + Edge Function),
  * questo servizio mantiene solo:
  *   - initialize(): setup OneSignal
- *   - scheduleTestNotification(): diagnostica
+ *   - checkNotificationReadiness(): verifica permessi diagnostica
  *
  * Le notifiche push sono gestite interamente da OneSignal SDK a livello nativo.
  * Non serve più setNotificationHandler né la creazione manuale del canale Android:
@@ -68,11 +68,10 @@ export class NotificationService {
   }
 
   /**
-   * Pianifica una notifica di test (si attiva dopo 10 secondi).
-   * Utile per verificare che OneSignal e il canale Android funzionino.
+   * Verifica il permesso OneSignal; non invia una notifica.
    */
-  static async scheduleTestNotification(): Promise<void> {
-    return NotificationCoreService.scheduleTestNotification();
+  static async checkNotificationReadiness(): Promise<boolean> {
+    return NotificationCoreService.checkNotificationReadiness();
   }
 }
 

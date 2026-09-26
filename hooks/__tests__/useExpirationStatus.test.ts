@@ -14,21 +14,21 @@ describe('useExpirationStatus', () => {
   today.setHours(0, 0, 0, 0);
 
   describe('Status Calculation', () => {
-    it('should return "Scaduto" for past dates', () => {
+    it('should return stable expired status for past dates', () => {
       const pastDate = new Date(today);
       pastDate.setDate(today.getDate() - 1);
       
       const { result } = renderHook(() => useExpirationStatus(pastDate.toISOString(), false));
       
-      expect(result.current.text).toBe('Scaduto');
+      expect(result.current.status).toBe('expired');
       expect(result.current.color).toBeDefined();
       expect(result.current.backgroundColor).toBeDefined();
     });
 
-    it('should return "Scade oggi" for today', () => {
+    it('should return stable expires-today status for today', () => {
       const { result } = renderHook(() => useExpirationStatus(today.toISOString(), false));
       
-      expect(result.current.text).toBe('Scade oggi');
+      expect(result.current.status).toBe('expiresToday');
       expect(result.current.color).toBeDefined();
     });
 
@@ -38,7 +38,8 @@ describe('useExpirationStatus', () => {
       
       const { result } = renderHook(() => useExpirationStatus(warningDate.toISOString(), false));
       
-      expect(result.current.text).toContain('giorni');
+      expect(result.current.status).toBe('expiresInDays');
+      expect(result.current).toHaveProperty('daysUntil', 2);
       expect(result.current.color).toBeDefined();
     });
 
@@ -48,10 +49,25 @@ describe('useExpirationStatus', () => {
       
       const { result } = renderHook(() => useExpirationStatus(futureDate.toISOString(), false));
       
-      expect(result.current.text).toContain('giorni');
+      expect(result.current.status).toBe('expiresInDays');
+      expect(result.current).toHaveProperty('daysUntil', 30);
       expect(result.current.color).toBeDefined();
     });
   });
+
+    it('counts calendar days consistently across a daylight saving transition', () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-09-25T22:30:00.000Z'));
+
+      try {
+        const expirationDate = new Date('2026-10-25T23:00:00.000Z');
+        const { result } = renderHook(() => useExpirationStatus(expirationDate.toISOString(), false));
+
+        expect(result.current).toMatchObject({ status: 'expiresInDays', daysUntil: 30 });
+      } finally {
+        jest.useRealTimers();
+      }
+    });
 
   describe('Dark Mode Support', () => {
     it('should return different colors for light mode', () => {
@@ -82,21 +98,21 @@ describe('useExpirationStatus', () => {
     it('should handle undefined dates', () => {
       const { result } = renderHook(() => useExpirationStatus(undefined, false));
       
-      expect(result.current.text).toBe('Data non impostata');
+      expect(result.current.status).toBe('dateNotSet');
       expect(result.current.color).toBeDefined();
     });
 
     it('should handle invalid dates', () => {
       const { result } = renderHook(() => useExpirationStatus('invalid-date', false));
       
-      expect(result.current.text).toBe('Data non valida');
+      expect(result.current.status).toBe('dateInvalid');
       expect(result.current.color).toBeDefined();
     });
 
     it('should handle empty string dates', () => {
       const { result } = renderHook(() => useExpirationStatus('', false));
       
-      expect(result.current.text).toBe('Data non impostata');
+      expect(result.current.status).toBe('dateNotSet');
     });
 
     it('should handle dates with time component', () => {
@@ -106,7 +122,7 @@ describe('useExpirationStatus', () => {
       
       const { result } = renderHook(() => useExpirationStatus(dateWithTime.toISOString(), false));
       
-      expect(result.current.text).toContain('giorni');
+      expect(result.current.status).toBe('expiresInDays');
       expect(result.current.color).toBeDefined();
     });
 
@@ -116,7 +132,7 @@ describe('useExpirationStatus', () => {
       
       const { result } = renderHook(() => useExpirationStatus(leapDate.toISOString(), false));
       
-      expect(result.current.text).toBeDefined();
+      expect(result.current.status).toBe('expired');
       expect(result.current.color).toBeDefined();
     });
   });
@@ -169,7 +185,7 @@ describe('useExpirationStatus', () => {
       
       const { result } = renderHook(() => useExpirationStatus(farFutureDate.toISOString(), false));
       
-      expect(result.current.text).toContain('giorni');
+      expect(result.current.status).toBe('expiresInDays');
       expect(result.current.color).toBeDefined();
     });
 
@@ -194,35 +210,38 @@ describe('useExpirationStatus', () => {
     });
   });
 
-  describe('Text Output', () => {
-    it('should display correct number of days remaining', () => {
+  describe('Stable day count', () => {
+    it('should return correct number of days remaining', () => {
       const futureDate = new Date(today);
       futureDate.setDate(today.getDate() + 5);
       
       const { result } = renderHook(() => useExpirationStatus(futureDate.toISOString(), false));
       
-      expect(result.current.text).toContain('5');
-      expect(result.current.text).toContain('giorni');
+      expect(result.current).toMatchObject({ status: 'expiresInDays', daysUntil: 5 });
     });
 
-    it('should display 1 day for tomorrow', () => {
+    it('should return one day for tomorrow', () => {
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
       
       const { result } = renderHook(() => useExpirationStatus(tomorrow.toISOString(), false));
       
-      expect(result.current.text).toContain('1');
-      expect(result.current.text).toContain('giorni');
+      expect(result.current).toMatchObject({ status: 'expiresInDays', daysUntil: 1 });
     });
 
-    it('should display 2 days for day after tomorrow', () => {
+    it('should return two days for day after tomorrow', () => {
       const dayAfterTomorrow = new Date(today);
       dayAfterTomorrow.setDate(today.getDate() + 2);
       
       const { result } = renderHook(() => useExpirationStatus(dayAfterTomorrow.toISOString(), false));
       
-      expect(result.current.text).toContain('2');
-      expect(result.current.text).toContain('giorni');
+      expect(result.current).toMatchObject({ status: 'expiresInDays', daysUntil: 2 });
+    });
+
+    it('should return frozen status when product is frozen', () => {
+      const { result } = renderHook(() => useExpirationStatus(undefined, false, true));
+
+      expect(result.current.status).toBe('frozen');
     });
   });
 });

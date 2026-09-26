@@ -48,7 +48,7 @@ jest.mock('@/utils/AuthLogger', () => ({
   },
 }));
 
-import { AuthService, cleanupRateLimiter } from '../AuthService';
+import { AuthService, AUTH_ERROR_CODES, cleanupRateLimiter } from '../AuthService';
 import { supabase } from '../supabaseClient';
 import { LoggingService } from '../LoggingService';
 import { authLogger } from '@/utils/AuthLogger';
@@ -112,7 +112,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('invalid-email', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Formato email non valido');
+      expect(result.error).toBe(AUTH_ERROR_CODES.INVALID_EMAIL_FORMAT);
       expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
     });
 
@@ -121,14 +121,14 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(false);
       // Empty string fails the email regex check before the empty check
-      expect(result.error).toBe('Formato email non valido');
+      expect(result.error).toBe(AUTH_ERROR_CODES.INVALID_EMAIL_FORMAT);
     });
 
     it('should return error when password is empty (valid email format)', async () => {
       const result = await AuthService.signInWithEmail('user@example.com', '');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Email e password sono richieste');
+      expect(result.error).toBe(AUTH_ERROR_CODES.MISSING_CREDENTIALS);
     });
 
     it('should return unified error for unconfirmed email (prevents enumeration)', async () => {
@@ -139,7 +139,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
+      expect(result.error).toBe(AUTH_ERROR_CODES.EMAIL_NOT_CONFIRMED);
       expect(LoggingService.warning).toHaveBeenCalledWith(
         'AuthService',
         'Login failed - email not confirmed',
@@ -155,7 +155,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Se le credenziali sono corrette, riceverai un\'email di conferma.');
+      expect(result.error).toBe(AUTH_ERROR_CODES.EMAIL_NOT_CONFIRMED);
     });
 
     it('should return invalid credentials error on wrong password', async () => {
@@ -166,7 +166,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'wrong-password');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Email o password non validi.');
+      expect(result.error).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
       expect(LoggingService.warning).toHaveBeenCalledWith(
         'AuthService',
         'Login failed - invalid credentials',
@@ -182,7 +182,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'wrong-password');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Email o password non validi.');
+      expect(result.error).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
     });
 
     it('should handle unexpected exceptions', async () => {
@@ -193,7 +193,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Si è verificato un errore durante il login. Riprova.');
+      expect(result.error).toBe(AUTH_ERROR_CODES.LOGIN_FAILED);
       expect(LoggingService.error).toHaveBeenCalled();
     });
 
@@ -203,7 +203,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('user@example.com', 'password123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Si è verificato un errore durante il login. Riprova.');
+      expect(result.error).toBe(AUTH_ERROR_CODES.LOGIN_FAILED);
     });
   });
 
@@ -231,7 +231,8 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithGoogle('expired-token');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Token expired');
+      // Provider messages never leak to the UI: stable generic code instead.
+      expect(result.error).toBe(AUTH_ERROR_CODES.GOOGLE_FAILED);
     });
 
     it('should return default error when Supabase error has no message', async () => {
@@ -243,7 +244,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithGoogle('token');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Google login fallito');
+      expect(result.error).toBe(AUTH_ERROR_CODES.GOOGLE_FAILED);
     });
 
     it('should handle unexpected exceptions', async () => {
@@ -254,7 +255,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithGoogle('token');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Network error');
+      expect(result.error).toBe(AUTH_ERROR_CODES.GOOGLE_FAILED);
     });
 
     it('should handle non-Error thrown values in Google login', async () => {
@@ -263,7 +264,7 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithGoogle('token');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Errore sconosciuto');
+      expect(result.error).toBe(AUTH_ERROR_CODES.GOOGLE_FAILED);
     });
   });
 
@@ -273,8 +274,7 @@ describe('AuthService', () => {
       const result = AuthService.handleGoogleSignInConfigurationError();
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('modulo nativo');
-      expect(result.error).toContain('Expo Go');
+      expect(result.error).toBe(AUTH_ERROR_CODES.GOOGLE_CONFIG_ERROR);
       expect(LoggingService.error).toHaveBeenCalledWith(
         'AuthService',
         'Google Sign-In native module error detected',
@@ -299,7 +299,8 @@ describe('AuthService', () => {
       const result = await AuthService.signInWithEmail('ratelimit@example.com', 'wrong');
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Troppi tentativi');
+      expect(result.error).toBe(AUTH_ERROR_CODES.RATE_LIMITED);
+      expect(result.errorParams).toEqual({ count: expect.any(Number) });
     });
 
     it('should allow login for different emails even when one is rate limited', async () => {
@@ -341,7 +342,7 @@ describe('AuthService', () => {
         error: { message: 'Invalid credentials' },
       });
       const failResult = await AuthService.signInWithEmail('clear@example.com', 'wrong');
-      expect(failResult.error).not.toContain('Troppi tentativi');
+      expect(failResult.error).not.toBe(AUTH_ERROR_CODES.RATE_LIMITED);
     });
   });
 });

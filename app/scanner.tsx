@@ -8,7 +8,7 @@
 // message: 
 
 import React, { useState, useCallback } from 'react';
-import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { Text, View, StyleSheet, Button, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { router } from 'expo-router';
 import { useIsFocused } from 'expo-router/build/react-navigation/native';
@@ -19,6 +19,8 @@ import { Product } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
 import { useBarcodeScanner, ScanResult } from '@/hooks/useBarcodeScanner';
 import { styles } from '@/styles/scanner.styles';
+import { useTranslation } from 'react-i18next';
+import i18next from 'i18next';
 
 interface FrameLayout {
   x: number;
@@ -52,25 +54,24 @@ type ProductData = {
 };
 
 export default function BarcodeScannerScreen() {
+  const { t } = useTranslation();
   const [frameLayout, setFrameLayout] = useState<FrameLayout | null>(null);
   const isFocused = useIsFocused();
   const { categories: appCategories } = useCategories();
 
   const handleProductFound = useCallback((result: ScanResult, barcode: string) => {
+    const translate = i18next.t.bind(i18next);
     if (result.type === 'template' && result.data) {
-      Alert.alert('Prodotto Trovato!', `Trovato template salvato: ${(result.data as Partial<Product>).name}`, [
+      Alert.alert(translate('scanner.productFoundTitle'), translate('scanner.savedTemplateFound', { name: (result.data as Partial<Product>).name }), [
         {
-          text: 'Continua',
+          text: translate('common.continue'),
           onPress: () => {
             LoggingService.info('Scanner', `Navigating to manual-entry with params: ${JSON.stringify(result.params)}`);
             router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
-            if (result.params?.imageUrl) {
-              Image.prefetch(result.params.imageUrl);
-            }
           }
         },
         {
-          text: 'Scansiona di Nuovo',
+          text: translate('scanner.scanAgain'),
           onPress: () => resetScanner(),
           style: 'cancel',
         },
@@ -82,37 +83,34 @@ export default function BarcodeScannerScreen() {
       const rawData = result.data as ProductData;
       const rawName = 'product_name' in rawData ? rawData.product_name : rawData.name;
       const displayName = extractedName || rawName;
-      Alert.alert('Prodotto Trovato!', `Trovato online: ${displayName || barcode}`, [
+      Alert.alert(translate('scanner.productFoundTitle'), translate('scanner.onlineProductFound', { name: displayName || barcode }), [
         {
-          text: 'Continua',
+          text: translate('common.continue'),
           onPress: () => {
             LoggingService.info('Scanner', `Navigating to manual-entry with online params: ${JSON.stringify(result.params)}`);
             router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
-            if (result.params?.imageUrl) {
-              Image.prefetch(result.params.imageUrl);
-            }
           }
         },
         {
-          text: 'Scansiona di Nuovo',
+          text: translate('scanner.scanAgain'),
           onPress: () => resetScanner(),
           style: 'cancel',
         },
       ]);
     } else if (result.type === 'not_found') {
       Alert.alert(
-        'Prodotto Non Trovato',
-        `Vuoi aggiungere manualmente il prodotto con codice ${barcode}?`,
+        translate('scanner.productNotFoundTitle'),
+        translate('scanner.addBarcodeManuallyPrompt', { barcode }),
         [
           {
-            text: 'Sì, Aggiungi',
+            text: translate('scanner.yesAdd'),
             onPress: () => {
               LoggingService.info('Scanner', `Navigating to manual-entry for manual entry: ${JSON.stringify(result.params)}`);
               router.replace({ pathname: '/manual-entry', params: { ...result.params, isEditMode: 'false', resetForm: 'true' } as ManualEntryParams });
             }
           },
           {
-            text: 'Scansiona di Nuovo',
+            text: translate('scanner.scanAgain'),
             onPress: () => resetScanner(),
             style: 'cancel',
           },
@@ -155,9 +153,9 @@ export default function BarcodeScannerScreen() {
     content = (
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Abbiamo bisogno del permesso per usare la fotocamera per scansionare i codici a barre.</Text>
-          <Button onPress={requestPermission} title="Concedi Permesso" />
-          <Button onPress={() => router.back()} title="Indietro" color="gray" />
+          <Text style={styles.permissionText}>{t('scanner.cameraPermissionMessage')}</Text>
+          <Button onPress={requestPermission} title={t('scanner.grantPermission')} />
+          <Button onPress={() => router.back()} title={t('common.back')} color="gray" />
         </View>
       </SafeAreaView>
     );
@@ -165,15 +163,15 @@ export default function BarcodeScannerScreen() {
     content = (
       <SafeAreaView style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color="#fff" style={styles.loadingIndicator} />
-        <Text style={styles.loadingText}>{loadingProgress}</Text>
-        {loadingProgress.includes('velocissima') && (
+        <Text style={styles.loadingText}>{t(loadingProgress === 'searching' ? 'scanner.searchingBarcode' : 'scanner.initializingBarcode')}</Text>
+        {loadingProgress === 'searching' && (
           <TouchableOpacity
-            accessibilityLabel="Salta ricerca e aggiungi manualmente"
+            accessibilityLabel={t('scanner.skipSearch')}
             accessibilityRole="button"
             style={styles.skipButton}
             onPress={() => resetScanner()}
           >
-            <Text style={styles.skipButtonText}>Salta ricerca e aggiungi manualmente</Text>
+            <Text style={styles.skipButtonText}>{t('scanner.skipSearch')}</Text>
           </TouchableOpacity>
         )}
       </SafeAreaView>
@@ -181,19 +179,19 @@ export default function BarcodeScannerScreen() {
   } else if (loadingError) {
     content = (
       <SafeAreaView style={[styles.container, styles.errorContainer]}>
-        <Text style={styles.errorText}>{loadingError}</Text>
-        <TouchableOpacity accessibilityLabel="Riprova scansione" accessibilityRole="button" style={styles.retryButton} onPress={() => resetScanner()}>
+            <Text style={styles.errorText}>{t('scanner.lookupFailed')}</Text>
+            <TouchableOpacity testID="scanner-retry-button" accessibilityLabel={t('scanner.retryScan')} accessibilityRole="button" style={styles.retryButton} onPress={() => resetScanner()}>
           <RefreshCw size={20} color="#fff" />
-          <Text style={styles.retryButtonText}>Riprova</Text>
+          <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel="Inserisci manualmente" accessibilityRole="button" style={styles.manualButton} onPress={() => {
+            <TouchableOpacity testID="scanner-manual-entry-button" accessibilityLabel={t('scanner.enterManually')} accessibilityRole="button" style={styles.manualButton} onPress={() => {
           LoggingService.info('Scanner', `Manual entry button pressed, navigating with barcode: ${currentBarcode}`);
           router.replace({ pathname: '/manual-entry', params: { barcode: currentBarcode, barcodeType: 'unknown', addedMethod: 'barcode', fromScannerError: 'true', isEditMode: 'false', resetForm: 'true' } as ManualEntryParams })
         }}>
-          <Text style={styles.manualButtonText}>Inserisci Manualmente</Text>
+          <Text style={styles.manualButtonText}>{t('scanner.enterManually')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel="Torna indietro" accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Torna Indietro</Text>
+        <TouchableOpacity accessibilityLabel={t('common.goBack')} accessibilityRole="button" style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>{t('common.goBack')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -211,14 +209,14 @@ export default function BarcodeScannerScreen() {
         )}
         <View style={styles.scanFrameContainer} pointerEvents="none">
           <View style={styles.scanFrame} onLayout={handleFrameLayout} />
-          <Text style={styles.scanFrameText}>Inquadra il codice a barre</Text>
+          <Text testID="scanner-frame-label" style={styles.scanFrameText}>{t('scanner.frameBarcode')}</Text>
         </View>
         {scanned && !isLoading && (
-          <TouchableOpacity accessibilityLabel="Scansiona di nuovo" accessibilityRole="button" style={styles.rescanButtonContainer} onPress={() => resetScanner()}>
-            <Text style={styles.rescanButtonText}>Tocca per Scansionare di Nuovo</Text>
+            <TouchableOpacity testID="scanner-rescan-button" accessibilityLabel={t('scanner.scanAgain')} accessibilityRole="button" style={styles.rescanButtonContainer} onPress={() => resetScanner()}>
+            <Text style={styles.rescanButtonText}>{t('scanner.tapToScanAgain')}</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity accessibilityLabel="Torna alla schermata precedente" accessibilityRole="button" onPress={() => router.back()} style={styles.backButtonContainer}>
+        <TouchableOpacity testID="scanner-back-button" accessibilityLabel={t('scanner.previousScreen')} accessibilityRole="button" onPress={() => router.back()} style={styles.backButtonContainer}>
           <ArrowLeft size={28} color="#fff" />
         </TouchableOpacity>
       </SafeAreaView>

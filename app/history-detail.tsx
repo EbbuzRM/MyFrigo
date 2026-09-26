@@ -17,15 +17,17 @@ import { Product } from '@/types/Product';
 import { ArrowLeft } from 'lucide-react-native';
 import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
+import { useTranslation } from 'react-i18next';
 
 export default function HistoryDetailScreen() {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const { filterType, title } = useLocalSearchParams<{ filterType: string, title: string }>();
+  const { filterType } = useLocalSearchParams<{ filterType: string }>();
   
   const [productList, setProductList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hasLoadError, setHasLoadError] = useState(false);
 
   // Carica i dati direttamente dal servizio
   useEffect(() => {
@@ -63,12 +65,12 @@ export default function HistoryDetailScreen() {
         }
       } catch (err) {
         LoggingService.error('HistoryDetail', 'Failed to load products:', err);
-        setError("Si è verificato un errore durante il caricamento dei prodotti.");
+        setHasLoadError(true);
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadProducts();
   }, [filterType]);
 
@@ -82,44 +84,55 @@ export default function HistoryDetailScreen() {
 
   const handleRestoreProduct = useCallback(async (productId: string) => {
     try {
-      await ProductStorage.restoreConsumedProduct(productId);
+      const restoreResult = await ProductStorage.restoreConsumedProduct(productId);
+      if (!restoreResult.success) {
+        throw new Error(restoreResult.error);
+      }
       // Rimuovi il prodotto dalla lista corrente invece di ricaricare tutto
       setProductList(currentProducts => currentProducts.filter(p => p.id !== productId));
-      Alert.alert('Prodotto Ripristinato', 'Il prodotto è stato spostato nuovamente nella tua dispensa.');
+      Alert.alert(t('history.restoreTitle'), t('history.restoreMessage'));
     } catch (error) {
-      Alert.alert('Errore', 'Si è verificato un errore durante il ripristino del prodotto.');
+      Alert.alert(t('history.restoreErrorTitle'), t('history.restoreErrorMessage'));
       LoggingService.error('HistoryDetail', 'Error restoring product:', error);
     }
-  }, []);
+  }, [t]);
+
+  const headerTitle = filterType === 'all'
+    ? t('history.historyAllTitle')
+    : filterType === 'consumed'
+      ? t('history.consumedTitle')
+      : filterType === 'expired'
+        ? t('history.expiredTitle')
+        : t('history.detailFallbackTitle');
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity accessibilityLabel="Torna indietro" accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityLabel={t('history.backLabel')} accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
         </TouchableOpacity>
-        <Text style={styles.title}>{title || 'Dettaglio Storico'}</Text>
+        <Text style={styles.title}>{headerTitle}</Text>
       </View>
-      
+
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
-          <Text style={styles.loadingText}>Caricamento prodotti...</Text>
+          <Text style={styles.loadingText}>{t('common.loadingProducts')}</Text>
         </View>
-      ) : error ? (
+      ) : hasLoadError ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorText}>{t('history.loadError')}</Text>
           <TouchableOpacity
-            accessibilityLabel="Riprova caricamento"
+            accessibilityLabel={t('common.retry')}
             accessibilityRole="button"
             style={styles.retryButton}
             onPress={() => {
-              setError(null);
+              setHasLoadError(false);
               setLoading(true);
               // Ricarica i dati
               ProductStorage.getProducts().then(({data, error}) => {
                 if (error) {
-                  setError("Si è verificato un errore durante il caricamento dei prodotti.");
+                  setHasLoadError(true);
                 } else if (data) {
                   setProductList(data);
                 }
@@ -127,7 +140,7 @@ export default function HistoryDetailScreen() {
               });
             }}
           >
-            <Text style={styles.retryButtonText}>Riprova</Text>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -145,7 +158,7 @@ export default function HistoryDetailScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Nessun prodotto da mostrare.</Text>
+              <Text style={styles.emptyStateText}>{t('history.detailEmpty')}</Text>
             </View>
           }
         />

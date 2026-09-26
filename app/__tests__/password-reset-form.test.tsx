@@ -6,9 +6,18 @@
 
 import React, { type ElementType } from 'react';
 import { render, act, waitFor, fireEvent } from '@testing-library/react-native';
+import i18next from 'i18next';
 import { Alert } from 'react-native';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import PasswordResetForm from '../password-reset-form';
 import { supabase } from '@/services/supabaseClient';
+
+// --- Mocks ---
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 
 
@@ -88,6 +97,7 @@ const renderForm = () => render(<PasswordResetForm />);
 describe('PasswordResetForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
     mockGetSession.mockReset();
     mockRefreshSession.mockReset();
     mockUpdateUser.mockReset();
@@ -101,6 +111,10 @@ describe('PasswordResetForm', () => {
     });
   });
 
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
+  });
+
   // ── Loading State ──────────────────────────────────────────────────
 
   describe('loading state', () => {
@@ -110,7 +124,7 @@ describe('PasswordResetForm', () => {
 
       const { getByText } = renderForm();
 
-      expect(getByText('Verifica sessione...')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.verifyingSession)).toBeTruthy();
     });
 
     it('should show ActivityIndicator while loading', () => {
@@ -149,8 +163,8 @@ describe('PasswordResetForm', () => {
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Impossibile verificare la sessione utente'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_sessionCheckError
         );
         expect(mockRouterReplace).toHaveBeenCalledWith('/login');
       });
@@ -187,7 +201,7 @@ describe('PasswordResetForm', () => {
       const { getByText } = renderForm();
 
       await waitFor(() => {
-        expect(getByText('Ciao refreshed@example.com, inserisci la tua nuova password')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.resetPasswordGreeting.replace('{{email}}', 'refreshed@example.com'))).toBeTruthy();
       });
     });
 
@@ -227,7 +241,7 @@ it('should continue with original session if refresh fails', async () => {
       const { getByText } = renderForm();
 
       await waitFor(() => {
-        expect(getByText('Ciao test@example.com, inserisci la tua nuova password')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.resetPasswordGreeting.replace('{{email}}', 'test@example.com'))).toBeTruthy();
       });
     });
 
@@ -235,7 +249,7 @@ it('should continue with original session if refresh fails', async () => {
       const { getByText } = renderForm();
 
       await waitFor(() => {
-        expect(getByText('Reimposta Password')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.resetPasswordTitle)).toBeTruthy();
       });
     });
 
@@ -243,11 +257,11 @@ it('should continue with original session if refresh fails', async () => {
       const { getByText } = renderForm();
 
       await waitFor(() => {
-        expect(getByText('Almeno 8 caratteri')).toBeTruthy();
-        expect(getByText('Una lettera maiuscola')).toBeTruthy();
-        expect(getByText('Una lettera minuscola')).toBeTruthy();
-        expect(getByText('Un numero')).toBeTruthy();
-        expect(getByText('Le password coincidono')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.minLengthRequirement)).toBeTruthy();
+        expect(getByText(itCatalogs.auth.hasUpperRequirement)).toBeTruthy();
+        expect(getByText(itCatalogs.auth.hasLowerRequirement)).toBeTruthy();
+        expect(getByText(itCatalogs.auth.hasNumberRequirement)).toBeTruthy();
+        expect(getByText(itCatalogs.auth.passwordsMatchRequirement)).toBeTruthy();
       });
     });
   });
@@ -410,10 +424,10 @@ it('should continue with original session if refresh fails', async () => {
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Successo',
-          'Password reimpostata con successo! Verrai reindirizzato alla dashboard.',
+          itCatalogs.auth.successTitle,
+          itCatalogs.auth.successMessage,
           expect.arrayContaining([
-            expect.objectContaining({ text: 'OK' }),
+            expect.objectContaining({ text: itCatalogs.auth.ok }),
           ])
         );
       });
@@ -439,7 +453,7 @@ it('should continue with original session if refresh fails', async () => {
 
       // Simulate pressing OK
       const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-      const okButton = alertCall[2].find((btn: { text: string }) => btn.text === 'OK');
+      const okButton = alertCall[2].find((btn: { text: string }) => btn.text === itCatalogs.auth.ok);
 
       await act(async () => {
         okButton.onPress();
@@ -464,8 +478,8 @@ it('should continue with original session if refresh fails', async () => {
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'La nuova password deve essere diversa dalla precedente.'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_newPasswordDifferent
         );
       });
     });
@@ -482,7 +496,8 @@ it('should continue with original session if refresh fails', async () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Network error');
+        // Unknown provider errors resolve to the generic catalog message.
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_unknownError);
       });
     });
 
@@ -510,8 +525,8 @@ it('should continue with original session if refresh fails', async () => {
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Il server non ha risposto in tempo, riprova tra poco.'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_serverTimeout
         );
       });
     });
@@ -532,7 +547,7 @@ it('should continue with original session if refresh fails', async () => {
       });
 
       // While updating, button should show "Aggiornamento..."
-      expect(queryByText('Aggiornamento...')).toBeTruthy();
+      expect(queryByText(itCatalogs.auth.updatingPassword)).toBeTruthy();
 
       // Resolve the update
       await act(async () => {
@@ -583,7 +598,7 @@ it('should continue with original session if refresh fails', async () => {
 
       // Now simulate the user pressing OK on the Alert
       const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-      const okButton = alertCall[2].find((btn: { text: string }) => btn.text === 'OK');
+      const okButton = alertCall[2].find((btn: { text: string }) => btn.text === itCatalogs.auth.ok);
 
       await act(async () => {
         okButton.onPress();
@@ -776,7 +791,7 @@ it('should continue with original session if refresh fails', async () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', expect.any(String));
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, expect.any(String));
       });
     });
 
@@ -799,7 +814,7 @@ it('should continue with original session if refresh fails', async () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Errore sconosciuto');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_unknownError);
       });
     });
 
@@ -826,8 +841,8 @@ it('should continue with original session if refresh fails', async () => {
       });
 
       // Loading should be false now, button text should be "Aggiorna Password"
-      expect(queryByText('Aggiorna Password')).toBeTruthy();
-      expect(queryByText('Aggiornamento...')).toBeNull();
+      expect(queryByText(itCatalogs.auth.updatePasswordButton)).toBeTruthy();
+      expect(queryByText(itCatalogs.auth.updatingPassword)).toBeNull();
     });
   });
 });

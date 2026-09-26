@@ -16,21 +16,32 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
-import { AUTH_CONSTANTS } from '@/constants/auth';
 import { useSignupValidation, SignupFormData } from '@/hooks/useSignupValidation';
 import { useRegistration } from '@/hooks/useRegistration';
+import { translateRegistrationError } from '@/utils/authErrorI18n';
 import { ValidationCheck } from '@/components/ValidationCheck';
 import { signupStyles as styles } from '@/styles/signupStyles';
 
+type CaptchaMessageEvent = {
+  nativeEvent: { data: string };
+  success: boolean;
+  markUsed?: () => void;
+};
+
 export default function SignupScreen() {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const [formData, setFormData] = useState<SignupFormData>({ email: '', password: '', firstName: '', lastName: '' });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const captchaRef = useRef<ConfirmHcaptcha>(null);
+  const captchaSubmissionInFlight = useRef(false);
   const router = useRouter();
 
   const sitekey = Constants.expoConfig?.extra?.hcaptchaSitekey;
@@ -38,7 +49,14 @@ export default function SignupScreen() {
   const { validateForm, validatePasswordField, passwordValidation, isFormValid, clearErrors } = useSignupValidation();
   const handleSuccess = useCallback(() => router.replace('/(tabs)'), [router]);
   const handleEmailNeedsConfirmation = useCallback((email: string) => router.replace({ pathname: '/confirm-email', params: { email } }), [router]);
-  const { register, handlePostRegistration, isLoading, error } = useRegistration(handleSuccess, () => handleEmailNeedsConfirmation(formData.email));
+  const handleLogin = useCallback(() => router.replace('/login'), [router]);
+  const handlePasswordRecovery = useCallback(() => router.replace('/forgot-password'), [router]);
+  const { register, handlePostRegistration, isLoading, error } = useRegistration(
+    handleSuccess,
+    () => handleEmailNeedsConfirmation(formData.email),
+    handleLogin,
+    handlePasswordRecovery
+  );
 
   const updateField = useCallback((field: keyof SignupFormData, value: string) => {
     setFormData((prev: SignupFormData) => ({ ...prev, [field]: value }));
@@ -46,25 +64,34 @@ export default function SignupScreen() {
   }, [validatePasswordField]);
 
   const submitSignup = useCallback(async (token?: string) => {
+    // hCaptcha responses are single-use; force a fresh challenge after every
+    // registration attempt, including validation or server failures.
+    setCaptchaToken(undefined);
     const trimmedFirstName = formData.firstName.trim();
     const trimmedLastName = formData.lastName.trim();
     const result = await register({ ...formData, firstName: trimmedFirstName, lastName: trimmedLastName, captchaToken: token });
-    if (result.error === AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS) {
-      Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.EMAIL_EXISTS, AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS);
-      return;
-    }
     handlePostRegistration(result, formData.email);
   }, [formData, register, handlePostRegistration]);
 
-  const onCaptchaMessage = useCallback((event: { nativeEvent: { data: string }; success: boolean }) => {
+  const onCaptchaMessage = useCallback((event: CaptchaMessageEvent) => {
     if (event.success) {
-      const token = event.nativeEvent.data;
-      setCaptchaToken(token);
+      const token = event.nativeEvent.data.trim();
+      // The native package also reports "open" with success=true. Ignore it;
+      // only a passcode is valid input for Supabase Auth.
+      if (token.length <= 35 || captchaSubmissionInFlight.current) return;
+
+      captchaSubmissionInFlight.current = true;
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
-      submitSignup(token);
+      void submitSignup(token).finally(() => {
+        event.markUsed?.();
+        captchaSubmissionInFlight.current = false;
+      });
     } else if (event.nativeEvent.data === 'error') {
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
     } else if (event.nativeEvent.data === 'challenge-closed') {
+      setCaptchaToken(undefined);
       captchaRef.current?.hide();
     }
   }, [submitSignup]);
@@ -73,11 +100,11 @@ export default function SignupScreen() {
     clearErrors();
     const validation = validateForm(formData);
     if (!validation.isValid) {
-      Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.MISSING_DATA, AUTH_CONSTANTS.ERRORS.MISSING_FIELDS);
+      Alert.alert(t('auth.alertTitles_missingData'), t('auth.errors_missingFields'));
       return;
     }
     if (formData.firstName.trim() === '' || formData.lastName.trim() === '') {
-      Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.MISSING_DATA, AUTH_CONSTANTS.ERRORS.MISSING_NAMES);
+      Alert.alert(t('auth.alertTitles_missingData'), t('auth.errors_missingNames'));
       return;
     }
 
@@ -90,45 +117,45 @@ export default function SignupScreen() {
   }, [formData, clearErrors, validateForm, submitSignup, captchaToken, sitekey]);
 
   const isDisabled = !isFormValid(formData) || isLoading;
-  const { UI_LABELS, PASSWORD_VALIDATION } = AUTH_CONSTANTS;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>{UI_LABELS.HEADER}</Text>
-      <Text style={styles.subtitle}>{UI_LABELS.SUBTITLE}</Text>
-      <Text style={styles.label}>{UI_LABELS.FIRST_NAME}</Text>
-      <TextInput testID="signup-first-name-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_FIRST_NAME} value={formData.firstName} onChangeText={(t) => updateField('firstName', t)} autoCapitalize="words" editable={!isLoading} />
-      <Text style={styles.label}>{UI_LABELS.LAST_NAME}</Text>
-      <TextInput testID="signup-last-name-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_LAST_NAME} value={formData.lastName} onChangeText={(t) => updateField('lastName', t)} autoCapitalize="words" editable={!isLoading} />
-      <Text style={styles.label}>{UI_LABELS.EMAIL}</Text>
-      <TextInput testID="signup-email-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_EMAIL} value={formData.email} onChangeText={(t) => updateField('email', t)} keyboardType="email-address" autoCapitalize="none" editable={!isLoading} />
-      <Text style={styles.label}>{UI_LABELS.PASSWORD}</Text>
+      <Text style={styles.header}>{t('auth.signupHeader')}</Text>
+      <Text style={styles.subtitle}>{t('auth.signupSubtitle')}</Text>
+      <Text style={styles.label}>{t('auth.firstNameLabel')}</Text>
+      <TextInput testID="signup-first-name-input" style={styles.input} placeholder={t('auth.firstNamePlaceholder')} value={formData.firstName} onChangeText={(v) => updateField('firstName', v)} autoCapitalize="words" editable={!isLoading} />
+      <Text style={styles.label}>{t('auth.lastNameLabel')}</Text>
+      <TextInput testID="signup-last-name-input" style={styles.input} placeholder={t('auth.lastNamePlaceholder')} value={formData.lastName} onChangeText={(v) => updateField('lastName', v)} autoCapitalize="words" editable={!isLoading} />
+      <Text style={styles.label}>{t('auth.emailLabel')}</Text>
+      <TextInput testID="signup-email-input" style={styles.input} placeholder={t('auth.emailPlaceholderSignup')} value={formData.email} onChangeText={(v) => updateField('email', v)} keyboardType="email-address" autoCapitalize="none" editable={!isLoading} />
+      <Text style={styles.label}>{t('auth.passwordLabel')}</Text>
       <View style={styles.passwordContainer}>
-        <TextInput testID="signup-password-input" style={styles.input} placeholder={UI_LABELS.PLACEHOLDER_PASSWORD} value={formData.password} onChangeText={(t) => updateField('password', t)} secureTextEntry={!isPasswordVisible} editable={!isLoading} />
-        <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)} disabled={isLoading} accessibilityLabel="Mostra/Nascondi password" accessibilityRole="button" accessibilityState={{ disabled: isLoading }}>
+        <TextInput testID="signup-password-input" style={styles.input} placeholder={t('auth.passwordPlaceholderSignup')} value={formData.password} onChangeText={(v) => updateField('password', v)} secureTextEntry={!isPasswordVisible} editable={!isLoading} />
+        <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)} disabled={isLoading} accessibilityLabel={t('auth.showHidePasswordLabel')} accessibilityRole="button" accessibilityState={{ disabled: isLoading }}>
           <FontAwesome name={isPasswordVisible ? 'eye' : 'eye-slash'} size={20} color="#6c757d" />
         </TouchableOpacity>
       </View>
       {formData.password.length > 0 && (
         <View style={styles.validationContainer}>
-          <ValidationCheck isValid={passwordValidation.minLength} text={PASSWORD_VALIDATION.MIN_LENGTH} />
-          <ValidationCheck isValid={passwordValidation.hasLower} text={PASSWORD_VALIDATION.HAS_LOWER} />
-          <ValidationCheck isValid={passwordValidation.hasUpper} text={PASSWORD_VALIDATION.HAS_UPPER} />
-          <ValidationCheck isValid={passwordValidation.hasNumber} text={PASSWORD_VALIDATION.HAS_NUMBER} />
+          <ValidationCheck isValid={passwordValidation.minLength} text={t('auth.minLengthRequirement')} />
+          <ValidationCheck isValid={passwordValidation.hasLower} text={t('auth.hasLowerRequirement')} />
+          <ValidationCheck isValid={passwordValidation.hasUpper} text={t('auth.hasUpperRequirement')} />
+          <ValidationCheck isValid={passwordValidation.hasNumber} text={t('auth.hasNumberRequirement')} />
         </View>
       )}
-      {error && <Text style={styles.errorText}>{error}</Text>}
-      <TouchableOpacity testID="signup-button" style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled} accessibilityRole="button" accessibilityLabel="Registrati" accessibilityState={{ disabled: isDisabled }}>
-        {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{UI_LABELS.SIGNUP_BUTTON}</Text>}
+      {error && <Text style={styles.errorText}>{translateRegistrationError(t, error)}</Text>}
+      <TouchableOpacity testID="signup-button" style={[styles.button, isDisabled && styles.buttonDisabled]} onPress={handleSignUp} disabled={isDisabled} accessibilityRole="button" accessibilityLabel={t('auth.signUp')} accessibilityState={{ disabled: isDisabled }}>
+        {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.signupButton')}</Text>}
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()}>
-        <Text style={styles.backText}>{UI_LABELS.BACK_TO_LOGIN}</Text>
+        <Text style={styles.backText}>{t('auth.backToLogin')}</Text>
       </TouchableOpacity>
 
       {sitekey && sitekey !== 'YOUR_HCAPTCHA_SITEKEY' && (
         <ConfirmHcaptcha
           ref={captchaRef}
           siteKey={sitekey}
+          languageCode={language}
           baseUrl="https://hcaptcha.com"
           onMessage={onCaptchaMessage}
           size="normal"

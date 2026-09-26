@@ -6,8 +6,18 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import i18next from 'i18next';
 import { Alert } from 'react-native';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
+import { cleanupRateLimiter } from '@/services/AuthService';
 import ForgotPassword from '../forgot-password';
+
+// --- Mocks ---
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 // --- Mocks ---
 
@@ -49,8 +59,13 @@ const renderForgotPassword = () => render(<ForgotPassword />);
 // --- Test Suite ---
 
 describe('ForgotPassword', () => {
+  afterAll(() => {
+    cleanupRateLimiter();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
     jest.useFakeTimers();
     mockResetPasswordForEmail.mockReset();
     mockVerifyOtp.mockReset();
@@ -59,8 +74,10 @@ describe('ForgotPassword', () => {
     delete process.env.EXPO_PUBLIC_E2E_TEST_MODE;
   });
 
-  afterEach(() => {
+  // Reset timers + language so suites running after this one start from Italian.
+  afterEach(async () => {
     jest.useRealTimers();
+    await i18next.changeLanguage('it');
   });
 
   // -- Rendering --
@@ -68,38 +85,38 @@ describe('ForgotPassword', () => {
   describe('rendering', () => {
     it('should render the title', () => {
       const { getByText } = renderForgotPassword();
-      expect(getByText('Recupero Password')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.forgotPasswordTitle)).toBeTruthy();
     });
 
     it('should render the email input with correct placeholder', () => {
       const { getByPlaceholderText } = renderForgotPassword();
-      expect(getByPlaceholderText('Inserisci la tua email')).toBeTruthy();
+      expect(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder)).toBeTruthy();
     });
 
     it('should render the info text about OTP', () => {
       const { getByText } = renderForgotPassword();
-      expect(getByText(/Ti invieremo un codice OTP/)).toBeTruthy();
+      expect(getByText(itCatalogs.auth.otpInfoText)).toBeTruthy();
     });
 
     it('should render the send OTP button', () => {
       const { getByText } = renderForgotPassword();
-      expect(getByText('Invia Codice OTP')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.sendOtpButton)).toBeTruthy();
     });
 
     it('should render email input with email-address keyboard type', () => {
       const { getByPlaceholderText } = renderForgotPassword();
-      expect(getByPlaceholderText('Inserisci la tua email').props.keyboardType).toBe('email-address');
+      expect(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder).props.keyboardType).toBe('email-address');
     });
 
     it('should render email input with autoCapitalize none', () => {
       const { getByPlaceholderText } = renderForgotPassword();
-      expect(getByPlaceholderText('Inserisci la tua email').props.autoCapitalize).toBe('none');
+      expect(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder).props.autoCapitalize).toBe('none');
     });
 
     it('should NOT render the OTP section initially', () => {
       const { queryByText } = renderForgotPassword();
-      expect(queryByText('Inserisci il codice OTP')).toBeNull();
-      expect(queryByText('Verifica Codice')).toBeNull();
+      expect(queryByText(itCatalogs.auth.enterOtpTitle)).toBeNull();
+      expect(queryByText(itCatalogs.auth.verifyCodeButton)).toBeNull();
     });
 
     it('should render the send-otp-button testID wrapper', () => {
@@ -113,7 +130,7 @@ describe('ForgotPassword', () => {
   describe('email input interaction', () => {
     it('should update email value when text is entered', () => {
       const { getByPlaceholderText } = renderForgotPassword();
-      const input = getByPlaceholderText('Inserisci la tua email');
+      const input = getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder);
       fireEvent.changeText(input, 'user@example.com');
       expect(input.props.value).toBe('user@example.com');
     });
@@ -123,11 +140,11 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), '  user@example.com  ');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), '  user@example.com  ');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
@@ -145,21 +162,21 @@ describe('ForgotPassword', () => {
     it('should show alert when email is empty', async () => {
       const { getByText } = renderForgotPassword();
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
-      expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Inserisci la tua email.');
+      expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_emailRequired);
       expect(mockResetPasswordForEmail).not.toHaveBeenCalled();
     });
 
     it('should show alert when email is only spaces', async () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), '   ');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), '   ');
       });
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
-      expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Inserisci la tua email.');
+      expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_emailRequired);
       expect(mockResetPasswordForEmail).not.toHaveBeenCalled();
     });
   });
@@ -172,11 +189,11 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
@@ -189,17 +206,17 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Successo',
-          'Email di reset della password inviata. Si prega di controllare la posta in arrivo.'
+          itCatalogs.auth.checkEmailAlertTitle,
+          itCatalogs.auth.checkEmailAlertMessage
         );
       });
     });
@@ -209,30 +226,30 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
-        expect(getByText('Verifica Codice')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
+        expect(getByText(itCatalogs.auth.verifyCodeButton)).toBeTruthy();
       });
     });
 
     it('should disable email input while loading', async () => {
       mockResetPasswordForEmail.mockReturnValue(new Promise(() => {}));
       const { getByPlaceholderText, getByText } = renderForgotPassword();
-      const input = getByPlaceholderText('Inserisci la tua email');
+      const input = getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder);
 
       await act(async () => {
         fireEvent.changeText(input, 'user@example.com');
       });
 
       act(() => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
@@ -244,20 +261,23 @@ describe('ForgotPassword', () => {
   // -- Supabase Error Handling --
 
   describe('Supabase error handling', () => {
-    it('should show user-not-found error', async () => {
+    it('should not reveal when the account does not exist', async () => {
       mockResetPasswordForEmail.mockResolvedValue({ error: { message: 'User not found' } });
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'unknown@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'unknown@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Nessun account trovato con questa email.');
+        expect(Alert.alert).toHaveBeenCalledWith(
+          itCatalogs.auth.checkEmailAlertTitle,
+          itCatalogs.auth.checkEmailAlertMessage
+        );
       });
     });
 
@@ -266,17 +286,17 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Troppe richieste. Attendi qualche minuto prima di riprovare.'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_tooManyRequests
         );
       });
     });
@@ -286,17 +306,17 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'not-an-email');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'not-an-email');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          "L'indirizzo email inserito non è valido."
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_invalidEmailAddress
         );
       });
     });
@@ -306,35 +326,35 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          "Errore nell'invio dell'email di reset della password. Si prega di riprovare."
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_resetEmailSendError
         );
       });
     });
 
-    it('should show error message when an exception is thrown', async () => {
+    it('should show localised fallback when an exception is thrown', async () => {
       mockResetPasswordForEmail.mockRejectedValue(new Error('Network failure'));
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Network failure');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_unexpectedOtpError);
       });
     });
 
@@ -343,31 +363,31 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          "Errore durante l'invio del codice OTP"
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_unexpectedOtpError
         );
       });
     });
 
     it('should reset loading state after error', async () => {
-      mockResetPasswordForEmail.mockResolvedValue({ error: { message: 'User not found' } });
+      mockResetPasswordForEmail.mockResolvedValue({ error: { message: 'Server unavailable' } });
       const { getByPlaceholderText, getByText, queryByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
@@ -388,15 +408,15 @@ describe('ForgotPassword', () => {
       mockResetPasswordForEmail.mockResolvedValue({ error: null });
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
       });
     };
 
@@ -415,13 +435,13 @@ describe('ForgotPassword', () => {
     it('should show OTP section title', async () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
       await showOtpSection(getByPlaceholderText, getByText);
-      expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
     });
 
     it('should show OTP info text about checking email', async () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
       await showOtpSection(getByPlaceholderText, getByText);
-      expect(getByText(/Controlla la tua email per il codice di verifica/)).toBeTruthy();
+      expect(getByText(itCatalogs.auth.checkEmailForCode)).toBeTruthy();
     });
   });
 
@@ -435,15 +455,15 @@ describe('ForgotPassword', () => {
       mockResetPasswordForEmail.mockResolvedValue({ error: null });
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
       });
     };
 
@@ -452,12 +472,12 @@ describe('ForgotPassword', () => {
       await showOtpSection(getByPlaceholderText, getByText);
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Errore',
-        'Inserisci un codice OTP valido a 6 cifre.'
+        itCatalogs.auth.alertTitles_error,
+        itCatalogs.auth.errors_invalidOtpLength
       );
       expect(mockVerifyOtp).not.toHaveBeenCalled();
     });
@@ -471,12 +491,12 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Errore',
-        'Inserisci un codice OTP valido a 6 cifre.'
+        itCatalogs.auth.alertTitles_error,
+        itCatalogs.auth.errors_invalidOtpLength
       );
       expect(mockVerifyOtp).not.toHaveBeenCalled();
     });
@@ -492,15 +512,15 @@ describe('ForgotPassword', () => {
       mockResetPasswordForEmail.mockResolvedValue({ error: null });
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
       });
     };
 
@@ -519,7 +539,7 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
@@ -546,7 +566,7 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
@@ -562,15 +582,15 @@ describe('ForgotPassword', () => {
       mockResetPasswordForEmail.mockResolvedValue({ error: null });
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), '  user@example.com  ');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), '  user@example.com  ');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
       });
 
       mockVerifyOtp.mockResolvedValue({
@@ -584,7 +604,7 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
@@ -611,7 +631,7 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       act(() => {
@@ -634,15 +654,15 @@ describe('ForgotPassword', () => {
       mockResetPasswordForEmail.mockResolvedValue({ error: null });
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
       });
     };
 
@@ -657,13 +677,13 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Il codice OTP è scaduto. Richiedi un nuovo codice.'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_expiredOtp
         );
       });
     });
@@ -679,13 +699,13 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Il codice OTP inserito non è corretto.'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_incorrectOtp
         );
       });
     });
@@ -701,13 +721,13 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Codice OTP non valido o scaduto.'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_genericOtpError
         );
       });
     });
@@ -727,18 +747,18 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Impossibile aggiornare lo stato di reset password'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_metadataUpdateError
         );
       });
     });
 
-    it('should show error when exception is thrown during OTP verification', async () => {
+    it('should show localised fallback when exception is thrown during OTP verification', async () => {
       const { getByPlaceholderText, getByText, getByTestId } = renderForgotPassword();
       await setupOtpSection(getByPlaceholderText, getByText);
 
@@ -749,11 +769,11 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Network timeout');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_unexpectedVerifyError);
       });
     });
 
@@ -768,13 +788,13 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Verifica Codice'));
+        fireEvent.press(getByText(itCatalogs.auth.verifyCodeButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Errore durante la verifica del codice'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_unexpectedVerifyError
         );
       });
     });
@@ -788,15 +808,15 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText, queryByText, getByTestId } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
       });
 
       await act(async () => {
@@ -804,21 +824,21 @@ describe('ForgotPassword', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText(/Torna all/));
+        fireEvent.press(getByText(itCatalogs.auth.backToEmailButton));
       });
 
-      expect(queryByText('Inserisci il codice OTP')).toBeNull();
-      expect(queryByText('Verifica Codice')).toBeNull();
+      expect(queryByText(itCatalogs.auth.enterOtpTitle)).toBeNull();
+      expect(queryByText(itCatalogs.auth.verifyCodeButton)).toBeNull();
 
       // Re-trigger OTP to verify OTP was cleared
       mockResetPasswordForEmail.mockResolvedValue({ error: null });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(getByText('Inserisci il codice OTP')).toBeTruthy();
+        expect(getByText(itCatalogs.auth.enterOtpTitle)).toBeTruthy();
       });
 
       const otpInput = getByTestId('otp-input');
@@ -843,11 +863,11 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
@@ -873,11 +893,11 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
@@ -902,11 +922,11 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
@@ -914,7 +934,7 @@ describe('ForgotPassword', () => {
       });
     });
 
-    it('should show error when edge function fails', async () => {
+    it('should show localised generation error when edge function fails', async () => {
       process.env.EXPO_PUBLIC_E2E_TEST_MODE = 'true';
       mockFunctionsInvoke.mockResolvedValue({
         data: null,
@@ -924,15 +944,15 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Edge function error');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_otpGenerationError);
       });
     });
 
@@ -946,19 +966,19 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Token hash non ricevuto dalla Edge Function');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_tokenHashMissing);
       });
     });
 
-    it('should show error when verifyOtp fails in E2E mode', async () => {
+    it('should show localised error without technical detail when verifyOtp fails in E2E mode', async () => {
       process.env.EXPO_PUBLIC_E2E_TEST_MODE = 'true';
       mockFunctionsInvoke.mockResolvedValue({
         data: { token_hash: 'mock-hash' },
@@ -972,15 +992,16 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Verifica OTP fallita: OTP failed');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_otpVerifyFailed);
+        expect(Alert.alert).not.toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, expect.stringContaining('OTP failed'));
       });
     });
 
@@ -998,15 +1019,15 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Errore', 'Nessuna sessione stabilita');
+        expect(Alert.alert).toHaveBeenCalledWith(itCatalogs.auth.alertTitles_error, itCatalogs.auth.errors_noSessionEstablished);
       });
     });
 
@@ -1017,17 +1038,17 @@ describe('ForgotPassword', () => {
       const { getByPlaceholderText, getByText } = renderForgotPassword();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Inserisci la tua email'), 'user@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailInputPlaceholder), 'user@example.com');
       });
 
       await act(async () => {
-        fireEvent.press(getByText('Invia Codice OTP'));
+        fireEvent.press(getByText(itCatalogs.auth.sendOtpButton));
       });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
-          'Errore',
-          'Errore durante la generazione del token'
+          itCatalogs.auth.alertTitles_error,
+          itCatalogs.auth.errors_otpGenerationError
         );
       });
     });

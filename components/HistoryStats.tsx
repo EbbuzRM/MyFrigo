@@ -11,6 +11,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { StatsCard } from './StatsCard';
 import { router } from 'expo-router';
 import { Product } from '@/types/Product';
@@ -23,6 +24,7 @@ interface HistoryStatsProps {
 }
 
 export function HistoryStats({ totalProducts, expiredProducts, consumedProducts, allProducts: _allProducts }: HistoryStatsProps) {
+  const { t } = useTranslation();
   const wastePercentage = totalProducts > 0 ? Math.round((expiredProducts / totalProducts) * 100) : 0;
 
   const handlePress = (type: 'consumed' | 'expired' | 'all', title: string) => {
@@ -52,31 +54,31 @@ export function HistoryStats({ totalProducts, expiredProducts, consumedProducts,
     <View style={styles.container}>
       <View style={styles.statsContainer}>
         <StatsCard
-          title="Totale Gestiti"
+          title={t('history.statsTotal')}
           value={totalProducts.toString()}
           icon={<TrendingUp size={24} color="#2563EB" />}
           lightBackgroundColor="#EFF6FF"
           darkBackgroundColor="#1e293b"
-          onPress={() => handlePress('all', 'Storico Completo')}
+          onPress={() => handlePress('all', t('history.historyAllTitle'))}
         />
         <StatsCard
-          title="Consumati"
+          title={t('history.statsConsumed')}
           value={consumedProducts.toString()}
           icon={<CheckCircle size={24} color="#10B981" />}
           lightBackgroundColor="#F0FDF4"
           darkBackgroundColor="#162d21"
-          onPress={() => handlePress('consumed', 'Prodotti Consumati')}
+          onPress={() => handlePress('consumed', t('history.consumedTitle'))}
         />
         <StatsCard
-          title="Sprecati"
+          title={t('history.statsWasted')}
           value={expiredProducts.toString()}
           icon={<AlertTriangle size={24} color="#EF4444" />}
           lightBackgroundColor="#FEF2F2"
           darkBackgroundColor="#2a1212"
-          onPress={() => handlePress('expired', 'Prodotti Scaduti')}
+          onPress={() => handlePress('expired', t('history.expiredTitle'))}
         />
         <StatsCard
-          title="% Spreco"
+          title={t('history.statsWasteRate')}
           value={`${wastePercentage}%`}
           icon={<AlertTriangle size={24} color="#F59E0B" />}
           lightBackgroundColor="#FFFBEB"

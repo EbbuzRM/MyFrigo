@@ -9,6 +9,8 @@
 import { AuthTests } from '../AuthTests';
 import { authLogger } from '@/utils/AuthLogger';
 import { formStateLogger } from '@/utils/FormStateLogger';
+import { Alert } from 'react-native';
+import i18next from 'i18next';
 
 // Mock delle dipendenze
 jest.mock('@/services/LoggingService');
@@ -63,7 +65,25 @@ describe('AuthTests', () => {
     jest.clearAllMocks();
   });
 
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
+  });
+
   describe('runAuthLoggingTest', () => {
+    it('uses the current language when a diagnostic test runs', async () => {
+      await AuthTests.runAuthLoggingTest();
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Test autenticazione completato',
+        'Il sistema di logging dell’autenticazione funziona correttamente.'
+      );
+
+      await i18next.changeLanguage('en');
+      await AuthTests.runAuthLoggingTest();
+      expect(Alert.alert).toHaveBeenLastCalledWith(
+        'Authentication test completed',
+        'Authentication logging is working correctly.'
+      );
+    });
     it('should return success result when auth logger works correctly', async () => {
       const result = await AuthTests.runAuthLoggingTest();
 

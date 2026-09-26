@@ -13,6 +13,7 @@
 // message: 
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { LoggingService } from '@/services/LoggingService';
 import { useAuth } from '@/context/AuthContext';
@@ -42,6 +43,7 @@ export interface TestResult {
 }
 
 export const useDiagnosticTests = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { settings } = useSettings();
   const [isRunning, setIsRunning] = useState(false);
@@ -142,9 +144,9 @@ export const useDiagnosticTests = () => {
     });
   }, [addResult]);
 
-  // Test Scheduling Notifiche
-  const runNotificationSchedulingTest = useCallback(async () => {
-    const result = await NotificationTests.runNotificationSchedulingTest();
+  // Controllo di disponibilità notifiche
+  const runNotificationReadinessTest = useCallback(async () => {
+    const result = await NotificationTests.runNotificationReadinessTest();
     addResult({
       testId: result.testId,
       success: result.success,
@@ -159,51 +161,51 @@ export const useDiagnosticTests = () => {
   const availableTests: DiagnosticTest[] = [
     {
       id: 'auth-logging',
-      name: 'Test Sistema Logging Autenticazione',
+      name: t('settings.diagnosticAuthLogging'),
       category: 'auth',
       run: runAuthLoggingTest
     },
     {
       id: 'form-logging',
-      name: 'Test Sistema Logging Inserimento Prodotti',
+      name: t('settings.diagnosticFormLogging'),
       category: 'auth',
       run: runFormStateLoggingTest
     },
     {
       id: 'database-connectivity',
-      name: 'Test Connettività Database',
+      name: t('settings.diagnosticDatabaseConnectivity'),
       category: 'database',
       run: runDatabaseConnectivityTest
     },
     {
       id: 'api-performance',
-      name: 'Test Performance API',
+      name: t('settings.diagnosticApiPerformance'),
       category: 'performance',
       run: runApiPerformanceTest
     },
     {
       id: 'data-integrity',
-      name: 'Test Integrità Dati',
+      name: t('settings.diagnosticDataIntegrity'),
       category: 'database',
       run: runDataIntegrityTest
     },
     {
       id: 'system-health',
-      name: 'Test Salute Sistema',
+      name: t('settings.diagnosticSystemHealth'),
       category: 'system',
       run: runSystemHealthTest
     },
     {
       id: 'notification-permissions',
-      name: 'Test Permessi Notifiche',
+      name: t('settings.diagnosticNotificationPermissions'),
       category: 'system',
       run: runNotificationPermissionsTest
     },
     {
-      id: 'notification-scheduling',
-      name: 'Test Scheduling Notifiche',
+      id: 'notification-readiness',
+      name: t('settings.diagnosticNotificationReadiness'),
       category: 'system',
-      run: runNotificationSchedulingTest
+      run: runNotificationReadinessTest
     }
   ];
 
@@ -237,19 +239,19 @@ export const useDiagnosticTests = () => {
       await runNotificationPermissionsTest();
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      await runNotificationSchedulingTest();
+      await runNotificationReadinessTest();
 
       LoggingService.info('DiagnosticPanel', 'Sequenza completa di test diagnostici completata');
 
       Alert.alert(
-        'Test Completati',
-        'Tutti i test diagnostici sono stati eseguiti. Controlla i log per i dettagli completi.'
+        t('settings.diagnosticTestsCompleted'),
+        t('settings.diagnosticTestsCompletedMessage')
       );
     } catch (error) {
       LoggingService.error('DiagnosticPanel', 'Errore durante l\'esecuzione dei test completi', error);
       Alert.alert(
-        'Errore Test',
-        'Si è verificato un errore durante l\'esecuzione dei test.'
+        t('settings.diagnosticTestError'),
+        t('settings.diagnosticTestErrorMessage')
       );
     } finally {
       setIsRunning(false);
@@ -262,7 +264,8 @@ export const useDiagnosticTests = () => {
     runDataIntegrityTest,
     runSystemHealthTest,
     runNotificationPermissionsTest,
-    runNotificationSchedulingTest
+    runNotificationReadinessTest,
+    t
   ]);
 
   return {

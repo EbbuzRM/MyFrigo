@@ -8,6 +8,7 @@
 // message: 
 
 import React from 'react';
+import i18next from 'i18next';
 import { Alert } from 'react-native';
 import { AuthUIFeedback } from '@/types/auth';
 
@@ -23,12 +24,12 @@ export class GoogleAuthFeedback implements AuthUIFeedback {
   /**
    * Shows retry feedback to the user
    */
-  showRetryFeedback(attemptNumber: number, maxAttempts: number, message: string): void {
+  showRetryFeedback(attemptNumber: number, maxAttempts: number, _message: string): void {
     if (attemptNumber > 1) {
       Alert.alert(
-        'Recupero Profilo',
-        message,
-        [{ text: 'OK' }],
+        i18next.t('auth.googleProfileRecovery'),
+        i18next.t('auth.googleRetryMessage', { attempt: attemptNumber, max: maxAttempts }),
+        [{ text: i18next.t('common.ok') }],
         { cancelable: true }
       );
     }
@@ -39,11 +40,11 @@ export class GoogleAuthFeedback implements AuthUIFeedback {
    */
   showMaxAttemptsError(): void {
     Alert.alert(
-      'Problema di Autenticazione',
-      'Non è stato possibile recuperare completamente le informazioni del tuo profilo Google dopo diversi tentativi. Questo potrebbe essere dovuto a un problema temporaneo con i servizi di autenticazione.\n\nPuoi:\n• Riprovare ad accedere più tardi\n• Usare l\'accesso con email e password\n• Completare manualmente il profilo se necessario',
+      i18next.t('auth.googleAuthProblem'),
+      i18next.t('auth.googleMaxAttemptsMessage'),
       [
-        { text: 'Riprova più tardi', style: 'default' },
-        { text: 'OK', style: 'cancel' }
+        { text: i18next.t('auth.googleTryLater'), style: 'default' },
+        { text: i18next.t('common.ok'), style: 'cancel' }
       ]
     );
   }
@@ -51,8 +52,8 @@ export class GoogleAuthFeedback implements AuthUIFeedback {
   /**
    * Shows a generic error message
    */
-  showError(message: string): void {
-    Alert.alert('Errore', message, [{ text: 'OK' }], { cancelable: true });
+  showError(_message: string): void {
+    Alert.alert(i18next.t('common.error'), i18next.t('auth.errors_googleLoginFailed'), [{ text: i18next.t('common.ok') }], { cancelable: true });
   }
 }
 

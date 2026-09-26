@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 
 /**
@@ -36,16 +37,19 @@ export function EmptyProductState({
   hasCategoryFilter,
   testID,
 }: EmptyProductStateProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
-  const message = hasSearchQuery || hasCategoryFilter
-    ? 'Nessun prodotto trovato'
-    : 'Nessun prodotto ancora aggiunto';
+  const hasActiveFilters = hasSearchQuery || hasCategoryFilter;
 
-  const accessibilityHint = hasSearchQuery || hasCategoryFilter
-    ? 'Prova a modificare i filtri o la ricerca'
-    : 'Aggiungi il tuo primo prodotto usando il pulsante in alto a destra';
+  const message = hasActiveFilters
+    ? t('products.emptyFiltered')
+    : t('products.emptyNoneAdded');
+
+  const accessibilityHint = hasActiveFilters
+    ? t('products.emptyFilteredHint')
+    : t('products.emptyNoneAddedHint');
 
   return (
     <View 

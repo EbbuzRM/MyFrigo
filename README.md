@@ -191,6 +191,18 @@ eas build -p android --profile preview
 eas build -p ios --profile preview
 ```
 
+The next multilingual Android preview binary is version `1.0.7` with Expo OTA
+runtime `1.0.7` in both `app.config.js` and the checked-in Android resource.
+The `preview` EAS build profile uses the `preview` channel. Expo Updates
+matches both the channel and runtime: older binaries with runtime `1.0.6`
+can receive only compatible `1.0.6` updates, while the new binary can receive
+only `1.0.7` updates. Before publishing an OTA, verify the remote `preview`
+channel-to-branch mapping and the update's runtime. The `production` build
+profile does not declare a channel and is not used for this preview build.
+EAS uses remote app version source; check its Android `versionCode` before the
+next preview build. The checked-in Gradle `versionCode` has not been changed.
+Multilingual support is currently scoped to Android; iOS has not been validated.
+
 ---
 
 ## 🤝 Contributing

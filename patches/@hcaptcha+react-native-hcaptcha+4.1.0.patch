@@ -10,3 +10,15 @@ index 2936b4c..2966a65 100644
    },
  });
  
+diff --git a/node_modules/@hcaptcha/react-native-hcaptcha/index.js b/node_modules/@hcaptcha/react-native-hcaptcha/index.js
+index 9ee08a5..7676dc6 100644
+--- a/node_modules/@hcaptcha/react-native-hcaptcha/index.js
++++ b/node_modules/@hcaptcha/react-native-hcaptcha/index.js
+@@ -1,5 +1,6 @@
+ import React, { PureComponent } from 'react';
+-import { Modal, SafeAreaView, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
++import { Modal, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
++import { SafeAreaView } from 'react-native-safe-area-context';
+ import Hcaptcha from './Hcaptcha';
+ import PropTypes from 'prop-types';
+ import { clearJourneyEvents, disableJourneyConsumer, enableJourneyConsumer } from './journey';

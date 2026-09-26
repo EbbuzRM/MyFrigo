@@ -15,12 +15,13 @@
  */
 
 import { Product } from '@/types/Product';
-import { 
-  HistoryStatsData, 
-  HistoryCalculationResult, 
-  Suggestion 
+import {
+  HistoryStatsData,
+  HistoryCalculationResult,
+  Suggestion
 } from '@/types/history';
 import { LoggingService } from '@/services/LoggingService';
+import type { TFunction } from 'i18next';
 
 /**
  * Costanti per la generazione di suggerimenti
@@ -65,45 +66,47 @@ export function calculateHistoryStats(products: Product[]): HistoryStatsData {
 /**
  * Genera suggerimenti basati sulle statistiche della cronologia
  * @param stats - Dati statistici calcolati
+ * @param t - Funzione di traduzione (i18next), risolta al momento della chiamata
  * @returns Lista di suggerimenti personalizzati
  */
-export function generateSuggestions(stats: HistoryStatsData): Suggestion[] {
+export function generateSuggestions(stats: HistoryStatsData, t: TFunction): Suggestion[] {
   const suggestions: Suggestion[] = [
     {
       type: 'info',
-      title: 'Elemento consumato per errore?',
-      text: "Clicca sul riquadro 'Consumati' per visualizzare la lista e ripristinare i prodotti."
+      title: t('history.suggestionInfoTitle'),
+      text: t('history.suggestionInfoText')
     }
   ];
-  
+
   if (stats.totalCount > 0) {
     if (stats.wastePercentage > WASTE_WARNING_THRESHOLD) {
       suggestions.push({
         type: 'warning',
-        title: 'Attenzione ai Prodotti Scaduti',
-        text: `Circa il ${stats.wastePercentage}% dei tuoi prodotti è scaduto. Prova a controllare le date più spesso.`
+        title: t('history.suggestionWarningTitle'),
+        text: t('history.suggestionWarningText', { waste: stats.wastePercentage })
       });
     } else if (stats.wastePercentage < WASTE_POSITIVE_THRESHOLD && stats.totalCount > MIN_PRODUCTS_FOR_POSITIVE) {
       suggestions.push({
         type: 'positive',
-        title: 'Ottima Gestione!',
-        text: `Meno del ${stats.wastePercentage}% dei tuoi prodotti scade. Continua così!`
+        title: t('history.suggestionPositiveTitle'),
+        text: t('history.suggestionPositiveText', { waste: stats.wastePercentage })
       });
     }
   }
-  
+
   return suggestions;
 }
 
 /**
  * Calcola statistiche e genera suggerimenti in un'unica operazione
  * @param products - Lista di prodotti dalla cronologia
+ * @param t - Funzione di traduzione (i18next), risolta al momento della chiamata
  * @returns Risultato completo con statistiche e suggerimenti
  */
-export function calculateHistoryData(products: Product[]): HistoryCalculationResult {
+export function calculateHistoryData(products: Product[], t: TFunction): HistoryCalculationResult {
   const stats = calculateHistoryStats(products);
-  const suggestions = generateSuggestions(stats);
-  
+  const suggestions = generateSuggestions(stats, t);
+
   return {
     stats,
     suggestions,

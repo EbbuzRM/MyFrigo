@@ -33,6 +33,7 @@ jest.mock('@/utils/ocr/ocrSpaceService', () => ({
   ocrSpaceRecognize: jest.fn(),
   convertOcrSpaceToTextBlocks: jest.fn()
 }));
+jest.mock('@/i18n', () => ({ getCurrentLanguage: () => 'en' }));
 
 const mockTextRecognition = require('@react-native-ml-kit/text-recognition').default;
 const { ocrSpaceRecognize } = require('@/utils/ocr/ocrSpaceService');
@@ -53,6 +54,19 @@ describe('usePhotoOCR', () => {
     });
     expect(typeof result.current.extractExpirationDate).toBe('function');
     expect(typeof result.current.resetProgress).toBe('function');
+  });
+
+  it('tries device language then the other language when no date is found', async () => {
+    mockTextRecognition.recognize.mockResolvedValue({ blocks: [] });
+    const { result } = renderHook(() => usePhotoOCR());
+
+    await act(async () => {
+      await result.current.extractExpirationDate('file://test-image.jpg');
+    });
+
+    expect(ocrSpaceRecognize).toHaveBeenNthCalledWith(1, 'file://test-image.jpg', 'en');
+    expect(ocrSpaceRecognize).toHaveBeenNthCalledWith(2, 'file://test-image.jpg', 'it');
+    expect(ocrSpaceRecognize).toHaveBeenCalledTimes(2);
   });
 
   it('should extract expiration date successfully', async () => {

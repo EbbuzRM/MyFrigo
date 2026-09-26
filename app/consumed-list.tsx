@@ -20,8 +20,10 @@ import { Product } from '@/types/Product';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { ArrowLeft } from 'lucide-react-native';
 import { LoggingService } from '@/services/LoggingService';
+import { useTranslation } from 'react-i18next';
 
 export default function ConsumedListScreen() {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const [consumedProducts, setConsumedProducts] = useState<Product[]>([]);
@@ -59,14 +61,17 @@ export default function ConsumedListScreen() {
 
   const handleRestoreProduct = useCallback(async (productId: string) => {
     try {
-      await ProductStorage.restoreConsumedProduct(productId);
-      Alert.alert('Prodotto Ripristinato', 'Il prodotto è stato spostato nuovamente nella tua dispensa.');
+      const restoreResult = await ProductStorage.restoreConsumedProduct(productId);
+      if (!restoreResult.success) {
+        throw new Error(restoreResult.error);
+      }
+      Alert.alert(t('history.restoreTitle'), t('history.restoreMessage'));
       loadData(); // Ricarica la lista per riflettere il cambiamento
     } catch (error) {
-      Alert.alert('Errore', 'Si è verificato un errore durante il ripristino del prodotto.');
+      Alert.alert(t('history.restoreErrorTitle'), t('history.restoreErrorMessage'));
       LoggingService.error('ConsumedList', 'Error restoring product:', error);
     }
-  }, [loadData]);
+  }, [loadData, t]);
 
   const renderHistoryItem = ({ item }: { item: Product }) => (
     <HistoryCard
@@ -79,10 +84,15 @@ export default function ConsumedListScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          accessibilityLabel={t('history.backLabel')}
+          accessibilityRole="button"
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <ArrowLeft size={24} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
         </TouchableOpacity>
-        <Text style={styles.title}>Prodotti Consumati</Text>
+        <Text style={styles.title}>{t('history.consumedTitle')}</Text>
       </View>
       <FlashList
         data={consumedProducts}
@@ -92,7 +102,7 @@ export default function ConsumedListScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nessun prodotto consumato di recente.</Text>
+            <Text style={styles.emptyText}>{t('history.consumedEmpty')}</Text>
           </View>
         )}
       />

@@ -9,8 +9,13 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { DashboardHeader } from '../DashboardHeader';
-import { DASHBOARD_CONTENT } from '@/constants/content';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import { ThemeProvider } from '@/context/ThemeContext';
+
+jest.mock('expo-localization', () => ({
+    getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 jest.mock('lucide-react-native', () => ({
     Bell: 'Bell',
@@ -43,11 +48,12 @@ describe('DashboardHeader', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        initI18n();
     });
 
     it('renders the title correctly', () => {
         const { getByText } = renderComponent();
-        expect(getByText(DASHBOARD_CONTENT.TITLE)).toBeTruthy();
+        expect(getByText(itCatalogs.dashboard.pantryTitle)).toBeTruthy();
     });
 
     it('displays user initials when provided', () => {
@@ -63,7 +69,7 @@ describe('DashboardHeader', () => {
 
     it('calls onBellPress when title container is tapped and permission is denied', () => {
         const { getByText } = renderComponent({ permissionStatus: false });
-        fireEvent.press(getByText(DASHBOARD_CONTENT.TITLE));
+        fireEvent.press(getByText(itCatalogs.dashboard.pantryTitle));
         expect(defaultProps.onBellPress).toHaveBeenCalled();
     });
 

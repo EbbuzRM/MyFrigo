@@ -13,6 +13,7 @@ import { requireUser, UnauthorizedError } from '../_shared/auth.ts';
 
 interface OcrProxyRequest {
   base64Image: string;
+  language?: 'it' | 'en';
 }
 
 interface OcrSpaceResponse {
@@ -45,7 +46,13 @@ serve(async (req: Request) => {
     await requireUser(req);
 
     const body: OcrProxyRequest = await req.json();
-    const { base64Image } = body;
+    const { base64Image, language = 'it' } = body;
+    if (language !== 'it' && language !== 'en') {
+      return new Response(JSON.stringify({ error: 'Unsupported language' }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
 
     if (!base64Image || typeof base64Image !== 'string') {
       return new Response(
@@ -72,7 +79,7 @@ serve(async (req: Request) => {
 
     const params = new URLSearchParams({
       base64Image,
-      language: 'ita',
+      language: language === 'en' ? 'eng' : 'ita',
       OCREngine: '2',
       scale: 'true',
       isOverlayRequired: 'true',

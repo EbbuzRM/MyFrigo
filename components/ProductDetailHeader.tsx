@@ -87,7 +87,7 @@ export const ProductDetailHeader: React.FC<ProductDetailHeaderProps> = memo(({ p
           onLoadEnd={() => setImageLoading(false)}
           onError={() => {
             setImageLoading(false);
-            LoggingService.warning('ProductDetailHeader', 'Failed to load product image', { imageUrl: product.imageUrl });
+            LoggingService.warning('ProductDetailHeader', 'Failed to load product image');
           }}
         />
       )}

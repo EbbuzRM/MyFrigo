@@ -6,7 +6,15 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import i18next from 'i18next';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
+import { enCatalogs } from '@/i18n/catalogs/en';
 import { LoginForm } from '../LoginForm';
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 // ── Mock dependencies ────────────────────────────────────────────────
 
@@ -31,6 +39,26 @@ jest.mock('../EmailVerificationBanner', () => ({
 jest.mock('@/services/AuthService', () => ({
   AuthService: {
     signInWithEmail: jest.fn(),
+  },
+  AUTH_ERROR_CODES: {
+    INVALID_EMAIL_FORMAT: 'invalid_email_format',
+    MISSING_CREDENTIALS: 'missing_credentials',
+    RATE_LIMITED: 'rate_limited',
+    INVALID_CREDENTIALS: 'invalid_credentials',
+    EMAIL_NOT_CONFIRMED: 'email_not_confirmed',
+    LOGIN_FAILED: 'login_failed',
+    GOOGLE_FAILED: 'google_failed',
+    GOOGLE_CONFIG_ERROR: 'google_config_error',
+  },
+  AUTH_ERROR_I18N_KEYS: {
+    invalid_email_format: 'auth.errors_invalidEmailFormat',
+    missing_credentials: 'auth.errors_loginGenericError',
+    rate_limited: 'auth.errors_rateLimitLogin',
+    invalid_credentials: 'auth.errors_invalidCredentials',
+    email_not_confirmed: 'auth.errors_emailNotConfirmed',
+    login_failed: 'auth.errors_loginGenericError',
+    google_failed: 'auth.errors_googleLoginFailed',
+    google_config_error: 'auth.errors_googleConfigError',
   },
 }));
 
@@ -72,8 +100,13 @@ describe('LoginForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
     (useEmailAuth as jest.Mock).mockReturnValue(mockEmailAuth);
     (usePasswordValidation as jest.Mock).mockReturnValue(mockPasswordValidation);
+  });
+
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
   });
 
   it('should render email input, password input and login button', () => {
@@ -82,14 +115,14 @@ describe('LoginForm', () => {
     expect(getByTestId('email-input')).toBeTruthy();
     expect(getByTestId('password-input')).toBeTruthy();
     expect(getByTestId('login-button')).toBeTruthy();
-    expect(getByText('Login')).toBeTruthy();
+    expect(getByText(itCatalogs.auth.login)).toBeTruthy();
   });
 
   it('should show register and forgot password links', () => {
     const { getByText } = render(<LoginForm {...defaultProps} />);
 
-    expect(getByText('Registrati')).toBeTruthy();
-    expect(getByText('Hai dimenticato la password?')).toBeTruthy();
+    expect(getByText(itCatalogs.auth.signUp)).toBeTruthy();
+    expect(getByText(itCatalogs.auth.forgotPassword)).toBeTruthy();
   });
 
   it('should call onRegisterPress when register button pressed', () => {
@@ -98,7 +131,7 @@ describe('LoginForm', () => {
       <LoginForm {...defaultProps} onRegisterPress={onRegisterPress} />
     );
 
-    fireEvent.press(getByText('Registrati'));
+    fireEvent.press(getByText(itCatalogs.auth.signUp));
     expect(onRegisterPress).toHaveBeenCalledTimes(1);
   });
 
@@ -108,7 +141,7 @@ describe('LoginForm', () => {
       <LoginForm {...defaultProps} onForgotPasswordPress={onForgotPasswordPress} />
     );
 
-    fireEvent.press(getByText('Hai dimenticato la password?'));
+    fireEvent.press(getByText(itCatalogs.auth.forgotPassword));
     expect(onForgotPasswordPress).toHaveBeenCalledTimes(1);
   });
 
@@ -168,7 +201,7 @@ describe('LoginForm', () => {
     const onLoginError = jest.fn();
     const handleLogin = jest.fn().mockResolvedValue({
       success: false,
-      error: 'Invalid credentials',
+      error: 'invalid_credentials',
     });
     (useEmailAuth as jest.Mock).mockReturnValue({
       ...mockEmailAuth,
@@ -188,7 +221,8 @@ describe('LoginForm', () => {
 
     await waitFor(() => {
       expect(handleLogin).toHaveBeenCalled();
-      expect(onLoginError).toHaveBeenCalledWith('Invalid credentials');
+      // Boundary maps the stable code to the catalog text.
+      expect(onLoginError).toHaveBeenCalledWith(itCatalogs.auth.errors_invalidCredentials);
     });
   });
 
@@ -206,18 +240,36 @@ describe('LoginForm', () => {
     fireEvent.press(getByTestId('login-button'));
 
     await waitFor(() => {
-      expect(onLoginError).toHaveBeenCalledWith('Inserisci la password');
+      expect(onLoginError).toHaveBeenCalledWith(itCatalogs.auth.errors_emptyPassword);
     });
   });
 
   it('should show error message from useEmailAuth', () => {
     (useEmailAuth as jest.Mock).mockReturnValue({
       ...mockEmailAuth,
-      error: 'Email già in uso',
+      error: 'invalid_credentials',
     });
 
     const { getByText } = render(<LoginForm {...defaultProps} />);
-    expect(getByText('Email già in uso')).toBeTruthy();
+    expect(getByText(itCatalogs.auth.errors_invalidCredentials)).toBeTruthy();
+  });
+
+  it('should render localised blocked label with minutes when rate limited (IT and EN)', async () => {
+    (useEmailAuth as jest.Mock).mockReturnValue({
+      ...mockEmailAuth,
+      isRateLimited: true,
+      remainingMs: 5 * 60 * 1000,
+    });
+
+    const { getByText, unmount } = render(<LoginForm {...defaultProps} />);
+    expect(getByText(`${itCatalogs.auth.blockedSuffix} (5m)`)).toBeTruthy();
+    expect(getByText('Bloccato (5m)')).toBeTruthy();
+    unmount();
+
+    await i18next.changeLanguage('en');
+    const { getByText: getByTextEn } = render(<LoginForm {...defaultProps} />);
+    expect(getByTextEn(`${enCatalogs.auth.blockedSuffix} (5m)`)).toBeTruthy();
+    expect(getByTextEn('Blocked (5m)')).toBeTruthy();
   });
 
   it('should disable login button when loading', () => {

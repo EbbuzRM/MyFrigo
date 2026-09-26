@@ -9,6 +9,7 @@
 // message: 
 
 import { LoggingService } from '@/services/LoggingService';
+import i18next from 'i18next';
 import { NotificationService } from '@/services/NotificationService';
 import { Alert, Platform } from 'react-native';
 import { OneSignal } from 'react-native-onesignal';
@@ -32,8 +33,8 @@ export class NotificationTests {
         try {
             if (Platform.OS === 'web') {
                 Alert.alert(
-                    'Test Non Disponibile',
-                    'Le notifiche non sono supportate sulla piattaforma web.'
+                    i18next.t('notifications.testUnavailable'),
+                    i18next.t('notifications.testUnavailableWeb')
                 );
                 return {
                     testId: 'notification-permissions',
@@ -59,13 +60,13 @@ export class NotificationTests {
 
             if (hasPermissions) {
                 Alert.alert(
-                    'Test Permessi Completato',
-                    `✅ Permessi Notifiche: ${permissionStatus ? 'granted' : 'denied'}\n\nIl sistema di notifiche è configurato correttamente!`
+                    i18next.t('notifications.testPermissionDone'),
+                    i18next.t('notifications.testPermissionGranted')
                 );
             } else {
                 Alert.alert(
-                    'Test Permessi Fallito',
-                    `❌ Permessi Notifiche: ${permissionStatus ? 'granted' : 'denied'}\n\nI permessi per le notifiche non sono stati concessi. Attivali nelle impostazioni del dispositivo.`
+                    i18next.t('notifications.testPermissionFailed'),
+                    i18next.t('notifications.testPermissionDenied')
                 );
             }
 
@@ -80,8 +81,8 @@ export class NotificationTests {
             LoggingService.error('NotificationTests', 'Errore nel test permessi notifiche:', error);
 
             Alert.alert(
-                'Errore Test Permessi',
-                `Si è verificato un errore: ${errorMessage}`
+                i18next.t('notifications.testPermissionError'),
+                i18next.t('notifications.testUnexpectedError')
             );
 
             return {
@@ -93,70 +94,75 @@ export class NotificationTests {
         }
     }
 
-    static async runNotificationSchedulingTest(): Promise<NotificationTestResult> {
+    static async runNotificationReadinessTest(): Promise<NotificationTestResult> {
         const startTime = Date.now();
 
         try {
             if (Platform.OS === 'web') {
                 Alert.alert(
-                    'Test Non Disponibile',
-                    'Le notifiche non sono supportate sulla piattaforma web.'
+                    i18next.t('notifications.testUnavailable'),
+                    i18next.t('notifications.testUnavailableWeb')
                 );
                 return {
-                    testId: 'notification-scheduling',
+                    testId: 'notification-readiness',
                     success: false,
                     duration: Date.now() - startTime,
                     error: 'Platform not supported'
                 };
             }
 
-            // Verifica permessi prima di schedulare
+            // Verifica il permesso senza simulare l'invio di una notifica.
             const hasPermissions = await NotificationService.getOrRequestPermissionsAsync();
             if (!hasPermissions) {
                 Alert.alert(
-                    'Test Scheduling Fallito',
-                    'Permessi notifiche non concessi. Impossibile schedulare notifiche di test.'
+                    i18next.t('notifications.testReadinessFailed'),
+                    i18next.t('notifications.testReadinessNoPermission')
                 );
                 return {
-                    testId: 'notification-scheduling',
+                    testId: 'notification-readiness',
                     success: false,
                     duration: Date.now() - startTime,
                     error: 'Permissions not granted'
                 };
             }
 
-            // Schedula una notifica di test
-            await NotificationService.scheduleTestNotification();
-
-            const testData = {
-                scheduledAt: new Date().toISOString(),
-                triggerIn: '10 secondi'
-            };
-
-            LoggingService.info('NotificationTests', 'Notifica di test schedulata:', testData);
+            const permissionGranted = await NotificationService.checkNotificationReadiness();
+            if (!permissionGranted) {
+                Alert.alert(
+                    i18next.t('notifications.testReadinessFailed'),
+                    i18next.t('notifications.testReadinessNoPermission')
+                );
+                return {
+                    testId: 'notification-readiness',
+                    success: false,
+                    duration: Date.now() - startTime,
+                    error: 'Permission not granted'
+                };
+            }
+            LoggingService.info('NotificationTests', 'OneSignal notification permission confirmed');
 
             Alert.alert(
-                'Test Scheduling Completato',
-                '✅ Notifica di test schedulata con successo!\n\nRiceverai una notifica tra circa 10 secondi.'
+                i18next.t('notifications.testReadinessDone'),
+                i18next.t('notifications.testReadinessDoneMessage')
             );
 
             return {
-                testId: 'notification-scheduling',
+                testId: 'notification-readiness',
                 success: true,
                 duration: Date.now() - startTime,
-                data: testData
+                data: { permissionGranted: true }
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-            LoggingService.error('NotificationTests', 'Errore nel test scheduling notifiche:', error);
+            LoggingService.error('NotificationTests', 'Notification readiness check failed', error);
 
             Alert.alert(
-                'Errore Test Scheduling',
-                `Si è verificato un errore: ${errorMessage}`
+                i18next.t('notifications.testReadinessError'),
+                i18next.t('notifications.testUnexpectedError')
             );
 
             return {
-                testId: 'notification-scheduling',
+                testId: 'notification-readiness',
                 success: false,
                 duration: Date.now() - startTime,
                 error: errorMessage

@@ -22,7 +22,6 @@ jest.mock('../useRegistrationOrchestrator', () => ({
 }));
 
 jest.mock('../useRegistrationActions', () => ({
-  useEmailCheck: jest.fn(),
   useUserProfileCreation: jest.fn(),
   useAccountCreation: jest.fn(),
 }));
@@ -38,7 +37,6 @@ const {
   useRegistrationOrchestrator,
 } = require('../useRegistrationOrchestrator');
 const {
-  useEmailCheck,
   useUserProfileCreation,
   useAccountCreation,
 } = require('../useRegistrationActions');
@@ -69,7 +67,6 @@ describe('useRegistration', () => {
   };
 
   const mockRegister = jest.fn();
-  const mockCheckEmail = jest.fn();
   const mockCreateAccount = jest.fn();
   const mockHandlePostRegistration = jest.fn();
   const mockOnSuccess = jest.fn();
@@ -80,7 +77,6 @@ describe('useRegistration', () => {
 
     // Default mock implementations
     (useRegistrationState as jest.Mock).mockReturnValue(mockState);
-    (useEmailCheck as jest.Mock).mockReturnValue(mockCheckEmail);
     (useUserProfileCreation as jest.Mock).mockReturnValue(jest.fn());
     (useAccountCreation as jest.Mock).mockReturnValue(mockCreateAccount);
     (useRegistrationOrchestrator as jest.Mock).mockReturnValue(mockRegister);
@@ -95,11 +91,9 @@ describe('useRegistration', () => {
 
       // Verify all sub-hooks were called
       expect(useRegistrationState).toHaveBeenCalled();
-      expect(useEmailCheck).toHaveBeenCalled();
       expect(useUserProfileCreation).toHaveBeenCalled();
       expect(useAccountCreation).toHaveBeenCalled();
       expect(useRegistrationOrchestrator).toHaveBeenCalledWith(
-        mockCheckEmail,
         mockCreateAccount,
         mockState
       );
@@ -107,7 +101,6 @@ describe('useRegistration', () => {
 
       // Verify returned interface
       expect(result.current.register).toBe(mockRegister);
-      expect(result.current.checkEmailExists).toBe(mockCheckEmail);
       expect(result.current.createUserAccount).toBe(mockCreateAccount);
       expect(result.current.handlePostRegistration).toBe(mockHandlePostRegistration);
     });
@@ -136,7 +129,6 @@ describe('useRegistration', () => {
       );
 
       expect(typeof result.current.register).toBe('function');
-      expect(typeof result.current.checkEmailExists).toBe('function');
       expect(typeof result.current.createUserAccount).toBe('function');
       expect(typeof result.current.handlePostRegistration).toBe('function');
       expect(typeof result.current.resetError).toBe('function');
@@ -161,7 +153,7 @@ describe('useRegistration', () => {
     });
 
     it('should handle registration errors', async () => {
-      const errorResult: RegistrationResult = { success: false, error: 'Email already exists' };
+      const errorResult: RegistrationResult = { success: false, error: 'registration_failed' };
       mockRegister.mockResolvedValueOnce(errorResult);
 
       const { result } = renderHook(() =>
@@ -174,39 +166,6 @@ describe('useRegistration', () => {
       });
 
       expect(res!).toEqual(errorResult);
-    });
-  });
-
-  describe('checkEmailExists', () => {
-    it('should check if email exists', async () => {
-      mockCheckEmail.mockResolvedValueOnce(false);
-
-      const { result } = renderHook(() =>
-        useRegistration(mockOnSuccess, mockOnEmailNeedsConfirmation)
-      );
-
-      let exists: boolean;
-      await act(async () => {
-        exists = await result.current.checkEmailExists('test@example.com');
-      });
-
-      expect(mockCheckEmail).toHaveBeenCalledWith('test@example.com');
-      expect(exists!).toBe(false);
-    });
-
-    it('should return true when email already exists', async () => {
-      mockCheckEmail.mockResolvedValueOnce(true);
-
-      const { result } = renderHook(() =>
-        useRegistration(mockOnSuccess, mockOnEmailNeedsConfirmation)
-      );
-
-      let exists: boolean;
-      await act(async () => {
-        exists = await result.current.checkEmailExists('existing@example.com');
-      });
-
-      expect(exists!).toBe(true);
     });
   });
 

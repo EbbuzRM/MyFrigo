@@ -11,6 +11,7 @@
 import React, { memo } from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 import { CameraView as ExpoCameraView } from 'expo-camera';
+import { useTranslation } from 'react-i18next';
 import { Camera as CameraIcon, Image as ImageIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { PhotoCaptureStyles } from '@/styles/photo-capture.styles';
@@ -47,6 +48,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
   onPickImage,
   isActive = true,
 }) => {
+  const { t } = useTranslation();
   const isExpirationDateMode = captureMode === 'expirationDateOnly';
 
   return (
@@ -56,8 +58,8 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
         style={styles.camera}
         facing="back"
         active={isActive}
-        accessibilityLabel="Vista fotocamera"
-        accessibilityHint="Inquadra il prodotto e tocca il pulsante centrale per scattare la foto"
+        accessibilityLabel={t('scanner.cameraView')}
+        accessibilityHint={t('scanner.cameraCaptureHint')}
         {...(isExpirationDateMode && {
           zoom: 0.1,
           autoFocus: 'on',
@@ -68,7 +70,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
       {isExpirationDateMode && (
         <View style={styles.macroFocusFrame}>
           <Text style={styles.focusFrameText}>
-            Fotografa la scadenza
+            {t('scanner.captureExpiry')}
           </Text>
         </View>
       )}
@@ -77,7 +79,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
         <TouchableOpacity
           style={styles.controlButton}
           onPress={onPickImage}
-          accessibilityLabel="Seleziona dalla galleria"
+          accessibilityLabel={t('scanner.chooseGallery')}
           accessibilityRole="button"
           testID="pick-image-button"
         >
@@ -87,7 +89,7 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
         <TouchableOpacity
           style={styles.captureButton}
           onPress={onTakePicture}
-          accessibilityLabel="Scatta foto"
+          accessibilityLabel={t('scanner.takePhoto')}
           accessibilityRole="button"
           testID="capture-button"
         >
@@ -97,10 +99,10 @@ export const CameraView: React.FC<CameraViewProps> = memo(({
         <TouchableOpacity
           style={styles.controlButton}
           onPress={() => router.back()}
-          accessibilityLabel="Torna indietro"
+          accessibilityLabel={t('common.goBack')}
           accessibilityRole="button"
         >
-          <Text style={styles.controlButtonText}>Indietro</Text>
+          <Text style={styles.controlButtonText}>{t('common.back')}</Text>
         </TouchableOpacity>
       </View>
     </>

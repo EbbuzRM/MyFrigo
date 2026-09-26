@@ -491,14 +491,32 @@ describe('Error Handling', () => {
       await result.current.handleSaveProduct();
     });
 
-    expect(mockAlert).toHaveBeenCalledWith(
-      'Errore',
-      expect.stringContaining('Save error')
-    );
+        expect(mockAlert).toHaveBeenCalledWith('Errore', 'Impossibile salvare il prodotto. Riprova o contatta il supporto.');
   });
 
-  it('should show timeout error with retry option', async () => {
-    mockProductStorage.saveProduct.mockRejectedValue(new Error('Timeout'));
+  it('should handle a resolved ServiceResult failure without showing success', async () => {
+    mockProductStorage.saveProduct.mockResolvedValue(createErrorResult('Database unavailable'));
+
+    const { result } = renderHook(() => useProductSave());
+
+    await act(async () => {
+      await result.current.handleSaveProduct();
+    });
+
+        expect(mockAlert).toHaveBeenCalledWith('Errore', 'Impossibile salvare il prodotto. Riprova o contatta il supporto.');
+    expect(mockAlert).not.toHaveBeenCalledWith(
+      'Prodotto Salvato',
+      expect.any(String),
+      expect.any(Array),
+      expect.any(Object)
+    );
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('should handle a timeout returned as a ServiceResult failure', async () => {
+    mockProductStorage.saveProduct.mockResolvedValue(
+          { ...createErrorResult('Timeout durante salvataggio prodotto'), errorCode: 'timeout' }
+    );
 
     const { result } = renderHook(() => useProductSave());
 
@@ -514,6 +532,18 @@ describe('Error Handling', () => {
         expect.objectContaining({ text: 'Riprova' }),
       ])
     );
+  });
+
+    it('does not infer timeout from an arbitrary error message', async () => {
+    mockProductStorage.saveProduct.mockRejectedValue(new Error('Timeout'));
+
+    const { result } = renderHook(() => useProductSave());
+
+    await act(async () => {
+      await result.current.handleSaveProduct();
+    });
+
+      expect(mockAlert).toHaveBeenCalledWith('Errore', 'Impossibile salvare il prodotto. Riprova o contatta il supporto.');
   });
 
   it('should log error on save failure', async () => {

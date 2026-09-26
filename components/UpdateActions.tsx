@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { View, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { UpdateModalStyles } from './UpdateModal.styles';
 import { UpdateStatus } from './UpdateModalHeader';
 
@@ -27,6 +28,7 @@ interface UpdateActionsProps {
 export const UpdateActions: React.FC<UpdateActionsProps> = React.memo(({
   styles, updateStatus, isDownloading, isInstalling, autoInstall, onLater, onInstall, onRestart,
 }) => {
+  const { t } = useTranslation();
   const showButtons = updateStatus === 'idle' || updateStatus === 'completed' || updateStatus === 'error';
   const showRestart = updateStatus === 'completed' && !autoInstall;
   const isInProgress = updateStatus === 'downloading' || updateStatus === 'installing';
@@ -50,26 +52,29 @@ export const UpdateActions: React.FC<UpdateActionsProps> = React.memo(({
   );
 
   if (updateStatus === 'error') {
-    return <View style={styles.actions}><PrimaryButton onPress={onInstall} label="Riprova" /></View>;
+    return <View style={styles.actions}><PrimaryButton onPress={onInstall} label={t('common.retry')} /></View>;
   }
 
   if (showRestart) {
-    return <View style={styles.actions}><PrimaryButton onPress={onRestart} label="Riavvia App" /></View>;
+    return <View style={styles.actions}><PrimaryButton onPress={onRestart} label={t('common.restartApp')} /></View>;
   }
+
+  const laterLabel = t('common.later');
+  const installLabel = t('common.installNow');
 
   return (
     <View style={styles.actions}>
       <TouchableOpacity style={[styles.button, styles.laterButton]} onPress={onLater}
-        accessible accessibilityLabel="Più tardi" accessibilityRole="button">
-        <Text style={styles.buttonText}>Più tardi</Text>
+        accessible accessibilityLabel={laterLabel} accessibilityRole="button">
+        <Text style={styles.buttonText}>{laterLabel}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={onInstall}
         disabled={isDownloading || isInstalling}
-        accessible accessibilityLabel="Installa ora" accessibilityRole="button"
+        accessible accessibilityLabel={installLabel} accessibilityRole="button"
         accessibilityState={{ disabled: isDownloading || isInstalling }}>
         {isDownloading || isInstalling ? (
           <ActivityIndicator size="small" color="#ffffff" />
-        ) : <Text style={styles.primaryButtonText}>Installa ora</Text>}
+        ) : <Text style={styles.primaryButtonText}>{installLabel}</Text>}
       </TouchableOpacity>
     </View>
   );

@@ -14,6 +14,7 @@ import { ProductStorage } from '@/services/ProductStorage';
 import { SettingsService } from '@/services/SettingsService';
 import { CategoryService } from '@/services/CategoryService';
 import { Alert } from 'react-native';
+import i18next from 'i18next';
 
 export interface DiagnosticData {
   [key: string]: unknown;
@@ -39,8 +40,8 @@ export class DatabaseTests {
       if (healthError) throw new Error(`Database connection failed: ${healthError.message}`);
 
       Alert.alert(
-        'Test Connettività Database Completato',
-        '✅ Connessione database OK'
+        i18next.t('settings.diagnosticDatabaseCompleted'),
+        i18next.t('settings.diagnosticDatabaseOk')
       );
 
       return {
@@ -53,8 +54,8 @@ export class DatabaseTests {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
 
       Alert.alert(
-        'Test Connettività Database Fallito',
-        `❌ Errore: ${errorMessage}`
+        i18next.t('settings.diagnosticDatabaseFailed'),
+        i18next.t('settings.diagnosticErrorWithMessage', { message: errorMessage })
       );
 
       return {
@@ -90,22 +91,31 @@ export class DatabaseTests {
       const hasCategories = Array.isArray(categories);
       const categoriesCount = hasCategories ? categories.length : 0;
 
-      const issues = [];
-      if (!hasValidSession) issues.push('Sessione utente non valida');
-      if (!isValidSettings) issues.push('Impostazioni corrotte');
-      if (!hasCategories) issues.push('Errore nel caricamento categorie');
-      if (products && products.some(p => !p.id || !p.name)) issues.push('Prodotti con dati mancanti');
+      const issues: Array<'invalid_session' | 'corrupt_settings' | 'categories_failed' | 'incomplete_products'> = [];
+      if (!hasValidSession) issues.push('invalid_session');
+      if (!isValidSettings) issues.push('corrupt_settings');
+      if (!hasCategories) issues.push('categories_failed');
+      if (products && products.some(p => !p.id || !p.name)) issues.push('incomplete_products');
+      const issueLabels = issues.map(issue => i18next.t(({
+        invalid_session: 'settings.diagnosticInvalidSession',
+        corrupt_settings: 'settings.diagnosticCorruptSettings',
+        categories_failed: 'settings.diagnosticCategoriesFailed',
+        incomplete_products: 'settings.diagnosticIncompleteProducts'
+      } as const)[issue]));
 
       Alert.alert(
-        'Test Integrità Dati Completato',
-        `📊 Statistiche:\n` +
-        `• Prodotti totali: ${products?.length || 0}\n` +
-        `• Prodotti attivi: ${activeProducts.length}\n` +
-        `• Prodotti consumati: ${consumedProducts.length}\n` +
-        `• Categorie: ${categoriesCount}\n` +
-        `• Sessione: ${hasValidSession ? 'Valida' : 'Non valida'}\n` +
-        `• Impostazioni: ${isValidSettings ? 'OK' : 'Corrotte'}\n\n` +
-        `${issues.length === 0 ? '✅ Nessun problema rilevato' : `❌ Problemi: ${issues.join(', ')}`}`
+        i18next.t('settings.diagnosticIntegrityCompleted'),
+        i18next.t('settings.diagnosticIntegritySummary', {
+          total: products?.length || 0,
+          active: activeProducts.length,
+          consumed: consumedProducts.length,
+          categories: categoriesCount,
+          session: i18next.t(hasValidSession ? 'settings.diagnosticValid' : 'settings.diagnosticInvalid'),
+          settings: i18next.t(isValidSettings ? 'settings.diagnosticValid' : 'settings.diagnosticCorrupt'),
+          issues: issues.length === 0
+            ? i18next.t('settings.diagnosticNoIssues')
+            : i18next.t('settings.diagnosticIssues', { issues: issueLabels.join(', ') })
+        })
       );
 
       return {
@@ -126,8 +136,8 @@ export class DatabaseTests {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
 
       Alert.alert(
-        'Test Integrità Dati Fallito',
-        `❌ Errore durante il test: ${errorMessage}`
+        i18next.t('settings.diagnosticIntegrityFailed'),
+        i18next.t('settings.diagnosticTestFailedWithMessage', { message: errorMessage })
       );
 
       return {

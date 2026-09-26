@@ -13,6 +13,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Props for ProductsHeader component
@@ -30,6 +31,7 @@ interface ProductsHeaderProps {
  * @returns Header component
  */
 export function ProductsHeader({ testID }: ProductsHeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -40,14 +42,14 @@ export function ProductsHeader({ testID }: ProductsHeaderProps): React.ReactElem
   return (
     <View style={styles.header} testID={testID}>
       <Text style={styles.title} accessibilityRole="header">
-        Prodotti
+        {t('products.title')}
       </Text>
       <TouchableOpacity
         style={styles.addButton}
         onPress={handleAddPress}
-        accessibilityLabel="Aggiungi nuovo prodotto"
+        accessibilityLabel={t('products.addProductLabel')}
         accessibilityRole="button"
-        accessibilityHint="Tocca per aggiungere un nuovo prodotto"
+        accessibilityHint={t('products.addProductHint')}
       >
         <Plus size={24} color="#ffffff" />
       </TouchableOpacity>

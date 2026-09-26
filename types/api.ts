@@ -15,8 +15,10 @@ export interface OpenFoodFactsProduct {
   barcode: string;
   product_name?: string;
   product_name_it?: string;
+  product_name_en?: string;
   generic_name?: string;
   generic_name_it?: string;
+  generic_name_en?: string;
   abbreviated_product_name?: string;
   brands?: string;
   brands_tags?: string[];

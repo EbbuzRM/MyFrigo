@@ -1,110 +1,138 @@
 // useExpirationStatus.ts — useExpirationStatus module.
 //
-// exports: useExpirationStatus
+// exports: useExpirationStatus | getExpirationStatusLabel | ExpirationStatusInfo
 // used_by: components\ExpirationCard.tsx
 //                   hooks\useProductStatus.ts
-// rules:   - All expiration status logic must use centralized COLORS constants from `@/constants/colors` and respect the `isDarkMode` parameter for theming; hardcoded color values are prohibited.
-//          - The hook must always return the strict `{text: string, color: string, backgroundColor: string}` shape, and status calculation must be memoized via `useMemo` with expirationDate, isDarkMode, and isFrozen as dependencies.
-// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
 
 import { useMemo } from 'react';
+import type { TFunction } from 'i18next';
+import { differenceInCalendarDays } from 'date-fns';
 import { COLORS } from '@/constants/colors';
 
-/**
- * @hook useExpirationStatus
- * @description Hook personalizzato che calcola lo stato di scadenza di un prodotto.
- * Restituisce un oggetto contenente un testo descrittivo (es. "Scade oggi") e i colori
- * appropriati per lo sfondo e il testo, adattandosi al tema chiaro/scuro.
- * @param {string|undefined} expirationDate - La data di scadenza del prodotto in formato stringa ISO o undefined.
- * @returns {{text: string, color: string, backgroundColor: string}} Lo stato di scadenza calcolato.
- */
-export function useExpirationStatus(expirationDate: string | undefined, isDarkMode: boolean, isFrozen?: boolean) {
+export type ExpirationStatusInfo =
+  | {
+      status: 'frozen' | 'dateNotSet' | 'dateInvalid' | 'expired' | 'expiresToday';
+      color: string;
+      backgroundColor: string;
+    }
+  | {
+      status: 'expiresInDays';
+      daysUntil: number;
+      color: string;
+      backgroundColor: string;
+    };
 
-  const status = useMemo(() => {
-    // Utilizziamo i colori centralizzati
+interface StatusColors {
+  color: string;
+  background: string;
+}
+
+type NonDayExpirationStatus = Exclude<ExpirationStatusInfo['status'], 'expiresInDays'>;
+
+/** Resolve presentation copy from stable expiration state at UI boundary. */
+export function getExpirationStatusLabel(status: ExpirationStatusInfo, t: TFunction): string {
+  switch (status.status) {
+    case 'frozen':
+      return t('dashboard.statusFrozen');
+    case 'dateNotSet':
+      return t('dashboard.statusDateNotSet');
+    case 'dateInvalid':
+      return t('dashboard.statusDateInvalid');
+    case 'expired':
+      return t('dashboard.statusExpired');
+    case 'expiresToday':
+      return t('dashboard.statusExpiresToday');
+    case 'expiresInDays':
+      return t('dashboard.statusExpiresInDays', { count: status.daysUntil });
+  }
+}
+
+/** Calculate stable expiration state and theme colors without embedding language. */
+export function useExpirationStatus(
+  expirationDate: string | undefined,
+  isDarkMode: boolean,
+  isFrozen?: boolean,
+): ExpirationStatusInfo {
+  return useMemo(() => {
     const statusColors = {
       good: {
         light: {
           color: COLORS.LIGHT.SUCCESS,
-          background: COLORS.LIGHT.SUCCESS_LIGHT + '20' // Aggiungiamo trasparenza
+          background: COLORS.LIGHT.SUCCESS_LIGHT + '20',
         },
         dark: {
           color: COLORS.DARK.SUCCESS,
-          background: COLORS.DARK.SUCCESS_DARK + '20'
+          background: COLORS.DARK.SUCCESS_DARK + '20',
         },
       },
       warning: {
         light: {
           color: COLORS.LIGHT.WARNING,
-          background: COLORS.LIGHT.WARNING_LIGHT + '20'
+          background: COLORS.LIGHT.WARNING_LIGHT + '20',
         },
         dark: {
           color: COLORS.DARK.WARNING,
-          background: COLORS.DARK.WARNING_DARK + '20'
+          background: COLORS.DARK.WARNING_DARK + '20',
         },
       },
       expired: {
         light: {
           color: COLORS.LIGHT.ERROR,
-          background: COLORS.LIGHT.ERROR_LIGHT + '20'
+          background: COLORS.LIGHT.ERROR_LIGHT + '20',
         },
         dark: {
           color: COLORS.DARK.ERROR,
-          background: COLORS.DARK.ERROR_DARK + '20'
+          background: COLORS.DARK.ERROR_DARK + '20',
         },
       },
       frozen: {
         light: {
-          color: '#2563EB', // Blue for frozen
-          background: '#2563EB20'
+          color: '#2563EB',
+          background: '#2563EB20',
         },
         dark: {
-          color: '#58a6ff', // Lighter blue for dark mode
-          background: '#58a6ff20'
-        }
-      }
+          color: '#58a6ff',
+          background: '#58a6ff20',
+        },
+      },
     };
 
     const theme = isDarkMode ? 'dark' : 'light';
+    const createStatus = (status: NonDayExpirationStatus, colors: StatusColors) => ({
+      status,
+      color: colors.color,
+      backgroundColor: colors.background,
+    });
 
-    // Se è congelato, restituisci sempre uno stato "sicuro" con colore blu
     if (isFrozen) {
-      const { color, background } = statusColors.frozen[theme];
-      return { text: 'Congelato', color, backgroundColor: background };
+      return createStatus('frozen', statusColors.frozen[theme]);
     }
 
-    // Se la data di scadenza non è definita, restituisci uno stato predefinito
     if (!expirationDate) {
-      const { color, background } = statusColors.good[theme];
-      return { text: 'Data non impostata', color, backgroundColor: background };
+      return createStatus('dateNotSet', statusColors.good[theme]);
     }
 
-    const now = new Date();
     const expDate = new Date(expirationDate);
-
-    // Verifica che la data sia valida
-    if (isNaN(expDate.getTime())) {
-      const { color, background } = statusColors.warning[theme];
-      return { text: 'Data non valida', color, backgroundColor: background };
+    if (Number.isNaN(expDate.getTime())) {
+      return createStatus('dateInvalid', statusColors.warning[theme]);
     }
 
-    const daysUntil = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntil = differenceInCalendarDays(expDate, new Date());
 
     if (daysUntil < 0) {
-      const { color, background } = statusColors.expired[theme];
-      return { text: 'Scaduto', color, backgroundColor: background };
-    } else if (daysUntil === 0) {
-      const { color, background } = statusColors.warning[theme];
-      return { text: 'Scade oggi', color, backgroundColor: background };
-    } else if (daysUntil <= 3) {
-      const { color, background } = statusColors.warning[theme];
-      return { text: `${daysUntil} giorni`, color, backgroundColor: background };
-    } else {
-      const { color, background } = statusColors.good[theme];
-      return { text: `${daysUntil} giorni`, color, backgroundColor: background };
+      return createStatus('expired', statusColors.expired[theme]);
     }
-  }, [expirationDate, isDarkMode, isFrozen]);
 
-  return status;
+    if (daysUntil === 0) {
+      return createStatus('expiresToday', statusColors.warning[theme]);
+    }
+
+    const colors = daysUntil <= 3 ? statusColors.warning[theme] : statusColors.good[theme];
+    return {
+      status: 'expiresInDays',
+      daysUntil,
+      color: colors.color,
+      backgroundColor: colors.background,
+    };
+  }, [expirationDate, isDarkMode, isFrozen]);
 }

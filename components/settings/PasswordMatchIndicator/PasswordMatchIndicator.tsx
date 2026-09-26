@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -22,6 +23,7 @@ export function PasswordMatchIndicator({
   confirmPassword,
   isDarkMode,
 }: PasswordMatchIndicatorProps): React.ReactElement | null {
+  const { t } = useTranslation();
   if (!newPassword) return null;
 
   const { validation } = validatePassword(newPassword);
@@ -29,12 +31,12 @@ export function PasswordMatchIndicator({
 
   const styles = getStyles(isDarkMode);
   const criteria = [
-    { label: 'Minimo 8 caratteri', valid: validation.minLength },
-    { label: 'Una maiuscola', valid: validation.hasUpperCase },
-    { label: 'Una minuscola', valid: validation.hasLowerCase },
-    { label: 'Un numero', valid: validation.hasNumber },
-    { label: 'Un carattere speciale', valid: validation.hasSpecialChar },
-    { label: 'Password coincidono', valid: passwordsMatch },
+    { label: t('settings.passwordMinLength'), valid: validation.minLength },
+    { label: t('settings.passwordUppercase'), valid: validation.hasUpperCase },
+    { label: t('settings.passwordLowercase'), valid: validation.hasLowerCase },
+    { label: t('settings.passwordNumber'), valid: validation.hasNumber },
+    { label: t('settings.specialCharacter'), valid: validation.hasSpecialChar },
+    { label: t('settings.passwordMatch'), valid: passwordsMatch },
   ];
 
   return (

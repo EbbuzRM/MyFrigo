@@ -15,6 +15,14 @@ import {
   STATUS_FILTERS, 
   ProductStatusFilter 
 } from '@/constants/productFilters';
+import { useTranslation } from 'react-i18next';
+
+const statusKeys = {
+  all: { label: 'products.statusAll', accessibility: 'products.showAll', hint: 'products.filterAllHint' },
+  fresh: { label: 'products.statusFresh', accessibility: 'products.showFresh', hint: 'products.filterFreshHint' },
+  expiring: { label: 'products.statusExpiring', accessibility: 'products.showExpiring', hint: 'products.filterExpiringHint' },
+  expired: { label: 'products.statusExpired', accessibility: 'products.showExpired', hint: 'products.filterExpiredHint' },
+} as const;
 
 /**
  * Props for StatusFilterBar component
@@ -40,6 +48,7 @@ export function StatusFilterBar({
   onStatusChange,
   testID,
 }: StatusFilterBarProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -61,16 +70,16 @@ export function StatusFilterBar({
               selectedStatus === status.key && styles.statusFilterActive
             ]}
             onPress={() => handleStatusPress(status.key)}
-            accessibilityLabel={status.accessibilityLabel}
+            accessibilityLabel={t(statusKeys[status.key].accessibility)}
             accessibilityRole="button"
             accessibilityState={{ selected: selectedStatus === status.key }}
-            accessibilityHint={`Filtra per ${status.label.toLowerCase()}`}
+            accessibilityHint={t(statusKeys[status.key].hint)}
           >
             <Text style={[
               styles.statusFilterText,
               selectedStatus === status.key && styles.statusFilterTextActive
             ]}>
-              {status.label}
+              {t(statusKeys[status.key].label)}
             </Text>
           </TouchableOpacity>
         ))}

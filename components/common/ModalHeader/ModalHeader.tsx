@@ -6,6 +6,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { scaleFont } from '@/utils/scaleFont';
 
 interface ModalHeaderProps {
@@ -19,6 +20,7 @@ export function ModalHeader({
   onClose,
   isDarkMode,
 }: ModalHeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   const styles = getStyles(isDarkMode);
 
   return (
@@ -28,8 +30,8 @@ export function ModalHeader({
       </Text>
       <TouchableOpacity
         onPress={onClose}
-        accessibilityLabel="Chiudi modal"
-        accessibilityHint="Tocca per chiudere"
+        accessibilityLabel={t('common.closeModalLabel')}
+        accessibilityHint={t('common.tapToCloseHint')}
         accessibilityRole="button"
         style={styles.closeButton}
       >

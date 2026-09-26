@@ -7,6 +7,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { DiagnosticTest, TestResult } from '@/hooks/useDiagnosticTests';
@@ -24,6 +25,7 @@ export const AuthTestSection: React.FC<AuthTestSectionProps> = ({
   isRunning,
   onRunTest
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -36,7 +38,7 @@ export const AuthTestSection: React.FC<AuthTestSectionProps> = ({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Test Autenticazione</Text>
+      <Text style={styles.sectionTitle}>{t('settings.diagnosticAuthSection')}</Text>
 
       {authTests.map(test => {
         const result = getTestResult(test.id);

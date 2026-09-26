@@ -27,6 +27,26 @@ jest.mock('@/services/AuthService', () => ({
     signInWithGoogle: jest.fn(),
     handleGoogleSignInConfigurationError: jest.fn(),
   },
+  AUTH_ERROR_CODES: {
+    INVALID_EMAIL_FORMAT: 'invalid_email_format',
+    MISSING_CREDENTIALS: 'missing_credentials',
+    RATE_LIMITED: 'rate_limited',
+    INVALID_CREDENTIALS: 'invalid_credentials',
+    EMAIL_NOT_CONFIRMED: 'email_not_confirmed',
+    LOGIN_FAILED: 'login_failed',
+    GOOGLE_FAILED: 'google_failed',
+    GOOGLE_CONFIG_ERROR: 'google_config_error',
+  },
+  AUTH_ERROR_I18N_KEYS: {
+    invalid_email_format: 'auth.errors_invalidEmailFormat',
+    missing_credentials: 'auth.errors_loginGenericError',
+    rate_limited: 'auth.errors_rateLimitLogin',
+    invalid_credentials: 'auth.errors_invalidCredentials',
+    email_not_confirmed: 'auth.errors_emailNotConfirmed',
+    login_failed: 'auth.errors_loginGenericError',
+    google_failed: 'auth.errors_googleLoginFailed',
+    google_config_error: 'auth.errors_googleConfigError',
+  },
 }));
 
 // Mock AuthLogger
@@ -163,7 +183,8 @@ describe('useGoogleAuth', () => {
       });
 
       expect(authResult!.success).toBe(false);
-      expect(authResult!.error).toBe('Piattaforma non supportata');
+      // Stable code (never a user-facing string): the screen maps it via AUTH_ERROR_I18N_KEYS.
+      expect(authResult!.error).toBe('google_failed');
     });
 
     it('should handle configuration error when native module is not linked', async () => {

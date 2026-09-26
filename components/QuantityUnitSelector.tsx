@@ -11,6 +11,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '@/context/ThemeContext';
 import { COMMON_UNITS, UnitOption } from '@/constants/quantities';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { getUnitLabel } from '@/i18n/units';
 
 interface QuantityUnitSelectorProps {
   selectedValue: string;
@@ -27,6 +30,8 @@ export const QuantityUnitSelector = React.memo(({
   containerStyle,
   testID,
 }: QuantityUnitSelectorProps) => {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -36,7 +41,7 @@ export const QuantityUnitSelector = React.memo(({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      <Text style={styles.label}>Unità*</Text>
+      <Text style={styles.label}>{t('products.unitRequiredLabel')}</Text>
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={selectedValue}
@@ -44,10 +49,10 @@ export const QuantityUnitSelector = React.memo(({
           onValueChange={handleChange}
           dropdownIconColor={isDarkMode ? '#c9d1d9' : '#1e293b'}
           testID={testID}
-          accessibilityLabel="Seleziona unità di misura"
+          accessibilityLabel={t('products.selectUnitLabel')}
         >
           {units.map((unit) => (
-            <Picker.Item key={unit.id} label={unit.name} value={unit.id} />
+            <Picker.Item key={unit.id} label={getUnitLabel(unit.id, language, true) === unit.id ? unit.name : getUnitLabel(unit.id, language, true)} value={unit.id} />
           ))}
         </Picker>
       </View>

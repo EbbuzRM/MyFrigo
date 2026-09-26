@@ -1,0 +1,44 @@
+﻿{
+    "capturedAt":  "2026-09-24T16:45:52.1461239Z",
+    "projectRef":  "tfhjupcybietwzmnpwfh",
+    "authSettings":  {
+                         "disable_signup":  false,
+                         "external_email_enabled":  true,
+                         "mailer_autoconfirm":  false,
+                         "mailer_otp_exp":  600,
+                         "mailer_otp_length":  6,
+                         "mailer_secure_email_change_enabled":  true,
+                         "mailer_notifications_password_changed_enabled":  true,
+                         "site_url":  "myfrigo://**"
+                     },
+    "flows":  {
+                  "confirmation":  {
+                                       "subject":  "Confirm Your Signup",
+                                       "html":  "\u003c!DOCTYPE html\u003e\n\u003chtml lang=\"it\"\u003e\n\u003chead\u003e\n  \u003cmeta charset=\"UTF-8\"\u003e\n  \u003ctitle\u003eConferma registrazione\u003c/title\u003e\n  \u003cstyle\u003e\n    body {\n      font-family: \u0027Segoe UI\u0027, sans-serif;\n      background-color: #f9fafb;\n      color: #111827;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      max-width: 600px;\n      margin: 40px auto;\n      background-color: #ffffff;\n      padding: 32px;\n      border-radius: 8px;\n      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);\n      text-align: center;\n    }\n    .logo {\n      width: 80px;\n      margin-bottom: 20px;\n    }\n    h2 {\n      color: #111827;\n      font-size: 24px;\n      margin-bottom: 16px;\n    }\n    p {\n      font-size: 16px;\n      color: #4b5563;\n      line-height: 1.5;\n    }\n    .button {\n      display: inline-block;\n      margin-top: 24px;\n      padding: 14px 24px;\n      background-color: #3b82f6;\n      color: #ffffff !important;\n      text-decoration: none;\n      border-radius: 6px;\n      font-weight: 600;\n      font-size: 16px;\n    }\n    .footer {\n      margin-top: 32px;\n      font-size: 12px;\n      color: #9ca3af;\n      text-align: center;\n    }\n  \u003c/style\u003e\n\u003c/head\u003e\n\u003cbody\u003e\n  \u003cdiv class=\"container\"\u003e\n    \n    \u003ch2\u003eConferma la tua registrazione\u003c/h2\u003e\n    \u003cp\u003eGrazie per esserti registrato su \u003cstrong\u003eMyFrigo\u003c/strong\u003e!\u003c/p\u003e\n    \u003cp\u003ePer procedere, inserisci questo codice di 6 cifre nell\u0027app:\u003c/p\u003e\n    \n\u003ch2 style=\"font-size: 28px; letter-spacing: 4px; text-align: center;\"\u003e\n\u003cstrong\u003e{{ .Token }}\u003c/strong\u003e\n\n    \u003cp class=\"footer\"\u003eSe non hai richiesto questa email, puoi ignorarla.\u003c/p\u003e\n  \u003c/div\u003e\n\u003c/body\u003e\n\u003c/html\u003e"
+                                   },
+                  "recovery":  {
+                                   "subject":  "Reset Password",
+                                   "html":  "                                    \u003ch2\u003eReimposta la tua password\u003c/h2\u003e\n\u003cp\u003eCiao,\u003c/p\u003e\n\u003cp\u003eAbbiamo ricevuto una richiesta di reset password per il tuo account.\u003c/p\u003e\n\u003cp\u003ePer procedere, inserisci questo codice di 6 cifre nell\u0027app:\u003c/p\u003e\n\u003ch2 style=\"font-size: 28px; letter-spacing: 4px; text-align: center;\"\u003e\n\u003cstrong\u003e{{ .Token }}\u003c/strong\u003e\n\u003c/h2\u003e\u003cp\u003eIl codice scadrà a breve. Se non hai richiesto tu questa operazione, contattaci immediatamente.\u003c/p\u003e\n\u003cp\u003eGrazie,\u003cbr/\u003eIl team di MyFrigo\u003c/p\u003e"
+                               },
+                  "magic_link":  {
+                                     "subject":  "Your Magic Link",
+                                     "html":  "\u003ch2\u003eMagic Link\u003c/h2\u003e\n\n\u003cp\u003eFollow this link to login:\u003c/p\u003e\n\u003cp\u003e\u003ca href=\"{{ .ConfirmationURL }}\"\u003eLog In\u003c/a\u003e\u003c/p\u003e"
+                                 },
+                  "invite":  {
+                                 "subject":  "You have been invited",
+                                 "html":  "\u003ch2\u003eYou have been invited\u003c/h2\u003e\n\n\u003cp\u003eYou have been invited to create a user on {{ .SiteURL }}. Follow this link to accept the invite:\u003c/p\u003e\n\u003cp\u003e\u003ca href=\"{{ .ConfirmationURL }}\"\u003eAccept the invite\u003c/a\u003e\u003c/p\u003e"
+                             },
+                  "email_change":  {
+                                       "subject":  "Confirm Email Change",
+                                       "html":  "\u003ch2\u003eConfirm Change of Email\u003c/h2\u003e\n\n\u003cp\u003eFollow this link to confirm the update of your email from {{ .Email }} to {{ .NewEmail }}:\u003c/p\u003e\n\u003cp\u003e\u003ca href=\"{{ .ConfirmationURL }}\"\u003eChange Email\u003c/a\u003e\u003c/p\u003e"
+                                   },
+                  "reauthentication":  {
+                                           "subject":  "Confirm Reauthentication",
+                                           "html":  "\u003ch2\u003eConfirm reauthentication\u003c/h2\u003e\n\n\u003cp\u003eEnter the code: {{ .Token }}\u003c/p\u003e"
+                                       },
+                  "password_changed_notification":  {
+                                                        "subject":  "Your password has been changed",
+                                                        "html":  "\u003ch2\u003eYour password has been changed\u003c/h2\u003e\n\n\u003cp\u003eThis is a confirmation that the password for your account {{ .Email }} has just been changed.\u003c/p\u003e\n\u003cp\u003eIf you did not make this change, please contact support.\u003c/p\u003e"
+                                                    }
+              }
+}

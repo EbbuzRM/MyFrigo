@@ -7,6 +7,7 @@
 // message: 
 
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { PhotoCaptureStyles } from '@/styles/photo-capture.styles';
 
@@ -36,6 +37,7 @@ export const OCRProgressOverlay: React.FC<OCRProgressOverlayProps> = memo(({
   ocrProgress,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   // Don't render if not processing
   if (!ocrProgress.isProcessing) {
     return null;
@@ -63,7 +65,7 @@ export const OCRProgressOverlay: React.FC<OCRProgressOverlayProps> = memo(({
           style={styles.resetOcrButton}
           onPress={onCancel}
         >
-          <Text style={styles.resetOcrButtonText}>Annulla</Text>
+          <Text style={styles.resetOcrButtonText}>{t('common.cancel')}</Text>
         </TouchableOpacity>
       </View>
     </View>

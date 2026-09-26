@@ -9,6 +9,9 @@
 // message: 
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { getUnitLabel } from '@/i18n/units';
 import { Modal, View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { X, Info } from 'lucide-react-native';
@@ -30,13 +33,19 @@ interface ConsumeQuantityModalProps {
 export const ConsumeQuantityModal: React.FC<ConsumeQuantityModalProps> = React.memo(({
   visible, product, onConfirm, onCancel,
 }) => {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const { isDarkMode } = useTheme();
   const styles = useMemo(() => getConsumeQuantityModalStyles(isDarkMode), [isDarkMode]);
   const [inputQuantity, setInputQuantity] = useState('');
   const [error, setError] = useState('');
   const { totalQuantity, unit, validateInput } = useQuantityCalculation(product.quantities);
+  const unitLabel = getUnitLabel(unit, language);
 
   useEffect(() => { if (visible) { setInputQuantity(''); setError(''); } }, [visible]);
+  useEffect(() => {
+    setError(previous => previous ? validateInput(inputQuantity).error : previous);
+  }, [validateInput, inputQuantity]);
 
   const handleInputChange = useCallback((text: string) => {
     setInputQuantity(text);
@@ -72,13 +81,13 @@ export const ConsumeQuantityModal: React.FC<ConsumeQuantityModalProps> = React.m
           <View style={styles.modalContent}>
             <View style={styles.header}>
               <Info size={24} color={colors.icon} />
-              <Text style={[styles.title, { color: colors.title }]}>Consuma {product.name}</Text>
-              <TouchableOpacity onPress={handleCancel} style={styles.closeButton} accessible accessibilityLabel="Chiudi" accessibilityRole="button">
+              <Text style={[styles.title, { color: colors.title }]}>{t('products.consumeTitle', { name: product.name })}</Text>
+              <TouchableOpacity onPress={handleCancel} style={styles.closeButton} accessible accessibilityLabel={t('common.close')} accessibilityRole="button">
                 <X size={24} color={colors.closeIcon} />
               </TouchableOpacity>
             </View>
             <Text style={[styles.description, { color: colors.desc }]}>
-              Hai {totalQuantity} {unit} disponibili. Quante unità vuoi consumare?
+              {t('products.consumeAvailable', { count: totalQuantity, unit: unitLabel })}
             </Text>
             <QuantityInput value={inputQuantity} onChangeText={handleInputChange} totalQuantity={totalQuantity}
               hasError={!!error} maxLength={String(totalQuantity).length} isDarkMode={isDarkMode}

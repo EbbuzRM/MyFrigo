@@ -1,10 +1,16 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import { PasswordInput } from '../PasswordInput';
 
 // Mock dependencies
 jest.mock('@/utils/scaleFont', () => ({
   scaleFont: (size: number) => size,
+}));
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
 }));
 
 describe('PasswordInput', () => {
@@ -19,6 +25,7 @@ describe('PasswordInput', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
   });
 
   it('should render with required props', () => {
@@ -27,7 +34,7 @@ describe('PasswordInput', () => {
     );
     
     expect(getByText('Password')).toBeTruthy();
-    expect(getByPlaceholderText('Inserisci password')).toBeTruthy();
+    expect(getByPlaceholderText(itCatalogs.common.passwordPlaceholder)).toBeTruthy();
   });
 
   it('should render with custom placeholder', () => {
@@ -52,7 +59,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} onChangeText={onChangeTextMock} />
     );
     
-    const input = getByPlaceholderText('Inserisci password');
+    const input = getByPlaceholderText(itCatalogs.common.passwordPlaceholder);
     fireEvent.changeText(input, 'NewPassword');
     
     expect(onChangeTextMock).toHaveBeenCalledWith('NewPassword');
@@ -65,7 +72,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} onToggleVisibility={onToggleVisibilityMock} />
     );
     
-    const toggleButton = getByLabelText('Mostra password');
+    const toggleButton = getByLabelText(itCatalogs.common.showPasswordLabel);
     fireEvent.press(toggleButton);
     
     expect(onToggleVisibilityMock).toHaveBeenCalledTimes(1);
@@ -76,7 +83,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} showPassword={false} />
     );
     
-    expect(getByLabelText('Mostra password')).toBeTruthy();
+    expect(getByLabelText(itCatalogs.common.showPasswordLabel)).toBeTruthy();
   });
 
   it('should show "Nascondi password" accessibility label when password is visible', () => {
@@ -84,7 +91,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} showPassword={true} />
     );
     
-    expect(getByLabelText('Nascondi password')).toBeTruthy();
+    expect(getByLabelText(itCatalogs.common.hidePasswordLabel)).toBeTruthy();
   });
 
   it('should render secureTextEntry when password is hidden', () => {
@@ -92,7 +99,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} showPassword={false} />
     );
     
-    const input = getByPlaceholderText('Inserisci password');
+    const input = getByPlaceholderText(itCatalogs.common.passwordPlaceholder);
     expect(input.props.secureTextEntry).toBe(true);
   });
 
@@ -101,7 +108,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} showPassword={true} />
     );
     
-    const input = getByPlaceholderText('Inserisci password');
+    const input = getByPlaceholderText(itCatalogs.common.passwordPlaceholder);
     expect(input.props.secureTextEntry).toBe(false);
   });
 
@@ -126,7 +133,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} error="Errore" />
     );
     
-    const input = getByPlaceholderText('Inserisci password');
+    const input = getByPlaceholderText(itCatalogs.common.passwordPlaceholder);
     expect(input.parent?.parent?.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -174,7 +181,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} />
     );
     
-    const toggleButton = getByLabelText('Mostra password');
+    const toggleButton = getByLabelText(itCatalogs.common.showPasswordLabel);
     expect(toggleButton).toBeTruthy();
     expect(toggleButton.props.accessibilityRole).toBe('button');
   });
@@ -184,7 +191,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} />
     );
     
-    const input = getByPlaceholderText('Inserisci password');
+    const input = getByPlaceholderText(itCatalogs.common.passwordPlaceholder);
     expect(input.props.autoCorrect).toBe(false);
   });
 
@@ -194,7 +201,7 @@ describe('PasswordInput', () => {
       <PasswordInput {...defaultProps} onChangeText={onChangeTextMock} />
     );
     
-    const input = getByPlaceholderText('Inserisci password');
+    const input = getByPlaceholderText(itCatalogs.common.passwordPlaceholder);
     fireEvent.changeText(input, 'Pass1');
     fireEvent.changeText(input, 'Pass12');
     fireEvent.changeText(input, 'Pass123');

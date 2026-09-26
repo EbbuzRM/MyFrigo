@@ -20,6 +20,7 @@ import { getProductCardStyles } from './ProductCard.styles';
 import { LoggingService } from '@/services/LoggingService';
 import { getProductCardAccessibilityProps } from '@/utils/accessibility';
 import Animated from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Props for ProductCard component
@@ -64,6 +65,7 @@ export const ProductCard = React.memo(({
   index,
 }: ProductCardProps) => {
   const { isDarkMode, colors } = useTheme();
+  const { t } = useTranslation();
   const { animatedStyle } = useCardAnimation(index);
 
   const { expirationInfo, formattedExpirationDate, formattedPurchaseDate } = useProductStatus(
@@ -92,9 +94,7 @@ export const ProductCard = React.memo(({
         ]}
         onPress={onPress}
         activeOpacity={0.7}
-        accessible={true}
-        accessibilityRole="button"
-        accessibilityLabel={getProductCardAccessibilityProps(product, categoryInfo).accessibilityLabel}
+        {...getProductCardAccessibilityProps(product, categoryInfo, t)}
       >
         <View
           style={[styles.statusIndicator, { backgroundColor: expirationInfo.color, width: STATUS_INDICATOR_WIDTH }]}

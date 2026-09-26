@@ -9,7 +9,14 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { LoggingService } from '@/services/LoggingService';
-import { AuthService, AuthResult, getRateLimitStatus } from '@/services/AuthService';
+import {
+  AuthService,
+  AuthResult,
+  AUTH_ERROR_CODES,
+  getRateLimitStatus,
+  type AuthErrorCode,
+} from '@/services/AuthService';
+import type { AuthErrorParams } from '@/utils/authErrorI18n';
 
 /**
  * Hook per la gestione dell'autenticazione email
@@ -19,6 +26,7 @@ export const useEmailAuth = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorParams, setErrorParams] = useState<AuthErrorParams | undefined>(undefined);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
   const [remainingMs, setRemainingMs] = useState<number | undefined>(undefined);
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
@@ -95,18 +103,21 @@ export const useEmailAuth = () => {
   const handleLogin = useCallback(async (password: string, captchaToken?: string): Promise<AuthResult> => {
     try {
       setError(null);
+      setErrorParams(undefined);
       setLoading(true);
 
-      // Pre-check persisted block for instant UX
+      // Pre-check persisted block for instant UX. The hook only stores the
+      // stable `rate_limited` code (+ `{ count }` params): the screen maps
+      // code -> `auth.*` catalog text at the UI boundary.
       const preCheck = await getRateLimitStatus(email);
       if (!preCheck.allowed) {
         const minutes = Math.ceil((preCheck.remainingMs || 0) / 60000);
-        const msg = `Troppi tentativi di login. Riprova tra ${minutes} minuti.`;
-        setError(msg);
+        setError(AUTH_ERROR_CODES.RATE_LIMITED);
+        setErrorParams({ count: minutes });
         setRateLimitedUntil(Date.now() + (preCheck.remainingMs || 0));
         setRemainingMs(preCheck.remainingMs);
         setAttemptsLeft(0);
-        return { success: false, error: msg };
+        return { success: false, error: AUTH_ERROR_CODES.RATE_LIMITED, errorParams: { count: minutes } };
       }
 
       const result = await AuthService.signInWithEmail(email, password, captchaToken);
@@ -120,18 +131,18 @@ export const useEmailAuth = () => {
         setRemainingMs(undefined);
       } else {
         // Se limite appena raggiunto al 5° fallimento, sovrascrivi errore generico
-        // con messaggio di blocco per UX immediata (§6: "Troppi tentativi" già al 5°)
+        // con codice di blocco per UX immediata (§6: rate-limit già al 5°)
         const status = await getRateLimitStatus(email);
         if (!status.allowed) {
           const minutes = Math.ceil((status.remainingMs || 0) / 60000);
-          const msg = `Troppi tentativi di login. Riprova tra ${minutes} minuti.`;
-          setError(msg);
-          return { success: false, error: msg };
+          setError(AUTH_ERROR_CODES.RATE_LIMITED);
+          setErrorParams({ count: minutes });
+          return { success: false, error: AUTH_ERROR_CODES.RATE_LIMITED, errorParams: { count: minutes } };
         }
 
-        setError(result.error || 'Errore durante il login');
+        setError(result.error ?? AUTH_ERROR_CODES.LOGIN_FAILED);
         // If blocked after this attempt, ensure countdown shown even if error already set
-        if (result.error?.includes('Troppi tentativi')) {
+        if (result.error === AUTH_ERROR_CODES.RATE_LIMITED) {
           const s = await getRateLimitStatus(email);
           if (!s.allowed && s.remainingMs) {
             setRateLimitedUntil(Date.now() + s.remainingMs);
@@ -144,13 +155,19 @@ export const useEmailAuth = () => {
       return result;
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Errore sconosciuto';
+      const rawMessage = err instanceof Error ? err.message : null;
+      const code: AuthErrorCode =
+        rawMessage !== null &&
+        (Object.values(AUTH_ERROR_CODES) as string[]).includes(rawMessage)
+          ? (rawMessage as AuthErrorCode)
+          : AUTH_ERROR_CODES.LOGIN_FAILED;
       LoggingService.error('useEmailAuth', 'Login failed', err);
-      setError(errorMessage);
+      setError(code);
+      setErrorParams(undefined);
 
       return {
         success: false,
-        error: errorMessage
+        error: code
       };
     } finally {
       setLoading(false);
@@ -159,6 +176,7 @@ export const useEmailAuth = () => {
 
   const clearError = useCallback(() => {
     setError(null);
+    setErrorParams(undefined);
   }, []);
 
   return {
@@ -166,6 +184,7 @@ export const useEmailAuth = () => {
     setEmail,
     loading,
     error,
+    errorParams,
     handleLogin,
     clearError,
     rateLimitedUntil,

@@ -18,6 +18,10 @@ import {
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { CustomDatePicker } from './CustomDatePicker';
 import { getStyles } from './ProductFormFooter.styles';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { formatDisplayDate } from '@/i18n/format';
+import { parseISO } from 'date-fns';
 
 interface DateHandlers {
   setShowPurchaseDatePicker: (value: boolean) => void;
@@ -46,8 +50,10 @@ export const DatePickerRow: React.FC<DatePickerRowProps> = React.memo(
     isDarkMode,
     renderPhotoButton,
     accessible = true,
-    accessibilityLabel = 'Date selection section',
+    accessibilityLabel,
   }) => {
+    const { t } = useTranslation();
+    const language = useAppLanguage();
     const styles = getStyles(isDarkMode);
 
     const handlePurchaseDatePress = useCallback(() => {
@@ -67,27 +73,27 @@ export const DatePickerRow: React.FC<DatePickerRowProps> = React.memo(
     }, [handlers]);
 
     const formatDate = useCallback((date: string | null): string => {
-      return date ? new Date(date).toLocaleDateString('it-IT') : 'Seleziona Data';
-    }, []);
+      return date ? formatDisplayDate(date, language) ?? t('products.dateInvalid') : t('products.selectDate');
+    }, [language, t]);
 
     return (
-      <View accessible={accessible} accessibilityLabel={accessibilityLabel}>
-        <Text style={styles.label}>Data di Acquisto*</Text>
+      <View accessible={accessible} accessibilityLabel={accessibilityLabel ?? t('products.dateSelectionLabel')}>
+        <Text style={styles.label}>{t('products.purchaseDateRequired')}</Text>
         <TouchableOpacity
           testID="purchase-date-button"
           onPress={handlePurchaseDatePress}
           style={styles.dateInputTouchable}
           accessible={true}
-          accessibilityLabel="Purchase date"
+          accessibilityLabel={t('products.purchaseDateLabel')}
           accessibilityRole="button"
-          accessibilityHint="Opens date picker for purchase date"
+          accessibilityHint={t('products.openPurchaseDateHint')}
         >
           <Text style={styles.dateTextValue}>{formatDate(purchaseDate)}</Text>
         </TouchableOpacity>
 
         {showPurchaseDatePicker && (
           <CustomDatePicker
-            value={new Date(purchaseDate || Date.now())}
+            value={purchaseDate ? parseISO(purchaseDate) : new Date()}
             onChange={handlers.onChangePurchaseDate}
             onClose={handlePurchaseDateClose}
             maximumDate={new Date()}
@@ -95,7 +101,7 @@ export const DatePickerRow: React.FC<DatePickerRowProps> = React.memo(
         )}
 
         <View style={styles.labelRow}>
-          <Text style={styles.label}>Data di Scadenza*</Text>
+          <Text style={styles.label}>{t('products.expirationDateRequired')}</Text>
           {renderPhotoButton}
         </View>
         <TouchableOpacity
@@ -103,16 +109,16 @@ export const DatePickerRow: React.FC<DatePickerRowProps> = React.memo(
           onPress={handleExpirationDatePress}
           style={styles.dateInputTouchable}
           accessible={true}
-          accessibilityLabel="Expiration date"
+          accessibilityLabel={t('products.expirationDateLabel')}
           accessibilityRole="button"
-          accessibilityHint="Opens date picker for expiration date"
+          accessibilityHint={t('products.openExpirationDateHint')}
         >
           <Text style={styles.dateTextValue}>{formatDate(expirationDate)}</Text>
         </TouchableOpacity>
 
         {showExpirationDatePicker && (
           <CustomDatePicker
-            value={new Date(expirationDate || Date.now())}
+            value={expirationDate ? parseISO(expirationDate) : new Date()}
             onChange={handlers.onChangeExpirationDate}
             onClose={handleExpirationDateClose}
             minimumDate={new Date()}

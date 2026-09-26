@@ -171,7 +171,9 @@ class Logger {
 
   private constructor() {
     this.config = {
-      minLevel: __DEV__ ? LogLevel.DEBUG : LogLevel.INFO,
+      // Production logs are persisted on-device: keep routine events and
+      // user/product details out of that durable log by default.
+      minLevel: __DEV__ ? LogLevel.DEBUG : LogLevel.WARNING,
       enableConsole: true,
       enableFileLogging: true,
       batchInterval: 1000,

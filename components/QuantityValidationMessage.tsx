@@ -9,6 +9,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, TextStyle } from 'react-native';
 
 /**
@@ -31,8 +32,9 @@ interface QuantityValidationMessageProps {
 export const QuantityValidationMessage = React.memo(({
   error,
   errorStyle,
-  accessibilityLabel = 'Messaggio di errore',
+  accessibilityLabel,
 }: QuantityValidationMessageProps) => {
+  const { t } = useTranslation();
   if (!error) {
     return null;
   }
@@ -41,7 +43,7 @@ export const QuantityValidationMessage = React.memo(({
     <Text
       style={errorStyle}
       accessible={true}
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel ?? t('common.error')}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
       testID="quantity-error-message"

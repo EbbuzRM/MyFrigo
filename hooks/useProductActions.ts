@@ -10,6 +10,7 @@
 // message: 
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { Product } from '@/types/Product';
 import { ProductStorage } from '@/services/ProductStorage';
@@ -55,6 +56,7 @@ export function useProductActions({
   refreshProducts,
   onShowConsumeModal,
 }: UseProductActionsParams): UseProductActionsResult {
+  const { t } = useTranslation();
 
   /**
    * Handles direct consumption of a single quantity product
@@ -70,9 +72,9 @@ export function useProductActions({
       LoggingService.info('useProductActions', `Product ${product.name} marked as consumed directly.`);
     } catch (error) {
       LoggingService.error('useProductActions', 'Error consuming product directly', error);
-      Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
+      Alert.alert(t('common.error'), t('products.consumeFailed'));
     }
-  }, [refreshProducts]);
+  }, [refreshProducts, t]);
 
   /**
    * Shows consume modal for multi-quantity products
@@ -96,9 +98,9 @@ export function useProductActions({
       LoggingService.info('useProductActions', `Product ${product.name} deleted successfully`);
     } catch (error) {
       LoggingService.error('useProductActions', `Error deleting product: ${error}`);
-      Alert.alert('Errore', 'Si è verificato un errore durante l\'eliminazione del prodotto.');
+      Alert.alert(t('common.error'), t('products.deleteFailed'));
     }
-  }, [refreshProducts]);
+  }, [refreshProducts, t]);
 
   /**
    * Handles consume confirmation with specified quantity
@@ -158,9 +160,9 @@ export function useProductActions({
       await refreshProducts();
     } catch (error) {
       LoggingService.error('useProductActions', 'Error consuming product', error);
-      Alert.alert('Errore', 'Si è verificato un errore durante il consumo del prodotto.');
+      Alert.alert(t('common.error'), t('products.consumeFailed'));
     }
-  }, [refreshProducts]);
+  }, [refreshProducts, t]);
 
   return {
     handleDirectConsume,

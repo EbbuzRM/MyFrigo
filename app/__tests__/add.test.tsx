@@ -311,7 +311,7 @@ describe('AddProduct Screen', () => {
       render(<AddProduct />);
       await triggerFocus();
 
-      expect(getLastRecentsProps().error).toBe('Network error');
+      expect(getLastRecentsProps().error).toBe('Impossibile caricare i prodotti recenti');
     });
 
     it('sets default error message when fetch fails without error string', async () => {
@@ -320,7 +320,7 @@ describe('AddProduct Screen', () => {
       render(<AddProduct />);
       await triggerFocus();
 
-      expect(getLastRecentsProps().error).toBe('Errore caricamento recents');
+      expect(getLastRecentsProps().error).toBe('Impossibile caricare i prodotti recenti');
     });
 
     it('passes empty array when fetch returns null data', async () => {
@@ -466,7 +466,7 @@ describe('AddProduct Screen', () => {
         await jest.advanceTimersByTimeAsync(300);
       });
 
-      expect(getLastRecentsProps().error).toBe('Search failed');
+      expect(getLastRecentsProps().error).toBe('Impossibile cercare i prodotti recenti');
 
       jest.useRealTimers();
     });

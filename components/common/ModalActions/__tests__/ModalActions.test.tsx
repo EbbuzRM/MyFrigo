@@ -1,10 +1,18 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
+import i18next from 'i18next';
+import { initI18n } from '@/i18n';
+import { enCatalogs } from '@/i18n/catalogs/en';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import { ModalActions } from '../ModalActions';
 
 // Mock dependencies
 jest.mock('@/utils/scaleFont', () => ({
   scaleFont: (size: number) => size,
+}));
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
 }));
 
 describe('ModalActions', () => {
@@ -16,13 +24,18 @@ describe('ModalActions', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
+  });
+
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
   });
 
   it('should render with required props', () => {
     const { getByText } = render(<ModalActions {...defaultProps} />);
     
-    expect(getByText('Annulla')).toBeTruthy();
-    expect(getByText('Conferma')).toBeTruthy();
+    expect(getByText(itCatalogs.common.cancel)).toBeTruthy();
+    expect(getByText(itCatalogs.common.confirm)).toBeTruthy();
   });
 
   it('should call onCancel when cancel button is pressed', () => {
@@ -31,7 +44,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} onCancel={onCancelMock} />
     );
     
-    const cancelButton = getByText('Annulla');
+    const cancelButton = getByText(itCatalogs.common.cancel);
     fireEvent.press(cancelButton);
     
     expect(onCancelMock).toHaveBeenCalledTimes(1);
@@ -43,7 +56,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} onConfirm={onConfirmMock} />
     );
     
-    const confirmButton = getByText('Conferma');
+    const confirmButton = getByText(itCatalogs.common.confirm);
     fireEvent.press(confirmButton);
     
     expect(onConfirmMock).toHaveBeenCalledTimes(1);
@@ -54,7 +67,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} confirmDisabled={true} />
     );
     
-    const confirmButton = getByLabelText('Conferma');
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     expect(confirmButton.props.accessibilityState.disabled).toBe(true);
   });
 
@@ -63,7 +76,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} isSubmitting={true} />
     );
     
-    const cancelButton = getByLabelText('Annulla');
+    const cancelButton = getByLabelText(itCatalogs.common.cancel);
     expect(cancelButton.props.accessibilityState.disabled).toBe(true);
   });
 
@@ -72,7 +85,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} isSubmitting={true} />
     );
     
-    const confirmButton = getByLabelText('Conferma');
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     expect(confirmButton.props.accessibilityState.disabled).toBe(true);
   });
 
@@ -84,7 +97,7 @@ describe('ModalActions', () => {
     const ActivityIndicator = require('react-native').ActivityIndicator;
     const loadingIndicator = UNSAFE_getByType(ActivityIndicator);
     expect(loadingIndicator).toBeTruthy();
-    expect(getByText('Salvataggio...')).toBeTruthy();
+    expect(getByText(itCatalogs.common.saving)).toBeTruthy();
   });
 
   it('should not show loading indicator when isSubmitting is false', () => {
@@ -92,7 +105,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} isSubmitting={false} />
     );
     
-    expect(queryByText('Salvataggio...')).toBeNull();
+    expect(queryByText(itCatalogs.common.saving)).toBeNull();
   });
 
   it('should not call onCancel when cancel button is pressed and isSubmitting is true', () => {
@@ -101,7 +114,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} onCancel={onCancelMock} isSubmitting={true} />
     );
     
-    const cancelButton = getByText('Annulla');
+    const cancelButton = getByText(itCatalogs.common.cancel);
     fireEvent.press(cancelButton);
     
     expect(onCancelMock).not.toHaveBeenCalled();
@@ -113,7 +126,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} onConfirm={onConfirmMock} confirmDisabled={true} />
     );
     
-    const confirmButton = getByLabelText('Conferma');
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     fireEvent.press(confirmButton);
     
     expect(onConfirmMock).not.toHaveBeenCalled();
@@ -122,20 +135,20 @@ describe('ModalActions', () => {
   it('should have accessibility label for cancel button', () => {
     const { getByLabelText } = render(<ModalActions {...defaultProps} />);
     
-    expect(getByLabelText('Annulla')).toBeTruthy();
+    expect(getByLabelText(itCatalogs.common.cancel)).toBeTruthy();
   });
 
   it('should have accessibility label for confirm button', () => {
     const { getByLabelText } = render(<ModalActions {...defaultProps} />);
     
-    expect(getByLabelText('Conferma')).toBeTruthy();
+    expect(getByLabelText(itCatalogs.common.confirm)).toBeTruthy();
   });
 
   it('should have accessibility role button for both buttons', () => {
     const { getByLabelText } = render(<ModalActions {...defaultProps} />);
     
-    const cancelButton = getByLabelText('Annulla');
-    const confirmButton = getByLabelText('Conferma');
+    const cancelButton = getByLabelText(itCatalogs.common.cancel);
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     expect(cancelButton).toBeTruthy();
     expect(confirmButton).toBeTruthy();
     expect(cancelButton.props.accessibilityRole).toBe('button');
@@ -147,7 +160,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} isDarkMode={true} />
     );
     
-    const cancelText = getByText('Annulla');
+    const cancelText = getByText(itCatalogs.common.cancel);
     expect(cancelText.props.style).toMatchObject({
       color: '#c9d1d9',
     });
@@ -158,7 +171,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} isDarkMode={false} />
     );
     
-    const cancelText = getByText('Annulla');
+    const cancelText = getByText(itCatalogs.common.cancel);
     expect(cancelText.props.style).toMatchObject({
       color: '#374151',
     });
@@ -169,7 +182,7 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} confirmDisabled={true} />
     );
     
-    const confirmButton = getByLabelText('Conferma');
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     expect(confirmButton.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -186,9 +199,9 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} onCancel={onCancelMock} onConfirm={onConfirmMock} />
     );
     
-    fireEvent.press(getByText('Annulla'));
-    fireEvent.press(getByText('Conferma'));
-    fireEvent.press(getByText('Annulla'));
+    fireEvent.press(getByText(itCatalogs.common.cancel));
+    fireEvent.press(getByText(itCatalogs.common.confirm));
+    fireEvent.press(getByText(itCatalogs.common.cancel));
     
     expect(onCancelMock).toHaveBeenCalledTimes(2);
     expect(onConfirmMock).toHaveBeenCalledTimes(1);
@@ -209,7 +222,27 @@ describe('ModalActions', () => {
       <ModalActions {...defaultProps} isSubmitting={true} confirmDisabled={true} />
     );
     
-    const confirmButton = getByLabelText('Conferma');
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     expect(confirmButton.props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('renders texts from the i18n catalogs and updates them on language change', async () => {
+    const screen = render(<ModalActions {...defaultProps} isSubmitting={true} />);
+
+    // Italian (default): texts come from the bundled `it` catalog.
+    expect(screen.getByText(itCatalogs.common.cancel)).toBeTruthy();
+    expect(screen.getByText(itCatalogs.common.saving)).toBeTruthy();
+
+    // Switch language: shared component re-renders with the `en` catalog.
+    await act(async () => {
+      await i18next.changeLanguage('en');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(enCatalogs.common.cancel)).toBeTruthy();
+    });
+    expect(screen.getByText(enCatalogs.common.saving)).toBeTruthy();
+    expect(screen.getByLabelText(enCatalogs.common.confirm)).toBeTruthy();
+    expect(screen.queryByText(itCatalogs.common.cancel)).toBeNull();
   });
 });

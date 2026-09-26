@@ -11,12 +11,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { LoggingService } from '@/services/LoggingService';
 import { supabase } from '@/services/supabaseClient';
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { user, profile, refreshUserProfile, signOut } = useAuth();
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
@@ -37,7 +39,7 @@ export default function ProfileScreen() {
   const handleUpdateProfile = async () => {
     LoggingService.info('[PROFILE_UPDATE] Inizio della funzione.', 'Function started');
     if (!user) {
-      Alert.alert('Errore', 'Nessun utente loggato.');
+      Alert.alert(t('common.error'), t('auth.profileNoUser'));
       LoggingService.error('[PROFILE_UPDATE] Uscita: utente non trovato.', 'User not authenticated', user);
       return;
     }
@@ -46,8 +48,8 @@ export default function ProfileScreen() {
     const trimmedLastName = lastName.trim();
 
     if (!trimmedFirstName || !trimmedLastName) {
-      Alert.alert('Attenzione', 'Nome e cognome non possono essere vuoti.');
-      LoggingService.error('[PROFILE_UPDATE] Uscita: campi vuoti.', 'Empty fields', { firstName, lastName });
+      Alert.alert(t('common.error'), t('auth.profileNamesRequired'));
+      LoggingService.error('[PROFILE_UPDATE] Uscita: campi vuoti.', 'Empty fields');
       return;
     }
 
@@ -74,7 +76,7 @@ export default function ProfileScreen() {
 
       await refreshUserProfile();
       
-      Alert.alert('Successo', 'Profilo aggiornato!');
+      Alert.alert(t('auth.profileUpdated'));
       if (router.canGoBack()) {
         LoggingService.info('[PROFILE_UPDATE] Navigo indietro.', 'Navigating back');
         router.back();
@@ -82,8 +84,7 @@ export default function ProfileScreen() {
 
     } catch (error: unknown) {
       LoggingService.error("[PROFILE_UPDATE] Errore nel blocco catch:", 'Error in catch block', error);
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-      Alert.alert('Errore', `Impossibile aggiornare il profilo: ${errorMessage}`);
+      Alert.alert(t('common.error'), t('auth.profileUpdateFailed'));
     } finally {
       LoggingService.info('[PROFILE_UPDATE] Eseguo blocco finally. Imposto saving a false.', 'Finally block executed');
       setSaving(false);
@@ -95,8 +96,8 @@ export default function ProfileScreen() {
     try {
       await signOut();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-      Alert.alert('Errore', 'Impossibile effettuare il logout: ' + errorMessage);
+      LoggingService.error('Profile', 'Sign out failed', error);
+      Alert.alert(t('common.error'), t('auth.logoutFailed'));
     } finally {
       setSaving(false);
     }
@@ -116,20 +117,20 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Il Tuo Profilo</Text>
-      <Text style={styles.label}>Nome</Text>
+      <Text style={styles.title}>{t('auth.profileTitle')}</Text>
+      <Text style={styles.label}>{t('auth.firstNameLabel')}</Text>
       <TextInput
         testID="first-name-input"
         style={styles.input}
-        placeholder="Il tuo nome"
+        placeholder={t('auth.firstNamePlaceholder')}
         value={firstName}
         onChangeText={setFirstName}
       />
-      <Text style={styles.label}>Cognome</Text>
+      <Text style={styles.label}>{t('auth.lastNameLabel')}</Text>
       <TextInput
         testID="last-name-input"
         style={styles.input}
-        placeholder="Il tuo cognome"
+        placeholder={t('auth.lastNamePlaceholder')}
         value={lastName}
         onChangeText={setLastName}
       />
@@ -139,13 +140,13 @@ export default function ProfileScreen() {
         onPress={handleUpdateProfile}
         disabled={saving}
         accessibilityRole="button"
-        accessibilityLabel="Salva Modifiche"
+        accessibilityLabel={t('auth.saveChanges')}
         accessibilityState={{ disabled: saving }}
       >
         {saving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Salva Modifiche</Text>
+          <Text style={styles.buttonText}>{t('auth.saveChanges')}</Text>
         )}
       </TouchableOpacity>
       <TouchableOpacity
@@ -153,10 +154,10 @@ export default function ProfileScreen() {
         onPress={handleLogout}
         disabled={saving}
         accessibilityRole="button"
-        accessibilityLabel="Logout"
+        accessibilityLabel={t('auth.logout')}
         accessibilityState={{ disabled: saving }}
       >
-        <Text style={styles.buttonText}>Logout</Text>
+        <Text style={styles.buttonText}>{t('auth.logout')}</Text>
       </TouchableOpacity>
 
 

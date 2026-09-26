@@ -18,10 +18,10 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, getCachedSession, clearCachedSession } from '@/services/supabaseClient';
-import { AuthService } from '@/services/AuthService';
+import { AuthService, AUTH_ERROR_CODES } from '@/services/AuthService';
 import { LoggingService } from '@/services/LoggingService';
 import { OneSignalService } from '@/services/OneSignalService';
 import { useRouter } from 'expo-router';
@@ -66,6 +66,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const lastPushUserId = useRef<string | null>(null);
+  const pendingSignOutUserId = useRef<string | null>(null);
 
   const fetchUserProfile = useCallback(async (user: User | null) => {
     if (!user) {
@@ -136,6 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (error) {
           LoggingService.error('AuthProvider', 'Error getting session', error);
         } else if (currentSession) {
+          lastPushUserId.current = currentSession.user.id;
           LoggingService.info('AuthProvider', 'Session found, processing...');
           setUser(currentSession.user);
           await fetchUserProfile(currentSession.user);
@@ -172,6 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(currentSession);
 
       if (event === 'SIGNED_IN') {
+        if (currentSession?.user) lastPushUserId.current = currentSession.user.id;
         const isResetting = currentSession?.user?.user_metadata?.is_resetting_password;
         if (isResetting) {
           LoggingService.info('AuthProvider', 'User signed in for reset. Skipping profile fetch and OneSignal config.');
@@ -196,9 +200,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
+        const signedOutUserId = pendingSignOutUserId.current ?? lastPushUserId.current;
+        pendingSignOutUserId.current = null;
+        if (lastPushUserId.current === signedOutUserId) lastPushUserId.current = null;
         // Disconnect OneSignal from the previous user. Covers both manual
         // signOut and session-expiry paths. Fire-and-forget.
-        OneSignalService.logout().catch((err) => {
+        OneSignalService.logout(signedOutUserId ?? undefined).catch((err) => {
           LoggingService.error('AuthProvider', 'OneSignalService.logout failed', err);
         });
         router.replace('/login');
@@ -228,6 +235,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       LoggingService.info('AuthProvider', 'Signing out user initiated');
       setLoading(true);
 
+      const signedOutUserId = user?.id ?? lastPushUserId.current;
+      pendingSignOutUserId.current = signedOutUserId;
+      await OneSignalService.logout(signedOutUserId ?? undefined).catch((error) => {
+        LoggingService.error('AuthProvider', 'OneSignal logout failed before sign-out', error);
+      });
+
+      const { data: { session: activeSession } } = await supabase.auth.getSession();
+      if (signedOutUserId && activeSession?.user.id && activeSession.user.id !== signedOutUserId) {
+        pendingSignOutUserId.current = null;
+        LoggingService.warning('AuthProvider', 'Skipped stale sign-out after account changed', {
+          signedOutUserId,
+          activeUserId: activeSession.user.id,
+        });
+        return;
+      }
       const { error } = await supabase.auth.signOut();
 
       if (error) {
@@ -247,7 +269,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, user?.id]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     if (!user || !user.email) {
@@ -261,8 +283,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const verifyResult = await AuthService.signInWithEmail(user.email, currentPassword);
 
       if (!verifyResult.success) {
-        // Map rate-limit / invalid credentials to user-friendly message
-        const isRateLimited = verifyResult.error?.includes('Troppi tentativi');
+        // verifyResult.error is a stable AuthService code (never a message):
+        // compare against the rate-limit code instead of matching text.
+        const isRateLimited = verifyResult.error === AUTH_ERROR_CODES.RATE_LIMITED;
         LoggingService.error('AuthProvider', 'Current password verification failed', verifyResult.error);
         throw new Error(isRateLimited ? verifyResult.error : 'Password attuale errata');
       }
@@ -346,4 +369,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

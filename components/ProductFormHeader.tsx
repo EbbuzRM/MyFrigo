@@ -11,6 +11,7 @@ import React, { useCallback } from 'react';
 import { Text, TextInput, Switch, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { formStateLogger } from '@/utils/FormStateLogger';
 import PhotoCaptureButton from './PhotoCaptureButton';
 import ProductNameInput from './ProductNameInput';
@@ -94,6 +95,7 @@ const ProductFormHeader = React.memo(({
   setIsFrozen,
 }: ProductFormHeaderProps) => {
   const { isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const headerStyles = getHeaderStyles(isDarkMode);
   const inputStyles = getInputStyles(isDarkMode);
 
@@ -159,7 +161,7 @@ const ProductFormHeader = React.memo(({
   return (
     <>
       <Text style={headerStyles.title} accessibilityRole="header">
-        {isEditMode ? 'Modifica Prodotto' : 'Inserimento Manuale'}
+        {isEditMode ? t('products.editTitle') : t('products.manualEntryTitle')}
       </Text>
 
       <PhotoCaptureButton
@@ -172,13 +174,13 @@ const ProductFormHeader = React.memo(({
 
       {barcode && !imageUrl && (
         <>
-          <Text style={headerStyles.label}>Codice a Barre Scansionato</Text>
+          <Text style={headerStyles.label}>{t('products.scannedBarcodeLabel')}</Text>
           <TextInput
             style={[inputStyles.input, inputStyles.disabledInput]}
             value={barcode}
             editable={false}
-            accessibilityLabel="Scanned barcode"
-            accessibilityHint="Barcode value from scan, cannot be edited"
+            accessibilityLabel={t('products.scannedBarcodeLabel')}
+            accessibilityHint={t('products.scannedBarcodeHint')}
             testID="barcode-display"
           />
         </>
@@ -198,7 +200,7 @@ const ProductFormHeader = React.memo(({
       />
 
       <View style={headerStyles.switchContainer}>
-        <Text style={headerStyles.label}>(Freezer)</Text>
+        <Text style={headerStyles.label}>{t('products.freezerLabel')}</Text>
         <Switch
           value={isFrozen}
           onValueChange={handleFrozenToggle}
@@ -207,8 +209,8 @@ const ProductFormHeader = React.memo(({
             true: '#2563EB',
           }}
           thumbColor={isDarkMode ? '#c9d1d9' : '#ffffff'}
-          accessibilityLabel="Freezer storage toggle"
-          accessibilityHint="Toggle to mark product as stored in freezer"
+          accessibilityLabel={t('products.freezerToggleLabel')}
+          accessibilityHint={t('products.freezerToggleHint')}
           accessibilityState={{ checked: isFrozen }}
           testID="freezer-toggle"
         />

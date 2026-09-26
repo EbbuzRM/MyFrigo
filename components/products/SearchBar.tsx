@@ -12,6 +12,7 @@ import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Search } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Props for SearchBar component
@@ -37,9 +38,10 @@ interface SearchBarProps {
 export function SearchBar({
   value,
   onChangeText,
-  placeholder = "Cerca per nome o marca...",
+  placeholder,
   testID,
 }: SearchBarProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -49,13 +51,13 @@ export function SearchBar({
         <Search size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
         <TextInput
           style={styles.searchInput}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('products.searchPlaceholder')}
           placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
           value={value}
           onChangeText={onChangeText}
-          accessibilityLabel="Cerca prodotti"
+          accessibilityLabel={t('products.searchLabel')}
           accessibilityRole="search"
-          accessibilityHint="Inserisci il nome o la marca del prodotto da cercare"
+          accessibilityHint={t('products.searchHint')}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />

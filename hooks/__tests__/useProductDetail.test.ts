@@ -111,6 +111,28 @@ describe('useProductDetail', () => {
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
+  it('should not navigate after a resolved save failure', async () => {
+    const singleQuantityProduct = {
+      ...mockProduct,
+      quantities: [{ quantity: 1, unit: 'pz' }],
+    };
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(singleQuantityProduct));
+    mockProductStorage.saveProduct.mockResolvedValue(createErrorResult('Database unavailable'));
+
+    const { result } = renderHook(() => useProductDetail('test-id'));
+
+    await act(async () => {
+      await result.current.actions.loadProduct();
+    });
+    await act(async () => {
+      await result.current.actions.handleModalConfirm(1);
+    });
+
+    expect(mockRouter.back).not.toHaveBeenCalled();
+    expect(result.current.state.toastType).toBe('error');
+    expect(result.current.state.toastMessage).toContain('errore');
+  });
+
   it('should handle consume action for multiple quantities', async () => {
     mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(mockProduct));
     mockProductStorage.saveProduct.mockResolvedValue(createSuccessResult(undefined));
@@ -153,6 +175,30 @@ describe('useProductDetail', () => {
 
     expect(mockProductStorage.deleteProduct).toHaveBeenCalledWith('test-id');
     expect(mockRouter.back).toHaveBeenCalled();
+  });
+
+  it('should not navigate after a resolved delete failure', async () => {
+    mockProductStorage.getProductById.mockResolvedValue(createSuccessResult(mockProduct));
+    mockProductStorage.deleteProduct.mockResolvedValue(createErrorResult('Delete failed'));
+
+    const { result } = renderHook(() => useProductDetail('test-id'));
+    await act(async () => {
+      await result.current.actions.loadProduct();
+    });
+
+    let confirmDelete: (() => void | Promise<void>) | undefined;
+    (Alert.alert as jest.Mock).mockImplementation((_title, _message, buttons) => {
+      confirmDelete = buttons?.[1]?.onPress;
+    });
+
+    await act(async () => {
+      await result.current.actions.handleDelete();
+      await confirmDelete?.();
+    });
+
+    expect(mockRouter.back).not.toHaveBeenCalled();
+    expect(result.current.state.toastType).toBe('error');
+    expect(result.current.state.toastMessage).toContain('errore');
   });
 
   it('should handle edit action', async () => {

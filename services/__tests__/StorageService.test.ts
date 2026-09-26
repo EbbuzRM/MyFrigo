@@ -118,7 +118,8 @@ describe('ProductStorage', () => {
       });
 
       const mockQueryBuilder = {
-        upsert: jest.fn().mockResolvedValue({ error: null }),
+        upsert: jest.fn().mockReturnThis(),
+        abortSignal: jest.fn().mockResolvedValue({ error: null }),
       };
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 
@@ -131,6 +132,7 @@ describe('ProductStorage', () => {
       expect(result.success).toBe(true);
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.upsert).toHaveBeenCalled();
+      expect(mockQueryBuilder.abortSignal).toHaveBeenCalledWith(expect.any(AbortSignal));
     });
   });
 

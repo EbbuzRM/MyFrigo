@@ -19,6 +19,9 @@ import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
 import { LoggingService } from '@/services/LoggingService';
 import { getStyles } from '@/styles/manage-categories.styles';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { getCategoryLabel } from '@/utils/categoryLabels';
 
 interface CreateCategoryModalProps {
   isVisible: boolean;
@@ -28,6 +31,7 @@ interface CreateCategoryModalProps {
 }
 
 function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateCategoryModalProps) {
+  const { t } = useTranslation();
   const [categoryName, setCategoryName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -35,7 +39,7 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
 
   const handleCreate = async () => {
     if (!categoryName.trim()) {
-      Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
+      Alert.alert(t('common.error'), t('categories.nameRequiredError'));
       return;
     }
 
@@ -50,7 +54,7 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
       setCategoryName('');
       onClose();
     } catch {
-      Alert.alert('Errore', 'Si è verificato un errore durante la creazione della categoria.');
+      Alert.alert(t('common.error'), t('categories.createFailedError'));
     } finally {
       setIsCreating(false);
     }
@@ -66,11 +70,11 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Crea Nuova Categoria</Text>
+          <Text style={styles.modalTitle}>{t('categories.createNewTitle')}</Text>
           <TextInput
             ref={inputRef}
             style={styles.modalInput}
-            placeholder="Nome della categoria"
+            placeholder={t('categories.namePlaceholder')}
             value={categoryName}
             onChangeText={setCategoryName}
             autoFocus
@@ -79,16 +83,16 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
           />
           <View style={styles.modalButtonContainer}>
             <TouchableOpacity 
-              accessibilityLabel="Annulla" 
+              accessibilityLabel={t('common.cancel')}
               accessibilityRole="button" 
               style={[styles.modalButton, styles.modalButtonCancel]} 
               onPress={onClose}
               disabled={isCreating}
             >
-              <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+              <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              accessibilityLabel="Conferma creazione" 
+              accessibilityLabel={t('categories.confirmCreateLabel')}
               accessibilityRole="button" 
               style={[styles.modalButton, styles.modalButtonConfirm]} 
               onPress={handleCreate} 
@@ -98,7 +102,7 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
               {isCreating ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Text style={styles.modalButtonTextConfirm}>Crea</Text>
+                <Text style={styles.modalButtonTextConfirm}>{t('categories.createAction')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -109,6 +113,8 @@ function CreateCategoryModal({ isVisible, onClose, isDarkMode, styles }: CreateC
 }
 
 export default function ManageCategoriesScreen() {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const { isDarkMode } = useTheme();
   const { categories, deleteCategory, updateCategory } = useCategories();
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
@@ -117,16 +123,16 @@ export default function ManageCategoriesScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const editInputRef = useRef<TextInput>(null);
 
-  const customCategories = categories.filter(sc => !PRODUCT_CATEGORIES.some(dc => dc.id === sc.id));
+  const customCategories = categories.filter(sc => sc.isDefault !== true && !PRODUCT_CATEGORIES.some(dc => dc.id === sc.id));
 
   const handleDelete = (categoryId: string) => {
 
     Alert.alert(
-      "Conferma Eliminazione",
-      "Sei sicuro di voler eliminare questa categoria? Questa azione non può essere annullata.",
+      t('categories.deleteConfirmTitle'),
+      t('categories.deleteConfirmMessage'),
       [
-        { text: "Annulla", style: "cancel" },
-        { text: "Elimina", style: "destructive", onPress: () => deleteCategory(categoryId) }
+        { text: t('common.cancel'), style: "cancel" },
+        { text: t('common.delete'), style: "destructive", onPress: () => deleteCategory(categoryId) }
       ]
     );
   };
@@ -142,16 +148,16 @@ export default function ManageCategoriesScreen() {
     
     try {
       if (!editCategoryNameInput.trim()) {
-        Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
+        Alert.alert(t('common.error'), t('categories.nameRequiredError'));
         return;
       }
 
       // Verifica se esiste già una categoria con lo stesso nome
       if (categories.some(cat =>
         cat.id !== selectedCategoryId &&
-        cat.name.toLowerCase() === editCategoryNameInput.trim().toLowerCase()
+        getCategoryLabel(cat, language).toLocaleLowerCase() === editCategoryNameInput.trim().toLocaleLowerCase()
       )) {
-        Alert.alert('Errore', 'Una categoria con questo nome esiste già.');
+        Alert.alert(t('common.error'), t('categories.duplicateNameError'));
         return;
       }
 
@@ -160,7 +166,7 @@ export default function ManageCategoriesScreen() {
       LoggingService.info('ManageCategories', `Categoria ${selectedCategoryId} rinominata in "${editCategoryNameInput}"`);
     } catch (error: unknown) {
       LoggingService.error('ManageCategories', 'Failed to update category', error);
-      Alert.alert('Errore', 'Si è verificato un errore durante l\'aggiornamento della categoria.');
+      Alert.alert(t('common.error'), t('categories.updateFailedError'));
     }
   };
 
@@ -168,10 +174,10 @@ export default function ManageCategoriesScreen() {
     <View style={styles.itemContainer}>
       <Text style={styles.categoryName}>{item.name}</Text>
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity accessibilityLabel="Modifica categoria" accessibilityRole="button" onPress={() => handleEdit(item.id, item.name)} style={styles.button}>
+        <TouchableOpacity accessibilityLabel={t('categories.editCategoryLabel')} accessibilityRole="button" onPress={() => handleEdit(item.id, item.name)} style={styles.button}>
           <Edit2 size={20} color={isDarkMode ? '#58a6ff' : '#3b82f6'} />
         </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel="Elimina categoria" accessibilityRole="button" onPress={() => handleDelete(item.id)} style={styles.button} testID="delete-category-button">
+        <TouchableOpacity accessibilityLabel={t('categories.deleteCategoryLabel')} accessibilityRole="button" onPress={() => handleDelete(item.id)} style={styles.button} testID="delete-category-button">
           <X size={20} color={isDarkMode ? '#EF4444' : 'red'} />
         </TouchableOpacity>
       </View>
@@ -182,22 +188,22 @@ export default function ManageCategoriesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Gestisci Categorie</Text>
+      <Text style={styles.title}>{t('categories.manageTitle')}</Text>
       <Text style={styles.infoText}>
-        Qui puoi creare, modificare o eliminare le categorie personalizzate. Le categorie predefinite non sono modificabili.
+        {t('categories.manageInfo')}
       </Text>
-       <TouchableOpacity accessibilityLabel="Crea nuova categoria" accessibilityRole="button" style={styles.createButton} onPress={() => setCreateModalVisible(true)} testID="add-category-button">
+       <TouchableOpacity accessibilityLabel={t('categories.createNewTitle')} accessibilityRole="button" style={styles.createButton} onPress={() => setCreateModalVisible(true)} testID="add-category-button">
         <Plus size={20} color="white" />
-        <Text style={styles.createButtonText}>Crea Nuova Categoria</Text>
+        <Text style={styles.createButtonText}>{t('categories.createNewTitle')}</Text>
       </TouchableOpacity>
       <FlashList
         data={customCategories}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.emptyText}>Nessuna categoria personalizzata.</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>{t('categories.noCustomCategories')}</Text>}
       />
-      <TouchableOpacity accessibilityLabel="Torna indietro" accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backButtonText}>Indietro</Text>
+      <TouchableOpacity accessibilityLabel={t('common.goBack')} accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
+        <Text style={styles.backButtonText}>{t('common.back')}</Text>
       </TouchableOpacity>
 
       <CreateCategoryModal 
@@ -217,22 +223,22 @@ export default function ManageCategoriesScreen() {
 
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Modifica Nome Categoria</Text>
+            <Text style={styles.modalTitle}>{t('categories.editNameTitle')}</Text>
              <TextInput
                ref={editInputRef}
                style={styles.modalInput}
-               placeholder="Nuovo nome della categoria"
+               placeholder={t('categories.newNamePlaceholder')}
                value={editCategoryNameInput}
                onChangeText={setEditCategoryNameInput}
                autoFocus
                placeholderTextColor={isDarkMode ? '#8b949e' : '#64748B'}
              />
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity accessibilityLabel="Annulla modifica" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setEditModalVisible(false)}>
-                <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+              <TouchableOpacity accessibilityLabel={t('categories.cancelEditLabel')} accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setEditModalVisible(false)}>
+                <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity accessibilityLabel="Salva modifica" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleUpdateCategory}>
-                <Text style={styles.modalButtonTextConfirm}>Salva</Text>
+              <TouchableOpacity accessibilityLabel={t('categories.saveEditLabel')} accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleUpdateCategory}>
+                <Text style={styles.modalButtonTextConfirm}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -241,4 +247,3 @@ export default function ManageCategoriesScreen() {
     </SafeAreaView>
   );
 }
-

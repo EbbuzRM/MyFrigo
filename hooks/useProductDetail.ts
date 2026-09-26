@@ -162,20 +162,25 @@ export const useProductDetail = (productId: string | undefined) => {
 
       // Aggiorna il prodotto
       const updatedProduct = { ...product, quantities: updatedQuantities };
+      let successMessage: string;
 
       if (totalRemaining <= 0) {
         // Se completamente consumato, sposta nello storico
         updatedProduct.status = 'consumed';
         updatedProduct.consumedDate = new Date().toISOString();
         LoggingService.info('ProductDetail', `Product ${product.id} fully consumed, moving to history`);
-        showToast('Prodotto consumato e spostato nello storico.', 'success');
+        successMessage = 'Prodotto consumato e spostato nello storico.';
       } else {
         // Parzialmente consumato, rimane attivo
         LoggingService.info('ProductDetail', `Product ${product.id} partially consumed, remaining: ${totalRemaining}`);
-        showToast('Quantità del prodotto aggiornata.', 'success');
+        successMessage = 'Quantità del prodotto aggiornata.';
       }
 
-      await ProductStorage.saveProduct(updatedProduct);
+      const saveResult = await ProductStorage.saveProduct(updatedProduct);
+      if (!saveResult.success) {
+        throw new Error(saveResult.error);
+      }
+      showToast(successMessage, 'success');
       updateState({ product: updatedProduct, isModalVisible: false });
       router.back();
     } catch (error) {
@@ -208,7 +213,10 @@ export const useProductDetail = (productId: string | undefined) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await ProductStorage.deleteProduct(product.id);
+              const deleteResult = await ProductStorage.deleteProduct(product.id);
+              if (!deleteResult.success) {
+                throw new Error(deleteResult.error);
+              }
               showToast('Prodotto eliminato definitivamente.', 'success');
               router.back();
             } catch (error) {

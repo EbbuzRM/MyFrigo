@@ -5,8 +5,9 @@
 // rules:   none
 
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { CameraView } from '../CameraView';
+import i18next from 'i18next';
 
 // Mock expo-camera
 jest.mock('expo-camera', () => {
@@ -125,6 +126,19 @@ describe('CameraView', () => {
   it('has correct accessibility labels on camera view', () => {
     const { getByLabelText } = render(<CameraView {...defaultProps} />);
     expect(getByLabelText('Vista fotocamera')).toBeTruthy();
+  });
+
+  it('updates the camera hint when the active language changes', async () => {
+    await i18next.changeLanguage('it');
+    const screen = render(<CameraView {...defaultProps} />);
+    expect(screen.getByTestId('expo-camera-view').props.accessibilityHint).toBe(
+      'Inquadra il prodotto e tocca il pulsante centrale per scattare la foto'
+    );
+    await act(async () => { await i18next.changeLanguage('en'); });
+    expect(screen.getByTestId('expo-camera-view').props.accessibilityHint).toBe(
+      'Frame the product and tap the centre button to take a photo'
+    );
+    await i18next.changeLanguage('it');
   });
 
   it('has correct accessibility label on capture button', () => {

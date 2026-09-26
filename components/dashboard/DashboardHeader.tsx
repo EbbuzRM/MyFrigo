@@ -12,7 +12,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { User, Bell, BellOff } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { DASHBOARD_CONTENT } from '@/constants/content';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardHeaderProps {
     permissionStatus: boolean | null;
@@ -28,12 +28,13 @@ export const DashboardHeader = React.memo(function DashboardHeader({
     displayInitials
 }: DashboardHeaderProps) {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const styles = getStyles(isDarkMode);
 
     return (
         <View style={styles.header}>
             <TouchableOpacity
-                accessibilityLabel="Notifiche"
+                accessibilityLabel={t('dashboard.notificationsLabel')}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: permissionStatus !== false }}
                 style={styles.titleContainer}
@@ -41,7 +42,7 @@ export const DashboardHeader = React.memo(function DashboardHeader({
                 disabled={permissionStatus !== false}
                 testID="bell-button"
             >
-                <Text style={styles.title}>{DASHBOARD_CONTENT.TITLE}</Text>
+                <Text style={styles.title}>{t('dashboard.pantryTitle')}</Text>
                 <View style={styles.notificationIconContainer}>
                     {permissionStatus === true
                         ? <Bell size={18} color={isDarkMode ? '#4ade80' : '#16a34a'} />
@@ -51,7 +52,7 @@ export const DashboardHeader = React.memo(function DashboardHeader({
             </TouchableOpacity>
 
             <TouchableOpacity
-                accessibilityLabel="Profilo"
+                accessibilityLabel={t('dashboard.profileLabel')}
                 accessibilityRole="button"
                 style={styles.profileButton}
                 onPress={onProfilePress}

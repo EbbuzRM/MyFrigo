@@ -9,6 +9,7 @@
 // message: 
 
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -37,6 +38,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { getStyles } from '@/styles/feedback.styles';
 
 const FeedbackScreen = () => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
   const router = useRouter();
@@ -65,13 +67,13 @@ const FeedbackScreen = () => {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setScreenshotUri(result.assets[0].uri);
-        showToast('Screenshot selezionato', 'success');
+        showToast(t('settings.screenshotSelected'), 'success');
       } else {
-        showToast('Selezione annullata', 'success');
+        showToast(t('settings.selectionCancelled'), 'success');
       }
     } catch (error) {
       LoggingService.error('FeedbackScreen', 'Errore durante la selezione dell\'immagine', error);
-      showToast('Errore durante la selezione dell\'immagine', 'error');
+      showToast(t('settings.imageSelectionFailed'), 'error');
     } finally {
       setScreenshotLoading(false);
     }
@@ -81,7 +83,7 @@ const FeedbackScreen = () => {
     setScreenshotLoading(true);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permesso Negato', 'Per aggiungere uno screenshot, è necessario concedere l\'accesso alla galleria.');
+      Alert.alert(t('settings.galleryPermissionDenied'), t('settings.galleryPermissionMessage'));
       setScreenshotLoading(false);
       return;
     }
@@ -89,7 +91,7 @@ const FeedbackScreen = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['Scegli dalla Galleria', 'Annulla'],
+          options: [t('settings.chooseGallery'), t('common.cancel')],
           cancelButtonIndex: 1,
         },
         (buttonIndex) => {
@@ -104,12 +106,12 @@ const FeedbackScreen = () => {
 
   const removeScreenshot = () => {
     setScreenshotUri(null);
-    showToast('Screenshot rimosso', 'success');
+    showToast(t('settings.screenshotRemoved'), 'success');
   };
 
   const handleSendFeedback = async () => {
     if (feedbackText.trim().length < 10) {
-      showToast('Il tuo feedback è un po\' corto, prova a descrivere meglio.', 'error');
+      showToast(t('settings.feedbackTooShort'), 'error');
       return;
     }
 
@@ -140,7 +142,7 @@ const FeedbackScreen = () => {
       }
 
       LoggingService.info('FeedbackScreen', 'Feedback inviato con successo', data);
-      showToast('Feedback inviato con successo. Grazie!', 'success');
+      showToast(t('settings.feedbackSent'), 'success');
 
       setFeedbackText('');
       setScreenshotUri(null);
@@ -149,8 +151,7 @@ const FeedbackScreen = () => {
 
     } catch (error: unknown) {
       LoggingService.error('FeedbackScreen', 'Errore invio feedback', error);
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-      showToast(`Errore nell'invio: ${errorMessage}`, 'error');
+      showToast(error instanceof Error ? t('settings.feedbackSendFailed') : t('settings.feedbackUnknownError'), 'error');
     } finally {
       setLoading(false);
     }
@@ -168,7 +169,7 @@ const FeedbackScreen = () => {
             <TouchableOpacity
               testID="feedback-back-button"
               accessibilityRole="button"
-              accessibilityLabel="Torna indietro"
+              accessibilityLabel={t('common.goBack')}
               onPress={() => {
                 LoggingService.info('FeedbackScreen', 'Back button pressed');
                 Keyboard.dismiss();
@@ -178,17 +179,17 @@ const FeedbackScreen = () => {
             >
               <ChevronLeft size={28} color={isDarkMode ? '#c9d1d9' : '#1e293b'} />
             </TouchableOpacity>
-            <Text style={styles.title}>Aiutaci a Migliorare</Text>
+            <Text style={styles.title}>{t('settings.feedbackTitle')}</Text>
           </View>
 
           <Text style={styles.instructions}>
-            Descrivi il tuo feedback o il bug che hai trovato. Se possibile, includi i passaggi per riprodurlo.
+            {t('settings.feedbackInstructions')}
           </Text>
           
           <TextInput
             testID="feedback-input"
             style={styles.feedbackInput}
-            placeholder="Scrivi qui il tuo messaggio..."
+            placeholder={t('settings.feedbackPlaceholder')}
             placeholderTextColor={isDarkMode ? '#8b949e' : '#9ca3af'}
             multiline
             value={feedbackText}
@@ -197,20 +198,20 @@ const FeedbackScreen = () => {
           />
           
           <View style={styles.screenshotSection}>
-            <Text style={styles.screenshotLabel}>Screenshot (opzionale)</Text>
+            <Text style={styles.screenshotLabel}>{t('settings.screenshotOptional')}</Text>
             <View style={styles.screenshotButtonsContainer}>
               <TouchableOpacity
                 style={[styles.screenshotButton, screenshotLoading && styles.screenshotButtonDisabled]}
                 onPress={handleChooseScreenshot}
                 disabled={loading || screenshotLoading}
-                accessibilityLabel="Aggiungi Screenshot"
+                accessibilityLabel={t('settings.addScreenshot')}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: loading || screenshotLoading }}
               >
                 {screenshotLoading ? (
                   <ActivityIndicator color="#ffffff" size="small" />
                 ) : (
-                  <Text style={styles.screenshotButtonText}>Aggiungi Screenshot</Text>
+                  <Text style={styles.screenshotButtonText}>{t('settings.addScreenshot')}</Text>
                 )}
               </TouchableOpacity>
               
@@ -219,11 +220,11 @@ const FeedbackScreen = () => {
                   style={styles.removeScreenshotButton}
                   onPress={removeScreenshot}
                   disabled={loading}
-                  accessibilityLabel="Rimuovi screenshot"
+                  accessibilityLabel={t('settings.removeScreenshot')}
                   accessibilityRole="button"
                   accessibilityState={{ disabled: loading }}
                 >
-                  <Text style={styles.removeScreenshotButtonText}>Rimuovi</Text>
+                  <Text style={styles.removeScreenshotButtonText}>{t('settings.remove')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -245,14 +246,14 @@ const FeedbackScreen = () => {
             onPress={handleSendFeedback}
             disabled={loading}
             accessibilityRole="button"
-            accessibilityLabel="Invia Feedback"
+            accessibilityLabel={t('settings.feedback')}
             accessibilityState={{ disabled: loading }}
           >
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
               <Text style={styles.feedbackButtonText}>
-                Invia Feedback{!screenshotUri ? '' : ' con Screenshot'}
+                {screenshotUri ? t('settings.sendWithScreenshot') : t('settings.feedback')}
               </Text>
             )}
           </TouchableOpacity>

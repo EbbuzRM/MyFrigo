@@ -12,6 +12,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
@@ -20,6 +21,7 @@ import { LoggingService } from '@/services/LoggingService';
  */
 export default function NotFoundScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     LoggingService.info('NotFound', 'Page not found, determining redirect.');
@@ -41,9 +43,9 @@ export default function NotFoundScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Pagina non trovata</Text>
+        <Text style={styles.title}>{t('common.notFoundTitle')}</Text>
         <ActivityIndicator size="large" color="#007bff" />
-        <Text style={styles.message}>Stiamo per reindirizzarti...</Text>
+        <Text style={styles.message}>{t('common.redirectingMessage')}</Text>
       </View>
     </SafeAreaView>
   );

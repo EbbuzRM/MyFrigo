@@ -14,30 +14,32 @@ import { useTheme } from '@/context/ThemeContext';
 import { Product } from '@/types/Product';
 import { Calendar, Package } from 'lucide-react-native';
 import { scaleFont } from '@/utils/scaleFont';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { formatDisplayDate, formatDisplayNumber } from '@/i18n/format';
+import { getUnitLabel } from '@/i18n/units';
 
 interface ProductDetailInfoProps {
   product: Product;
 }
 
 export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = memo(({ product }) => {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
   const formatDate = useMemo(() => (dateString: string | undefined) => {
     if (!dateString || typeof dateString !== 'string' || dateString.length === 0) {
-      return 'Data non disponibile';
+      return t('products.dateUnavailable');
     }
 
     try {
-      return new Date(dateString).toLocaleDateString('it-IT', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+      return formatDisplayDate(dateString, language) ?? t('products.dateInvalid');
     } catch {
-      return 'Data non valida';
+      return t('products.dateInvalid');
     }
-  }, []);
+  }, [language, t]);
 
   const quantityItems = useMemo(() => {
     if (!product.quantities || !Array.isArray(product.quantities)) {
@@ -48,14 +50,14 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = memo(({ produ
       <View style={styles.detailRow} key={index}>
         <Package size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
         <Text style={styles.detailLabel}>
-          Quantità {product.quantities!.length > 1 ? index + 1 : ''}:
+          {product.quantities!.length > 1 ? t('products.quantityNumber', { number: index + 1 }) : t('products.quantityLabel')}:
         </Text>
         <Text style={styles.detailValue}>
-          {q.quantity} {q.unit}
+          {formatDisplayNumber(q.quantity, language)} {getUnitLabel(q.unit, language)}
         </Text>
       </View>
     ));
-  }, [product.quantities, isDarkMode, styles]);
+  }, [product.quantities, isDarkMode, styles, language, t]);
 
   return (
     <View style={styles.detailsSection}>
@@ -63,10 +65,10 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = memo(({ produ
 
       <View style={styles.detailRow}>
         <Calendar size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
-        <Text style={styles.detailLabel}>Scadenza:</Text>
+        <Text style={styles.detailLabel}>{t('products.expirationDateLabel')}:</Text>
         <Text
           style={styles.detailValue}
-          accessibilityLabel={`Data di scadenza: ${formatDate(product.expirationDate)}`}
+          accessibilityLabel={t('products.expirationDateA11y', { date: formatDate(product.expirationDate) })}
         >
           {formatDate(product.expirationDate)}
         </Text>
@@ -74,10 +76,10 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = memo(({ produ
 
       <View style={styles.detailRow}>
         <Calendar size={20} color={isDarkMode ? '#8b949e' : '#64748B'} />
-        <Text style={styles.detailLabel}>Acquistato:</Text>
+        <Text style={styles.detailLabel}>{t('products.purchasedLabel')}:</Text>
         <Text
           style={styles.detailValue}
-          accessibilityLabel={`Data di acquisto: ${formatDate(product.purchaseDate)}`}
+          accessibilityLabel={t('products.purchaseDateA11y', { date: formatDate(product.purchaseDate) })}
         >
           {formatDate(product.purchaseDate)}
         </Text>
@@ -85,10 +87,10 @@ export const ProductDetailInfo: React.FC<ProductDetailInfoProps> = memo(({ produ
 
       {product.notes && (
         <View style={styles.notesSection}>
-          <Text style={styles.notesLabel}>Note:</Text>
+          <Text style={styles.notesLabel}>{t('products.notesLabel')}:</Text>
           <Text
             style={styles.notesText}
-            accessibilityLabel={`Note del prodotto: ${product.notes}`}
+            accessibilityLabel={t('products.notesA11y', { notes: product.notes })}
           >
             {typeof product.notes === 'string' ? product.notes : ''}
           </Text>

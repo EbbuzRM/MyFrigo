@@ -15,7 +15,6 @@ import { LoggingService } from '@/services/LoggingService';
 const LOG_TAG = AUTH_CONSTANTS.LOG_TAGS.SIGNUP;
 
 export function useRegistrationOrchestrator(
-  checkEmail: (email: string) => Promise<boolean>,
   createAccount: (data: RegistrationData) => Promise<RegistrationResult>,
   state: UseRegistrationStateReturn
 ) {
@@ -26,14 +25,11 @@ export function useRegistrationOrchestrator(
       state.setComplete(false);
 
       try {
-        LoggingService.info(LOG_TAG, 'Starting registration process', { email: data.email });
-        const emailExists = await checkEmail(data.email);
-        if (emailExists) {
-          state.setLoading(false);
-          return { success: false, error: AUTH_CONSTANTS.ALERT_MESSAGES.EMAIL_EXISTS };
-        }
+        LoggingService.info(LOG_TAG, 'Starting registration process');
         return await createAccount(data);
       } catch (err) {
+        // `handleError` returns a stable code (see REGISTRATION_ERROR_CODES);
+        // translation to `auth.*` happens at the screen boundary.
         const errorMessage = state.handleError(err);
         state.setError(errorMessage);
         return { success: false, error: errorMessage };
@@ -42,6 +38,6 @@ export function useRegistrationOrchestrator(
         LoggingService.info(LOG_TAG, 'Registration process completed');
       }
     },
-    [checkEmail, createAccount, state]
+    [createAccount, state]
   );
 }

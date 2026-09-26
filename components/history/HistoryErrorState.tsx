@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 interface HistoryErrorStateProps {
   isDarkMode: boolean;
@@ -21,11 +22,13 @@ interface HistoryErrorStateProps {
  * Componente per lo stato di errore della schermata History
  */
 export function HistoryErrorState({ error, onRetry }: HistoryErrorStateProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <Text style={styles.errorText}>{error}</Text>
       <View style={styles.retryButton}>
-        <Text style={styles.retryText} onPress={onRetry}>Riprova</Text>
+        <Text style={styles.retryText} onPress={onRetry}>{t('common.retry')}</Text>
       </View>
     </View>
   );

@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LoggingService } from '@/services/LoggingService';
 
 interface Props {
@@ -19,6 +20,29 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+}
+
+/**
+ * Default error UI. Function component (not the class itself) so texts go
+ * through `useTranslation()` and stay reactive to language changes.
+ */
+function DefaultErrorFallback({ onRetry }: { onRetry: () => void }): React.ReactElement {
+  const { t } = useTranslation();
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{t('common.errorTitle')}</Text>
+      <Text style={styles.message}>{t('common.errorRetryMessage')}</Text>
+      <TouchableOpacity
+        style={styles.retryButton}
+        onPress={onRetry}
+        accessibilityLabel={t('common.retry')}
+        accessibilityHint={t('common.errorRetryHint')}
+      >
+        <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
@@ -48,15 +72,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if (this.props.fallback) {
         return this.props.fallback;
       }
-      return (
-        <View style={styles.container}>
-          <Text style={styles.title}>Qualcosa è andato storto</Text>
-          <Text style={styles.message}>Riprova ad aprire l'app</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry} accessibilityLabel="Riprova" accessibilityHint="Tenta di ripristinare l'app dopo un errore">
-            <Text style={styles.retryButtonText}>Riprova</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return <DefaultErrorFallback onRetry={this.handleRetry} />;
     }
     return this.props.children;
   }

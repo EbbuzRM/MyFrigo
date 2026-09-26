@@ -17,12 +17,22 @@ import { recentProductQueue } from '@/utils/recentProductQueue';
 import { saveImagePermanently } from '@/utils/imageStorage';
 import { Paths } from 'expo-file-system';
 import { getLocalISODate } from '@/utils/dateUtils';
+import { useTranslation } from 'react-i18next';
+
+class ProductSaveError extends Error {
+  constructor(message: string, readonly code: 'timeout' | 'failed') {
+    super(message);
+  }
+}
 
 export interface UseProductSaveReturn {
   handleSaveProduct: () => Promise<void>;
 }
 
 export const useProductSave = (): UseProductSaveReturn => {
+  const { t } = useTranslation();
+  const tRef = useRef(t);
+  tRef.current = t;
   const params = useLocalSearchParams();
   const {
     name,
@@ -103,7 +113,7 @@ export const useProductSave = (): UseProductSaveReturn => {
 
     if (!currentName || !currentCategory || currentQuantities.length === 0 || !areQuantitiesValid || !currentPurchaseDate || !currentExpirationDate) {
       LoggingService.error('useProductSave', 'Validation failed - missing required fields');
-      Alert.alert('Errore', 'Per favore, compila tutti i campi obbligatori, inclusa almeno una quantità valida.');
+      Alert.alert(tRef.current('common.error'), tRef.current('products.requiredFieldsError'));
       return;
     }
 
@@ -144,14 +154,17 @@ export const useProductSave = (): UseProductSaveReturn => {
 
     try {
       LoggingService.info('useProductSave', 'Calling ProductStorage.saveProduct...');
-      await ProductStorage.saveProduct(productData);
+      const saveResult = await ProductStorage.saveProduct(productData);
+      if (!saveResult.success) {
+        throw new ProductSaveError(saveResult.error, saveResult.errorCode === 'timeout' ? 'timeout' : 'failed');
+      }
       const savedProductName = currentName;
       LoggingService.info('useProductSave', `Product saved successfully: ${savedProductName}`);
 
       LoggingService.info('useProductSave', `handleSaveProduct check: isEditMode=${currentIsEditMode}`);
 
       if (currentIsEditMode) {
-        Alert.alert('Prodotto Aggiornato', `${savedProductName} è stato aggiornato con successo.`);
+        Alert.alert(tRef.current('products.updatedTitle'), tRef.current('products.updatedMessage', { name: savedProductName }));
         try {
           router.replace('/(tabs)/products');
         } catch (navError) {
@@ -192,7 +205,7 @@ export const useProductSave = (): UseProductSaveReturn => {
             } catch (fallbackNavError) {
               LoggingService.error('useProductSave', 'Fallback navigation also failed', fallbackNavError);
             }
-            Alert.alert('Errore', 'Impossibile aprire il prodotto successivo. Torna alla schermata prodotti.');
+          Alert.alert(tRef.current('common.error'), tRef.current('products.openNextError'));
           }
         } else {
           LoggingService.info('useProductSave', 'Queue empty after advance, navigating to products');
@@ -201,7 +214,7 @@ export const useProductSave = (): UseProductSaveReturn => {
             router.replace('/(tabs)/products');
           } catch (navError) {
             LoggingService.error('useProductSave', 'Final navigation failed after queue completion', navError);
-            Alert.alert('Errore', 'Impossibile tornare alla lista prodotti.');
+            Alert.alert(tRef.current('common.error'), tRef.current('products.returnToListError'));
           }
         }
         return;
@@ -209,11 +222,11 @@ export const useProductSave = (): UseProductSaveReturn => {
 
       LoggingService.info('useProductSave', 'Showing success alert for new product');
       Alert.alert(
-        'Prodotto Salvato',
-        `${savedProductName} è stato aggiunto. Cosa vuoi fare ora?`,
+        tRef.current('products.savedTitle'),
+        tRef.current('products.savedMessage', { name: savedProductName }),
         [
-          { text: 'Aggiungi Manualmente', onPress: () => { LoggingService.info('useProductSave', 'User chose to add manually'); currentClearForm(); } },
-          { text: 'Scansiona Codice', onPress: () => { 
+          { text: tRef.current('products.addManuallyAction'), onPress: () => { LoggingService.info('useProductSave', 'User chose to add manually'); currentClearForm(); } },
+          { text: tRef.current('products.scanCodeAction'), onPress: () => {
             LoggingService.info('useProductSave', 'User chose to scan barcode'); 
             currentClearForm(); 
             try {
@@ -222,7 +235,7 @@ export const useProductSave = (): UseProductSaveReturn => {
               LoggingService.error('useProductSave', 'Navigation to scanner failed', navError);
             }
           } },
-          { text: 'Finito', onPress: () => { 
+          { text: tRef.current('common.done'), onPress: () => {
             LoggingService.info('useProductSave', 'User chose to finish'); 
             currentClearForm(); 
             try {
@@ -245,17 +258,17 @@ export const useProductSave = (): UseProductSaveReturn => {
         recentProductQueue.clear();
       }
 
-      if (errorMessage.includes('Timeout')) {
+      if (error instanceof ProductSaveError && error.code === 'timeout') {
         Alert.alert(
-          'Timeout',
-          'Il salvataggio ha impiegato troppo tempo. Assicurati di avere una connessione stabile.',
+          tRef.current('products.saveTimeoutTitle'),
+          tRef.current('products.saveTimeoutMessage'),
           [
-            { text: 'OK', style: 'cancel' },
-            { text: 'Riprova', onPress: () => handleSaveProduct() }
+            { text: tRef.current('common.ok'), style: 'cancel' },
+            { text: tRef.current('common.retry'), onPress: () => handleSaveProduct() }
           ]
         );
       } else {
-        Alert.alert('Errore', `${errorMessage}. Riprova o contatta il supporto.`);
+        Alert.alert(tRef.current('common.error'), tRef.current('products.saveFailedMessage'));
       }
     }
   }, []); // Nessuna dipendenza - usa sempre i valori correnti dal ref

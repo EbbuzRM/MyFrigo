@@ -50,9 +50,10 @@ jest.mock('@/utils/AuthLogger', () => ({
 }));
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthService, cleanupRateLimiter, checkOtpRateLimit, recordOtpFailedAttempt, getRateLimitStatus, getOtpRateLimitStatus, __testing } from '../AuthService';
+import { AuthService, AUTH_ERROR_CODES, cleanupRateLimiter, checkOtpRateLimit, recordOtpFailedAttempt, getRateLimitStatus, getOtpRateLimitStatus, __testing } from '../AuthService';
 import { supabase } from '../supabaseClient';
 import { LoggingService } from '../LoggingService';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import * as UseEmailAuthModule from '@/hooks/useEmailAuth';
 import * as UsePasswordValidationModule from '@/hooks/usePasswordValidation';
 import { renderHook, act } from '@testing-library/react-native';
@@ -114,13 +115,13 @@ describe('AuthService — Brute Force Protection Demo', () => {
   });
 
   describe('1. 5 tentativi falliti → 6° bloccato', () => {
-    it('dopo 5 fallimenti, il 6° ritorna allowed=false con messaggio Troppi tentativi e remainingMs >0', async () => {
+    it('dopo 5 fallimenti, il 6° ritorna allowed=false con codice rate_limited (+errorParams count) e remainingMs >0', async () => {
       mockFailedLogin(supabaseMock);
 
       for (let i = 0; i < 5; i++) {
         const r = await AuthService.signInWithEmail('victim@example.com', 'wrong');
         expect(r.success).toBe(false);
-        expect(r.error).not.toContain('Troppi tentativi');
+        expect(r.error).not.toBe(AUTH_ERROR_CODES.RATE_LIMITED);
         flushPersistTimers();
         // allow persist promise to resolve
         await Promise.resolve();
@@ -131,7 +132,8 @@ describe('AuthService — Brute Force Protection Demo', () => {
       const blocked = await AuthService.signInWithEmail('victim@example.com', 'wrong');
 
       expect(blocked.success).toBe(false);
-      expect(blocked.error).toContain('Troppi tentativi');
+      expect(blocked.error).toBe(AUTH_ERROR_CODES.RATE_LIMITED);
+      expect(blocked.errorParams).toEqual({ count: expect.any(Number) });
       expect(supabaseMock).not.toHaveBeenCalled();
 
       const status = await getRateLimitStatus('victim@example.com');
@@ -173,13 +175,14 @@ describe('AuthService — Brute Force Protection Demo', () => {
       supabaseMock.mockClear();
       const blocked = await AuthService.signInWithEmail('test@example.com', 'wrong');
       expect(blocked.success).toBe(false);
-      expect(blocked.error).toContain('Troppi tentativi');
+      expect(blocked.error).toBe(AUTH_ERROR_CODES.RATE_LIMITED);
+      expect(blocked.errorParams).toEqual({ count: expect.any(Number) });
       expect(supabaseMock).not.toHaveBeenCalled();
 
       // Anche variante con spazi/case deve essere bloccata
       const blocked2 = await AuthService.signInWithEmail('  TEST@EXAMPLE.COM ', 'wrong');
       expect(blocked2.success).toBe(false);
-      expect(blocked2.error).toContain('Troppi tentativi');
+      expect(blocked2.error).toBe(AUTH_ERROR_CODES.RATE_LIMITED);
 
       // Email diversa non è bloccata
       mockSuccessfulLogin(supabaseMock);
@@ -303,7 +306,7 @@ describe('AuthService — Brute Force Protection Demo', () => {
       mockFailedLogin(supabaseMock);
       const fail = await AuthService.signInWithEmail('reset@example.com', 'wrong');
       expect(fail.success).toBe(false);
-      expect(fail.error).not.toContain('Troppi tentativi');
+      expect(fail.error).not.toBe(AUTH_ERROR_CODES.RATE_LIMITED);
       flushPersistTimers(); await Promise.resolve();
       status = await getRateLimitStatus('reset@example.com');
       expect(status.attempts).toBe(1);
@@ -340,7 +343,8 @@ describe('AuthService — Brute Force Protection Demo', () => {
       expect(afterReload.attempts).toBe(5);
 
       const blocked = await AuthService.signInWithEmail('persist@example.com', 'wrong');
-      expect(blocked.error).toContain('Troppi tentativi');
+      expect(blocked.error).toBe(AUTH_ERROR_CODES.RATE_LIMITED);
+      expect(blocked.errorParams).toEqual({ count: expect.any(Number) });
 
       // Window expiry deve comunque sbloccare anche dopo persist
       jest.advanceTimersByTime(RATE_LIMIT_WINDOW_MS + 1000);
@@ -432,7 +436,8 @@ describe('6. UX hook: useEmailAuth isRateLimited dopo 5 fallimenti', () => {
 
     expect(result.current.isRateLimited).toBe(true);
     expect(result.current.remainingMs).toBeGreaterThan(0);
-    expect(result.current.error).toContain('Troppi tentativi');
+    expect(result.current.error).toBe(AUTH_ERROR_CODES.RATE_LIMITED);
+    expect(result.current.errorParams).toEqual({ count: expect.any(Number) });
   });
 
   it('pre-check blocca immediatamente se già rate limited (senza chiamare supabase)', async () => {
@@ -455,7 +460,8 @@ describe('6. UX hook: useEmailAuth isRateLimited dopo 5 fallimenti', () => {
     await act(async () => {
       const r = await result.current.handleLogin('wrong');
       expect(r.success).toBe(false);
-      expect(r.error).toContain('Troppi tentativi');
+      expect(r.error).toBe(AUTH_ERROR_CODES.RATE_LIMITED);
+      expect(r.errorParams).toEqual({ count: expect.any(Number) });
     });
     expect(mock).not.toHaveBeenCalled();
     expect(result.current.isRateLimited).toBe(true);
@@ -472,7 +478,8 @@ describe('6b. UX component: LoginForm bottone disabilitato quando rate limited',
     setEmail: jest.fn(),
     loading: false,
     error: null,
-    handleLogin: jest.fn().mockResolvedValue({ success: false, error: 'Troppi tentativi di login. Riprova tra 15 minuti.' }),
+    errorParams: undefined,
+    handleLogin: jest.fn().mockResolvedValue({ success: false, error: AUTH_ERROR_CODES.RATE_LIMITED, errorParams: { count: 15 } }),
     clearError: jest.fn(),
     rateLimitedUntil: Date.now() + 15 * 60 * 1000,
     remainingMs: 15 * 60 * 1000,
@@ -498,8 +505,9 @@ describe('6b. UX component: LoginForm bottone disabilitato quando rate limited',
     expect(btn.props.disabled).toBe(true);
     expect(btn.props.accessibilityState?.disabled).toBeUndefined(); // we check disabled prop
     expect(getByTestId('rate-limit-warning')).toBeTruthy();
-    expect(getByText(/Troppi tentativi/)).toBeTruthy();
-    expect(getByText(/Bloccato/)).toBeTruthy();
+    // Rate-limit box text comes from the `auth` i18n catalog (plural, count=15).
+    expect(getByText(itCatalogs.auth.errors_rateLimitLogin_other.replace('{{count}}', '15'))).toBeTruthy();
+    expect(getByText(`${itCatalogs.auth.blockedSuffix} (15m)`)).toBeTruthy();
 
     spyPwd.mockRestore();
     spy.mockRestore();
@@ -537,7 +545,10 @@ describe('6b. UX component: LoginForm bottone disabilitato quando rate limited',
     const { getByTestId } = render(<LoginForm onLoginError={onLoginError} />);
     fireEvent.press(getByTestId('login-button'));
     expect(handleLogin).not.toHaveBeenCalled();
-    expect(onLoginError).toHaveBeenCalledWith(expect.stringContaining('Troppi tentativi'));
+    // LoginForm maps the rate-limit at the boundary: count=2 (120000ms).
+    expect(onLoginError).toHaveBeenCalledWith(
+      itCatalogs.auth.errors_rateLimitLogin_other.replace('{{count}}', '2')
+    );
     spyPwd.mockRestore();
     spy.mockRestore();
   });

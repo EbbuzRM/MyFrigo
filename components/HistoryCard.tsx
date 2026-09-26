@@ -20,6 +20,8 @@ import { HistoryCardDetails } from './HistoryCardDetails';
 import { useStatusInfo, formatHistoryDate, HistoryStatus } from './HistoryCardStatus';
 import { getHistoryCardStyles } from './HistoryCard.styles';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
 
 interface HistoryCardProps {
   /** Product data to display */
@@ -53,6 +55,8 @@ export const HistoryCard = React.memo(({
   onRestore,
   index = 0,
 }: HistoryCardProps) => {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const { isDarkMode } = useTheme();
   const { getCategoryById } = useCategories();
   const reducedMotion = useReducedMotion();
@@ -89,6 +93,7 @@ export const HistoryCard = React.memo(({
   // Status info with memoization
   const date = type === 'consumed' ? product.consumedDate : product.expirationDate;
   const statusInfo = useStatusInfo({ type, isDarkMode, date });
+  const statusText = t(type === 'consumed' ? 'history.statusConsumed' : 'history.statusExpired');
 
   // Memoized handlers
   const handleRestore = useCallback(() => {
@@ -96,7 +101,7 @@ export const HistoryCard = React.memo(({
   }, [onRestore, product.id]);
 
   // Memoized formatted date
-  const formattedDate = useMemo(() => formatHistoryDate(date), [date]);
+  const formattedDate = useMemo(() => formatHistoryDate(date, language), [date, language]);
 
   if (!categoryInfo) {
     return null;
@@ -107,7 +112,7 @@ export const HistoryCard = React.memo(({
       <View style={[styles.card, { borderColor: statusInfo.borderColor }]}>
         <View
           style={[styles.statusIndicator, { backgroundColor: statusInfo.color }]}
-          accessibilityLabel={`Status: ${statusInfo.statusText}`}
+          accessibilityLabel={t('history.cardStatusLabel', { status: statusText })}
         />
         <View style={styles.content}>
           <View style={styles.header}>
@@ -120,7 +125,7 @@ export const HistoryCard = React.memo(({
           </View>
           <HistoryCardDetails
             quantities={product.quantities}
-            statusText={statusInfo.statusText}
+            statusText={statusText}
             formattedDate={formattedDate}
             statusColor={statusInfo.color}
             type={type}

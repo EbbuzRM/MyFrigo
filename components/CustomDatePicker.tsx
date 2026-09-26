@@ -14,6 +14,10 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Calendar } from 'react-native-calendars';
 import { useTheme } from '@/context/ThemeContext';
 import { toLocalISOString } from '@/utils/dateUtils';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { setCalendarLocale } from '@/i18n/calendar';
+import { parseISO } from 'date-fns';
 
 interface CustomDatePickerProps {
   value: Date;
@@ -24,6 +28,9 @@ interface CustomDatePickerProps {
 }
 
 export function CustomDatePicker({ value, onChange, onClose, minimumDate, maximumDate }: CustomDatePickerProps) {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
+  setCalendarLocale(language);
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -32,11 +39,13 @@ export function CustomDatePicker({ value, onChange, onClose, minimumDate, maximu
       <Modal transparent={true} animationType="fade" onRequestClose={onClose}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Select Date</Text>
+            <Text style={styles.modalTitle}>{t('products.selectDate')}</Text>
             <Calendar
+              key={language}
+              firstDay={1}
               current={toLocalISOString(value)}
 onDayPress={(day) => {
-  onChange({ type: 'set' } as DateTimePickerEvent, new Date(day.dateString));
+  onChange({ type: 'set' } as DateTimePickerEvent, parseISO(day.dateString));
 }}
               minDate={minimumDate ? toLocalISOString(minimumDate) : undefined}
               maxDate={maximumDate ? toLocalISOString(maximumDate) : undefined}
@@ -60,7 +69,7 @@ onDayPress={(day) => {
               }}
             />
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.closeButtonText}>{t('common.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>

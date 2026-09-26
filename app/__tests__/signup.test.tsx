@@ -6,8 +6,19 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import i18next from 'i18next';
 import { Alert } from 'react-native';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
+import type { UseRegistrationReturn } from '@/hooks/useRegistration';
+import { cleanupRateLimiter } from '@/services/AuthService';
 import SignupScreen from '../signup';
+
+// --- Mocks ---
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 // --- Mocks ---
 
@@ -48,8 +59,9 @@ jest.mock('@/hooks/useSignupValidation', () => ({
 // Mock useRegistration
 const mockRegister = jest.fn();
 const mockHandlePostRegistration = jest.fn();
-const mockUseRegistration = jest.fn(() => ({
+const mockUseRegistration = jest.fn((): UseRegistrationReturn => ({
   register: mockRegister,
+  createUserAccount: mockRegister,
   handlePostRegistration: mockHandlePostRegistration,
   isLoading: false,
   error: null,
@@ -102,8 +114,13 @@ const renderSignupScreen = () => render(<SignupScreen />);
 // --- Test Suite ---
 
 describe('SignupScreen', () => {
+  afterAll(() => {
+    cleanupRateLimiter();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
     // Reset default mock implementations
     mockUseSignupValidation.mockReturnValue({
       validateForm: mockValidateForm,
@@ -121,6 +138,7 @@ describe('SignupScreen', () => {
     });
     mockUseRegistration.mockReturnValue({
       register: mockRegister,
+      createUserAccount: mockRegister,
       handlePostRegistration: mockHandlePostRegistration,
       isLoading: false,
       error: null,
@@ -131,49 +149,53 @@ describe('SignupScreen', () => {
     mockValidateForm.mockReturnValue({ isValid: true, errors: {}, passwordValidation: {} });
   });
 
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
+  });
+
   // ── Rendering ──────────────────────────────────────────────────────
 
   describe('rendering', () => {
     it('should render the signup screen header text', () => {
       const { getAllByText } = renderSignupScreen();
       // "Registrati" appears as both header and button text
-      const elements = getAllByText('Registrati');
+      const elements = getAllByText(itCatalogs.auth.signupButton);
       expect(elements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should render the subtitle', () => {
       const { getByText } = renderSignupScreen();
-      expect(getByText('Crea il tuo account MyFrigo')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.signupSubtitle)).toBeTruthy();
     });
 
     it('should render first name input', () => {
       const { getByPlaceholderText } = renderSignupScreen();
-      expect(getByPlaceholderText('Il tuo nome')).toBeTruthy();
+      expect(getByPlaceholderText(itCatalogs.auth.firstNamePlaceholder)).toBeTruthy();
     });
 
     it('should render last name input', () => {
       const { getByPlaceholderText } = renderSignupScreen();
-      expect(getByPlaceholderText('Il tuo cognome')).toBeTruthy();
+      expect(getByPlaceholderText(itCatalogs.auth.lastNamePlaceholder)).toBeTruthy();
     });
 
     it('should render email input', () => {
       const { getByPlaceholderText } = renderSignupScreen();
-      expect(getByPlaceholderText('La tua email')).toBeTruthy();
+      expect(getByPlaceholderText(itCatalogs.auth.emailPlaceholderSignup)).toBeTruthy();
     });
 
     it('should render password input', () => {
       const { getByPlaceholderText } = renderSignupScreen();
-      expect(getByPlaceholderText('La tua password')).toBeTruthy();
+      expect(getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup)).toBeTruthy();
     });
 
     it('should render the back to login link', () => {
       const { getByText } = renderSignupScreen();
-      expect(getByText('Torna al login')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.backToLogin)).toBeTruthy();
     });
 
     it('should render password visibility toggle', () => {
       const { getByLabelText } = renderSignupScreen();
-      expect(getByLabelText('Mostra/Nascondi password')).toBeTruthy();
+      expect(getByLabelText(itCatalogs.auth.showHidePasswordLabel)).toBeTruthy();
     });
   });
 
@@ -181,7 +203,7 @@ describe('SignupScreen', () => {
 
   describe('password validation display', () => {
     it('should show validation checks when password length > 0', () => {
-      const passwordInput = renderSignupScreen().getByPlaceholderText('La tua password');
+      const passwordInput = renderSignupScreen().getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup);
       act(() => {
         fireEvent.changeText(passwordInput, 'a');
       });
@@ -196,7 +218,7 @@ describe('SignupScreen', () => {
     it('should call validateForm when signup button is pressed', async () => {
       // Use accessibilityLabel to uniquely identify the button
       const { getByLabelText } = renderSignupScreen();
-      const signupButton = getByLabelText('Registrati');
+      const signupButton = getByLabelText(itCatalogs.auth.signUp);
 
       await act(async () => {
         fireEvent.press(signupButton);
@@ -209,7 +231,7 @@ describe('SignupScreen', () => {
       mockValidateForm.mockReturnValueOnce({ isValid: false, errors: { email: 'Email richiesta' }, passwordValidation: {} });
 
       const { getByLabelText } = renderSignupScreen();
-      const signupButton = getByLabelText('Registrati');
+      const signupButton = getByLabelText(itCatalogs.auth.signUp);
 
       await act(async () => {
         fireEvent.press(signupButton);
@@ -231,14 +253,14 @@ describe('SignupScreen', () => {
 
       // Fill in the form
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Il tuo nome'), 'Mario');
-        fireEvent.changeText(getByPlaceholderText('Il tuo cognome'), 'Rossi');
-        fireEvent.changeText(getByPlaceholderText('La tua email'), 'mario@example.com');
-        fireEvent.changeText(getByPlaceholderText('La tua password'), 'Password1');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.firstNamePlaceholder), 'Mario');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.lastNamePlaceholder), 'Rossi');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailPlaceholderSignup), 'mario@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup), 'Password1');
       });
 
       await act(async () => {
-        fireEvent.press(getByLabelText('Registrati'));
+        fireEvent.press(getByLabelText(itCatalogs.auth.signUp));
       });
 
       await waitFor(() => {
@@ -252,14 +274,14 @@ describe('SignupScreen', () => {
       const { getByLabelText, getByPlaceholderText } = renderSignupScreen();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Il tuo nome'), '  Mario  ');
-        fireEvent.changeText(getByPlaceholderText('Il tuo cognome'), '  Rossi  ');
-        fireEvent.changeText(getByPlaceholderText('La tua email'), 'mario@example.com');
-        fireEvent.changeText(getByPlaceholderText('La tua password'), 'Password1');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.firstNamePlaceholder), '  Mario  ');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.lastNamePlaceholder), '  Rossi  ');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailPlaceholderSignup), 'mario@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup), 'Password1');
       });
 
       await act(async () => {
-        fireEvent.press(getByLabelText('Registrati'));
+        fireEvent.press(getByLabelText(itCatalogs.auth.signUp));
       });
 
       await waitFor(() => {
@@ -275,6 +297,7 @@ describe('SignupScreen', () => {
     it('should show ActivityIndicator when isLoading is true', () => {
       mockUseRegistration.mockReturnValue({
         register: mockRegister,
+        createUserAccount: mockRegister,
         handlePostRegistration: mockHandlePostRegistration,
         isLoading: true,
         error: null,
@@ -289,6 +312,7 @@ describe('SignupScreen', () => {
     it('should disable inputs when isLoading is true', () => {
       mockUseRegistration.mockReturnValue({
         register: mockRegister,
+        createUserAccount: mockRegister,
         handlePostRegistration: mockHandlePostRegistration,
         isLoading: true,
         error: null,
@@ -298,9 +322,9 @@ describe('SignupScreen', () => {
 
       const { getByPlaceholderText } = renderSignupScreen();
 
-      expect(getByPlaceholderText('Il tuo nome').props.editable).toBe(false);
-      expect(getByPlaceholderText('La tua email').props.editable).toBe(false);
-      expect(getByPlaceholderText('La tua password').props.editable).toBe(false);
+      expect(getByPlaceholderText(itCatalogs.auth.firstNamePlaceholder).props.editable).toBe(false);
+      expect(getByPlaceholderText(itCatalogs.auth.emailPlaceholderSignup).props.editable).toBe(false);
+      expect(getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup).props.editable).toBe(false);
     });
   });
 
@@ -310,16 +334,18 @@ describe('SignupScreen', () => {
     it('should display error text when error is present', () => {
       mockUseRegistration.mockReturnValue({
         register: mockRegister,
+        createUserAccount: mockRegister,
         handlePostRegistration: mockHandlePostRegistration,
         isLoading: false,
-        error: 'Email già registrata' as any,
+        // Stable hook code: the screen maps it to the catalog text.
+        error: 'registration_failed',
         registrationComplete: false,
         resetError: jest.fn(),
       });
 
       const { getByText } = renderSignupScreen();
 
-      expect(getByText('Email già registrata')).toBeTruthy();
+      expect(getByText(itCatalogs.auth.errors_registrationFailed)).toBeTruthy();
     });
 
     it('should call register and handle result', async () => {
@@ -328,14 +354,14 @@ describe('SignupScreen', () => {
       const { getByLabelText, getByPlaceholderText } = renderSignupScreen();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Il tuo nome'), 'Mario');
-        fireEvent.changeText(getByPlaceholderText('Il tuo cognome'), 'Rossi');
-        fireEvent.changeText(getByPlaceholderText('La tua email'), 'mario@example.com');
-        fireEvent.changeText(getByPlaceholderText('La tua password'), 'Password1');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.firstNamePlaceholder), 'Mario');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.lastNamePlaceholder), 'Rossi');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailPlaceholderSignup), 'mario@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup), 'Password1');
       });
 
       await act(async () => {
-        fireEvent.press(getByLabelText('Registrati'));
+        fireEvent.press(getByLabelText(itCatalogs.auth.signUp));
       });
 
       await waitFor(() => {
@@ -347,14 +373,14 @@ describe('SignupScreen', () => {
       const { getByLabelText, getByPlaceholderText } = renderSignupScreen();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Il tuo nome'), '   ');
-        fireEvent.changeText(getByPlaceholderText('Il tuo cognome'), 'Rossi');
-        fireEvent.changeText(getByPlaceholderText('La tua email'), 'mario@example.com');
-        fireEvent.changeText(getByPlaceholderText('La tua password'), 'Password1');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.firstNamePlaceholder), '   ');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.lastNamePlaceholder), 'Rossi');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailPlaceholderSignup), 'mario@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup), 'Password1');
       });
 
       await act(async () => {
-        fireEvent.press(getByLabelText('Registrati'));
+        fireEvent.press(getByLabelText(itCatalogs.auth.signUp));
       });
 
       await waitFor(() => {
@@ -369,14 +395,14 @@ describe('SignupScreen', () => {
     it('should toggle password visibility when eye icon is pressed', () => {
       const { getByLabelText, getByPlaceholderText } = renderSignupScreen();
 
-      const passwordInput = getByPlaceholderText('La tua password');
+      const passwordInput = getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup);
 
       // Initially password should be hidden
       expect(passwordInput.props.secureTextEntry).toBe(true);
 
       // Press the eye button
       act(() => {
-        fireEvent.press(getByLabelText('Mostra/Nascondi password'));
+        fireEvent.press(getByLabelText(itCatalogs.auth.showHidePasswordLabel));
       });
     });
   });
@@ -388,7 +414,7 @@ describe('SignupScreen', () => {
       const { getByText } = renderSignupScreen();
 
       await act(async () => {
-        fireEvent.press(getByText('Torna al login'));
+        fireEvent.press(getByText(itCatalogs.auth.backToLogin));
       });
 
       expect(mockRouterBack).toHaveBeenCalled();
@@ -400,14 +426,14 @@ describe('SignupScreen', () => {
       const { getByLabelText, getByPlaceholderText } = renderSignupScreen();
 
       await act(async () => {
-        fireEvent.changeText(getByPlaceholderText('Il tuo nome'), 'Mario');
-        fireEvent.changeText(getByPlaceholderText('Il tuo cognome'), 'Rossi');
-        fireEvent.changeText(getByPlaceholderText('La tua email'), 'mario@example.com');
-        fireEvent.changeText(getByPlaceholderText('La tua password'), 'Password1');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.firstNamePlaceholder), 'Mario');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.lastNamePlaceholder), 'Rossi');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.emailPlaceholderSignup), 'mario@example.com');
+        fireEvent.changeText(getByPlaceholderText(itCatalogs.auth.passwordPlaceholderSignup), 'Password1');
       });
 
       await act(async () => {
-        fireEvent.press(getByLabelText('Registrati'));
+        fireEvent.press(getByLabelText(itCatalogs.auth.signUp));
       });
 
       await waitFor(() => {

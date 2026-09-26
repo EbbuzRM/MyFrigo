@@ -9,6 +9,7 @@
 // message: 
 
 import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -66,6 +67,7 @@ import { LoggingService } from '@/services/LoggingService';
  * @returns Settings screen component
  */
 export default function Settings(): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode, setAppTheme } = useTheme();
   const { settings, updateSettings, loading } = useSettings();
   const { changePassword } = useAuth();
@@ -107,22 +109,22 @@ export default function Settings(): React.ReactElement {
   const handleSaveNotificationDays = useCallback(async () => {
     const days = parseInt(daysInput, 10);
     if (isNaN(days) || days < 1 || days > 30) {
-      showGlobalToast('Inserisci un numero di giorni valido (1-30).', 'error');
+      showGlobalToast(t('settings.invalidDays'), 'error');
       return;
     }
 
     try {
       setIsSaving(true);
       await updateSettings({ notificationDays: days });
-      showGlobalToast(`Giorni di preavviso impostati a ${days}.`);
+      showGlobalToast(t('settings.daysSaved', { count: days }));
       setIsDaysModalVisible(false);
     } catch (error) {
       LoggingService.error('Settings', 'Errore durante il salvataggio delle impostazioni:', error);
-      showGlobalToast('Errore durante il salvataggio.', 'error');
+      showGlobalToast(t('settings.saveFailed'), 'error');
     } finally {
       setIsSaving(false);
     }
-  }, [daysInput, updateSettings, showGlobalToast]);
+  }, [daysInput, updateSettings, showGlobalToast, t]);
 
   /**
    * Handle password change
@@ -133,38 +135,37 @@ export default function Settings(): React.ReactElement {
     try {
       await changePassword(currentPassword, newPassword);
       setIsChangePasswordModalVisible(false);
-      showGlobalToast('Password cambiata con successo', 'success');
+      showGlobalToast(t('settings.passwordChanged'), 'success');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Errore durante il cambio password';
+      const message = err instanceof Error ? err.message : t('settings.passwordChangeFailed');
       setPasswordError(message);
     } finally {
       setIsChangingPassword(false);
     }
-  }, [changePassword, showGlobalToast]);
+  }, [changePassword, showGlobalToast, t]);
 
   /**
    * Handle clear data action with confirmation
    */
   const handleClearData = useCallback(() => {
     Alert.alert(
-      'Conferma Eliminazione',
-      'Sei sicuro di voler eliminare tutti i dati? Questa azione è irreversibile.',
+      t('settings.clearConfirmTitle'),
+      t('settings.clearConfirmMessage'),
       [
-        { text: 'Annulla', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Elimina',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Funzionalità temporaneamente non disponibile',
-              'La cancellazione di tutti i dati sarà disponibile nei prossimi aggiornamenti.'
+              t('settings.clearUnavailableTitle'),
+              t('settings.clearUnavailableMessage')
             );
-            showGlobalToast('Tutti i dati sono stati eliminati.');
           },
         },
       ]
     );
-  }, [showGlobalToast]);
+  }, [t]);
 
   /**
    * Handle manual update check
@@ -177,25 +178,25 @@ export default function Settings(): React.ReactElement {
         return;
       }
       if (updateInfo.isAvailable) {
-        showGlobalToast(`Aggiornamento disponibile: v${updateInfo.availableVersion}`, 'success');
+        showGlobalToast(t('settings.updateAvailable', { version: updateInfo.availableVersion }), 'success');
         // Apre automaticamente il modal se viene trovato un aggiornamento manuale
         openUpdateModal();
       } else {
-        showGlobalToast("L'app è aggiornata all'ultima versione", 'success');
+        showGlobalToast(t('settings.upToDate'), 'success');
       }
     } catch (error) {
       LoggingService.error('Settings', 'Errore durante controllo aggiornamenti:', error);
-      showGlobalToast('Errore durante il controllo aggiornamenti', 'error');
+      showGlobalToast(t('settings.updateCheckFailed'), 'error');
     }
-  }, [checkForUpdates, showGlobalToast, openUpdateModal]);
+  }, [checkForUpdates, showGlobalToast, openUpdateModal, t]);
 
   // Loading state
   if (loading || !settings) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Impostazioni</Text>
-          <Text style={styles.subtitle}>Caricamento...</Text>
+          <Text style={styles.title}>{t('settings.title')}</Text>
+          <Text style={styles.subtitle}>{t('settings.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -206,8 +207,8 @@ export default function Settings(): React.ReactElement {
       <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 60 }}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Impostazioni</Text>
-          <Text style={styles.subtitle}>Personalizza l'app secondo le tue preferenze</Text>
+          <Text style={styles.title}>{t('settings.title')}</Text>
+          <Text style={styles.subtitle}>{t('settings.subtitle')}</Text>
         </View>
 
         {/* Account Section */}

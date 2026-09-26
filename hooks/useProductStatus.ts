@@ -9,7 +9,13 @@
 
 import { useMemo, useCallback } from 'react';
 import { LoggingService } from '@/services/LoggingService';
-import { useExpirationStatus as useBaseExpirationStatus } from '@/hooks/useExpirationStatus';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { formatDisplayDate } from '@/i18n/format';
+import {
+  getExpirationStatusLabel,
+  useExpirationStatus as useBaseExpirationStatus,
+} from '@/hooks/useExpirationStatus';
 
 /**
  * @hook useProductStatus
@@ -30,6 +36,8 @@ export function useProductStatus(
   isDarkMode: boolean,
   isFrozen?: boolean
 ) {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const safeExpirationDate = useMemo(() => {
     if (!expirationDate) return null;
 
@@ -46,29 +54,34 @@ export function useProductStatus(
     }
   }, [expirationDate]);
 
-  const expirationInfo = useBaseExpirationStatus(
-    safeExpirationDate ? safeExpirationDate.toISOString() : undefined,
+  const statusExpirationDate = safeExpirationDate
+    ? safeExpirationDate.toISOString()
+    : expirationDate;
+  const expirationStatus = useBaseExpirationStatus(
+    statusExpirationDate,
     isDarkMode,
     isFrozen
   );
+  const expirationInfo = useMemo(() => ({
+    ...expirationStatus,
+    text: getExpirationStatusLabel(expirationStatus, t),
+  }), [expirationStatus, t]);
 
   const formatDate = useCallback((date: Date | null): string => {
     if (!date || isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString('it-IT');
-  }, []);
+    return formatDisplayDate(date, language) ?? 'N/A';
+  }, [language]);
 
   const formattedExpirationDate = formatDate(safeExpirationDate);
 
   const formattedPurchaseDate = useCallback((purchaseDate: string | undefined): string => {
     if (!purchaseDate) return 'N/A';
     try {
-      const date = new Date(purchaseDate);
-      if (isNaN(date.getTime())) return 'N/A';
-      return date.toLocaleDateString('it-IT');
+      return formatDisplayDate(purchaseDate, language) ?? 'N/A';
     } catch {
       return 'N/A';
     }
-  }, []);
+  }, [language]);
 
   return {
     safeExpirationDate,

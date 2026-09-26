@@ -1,4 +1,4 @@
-// revoke-user-sessions/index.ts — revokes every session for the CALLER.
+// revoke-user-sessions/index.ts — revokes the CALLER's other sessions.
 //
 // exports: serve | function
 // used_by: context/AuthContext.tsx (after a password change)
@@ -28,7 +28,7 @@ serve(async (req: Request) => {
       { auth: { persistSession: false } },
     )
 
-    const { error } = await supabaseAdmin.auth.admin.signOut(user.id, { scope: 'global' })
+    const { error } = await supabaseAdmin.auth.admin.signOut(user.id, { scope: 'others' })
 
     if (error) {
       console.error('Error revoking sessions:', error.message)
@@ -38,7 +38,7 @@ serve(async (req: Request) => {
       })
     }
 
-    console.log(`Revoked all sessions for user: ${user.id}`)
+    console.log('Revoked other sessions for authenticated user')
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders })
   } catch (err) {
     if (err instanceof UnauthorizedError) return err.response

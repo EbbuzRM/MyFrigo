@@ -9,6 +9,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 import { SettingsCard } from '@/components/SettingsCard';
 import { SettingsSection } from './SettingsSection';
@@ -51,6 +52,7 @@ export function AccountSettingsSection({
   onProfilePress,
   onChangePasswordPress,
 }: AccountSettingsSectionProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const cards = createAccountCards(isDarkMode);
 
@@ -63,7 +65,7 @@ export function AccountSettingsSection({
   };
 
   return (
-    <SettingsSection title="Account">
+    <SettingsSection title={t('settings.account')}>
       {cards.map((card) => (
         <SettingsCard
           key={card.id}

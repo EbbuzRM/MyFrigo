@@ -11,6 +11,7 @@
 import React, { useCallback } from 'react';
 import { TextInput, Text } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { getInputStyles } from './ProductFormHeader.styles';
 
 /**
@@ -46,10 +47,11 @@ interface BrandInputProps {
 const BrandInput = React.memo(({
   value,
   onChangeText,
-  placeholder = 'Es. Granarolo',
-  accessibilityLabel = 'Product brand input',
+  placeholder,
+  accessibilityLabel,
   testID = 'brand-input',
 }: BrandInputProps) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getInputStyles(isDarkMode);
 
@@ -59,15 +61,15 @@ const BrandInput = React.memo(({
 
   return (
     <>
-      <Text style={styles.placeholder}>Marca</Text>
+      <Text style={styles.placeholder}>{t('products.brandLabel')}</Text>
       <TextInput
         style={styles.input}
         value={value}
         onChangeText={handleChangeText}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('products.brandPlaceholder')}
         placeholderTextColor={isDarkMode ? '#8b949e' : '#64748b'}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityHint="Optional field"
+        accessibilityLabel={accessibilityLabel ?? t('products.brandInputLabel')}
+        accessibilityHint={t('common.optionalField')}
         testID={testID}
         autoCapitalize="words"
         maxLength={50}

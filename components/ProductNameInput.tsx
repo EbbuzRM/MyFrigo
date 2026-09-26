@@ -11,6 +11,7 @@
 import React, { useCallback } from 'react';
 import { TextInput, Text } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { getInputStyles } from './ProductFormHeader.styles';
 
 /**
@@ -51,11 +52,12 @@ interface ProductNameInputProps {
 const ProductNameInput = React.memo(({
   value,
   onChangeText,
-  placeholder = 'Es. Latte Parzialmente Scremato',
+  placeholder,
   required = true,
-  accessibilityLabel = 'Product name input',
+  accessibilityLabel,
   testID = 'product-name-input',
 }: ProductNameInputProps) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getInputStyles(isDarkMode);
 
@@ -66,16 +68,16 @@ const ProductNameInput = React.memo(({
   return (
     <>
       <Text style={styles.placeholder}>
-        Nome Prodotto{required ? '*' : ''}
+        {required ? t('products.nameRequiredLabel') : t('products.nameLabel')}
       </Text>
       <TextInput
         style={styles.input}
         value={value}
         onChangeText={handleChangeText}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('products.namePlaceholder')}
         placeholderTextColor={isDarkMode ? '#8b949e' : '#64748b'}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityHint={required ? 'Required field' : 'Optional field'}
+        accessibilityLabel={accessibilityLabel ?? t('products.nameInputLabel')}
+        accessibilityHint={required ? t('common.requiredField') : t('common.optionalField')}
         testID={testID}
         autoCapitalize="words"
         maxLength={100}

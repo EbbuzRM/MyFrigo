@@ -6,6 +6,8 @@
 
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import { ConsumeActions } from '../ConsumeActions';
 
 jest.mock('lucide-react-native', () => {
@@ -15,6 +17,10 @@ jest.mock('lucide-react-native', () => {
     CheckCircle: (props: any) => React.createElement(Text, { testID: 'check-circle-icon' }, 'CheckCircle'),
   };
 });
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 describe('ConsumeActions', () => {
   const mockStyles = {
@@ -36,16 +42,17 @@ describe('ConsumeActions', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
   });
 
   it('renders cancel button with "Annulla" text', () => {
     const { getByText } = render(<ConsumeActions {...defaultProps} />);
-    expect(getByText('Annulla')).toBeTruthy();
+    expect(getByText(itCatalogs.common.cancel)).toBeTruthy();
   });
 
   it('renders confirm button with "Conferma" text', () => {
     const { getByText } = render(<ConsumeActions {...defaultProps} />);
-    expect(getByText('Conferma')).toBeTruthy();
+    expect(getByText(itCatalogs.common.confirm)).toBeTruthy();
   });
 
   it('calls onCancel when cancel button is pressed', () => {
@@ -53,7 +60,7 @@ describe('ConsumeActions', () => {
     const { getByText } = render(
       <ConsumeActions {...defaultProps} onCancel={onCancel} />
     );
-    fireEvent.press(getByText('Annulla'));
+    fireEvent.press(getByText(itCatalogs.common.cancel));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -62,7 +69,7 @@ describe('ConsumeActions', () => {
     const { getByText } = render(
       <ConsumeActions {...defaultProps} onConfirm={onConfirm} />
     );
-    fireEvent.press(getByText('Conferma'));
+    fireEvent.press(getByText(itCatalogs.common.confirm));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
@@ -71,25 +78,25 @@ describe('ConsumeActions', () => {
     const { getByText } = render(
       <ConsumeActions {...defaultProps} onConfirm={onConfirm} isConfirmDisabled={true} />
     );
-    fireEvent.press(getByText('Conferma'));
+    fireEvent.press(getByText(itCatalogs.common.confirm));
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it('cancel button has accessibilityLabel "Annulla"', () => {
     const { getByLabelText } = render(<ConsumeActions {...defaultProps} />);
-    expect(getByLabelText('Annulla')).toBeTruthy();
+    expect(getByLabelText(itCatalogs.common.cancel)).toBeTruthy();
   });
 
   it('confirm button has accessibilityLabel "Conferma"', () => {
     const { getByLabelText } = render(<ConsumeActions {...defaultProps} />);
-    expect(getByLabelText('Conferma')).toBeTruthy();
+    expect(getByLabelText(itCatalogs.common.confirm)).toBeTruthy();
   });
 
   it('confirm button has accessibilityState disabled when isConfirmDisabled is true', () => {
     const { getByLabelText } = render(
       <ConsumeActions {...defaultProps} isConfirmDisabled={true} />
     );
-    const confirmButton = getByLabelText('Conferma');
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     expect(confirmButton.props.accessibilityState?.disabled).toBe(true);
   });
 
@@ -97,7 +104,7 @@ describe('ConsumeActions', () => {
     const { getByLabelText } = render(
       <ConsumeActions {...defaultProps} isConfirmDisabled={false} />
     );
-    const confirmButton = getByLabelText('Conferma');
+    const confirmButton = getByLabelText(itCatalogs.common.confirm);
     expect(confirmButton.props.accessibilityState?.disabled).toBe(false);
   });
 

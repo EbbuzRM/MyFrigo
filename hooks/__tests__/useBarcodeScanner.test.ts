@@ -38,11 +38,12 @@ jest.mock('../barcode/useLocalDatabaseLookup');
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useCameraPermissions } from 'expo-camera';
 import { useBarcodeCache } from '../barcode/useBarcodeCache';
-import { useOpenFoodFactsApi } from '../barcode/useOpenFoodFactsApi';
+import { ProductNotFoundError, useOpenFoodFactsApi } from '../barcode/useOpenFoodFactsApi';
 import { useLocalDatabaseLookup } from '../barcode/useLocalDatabaseLookup';
 import { CategoryMatcher } from '@/services/CategoryMatcher';
 import { useBarcodeScanner, __testing, ScanResult } from '../useBarcodeScanner';
 import { ProductCategory } from '@/types/Product';
+import i18next from 'i18next';
 
 const { extractProductName, extractBrand, extractImageUrl } = __testing;
 
@@ -95,6 +96,68 @@ const MOCK_OFF_PRODUCT = {
     image_front_small_url: 'https://off.com/pasta.jpg',
     categories_tags: ['en:pasta', 'en:dried-products']
 };
+
+describe('language changes during Open Food Facts lookup', () => {
+    afterEach(async () => {
+        await i18next.changeLanguage('it');
+    });
+
+    it.each([
+        { from: 'it', to: 'en', expectedName: 'Milk' },
+        { from: 'en', to: 'it', expectedName: 'Latte' },
+    ])('delivers the $to name and stores only the $to cache entry', async ({ from, to, expectedName }) => {
+        jest.clearAllMocks();
+        await i18next.changeLanguage(from);
+        const { mockFetchOFF, mockSet, mockGet } = setupMocks();
+        const cache = new Map<string, ScanResult>();
+        mockGet.mockImplementation(key => cache.get(key) ?? null);
+        mockSet.mockImplementation((key, value) => { cache.set(key, value); });
+        const product = { ...MOCK_OFF_PRODUCT, product_name_it: 'Latte', product_name_en: 'Milk' };
+        let resolveLookup: (value: typeof product) => void = () => undefined;
+        mockFetchOFF.mockImplementation(() => new Promise(resolve => { resolveLookup = resolve; }));
+        const oldCallback = jest.fn<void, [ScanResult, string]>();
+        const currentCallback = jest.fn<void, [ScanResult, string]>();
+        const { result, rerender } = renderHook(
+            ({ callback }: { callback: (scan: ScanResult, barcode: string) => void }) =>
+                useBarcodeScanner(MOCK_APP_CATEGORIES, callback),
+            { initialProps: { callback: oldCallback } }
+        );
+        let pending: Promise<void> = Promise.resolve();
+        act(() => {
+            pending = result.current.handleBarCodeScanned(
+                MOCK_BARCODE, MOCK_BARCODE_TYPE, MOCK_BOUNDS, MOCK_FRAME_LAYOUT
+            );
+        });
+        await i18next.changeLanguage(to);
+        rerender({ callback: currentCallback });
+        await act(async () => {
+            resolveLookup(product);
+            await pending;
+        });
+
+        expect(mockGet).toHaveBeenCalledWith(`${from}:${MOCK_BARCODE}`);
+        expect(currentCallback).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'online', params: expect.objectContaining({ name: expectedName }) }),
+            MOCK_BARCODE
+        );
+        expect(oldCallback).not.toHaveBeenCalled();
+        expect(mockSet).toHaveBeenCalledWith(`${to}:${MOCK_BARCODE}`, expect.any(Object));
+        expect(mockSet).not.toHaveBeenCalledWith(`${from}:${MOCK_BARCODE}`, expect.any(Object));
+
+        mockFetchOFF.mockResolvedValue(product);
+        await i18next.changeLanguage(from);
+        act(() => result.current.resetScanner());
+        await act(async () => {
+            await result.current.handleBarCodeScanned(
+                MOCK_BARCODE, MOCK_BARCODE_TYPE, MOCK_BOUNDS, MOCK_FRAME_LAYOUT
+            );
+        });
+        expect(mockFetchOFF).toHaveBeenCalledTimes(2);
+        expect(cache.get(`${from}:${MOCK_BARCODE}`)).toEqual(
+            expect.objectContaining({ params: expect.objectContaining({ name: from === 'it' ? 'Latte' : 'Milk' }) })
+        );
+    });
+});
 
 // ─── Test Helpers ────────────────────────────────────────────────
 
@@ -167,7 +230,7 @@ describe('useBarcodeScanner - Hook Initialization', () => {
         expect(result.current.isLoading).toBe(false);
         expect(result.current.loadingError).toBe(null);
         expect(result.current.currentBarcode).toBe(null);
-        expect(result.current.loadingProgress).toBe('Inizializzazione...');
+    expect(result.current.loadingProgress).toBe('initializing');
     });
 
     it('should return correct interface structure', () => {
@@ -313,7 +376,7 @@ describe('handleBarCodeScanned - Cache Hit Scenario', () => {
             );
         });
 
-        expect(mockGet).toHaveBeenCalledWith(MOCK_BARCODE);
+        expect(mockGet).toHaveBeenCalledWith(`it:${MOCK_BARCODE}`);
         expect(mockFetchSupabase).not.toHaveBeenCalled();
         expect(mockFetchOFF).not.toHaveBeenCalled();
     });
@@ -429,7 +492,46 @@ describe('handleBarCodeScanned - Parallel Fetch (Supabase Priority)', () => {
         );
     });
 
-    it('should map Supabase result correctly to ScanResult', async () => {
+  it('should use the Open Food Facts image when a saved template has a temporary local image URI', async () => {
+    const staleTemplate = {
+      ...MOCK_SUPABASE_PRODUCT,
+      imageUrl: 'file:///data/user/0/com.myfrigo/cache/Camera/missing.jpg',
+    };
+    const { mockFetchOFF, mockFetchSupabase, mockSet } = setupMocks({
+      supabaseResult: staleTemplate,
+      offResult: MOCK_OFF_PRODUCT,
+    });
+    const mockCallback = jest.fn();
+    const { result } = renderHook(() => useBarcodeScanner(MOCK_APP_CATEGORIES, mockCallback));
+
+    await act(async () => {
+      await result.current.handleBarCodeScanned(
+        MOCK_BARCODE,
+        MOCK_BARCODE_TYPE,
+        MOCK_BOUNDS,
+        MOCK_FRAME_LAYOUT
+      );
+    });
+
+    expect(mockCallback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'template',
+        params: expect.objectContaining({ imageUrl: MOCK_OFF_PRODUCT.image_front_small_url }),
+      }),
+      MOCK_BARCODE
+    );
+    expect(mockFetchSupabase).toHaveBeenCalledTimes(1);
+    expect(mockFetchOFF).toHaveBeenCalledTimes(1);
+    expect(mockSet).toHaveBeenCalledWith(
+      `it:${MOCK_BARCODE}`,
+      expect.objectContaining({
+        type: 'template',
+        params: expect.objectContaining({ imageUrl: MOCK_OFF_PRODUCT.image_front_small_url }),
+      })
+    );
+  });
+
+  it('should map Supabase result correctly to ScanResult', async () => {
         setupMocks({ supabaseResult: MOCK_SUPABASE_PRODUCT });
         const mockCallback = jest.fn();
 
@@ -444,7 +546,7 @@ describe('handleBarCodeScanned - Parallel Fetch (Supabase Priority)', () => {
                 MOCK_BOUNDS,
                 MOCK_FRAME_LAYOUT
             );
-        });
+  });
 
         expect(mockCallback).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -480,7 +582,7 @@ describe('handleBarCodeScanned - Parallel Fetch (Supabase Priority)', () => {
         });
 
         expect(mockSet).toHaveBeenCalledWith(
-            MOCK_BARCODE,
+            `it:${MOCK_BARCODE}`,
             expect.objectContaining({
                 type: 'template',
                 data: MOCK_SUPABASE_PRODUCT
@@ -634,7 +736,7 @@ describe('handleBarCodeScanned - OpenFoodFacts Fallback', () => {
         });
 
         expect(mockSet).toHaveBeenCalledWith(
-            MOCK_BARCODE,
+            `it:${MOCK_BARCODE}`,
             expect.objectContaining({
                 type: 'online',
                 data: MOCK_OFF_PRODUCT
@@ -667,14 +769,14 @@ describe('handleBarCodeScanned - Error Handling', () => {
             );
         });
 
-        expect(result.current.loadingError).toContain('Errore');
+    expect(result.current.loadingError).toBe('lookup_failed');
         expect(mockCallback).not.toHaveBeenCalled();
     });
 
     it('should handle product not found (both return null)', async () => {
         const { mockFetchSupabase, mockFetchOFF } = setupMocks();
         mockFetchSupabase.mockRejectedValue(new Error('Prodotto non trovato'));
-        mockFetchOFF.mockRejectedValue(new Error('Errore HTTP: 404'));
+    mockFetchOFF.mockRejectedValue(new ProductNotFoundError('Product not found'));
         const mockCallback = jest.fn();
 
         const { result } = renderHook(() => 
@@ -721,13 +823,13 @@ describe('handleBarCodeScanned - Error Handling', () => {
         });
 
         expect(result.current.loadingError).toBeTruthy();
-        expect(result.current.loadingError).toContain('Errore');
+    expect(result.current.loadingError).toBe('lookup_failed');
     });
 
     it('should cache not_found result', async () => {
         const { mockFetchSupabase, mockFetchOFF, mockSet } = setupMocks();
         mockFetchSupabase.mockRejectedValue(new Error('Prodotto non trovato'));
-        mockFetchOFF.mockRejectedValue(new Error('Errore HTTP: 404'));
+    mockFetchOFF.mockRejectedValue(new ProductNotFoundError('Product not found'));
         const mockCallback = jest.fn();
 
         const { result } = renderHook(() => 
@@ -744,7 +846,7 @@ describe('handleBarCodeScanned - Error Handling', () => {
         });
 
         expect(mockSet).toHaveBeenCalledWith(
-            MOCK_BARCODE,
+            `it:${MOCK_BARCODE}`,
             expect.objectContaining({
                 type: 'not_found'
             })
@@ -913,7 +1015,7 @@ describe('handleBarCodeScanned - State Management', () => {
             );
         });
 
-        expect(progressStates).toContain('Inizializzazione...');
+    expect(progressStates).toContain('initializing');
     });
 });
 
@@ -1032,8 +1134,12 @@ describe('extractProductName', () => {
         expect(extractProductName({ barcode: '1234567890123' })).toBe('');
     });
 
-    it('dovrebbe preferire product_name a product_name_it', () => {
-        expect(extractProductName({ barcode: '1234567890123', product_name: 'Generic', product_name_it: 'Italiano' })).toBe('Generic');
+    it('prefers the active language over an unspecific product name', () => {
+        expect(extractProductName({ barcode: '1234567890123', product_name: 'Generic', product_name_it: 'Italiano' })).toBe('Italiano');
+    });
+
+    it('prefers the English product name for an English device', () => {
+        expect(extractProductName({ barcode: '1234567890123', product_name_it: 'Latte', product_name_en: 'Milk' }, 'en')).toBe('Milk');
     });
 
     it('dovrebbe fare fallback a generic_name_it quando product_name e product_name_it sono assenti', () => {

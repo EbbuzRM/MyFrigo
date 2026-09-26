@@ -9,7 +9,7 @@
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { LoggingService } from '@/services/LoggingService';
@@ -40,6 +40,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
   const [isInstalling, setIsInstalling] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
+  const installTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isClosable = useMemo(() => updateStatus !== 'downloading' && updateStatus !== 'installing', [updateStatus]);
   const showProgress = useMemo(() => updateStatus === 'downloading', [updateStatus]);
@@ -50,6 +51,13 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
       resetAnimations();
     }
   }, [visible, updateInfo, resetAnimations]);
+
+  useEffect(() => () => {
+    if (installTimerRef.current !== null) {
+      clearTimeout(installTimerRef.current);
+      installTimerRef.current = null;
+    }
+  }, [visible]);
 
   const handleDownloadAndInstall = useCallback(async () => {
     try {
@@ -64,7 +72,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
       if (success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setUpdateStatus('installing'); setIsInstalling(true);
-        setTimeout(async () => {
+        installTimerRef.current = setTimeout(async () => {
+          installTimerRef.current = null;
           if (autoInstall) await UpdateService.restartApp();
           else { setUpdateStatus('completed'); setIsInstalling(false); }
         }, autoInstall ? 1500 : 1000);

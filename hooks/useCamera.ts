@@ -11,6 +11,7 @@
 // message: 
 
 import { useRef, useCallback, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -56,6 +57,7 @@ interface UseCameraReturn {
  * @returns Camera control methods and state
  */
 export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
+  const { t } = useTranslation();
   const cameraRef = useRef<CameraView>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
@@ -227,11 +229,11 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
       LoggingService.error('useCamera', 'Error during photo capture', error);
 
       Alert.alert(
-        "Errore Fotocamera",
-        `Si è verificato un problema: ${(error as Error).message}`,
+        t('scanner.cameraError'),
+        t('scanner.cameraProblem', { message: error instanceof Error ? error.message : t('common.error') }),
         [
-          { text: 'Riprova', style: 'default', onPress: () => setIsProcessingImage(false) },
-          { text: 'Annulla', style: 'cancel', onPress: () => router.back() }
+          { text: t('common.retry'), style: 'default', onPress: () => setIsProcessingImage(false) },
+          { text: t('common.cancel'), style: 'cancel', onPress: () => router.back() }
         ]
       );
 
@@ -239,7 +241,7 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
     } finally {
       setIsProcessingImage(false);
     }
-  }, [captureMode, prepareImageForOCR]);
+  }, [captureMode, prepareImageForOCR, t]);
 
   /**
    * Pick an image from the gallery
@@ -301,13 +303,13 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
     } catch (error) {
       LoggingService.error('useCamera', 'Error picking image from gallery', error);
       Alert.alert(
-        "Errore Galleria",
-        "Si è verificato un errore durante la selezione dell'immagine.",
-        [{ text: 'OK' }]
+        t('scanner.galleryError'),
+        t('scanner.galleryFailed'),
+        [{ text: t('common.ok') }]
       );
       return null;
     }
-  }, [captureMode, prepareImageForOCR, processGalleryImage]);
+  }, [captureMode, prepareImageForOCR, processGalleryImage, t]);
 
   const hasCameraPermission = cameraPermission?.granted ?? false;
   const hasGalleryPermission = galleryPermission?.granted ?? false;
@@ -324,4 +326,3 @@ export const useCamera = (captureMode: CaptureMode): UseCameraReturn => {
     setIsProcessingImage,
   };
 };
-

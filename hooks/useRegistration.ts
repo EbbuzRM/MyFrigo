@@ -11,14 +11,15 @@ import { UseRegistrationReturn } from './useRegistration.types';
 import { useRegistrationState } from './useRegistrationState';
 import { usePostRegistration } from './usePostRegistration';
 import { useRegistrationOrchestrator } from './useRegistrationOrchestrator';
-import { useEmailCheck, useUserProfileCreation, useAccountCreation } from './useRegistrationActions';
+import { useUserProfileCreation, useAccountCreation } from './useRegistrationActions';
 
 export function useRegistration(
   onSuccess: () => void,
-  onEmailNeedsConfirmation: () => void
+  onEmailNeedsConfirmation: () => void,
+  onLogin: () => void = () => undefined,
+  onPasswordRecovery: () => void = () => undefined
 ): UseRegistrationReturn {
   const state = useRegistrationState();
-  const checkEmailExists = useEmailCheck();
   const createProfile = useUserProfileCreation();
   const createUserAccount = useAccountCreation(createProfile);
 
@@ -28,13 +29,14 @@ export function useRegistration(
   const handlePostRegistration = usePostRegistration({
     onSuccess: handleSuccess,
     onNeedsConfirmation: handleNeedsConfirmation,
+    onLogin,
+    onPasswordRecovery,
   });
 
-  const register = useRegistrationOrchestrator(checkEmailExists, createUserAccount, state);
+  const register = useRegistrationOrchestrator(createUserAccount, state);
 
   return {
     register,
-    checkEmailExists,
     createUserAccount,
     handlePostRegistration,
     isLoading: state.isLoading,
@@ -45,3 +47,9 @@ export function useRegistration(
 }
 
 export type { RegistrationData, RegistrationResult, UseRegistrationReturn } from './useRegistration.types';
+export {
+  REGISTRATION_ERROR_CODES,
+  REGISTRATION_ERROR_I18N_KEYS,
+  isRegistrationErrorCode,
+} from './useRegistration.types';
+export type { RegistrationErrorCode } from './useRegistration.types';

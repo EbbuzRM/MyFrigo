@@ -86,9 +86,9 @@ describe('BrandInput', () => {
     expect(getByPlaceholderText('Es. Barilla')).toBeTruthy();
   });
 
-  it('has default accessibility label "Product brand input"', () => {
+  it('uses the localised brand accessibility label', () => {
     const { getByLabelText } = render(<BrandInput {...defaultProps} />);
-    expect(getByLabelText('Product brand input')).toBeTruthy();
+    expect(getByLabelText('Marca del prodotto')).toBeTruthy();
   });
 
   it('uses custom accessibility label when provided', () => {

@@ -10,14 +10,17 @@
 
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Text, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { LoginForm } from '@/components/LoginForm';
 import { GoogleLoginButton } from '@/components/GoogleLoginButton';
 import { LoggingService } from '@/services/LoggingService';
+import { translateAuthError } from '@/utils/authErrorI18n';
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const router = useRouter();
   const googleAuth = useGoogleAuth();
@@ -29,7 +32,7 @@ export default function LoginScreen() {
 
   const handleLoginError = (error: string) => {
     LoggingService.error('LoginScreen', 'Login failed', { error });
-    Alert.alert('Errore nel Login', error);
+    Alert.alert(t('auth.loginErrorTitle'), error);
   };
 
   const handleSignUpRedirect = () => {
@@ -62,10 +65,10 @@ export default function LoginScreen() {
       />
 
       {googleAuth.configError && (
-        <Text style={styles.errorText}>{googleAuth.configError}</Text>
+        <Text style={styles.errorText}>{translateAuthError(t, googleAuth.configError)}</Text>
       )}
 
-      <Text style={styles.comingSoonText}>Disponibile nei prossimi aggiornamenti</Text>
+      <Text style={styles.comingSoonText}>{t('auth.comingSoon')}</Text>
     </View>
   );
 }

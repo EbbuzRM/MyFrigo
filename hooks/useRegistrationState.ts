@@ -23,6 +23,7 @@ export interface UseRegistrationStateReturn {
 import { useState } from 'react';
 import { LoggingService } from '@/services/LoggingService';
 import { AUTH_CONSTANTS } from '@/constants/auth';
+import { REGISTRATION_ERROR_CODES, isRegistrationErrorCode } from './useRegistration.types';
 
 const LOG_TAG = AUTH_CONSTANTS.LOG_TAGS.SIGNUP;
 
@@ -37,10 +38,18 @@ export function useRegistrationState(): UseRegistrationStateReturn {
     setRegistrationComplete(false);
   }, []);
 
+  /**
+   * Maps any thrown value to a stable error code (never a user-facing string).
+   * Known codes pass through; anything else (provider messages, unexpected
+   * throws) becomes `unknown_error`. Technical details stay in logs only.
+   */
   const handleError = useCallback((err: unknown): string => {
-    const errorMessage = err instanceof Error ? err.message : AUTH_CONSTANTS.ERRORS.UNKNOWN_ERROR;
-    LoggingService.error(LOG_TAG, 'Registration failed', { error: err, errorMessage });
-    return errorMessage;
+    const candidate = err instanceof Error ? err.message : null;
+    const code = isRegistrationErrorCode(candidate)
+      ? candidate
+      : REGISTRATION_ERROR_CODES.UNKNOWN_ERROR;
+    LoggingService.error(LOG_TAG, 'Registration failed', { error: err, errorCode: code });
+    return code;
   }, []);
 
   return {

@@ -9,6 +9,7 @@
 // message: 
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '@/context/ThemeContext';
@@ -25,6 +26,7 @@ interface DiagnosticPanelProps {
 }
 
 export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const {
     availableTests,
@@ -44,7 +46,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
       setLogs(logData);
     } catch (error: unknown) {
       LoggingService.error('DiagnosticPanel', 'Errore nel caricamento dei log:', error);
-      setLogs('Errore nel caricamento dei log');
+      setLogs(t('settings.diagnosticLogsLoadFailed'));
     } finally {
       setLoadingLogs(false);
     }
@@ -63,26 +65,26 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
   };
 
   const handleCopyLogs = async () => {
-    const textToCopy = logs || 'Nessun log disponibile';
+    const textToCopy = logs || t('settings.diagnosticNoLogs');
     await Clipboard.setStringAsync(textToCopy);
-    Alert.alert('Copiato', 'Log copiati negli appunti');
+    Alert.alert(t('settings.diagnosticCopied'), t('settings.diagnosticLogsCopied'));
   };
 
   const truncateLogs = (logText: string): string => {
     if (!logText) return '';
     const MAX_CHARS = 10000;
     if (logText.length <= MAX_CHARS) return logText;
-    return '... (troncato - mostra ultimi 10.000 caratteri)\n' + logText.slice(-MAX_CHARS);
+    return t('settings.diagnosticLogsTruncated') + logText.slice(-MAX_CHARS);
   };
 
   const handleResetTestUsers = async () => {
     Alert.alert(
-      'Reset Test Users',
-      'Sei sicuro di voler cancellare tutti gli utenti di test? Questa operazione è irreversibile.',
+      t('settings.diagnosticResetUsers'),
+      t('settings.diagnosticResetConfirm'),
       [
-        { text: 'Annulla', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Sì, Reset',
+          text: t('settings.diagnosticResetYes'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -91,10 +93,10 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
                 headers: { 'x-admin-secret': '' },
               });
               if (error) throw error;
-              Alert.alert('Successo', 'Tutti gli utenti di test sono stati rimossi.');
+              Alert.alert(t('common.done'), t('settings.diagnosticResetSuccess'));
             } catch (error: unknown) {
               LoggingService.error('DiagnosticPanel', 'Errore durante il reset degli utenti:', error);
-              Alert.alert('Errore', `Impossibile resettare gli utenti: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
+              Alert.alert(t('common.error'), t('settings.diagnosticResetFailed'));
             }
           },
         },
@@ -112,9 +114,9 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
   return (
     <View style={styles.container} testID="diagnostic-panel">
       <View style={styles.header}>
-        <Text style={styles.headerText}>Pannello Diagnostico</Text>
+        <Text style={styles.headerText}>{t('settings.diagnosticTitle')}</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeButtonText}>Chiudi</Text>
+          <Text style={styles.closeButtonText}>{t('common.close')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -148,34 +150,34 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
         />
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Manutenzione Sistema</Text>
+          <Text style={styles.sectionTitle}>{t('settings.diagnosticMaintenance')}</Text>
           <TouchableOpacity 
             style={[styles.logButton, styles.clearButton]} 
             onPress={handleResetTestUsers}
             testID="reset-test-users-button"
           >
-            <Text style={[styles.logButtonText, styles.clearButtonText]}>Reset Test Users</Text>
+            <Text style={[styles.logButtonText, styles.clearButtonText]}>{t('settings.diagnosticResetUsers')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Log Viewer Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Log dell'App</Text>
+          <Text style={styles.sectionTitle}>{t('settings.diagnosticLogs')}</Text>
           <View style={styles.logControls}>
             <TouchableOpacity style={styles.logButton} onPress={loadLogs} disabled={loadingLogs}>
-              <Text style={styles.logButtonText}>{loadingLogs ? 'Caricamento...' : 'Aggiorna Log'}</Text>
+              <Text style={styles.logButtonText}>{loadingLogs ? t('settings.loading') : t('settings.diagnosticRefreshLogs')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.logButton} onPress={handleCopyLogs}>
-              <Text style={styles.logButtonText}>Copia Log</Text>
+              <Text style={styles.logButtonText}>{t('settings.diagnosticCopyLogs')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.logButton, styles.clearButton]} onPress={handleClearLogs}>
-              <Text style={[styles.logButtonText, styles.clearButtonText]}>Cancella Log</Text>
+              <Text style={[styles.logButtonText, styles.clearButtonText]}>{t('settings.diagnosticClearLogs')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.logContainer}>
             <TextInput
               style={styles.logText}
-              value={truncateLogs(logs) || 'Nessun log disponibile'}
+              value={truncateLogs(logs) || t('settings.diagnosticNoLogs')}
               multiline
               editable={false}
               numberOfLines={0}
@@ -185,9 +187,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({ onClose }) => 
         </View>
 
         <Text style={styles.infoText}>
-          Questi test verificano il corretto funzionamento del sistema MyFrigo, inclusi autenticazione, inserimento prodotti,
-          connettività database, performance API, integrità dati, cache, sessioni utente e salute generale del sistema.
-          I risultati dei test saranno visualizzati tramite alert e registrati nei log dell'applicazione per analisi dettagliate.
+          {t('settings.diagnosticInfo')}
         </Text>
       </ScrollView>
     </View>

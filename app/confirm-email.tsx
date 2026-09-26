@@ -17,22 +17,24 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
 export default function ConfirmEmailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email?: string }>();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<'confirmEmailCodeRequired' | 'confirmEmailCodeInvalid' | null>(null);
 
   const handleVerifyOtp = async () => {
     if (!email || !otp) {
-      setError('Per favore, inserisci il codice di verifica.');
+      setError('confirmEmailCodeRequired');
       return;
     }
 
@@ -54,11 +56,11 @@ export default function ConfirmEmailScreen() {
 
       LoggingService.info('ConfirmEmailOTP', 'OTP verification successful', { user: data.user });
       Alert.alert(
-        'Registrazione Completata!',
-        'La tua email è stata verificata con successo. Sarai reindirizzato alla dashboard.',
+        t('auth.confirmEmailSuccessTitle'),
+        t('auth.confirmEmailSuccessMessage'),
         [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => {
               router.replace('/');
             },
@@ -66,8 +68,7 @@ export default function ConfirmEmailScreen() {
         ]
       );
     } catch (e: unknown) {
-      const errorMessage = (e instanceof Error) ? e.message : 'Codice OTP non valido o scaduto.';
-      setError(errorMessage);
+      setError('confirmEmailCodeInvalid');
       LoggingService.error('ConfirmEmailOTP', 'An exception occurred during OTP verification', e);
     } finally {
       setLoading(false);
@@ -76,23 +77,21 @@ export default function ConfirmEmailScreen() {
 
   const handleResendOtp = async () => {
     if (!email) {
-      Alert.alert('Errore', 'Indirizzo email non trovato. Torna alla registrazione.');
+      Alert.alert(t('common.error'), t('auth.confirmEmailMissingAddress'));
       return;
     }
 
     setLoading(true);
-    const { error: resendError } = await supabase.auth.resend({
-      type: 'signup',
-      email: email,
-    });
-    setLoading(false);
-
-    if (resendError) {
-      Alert.alert('Errore', 'Impossibile inviare un nuovo codice. Riprova più tardi.');
-      LoggingService.error('ConfirmEmailOTP', 'Failed to resend OTP', resendError);
-    } else {
-      Alert.alert('Inviato!', 'Un nuovo codice di verifica è stato inviato alla tua email.');
+    try {
+      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email });
+      if (resendError) throw resendError;
+      Alert.alert(t('auth.confirmEmailResentTitle'), t('auth.confirmEmailResentMessage'));
       LoggingService.info('ConfirmEmailOTP', 'Resent OTP successfully', { email });
+    } catch (resendError) {
+      Alert.alert(t('common.error'), t('auth.confirmEmailResendFailed'));
+      LoggingService.error('ConfirmEmailOTP', 'Failed to resend OTP', resendError);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -100,10 +99,9 @@ export default function ConfirmEmailScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.content}>
-        <Text style={styles.title}>Verifica la tua Email</Text>
+        <Text style={styles.title}>{t('auth.confirmEmailTitle')}</Text>
         <Text style={styles.subtitle}>
-          Abbiamo inviato un codice di 6 cifre a <Text style={styles.emailText}>{email}</Text>.
-          Inseriscilo qui sotto per continuare.
+          {t('auth.confirmEmailSubtitle', { email })}
         </Text>
 
         <TextInput
@@ -116,25 +114,25 @@ export default function ConfirmEmailScreen() {
           editable={!loading}
         />
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && <Text style={styles.errorText}>{t(`auth.${error}`)}</Text>}
 
         <TouchableOpacity
           style={[styles.button, (loading || otp.length < 6) && styles.buttonDisabled]}
           onPress={handleVerifyOtp}
           disabled={loading || otp.length < 6}
           accessibilityRole="button"
-          accessibilityLabel="Verifica e Accedi"
+          accessibilityLabel={t('auth.confirmEmailVerify')}
           accessibilityState={{ disabled: loading || otp.length < 6 }}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Verifica e Accedi</Text>
+            <Text style={styles.buttonText}>{t('auth.confirmEmailVerify')}</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.resendButton} onPress={handleResendOtp} disabled={loading} accessibilityRole="button" accessibilityLabel="Invia di nuovo il codice" accessibilityState={{ disabled: loading }}>
-          <Text style={styles.resendButtonText}>Invia di nuovo il codice</Text>
+        <TouchableOpacity style={styles.resendButton} onPress={handleResendOtp} disabled={loading} accessibilityRole="button" accessibilityLabel={t('auth.confirmEmailResend')} accessibilityState={{ disabled: loading }}>
+          <Text style={styles.resendButtonText}>{t('auth.confirmEmailResend')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -1,10 +1,16 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
 import { ModalHeader } from '../ModalHeader';
 
 // Mock dependencies
 jest.mock('@/utils/scaleFont', () => ({
   scaleFont: (size: number) => size,
+}));
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
 }));
 
 describe('ModalHeader', () => {
@@ -16,6 +22,7 @@ describe('ModalHeader', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    initI18n();
   });
 
   it('should render with required props', () => {
@@ -38,7 +45,7 @@ describe('ModalHeader', () => {
       <ModalHeader {...defaultProps} onClose={onCloseMock} />
     );
     
-    const closeButton = getByLabelText('Chiudi modal');
+    const closeButton = getByLabelText(itCatalogs.common.closeModalLabel);
     fireEvent.press(closeButton);
     
     expect(onCloseMock).toHaveBeenCalledTimes(1);
@@ -47,19 +54,19 @@ describe('ModalHeader', () => {
   it('should have accessibility label for close button', () => {
     const { getByLabelText } = render(<ModalHeader {...defaultProps} />);
     
-    expect(getByLabelText('Chiudi modal')).toBeTruthy();
+    expect(getByLabelText(itCatalogs.common.closeModalLabel)).toBeTruthy();
   });
 
   it('should have accessibility hint for close button', () => {
     const { getByAccessibilityHint } = render(<ModalHeader {...defaultProps} />);
     
-    expect(getByAccessibilityHint('Tocca per chiudere')).toBeTruthy();
+    expect(getByAccessibilityHint(itCatalogs.common.tapToCloseHint)).toBeTruthy();
   });
 
   it('should have accessibility role for close button', () => {
     const { getByLabelText } = render(<ModalHeader {...defaultProps} />);
     
-    const closeButton = getByLabelText('Chiudi modal');
+    const closeButton = getByLabelText(itCatalogs.common.closeModalLabel);
     expect(closeButton).toBeTruthy();
     expect(closeButton.props.accessibilityRole).toBe('button');
   });
@@ -109,7 +116,7 @@ describe('ModalHeader', () => {
       <ModalHeader {...defaultProps} onClose={onCloseMock} />
     );
     
-    const closeButton = getByLabelText('Chiudi modal');
+    const closeButton = getByLabelText(itCatalogs.common.closeModalLabel);
     fireEvent.press(closeButton);
     fireEvent.press(closeButton);
     fireEvent.press(closeButton);

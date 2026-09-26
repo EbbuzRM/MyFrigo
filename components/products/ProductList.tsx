@@ -14,6 +14,7 @@ import { Product, ProductCategory } from '@/types/Product';
 import { ProductCard } from '@/components/ProductCard';
 import { useTheme } from '@/context/ThemeContext';
 import { EmptyProductState } from './EmptyProductState';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Props for ProductList component
@@ -61,6 +62,7 @@ export function ProductList({
   testID = "products-list",
 }: ProductListProps): React.ReactElement {
   const { isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const styles = getStyles(isDarkMode);
 
   /**
@@ -116,11 +118,11 @@ export function ProductList({
           refreshing={refreshing}
           onRefresh={onRefresh}
           tintColor={isDarkMode ? '#c9d1d9' : '#64748B'}
-          accessibilityLabel="Aggiorna lista prodotti"
+          accessibilityLabel={t('accessibility.refreshProductsListLabel')}
         />
       }
       accessibilityRole="list"
-      accessibilityLabel="Lista dei prodotti"
+      accessibilityLabel={t('accessibility.productsListLabel')}
     />
   );
 }

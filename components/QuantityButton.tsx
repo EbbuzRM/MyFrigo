@@ -9,6 +9,7 @@
 // message: 
 
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, StyleSheet } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { useTheme } from '@/context/ThemeContext';
@@ -26,6 +27,7 @@ export const QuantityButton = React.memo(({
   onPress,
   disabled = false,
 }: QuantityButtonProps) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -40,7 +42,7 @@ export const QuantityButton = React.memo(({
       style={[styles.button, disabled && styles.disabled]}
       accessible={true}
       accessibilityRole="button"
-      accessibilityLabel={operation === 'increment' ? 'Aumenta quantità' : 'Diminuisci quantità'}
+      accessibilityLabel={t(operation === 'increment' ? 'products.quantityIncrease' : 'products.quantityDecrease')}
       accessibilityState={{ disabled }}
       disabled={disabled}
     >

@@ -20,6 +20,7 @@ import { useHistoryData } from '@/hooks/useHistoryData';
 import { calculateHistoryData } from '@/utils/historyCalculations';
 import { useTheme } from '@/context/ThemeContext';
 import { LoggingService } from '@/services/LoggingService';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Componente History - Visualizza la cronologia dei prodotti consumati e scaduti
@@ -27,6 +28,7 @@ import { LoggingService } from '@/services/LoggingService';
  */
 const History = () => {
   const { isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const { 
     allHistory, 
     loading, 
@@ -62,9 +64,9 @@ const History = () => {
     loadData(true);
   }, [loadData, setRefreshing]);
 
-  const { stats, suggestions } = useMemo(() => 
-    calculateHistoryData(allHistory), 
-  [allHistory]);
+  const { stats, suggestions } = useMemo(() =>
+    calculateHistoryData(allHistory, t),
+  [allHistory, t]);
 
   if (loading) {
     return (
@@ -77,7 +79,11 @@ const History = () => {
   if (error) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#0d1117' : '#f8f9fa' }]}>
-        <HistoryErrorState isDarkMode={isDarkMode} error={error} onRetry={() => loadData(true)} />
+        <HistoryErrorState
+          isDarkMode={isDarkMode}
+          error={t(error === 'loadTimeout' ? 'history.loadTimeoutError' : 'history.dataLoadError')}
+          onRetry={() => loadData(true)}
+        />
       </SafeAreaView>
     );
   }

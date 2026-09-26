@@ -10,6 +10,7 @@
 
 import React, { useCallback } from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, AccessibilityProps } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { getStyles } from './ProductFormFooter.styles';
 
 interface FormActionButtonsProps extends AccessibilityProps {
@@ -21,6 +22,7 @@ interface FormActionButtonsProps extends AccessibilityProps {
 
 export const FormActionButtons: React.FC<FormActionButtonsProps> = React.memo(
   ({ onSave, isEditMode, isLoading, isDarkMode, accessible = true, accessibilityLabel }) => {
+    const { t } = useTranslation();
     const styles = getStyles(isDarkMode);
 
     const handleSave = useCallback(() => {
@@ -29,7 +31,8 @@ export const FormActionButtons: React.FC<FormActionButtonsProps> = React.memo(
       }
     }, [onSave, isLoading]);
 
-    const buttonText = isEditMode ? 'Aggiorna Prodotto' : 'Salva Prodotto';
+    const buttonText = isEditMode ? t('common.updateProduct') : t('common.saveProduct');
+    const buttonHint = isEditMode ? t('common.updateProductHint') : t('common.saveProductHint');
 
     return (
       <TouchableOpacity
@@ -41,7 +44,7 @@ export const FormActionButtons: React.FC<FormActionButtonsProps> = React.memo(
         accessibilityLabel={accessibilityLabel || buttonText}
         accessibilityRole="button"
         accessibilityState={{ disabled: isLoading }}
-        accessibilityHint={isEditMode ? 'Updates the existing product' : 'Saves the new product'}
+        accessibilityHint={buttonHint}
       >
         {isLoading ? (
           <ActivityIndicator color="#ffffff" accessible={false} />

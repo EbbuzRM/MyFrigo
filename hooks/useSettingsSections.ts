@@ -9,6 +9,7 @@
 // message: 
 
 import { useMemo, useCallback, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -93,6 +94,7 @@ export interface UseSettingsSectionsReturn {
  * @returns Complete settings state and handlers
  */
 export function useSettingsSections(): UseSettingsSectionsReturn {
+  const { t, i18n } = useTranslation();
   const { isDarkMode, setAppTheme } = useTheme();
   const { settings, updateSettings } = useAppSettings();
   const {
@@ -105,7 +107,7 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
   } = useUpdate();
 
   // Generate sections based on current theme
-  const sections = useMemo(() => getSettingsSections(isDarkMode), [isDarkMode]);
+  const sections = useMemo(() => getSettingsSections(isDarkMode), [isDarkMode, i18n.language]);
 
   // Notification days state (managed here for modal)
   const [modalVisible, setModalVisible] = useState(false);
@@ -159,50 +161,49 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
   const handleSaveNotificationDays = useCallback(async () => {
     const days = parseInt(daysInput, 10);
     if (isNaN(days) || days < 1 || days > 30) {
-      showToast('Inserisci un numero di giorni valido (1-30).', 'error');
+      showToast(t('settings.invalidDays'), 'error');
       return;
     }
 
     try {
       setIsSaving(true);
       await updateSettings({ notificationDays: days });
-      showToast(`Giorni di preavviso impostati a ${days}.`);
+      showToast(t('settings.daysSaved', { count: days }));
       setModalVisible(false);
     } catch (error) {
       LoggingService.error('Settings', 'Errore durante il salvataggio delle impostazioni:', error);
-      showToast('Errore durante il salvataggio.', 'error');
+      showToast(t('settings.saveFailed'), 'error');
     } finally {
       setIsSaving(false);
     }
-  }, [daysInput, updateSettings, showToast]);
+  }, [daysInput, updateSettings, showToast, t]);
 
   /**
    * Handle clear data action with confirmation
    */
   const handleClearData = useCallback(() => {
     Alert.alert(
-      'Conferma Eliminazione',
-      'Sei sicuro di voler eliminare tutti i dati? Questa azione è irreversibile.',
+      t('settings.clearConfirmTitle'),
+      t('settings.clearConfirmMessage'),
       [
-        { text: 'Annulla', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Elimina',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               Alert.alert(
-                'Funzionalità temporaneamente non disponibile',
-                'La cancellazione di tutti i dati sarà disponibile nei prossimi aggiornamenti.'
+                t('settings.clearUnavailableTitle'),
+                t('settings.clearUnavailableMessage')
               );
-              showToast('Tutti i dati sono stati eliminati.');
             } catch {
-              showToast('Impossibile eliminare i dati.', 'error');
+              showToast(t('settings.saveFailed'), 'error');
             }
           },
         },
       ]
     );
-  }, [showToast]);
+  }, [showToast, t]);
 
   /**
    * Handle card press by ID
@@ -270,15 +271,15 @@ export function useSettingsSections(): UseSettingsSectionsReturn {
       const updateInfo = await checkForUpdates();
 
       if (updateInfo.isAvailable) {
-        showToast(`Aggiornamento disponibile: v${updateInfo.availableVersion}`, 'success');
+        showToast(t('settings.updateAvailable', { version: updateInfo.availableVersion }), 'success');
       } else {
-        showToast("L'app è aggiornata all'ultima versione", 'success');
+        showToast(t('settings.upToDate'), 'success');
       }
     } catch (error) {
       LoggingService.error('Settings', 'Errore durante controllo aggiornamenti:', error);
-      showToast('Errore durante il controllo aggiornamenti', 'error');
+      showToast(t('settings.updateCheckFailed'), 'error');
     }
-  }, [checkForUpdates, showToast]);
+  }, [checkForUpdates, showToast, t]);
 
   return {
     sections,

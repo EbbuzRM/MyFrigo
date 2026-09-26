@@ -21,6 +21,7 @@ export default tseslint.config(
       "ios/**",
       "build/**",
       "dist/**",
+      "coverage/**",
       "*.min.js",
       "EXDevMenuApp.android.js"
     ]

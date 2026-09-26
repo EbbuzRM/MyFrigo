@@ -10,10 +10,12 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Alert, Platform, BackHandler } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { LoggingService } from '@/services/LoggingService';
-import { AuthService, AuthResult } from '@/services/AuthService';
+import { AuthService, AuthResult, AUTH_ERROR_CODES } from '@/services/AuthService';
+import { translateAuthError } from '@/utils/authErrorI18n';
 import { authLogger } from '@/utils/AuthLogger';
 import { createGoogleAuthRetryManager } from '@/utils/GoogleAuthRetryManager';
 import { GoogleAuthStorage, AuthAttemptRepository } from '@/utils/GoogleAuthStorage';
@@ -25,6 +27,7 @@ import { useGoogleAuthFeedback } from '@/components/GoogleAuthFeedback';
  * Hook per la gestione dell'autenticazione Google
  */
 export const useGoogleAuth = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [googleRetryInProgress, setGoogleRetryInProgress] = useState(false);
   const [retryAttemptNumber, setRetryAttemptNumber] = useState(0);
@@ -88,7 +91,9 @@ export const useGoogleAuth = () => {
           googleServicePlistPath: ''
         });
       } catch {
-        setConfigError('Errore di configurazione Google Sign-In');
+        // Stable code (never a user-facing string): login.tsx maps it to the
+        // `auth.errors_googleConfigError` catalog text at the UI boundary.
+        setConfigError(AUTH_ERROR_CODES.GOOGLE_CONFIG_ERROR);
       }
     };
 
@@ -152,8 +157,8 @@ if (retryResult.shouldRetry) {
 
       if (Platform.OS !== 'android') {
         authLogger.errorStep('GOOGLE_LOGIN_VALIDATION', new Error('Piattaforma non supportata'));
-        Alert.alert('Supporto Piattaforma', 'Il login con Google è attualmente supportato solo su Android.');
-        return { success: false, error: 'Piattaforma non supportata' };
+        Alert.alert(t('auth.platformUnsupportedTitle'), t('auth.errors_platformUnsupported'));
+        return { success: false, error: AUTH_ERROR_CODES.GOOGLE_FAILED };
       }
 
       if (!isRetry) {
@@ -184,7 +189,7 @@ if (retryResult.shouldRetry) {
       }
 
       if (!idToken) {
-        const error = new Error('Impossibile ottenere il token da Google');
+        const error = new Error(AUTH_ERROR_CODES.GOOGLE_FAILED);
         authLogger.errorStep('GOOGLE_SIGNIN_TOKEN', error);
         throw error;
       }
@@ -206,15 +211,16 @@ if (retryResult.shouldRetry) {
 
         LoggingService.info('useGoogleAuth', 'Google login successful', { isRetry });
       } else {
-        // Gestione errori specifici
-        if (authResult.error?.includes('RN GoogleSignin native module is not correctly linked')) {
+        // authResult.error is a stable code: a native-module misconfiguration
+        // surfaces via the thrown error path below, not via AuthService.
+        if (authResult.error === AUTH_ERROR_CODES.GOOGLE_CONFIG_ERROR) {
           return AuthService.handleGoogleSignInConfigurationError();
         }
 
         if (!isRetry) {
           Alert.alert(
-            'Errore di Autenticazione',
-            authResult.error || 'Errore sconosciuto'
+            t('auth.loginErrorTitle'),
+            translateAuthError(t, authResult.error, authResult.errorParams)
           );
         }
         setGoogleRetryInProgress(false);
@@ -224,14 +230,14 @@ if (retryResult.shouldRetry) {
       return authResult;
 
     } catch (error) {
-      const errorMessage = error instanceof Error
+      const rawMessage = error instanceof Error
         ? error.message
-        : 'Errore sconosciuto';
+        : '';
       LoggingService.error('useGoogleAuth', 'Google login failed', error);
 
       // Gestione errore configurazione
       if (
-        errorMessage.includes(
+        rawMessage.includes(
           'RN GoogleSignin native module is not correctly linked'
         )
       ) {
@@ -239,20 +245,20 @@ if (retryResult.shouldRetry) {
       }
 
       if (!isRetry) {
-        Alert.alert('Errore di Autenticazione', errorMessage);
+        Alert.alert(t('auth.loginErrorTitle'), t('auth.errors_googleLoginFailed'));
       }
       setGoogleRetryInProgress(false);
       setRetryAttemptNumber(0);
       return {
         success: false,
-        error: errorMessage
+        error: AUTH_ERROR_CODES.GOOGLE_FAILED
       };
     } finally {
       if (!isRetry) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   const clearErrors = useCallback(() => {
     setConfigError(null);

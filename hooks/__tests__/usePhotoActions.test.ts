@@ -6,8 +6,25 @@
 
 import { renderHook, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { usePhotoActions } from '../usePhotoActions';
+import { ProductStorage } from '@/services/ProductStorage';
+import { createErrorResult } from '@/types/ServiceResult';
+
+jest.mock('expo-router', () => ({
+  router: {
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+  },
+  useLocalSearchParams: jest.fn(),
+}));
+
+jest.mock('@/services/ProductStorage', () => ({
+  ProductStorage: {
+    updateProductImage: jest.fn(),
+  },
+}));
 
 // Override global LoggingService mock to include `warning` method
 jest.mock('@/services/LoggingService', () => ({
@@ -54,6 +71,8 @@ jest.mock('@/context/ManualEntryContext', () => ({
 }));
 
 const { usePhotoOCR } = require('../usePhotoOCR');
+const mockUseLocalSearchParams = useLocalSearchParams as jest.Mock;
+const mockProductStorage = ProductStorage as jest.Mocked<typeof ProductStorage>;
 
 describe('usePhotoActions', () => {
   const mockExtractOCRDate = jest.fn();
@@ -66,6 +85,7 @@ describe('usePhotoActions', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseLocalSearchParams.mockReturnValue({});
 
     // Default mock for usePhotoOCR
     (usePhotoOCR as jest.Mock).mockReturnValue({
@@ -138,6 +158,30 @@ describe('usePhotoActions', () => {
       expect(Alert.alert).toHaveBeenCalledWith(
         'Errore',
         expect.stringContaining('ID prodotto'),
+        expect.any(Array)
+      );
+    });
+
+    it('should show an error instead of success when image update returns a failure', async () => {
+      mockUseLocalSearchParams.mockReturnValue({ productId: 'product-1' });
+      mockProductStorage.updateProductImage.mockResolvedValue(
+        createErrorResult('Image update failed')
+      );
+
+      const { result } = renderHook(() => usePhotoActions());
+
+      await act(async () => {
+        await result.current.confirmPhoto(capturedImage, 'updateProductPhoto');
+      });
+
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Errore',
+        expect.stringContaining('errore'),
+        expect.any(Array)
+      );
+      expect(Alert.alert).not.toHaveBeenCalledWith(
+        'Foto Aggiornata',
+        expect.any(String),
         expect.any(Array)
       );
     });

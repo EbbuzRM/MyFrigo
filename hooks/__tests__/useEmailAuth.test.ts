@@ -23,6 +23,16 @@ jest.mock('@/services/AuthService', () => ({
   AuthService: {
     signInWithEmail: jest.fn(),
   },
+  AUTH_ERROR_CODES: {
+    INVALID_EMAIL_FORMAT: 'invalid_email_format',
+    MISSING_CREDENTIALS: 'missing_credentials',
+    RATE_LIMITED: 'rate_limited',
+    INVALID_CREDENTIALS: 'invalid_credentials',
+    EMAIL_NOT_CONFIRMED: 'email_not_confirmed',
+    LOGIN_FAILED: 'login_failed',
+    GOOGLE_FAILED: 'google_failed',
+    GOOGLE_CONFIG_ERROR: 'google_config_error',
+  },
   getRateLimitStatus: jest.fn(() => Promise.resolve({ allowed: true, attemptsLeft: 5, remainingMs: 0, attempts: 0 })),
   getOtpRateLimitStatus: jest.fn(() => Promise.resolve({ allowed: true, attemptsLeft: 5, remainingMs: 0, attempts: 0 })),
   checkOtpRateLimit: jest.fn(() => Promise.resolve({ allowed: true, attemptsLeft: 5 })),
@@ -111,7 +121,7 @@ describe('useEmailAuth', () => {
     it('should handle login failure', async () => {
       mockedSignInWithEmail.mockResolvedValueOnce({
         success: false,
-        error: 'Credenziali non valide',
+        error: 'invalid_credentials',
       });
 
       const { result } = renderHook(() => useEmailAuth());
@@ -126,7 +136,8 @@ describe('useEmailAuth', () => {
       });
 
       expect(loginResult!.success).toBe(false);
-      expect(result.current.error).toBe('Credenziali non valide');
+      // The hook stores the stable code; the screen translates it at the boundary.
+      expect(result.current.error).toBe('invalid_credentials');
     });
 
     it('should handle network error during login', async () => {
@@ -144,8 +155,9 @@ describe('useEmailAuth', () => {
       });
 
       expect(loginResult!.success).toBe(false);
-      expect(loginResult!.error).toBe('Network error');
-      expect(result.current.error).toBe('Network error');
+      // Provider/transport messages never surface: generic login code instead.
+      expect(loginResult!.error).toBe('login_failed');
+      expect(result.current.error).toBe('login_failed');
     });
 
     it('should handle unknown error during login', async () => {
@@ -163,7 +175,33 @@ describe('useEmailAuth', () => {
       });
 
       expect(loginResult!.success).toBe(false);
-      expect(loginResult!.error).toBe('Errore sconosciuto');
+      expect(loginResult!.error).toBe('login_failed');
+    });
+
+    it('should return the rate_limited code with count params when pre-check is blocked', async () => {
+      const { result } = renderHook(() => useEmailAuth());
+
+      act(() => {
+        result.current.setEmail(testEmail);
+      });
+
+      // Let the email-change effect settle, then simulate a persisted block.
+      await act(async () => {
+        await Promise.resolve();
+      });
+      mockedGetRateLimitStatus.mockResolvedValue({ allowed: false, remainingMs: 120000, attemptsLeft: 0, attempts: 5 });
+
+      let loginResult;
+      await act(async () => {
+        loginResult = await result.current.handleLogin(testPassword);
+      });
+
+      expect(loginResult!.success).toBe(false);
+      expect(loginResult!.error).toBe('rate_limited');
+      expect(loginResult!.errorParams).toEqual({ count: 2 });
+      expect(result.current.error).toBe('rate_limited');
+      expect(result.current.errorParams).toEqual({ count: 2 });
+      expect(mockedSignInWithEmail).not.toHaveBeenCalled();
     });
 
     it('should set loading state during login', async () => {
@@ -203,7 +241,7 @@ describe('useEmailAuth', () => {
     it('should clear the error state', async () => {
       mockedSignInWithEmail.mockResolvedValueOnce({
         success: false,
-        error: 'Some error',
+        error: 'invalid_credentials',
       });
 
       const { result } = renderHook(() => useEmailAuth());
@@ -217,7 +255,7 @@ describe('useEmailAuth', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.error).toBe('Some error');
+        expect(result.current.error).toBe('invalid_credentials');
       });
 
       act(() => {
@@ -225,6 +263,7 @@ describe('useEmailAuth', () => {
       });
 
       expect(result.current.error).toBeNull();
+      expect(result.current.errorParams).toBeUndefined();
     });
   });
 });

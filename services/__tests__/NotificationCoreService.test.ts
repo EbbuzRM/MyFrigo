@@ -25,6 +25,7 @@ jest.mock('../LoggingService', () => ({
   LoggingService: {
     info: jest.fn(),
     error: jest.fn(),
+    warning: jest.fn(),
   },
 }));
 
@@ -40,16 +41,17 @@ describe('NotificationCoreService', () => {
     require('react-native').Platform.OS = 'ios';
   });
 
-  describe('scheduleTestNotification()', () => {
-    it('should not do anything on web platform', async () => {
+  describe('checkNotificationReadiness()', () => {
+    it('reports unavailable on web without querying permission', async () => {
       // Arrange
       const { Platform } = require('react-native');
       Platform.OS = 'web';
 
       // Act
-      await NotificationCoreService.scheduleTestNotification();
+      const result = await NotificationCoreService.checkNotificationReadiness();
 
       // Assert
+      expect(result).toBe(false);
       expect(require('react-native-onesignal').OneSignal.Notifications.getPermissionAsync).not.toHaveBeenCalled();
       expect(LoggingService.info).not.toHaveBeenCalled();
       expect(LoggingService.error).not.toHaveBeenCalled();
@@ -58,34 +60,36 @@ describe('NotificationCoreService', () => {
       Platform.OS = 'ios';
     });
 
-    it('should log error when permission is not granted', async () => {
+    it('reports unavailable when permission is not granted', async () => {
       // Arrange
       require('react-native-onesignal').OneSignal.Notifications.getPermissionAsync.mockResolvedValue(false);
 
       // Act
-      await NotificationCoreService.scheduleTestNotification();
+      const result = await NotificationCoreService.checkNotificationReadiness();
 
       // Assert
       expect(require('react-native-onesignal').OneSignal.Notifications.getPermissionAsync).toHaveBeenCalledTimes(1);
-      expect(LoggingService.error).toHaveBeenCalledWith(
+      expect(result).toBe(false);
+      expect(LoggingService.warning).toHaveBeenCalledWith(
         'NotificationCoreService',
-        'Cannot schedule test: permission not granted'
+        'Notification permission not granted'
       );
       expect(LoggingService.info).not.toHaveBeenCalled();
     });
 
-    it('should log info when permission is granted', async () => {
+    it('reports ready without sending a notification', async () => {
       // Arrange
       require('react-native-onesignal').OneSignal.Notifications.getPermissionAsync.mockResolvedValue(true);
 
       // Act
-      await NotificationCoreService.scheduleTestNotification();
+      const result = await NotificationCoreService.checkNotificationReadiness();
 
       // Assert
+      expect(result).toBe(true);
       expect(require('react-native-onesignal').OneSignal.Notifications.getPermissionAsync).toHaveBeenCalledTimes(1);
       expect(LoggingService.info).toHaveBeenCalledWith(
         'NotificationCoreService',
-        'OneSignal permission check OK for test notification'
+        'OneSignal notification permission granted'
       );
       expect(LoggingService.error).not.toHaveBeenCalled();
     });

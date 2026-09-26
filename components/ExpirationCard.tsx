@@ -11,11 +11,12 @@ import { View, TouchableOpacity } from 'react-native';
 import { Product } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
 import { useCategories } from '@/context/CategoryContext';
-import { useExpirationStatus } from '@/hooks/useExpirationStatus';
+import { getExpirationStatusLabel, useExpirationStatus } from '@/hooks/useExpirationStatus';
 import { getExpirationCardAccessibilityProps } from '@/utils/accessibility';
 import { ExpirationCardHeader } from './ExpirationCardHeader';
 import { ExpirationCardDetails } from './ExpirationCardDetails';
 import { getExpirationCardStyles, getExpirationCardColors } from './ExpirationCard.styles';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Props for the ExpirationCard component
@@ -42,10 +43,12 @@ interface ExpirationCardProps {
  */
 export const ExpirationCard = React.memo(({ product, onPress }: ExpirationCardProps) => {
   const { isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const colors = useMemo(() => getExpirationCardColors(isDarkMode), [isDarkMode]);
   const styles = useMemo(() => getExpirationCardStyles(isDarkMode, colors), [isDarkMode, colors]);
   const { getCategoryById } = useCategories();
   const expirationInfo = useExpirationStatus(product.expirationDate, isDarkMode);
+  const statusText = getExpirationStatusLabel(expirationInfo, t);
   
   const categoryInfo = useMemo(
     () => getCategoryById(product.category),
@@ -65,7 +68,7 @@ export const ExpirationCard = React.memo(({ product, onPress }: ExpirationCardPr
       style={styles.card}
       onPress={handlePress}
       activeOpacity={0.7}
-      {...getExpirationCardAccessibilityProps(product, expirationInfo)}
+      {...getExpirationCardAccessibilityProps(product, { text: statusText }, t)}
     >
       <View style={styles.content}>
         <ExpirationCardHeader
@@ -73,7 +76,7 @@ export const ExpirationCard = React.memo(({ product, onPress }: ExpirationCardPr
           categoryInfo={categoryInfo}
           statusBackgroundColor={expirationInfo.backgroundColor}
           statusTextColor={expirationInfo.color}
-          statusText={expirationInfo.text}
+          statusText={statusText}
           isDarkMode={isDarkMode}
         />
         <ExpirationCardDetails

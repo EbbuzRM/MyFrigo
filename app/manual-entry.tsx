@@ -30,6 +30,9 @@ import ProductFormFooter from '@/components/ProductFormFooter';
 import { ProductCategory } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
 import { recentProductQueue } from '@/utils/recentProductQueue';
+import { useTranslation } from 'react-i18next';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { getCategoryLabel } from '@/utils/categoryLabels';
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: {
@@ -172,6 +175,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
 });
 
 export default function ManualEntryScreen() {
+  const { t } = useTranslation();
+  const language = useAppLanguage();
   const { isDarkMode } = useTheme();
   const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
 
@@ -229,7 +234,7 @@ export default function ManualEntryScreen() {
     return (
       <TouchableOpacity
         testID={`category-item-${item.id}`}
-        accessibilityLabel="Seleziona categoria"
+        accessibilityLabel={t('categories.selectCategoryNamed', { name: getCategoryLabel(item, language) })}
         accessibilityRole="button"
         style={[
           styles.categoryItem,
@@ -252,11 +257,11 @@ export default function ManualEntryScreen() {
           style={[styles.categoryName, !hasIcon && styles.categoryNameNoIcon]}
           numberOfLines={2}
         >
-          {item.name}
+          {getCategoryLabel(item, language)}
         </Text>
       </TouchableOpacity>
     );
-  }, [selectedCategory, handleCategoryChange, styles]);
+  }, [selectedCategory, handleCategoryChange, styles, language, t]);
 
   if (isLoading || categoriesLoading) {
     LoggingService.info('ManualEntryScreen', `Loading state - isLoading: ${isLoading}, categoriesLoading: ${categoriesLoading}`);
@@ -264,7 +269,7 @@ export default function ManualEntryScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={isDarkMode ? '#ffffff' : '#000000'} />
-          <Text style={styles.loadingText}>Caricamento dati prodotto...</Text>
+          <Text style={styles.loadingText}>{t('products.loadingProductData')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -346,22 +351,22 @@ export default function ManualEntryScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Aggiungi Nuova Categoria</Text>
+            <Text style={styles.modalTitle}>{t('categories.addNewTitle')}</Text>
              <TextInput
                ref={categoryInputRef}
                style={styles.modalInput}
-               placeholder="Nome della nuova categoria"
+               placeholder={t('categories.newNamePlaceholder')}
                value={newCategoryNameInput}
                onChangeText={setNewCategoryNameInput}
                autoFocus
                placeholderTextColor={styles.placeholder.color}
              />
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity accessibilityLabel="Annulla creazione categoria" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setIsCategoryModalVisible(false)}>
-                <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+              <TouchableOpacity accessibilityLabel={t('categories.cancelCreateLabel')} accessibilityRole="button" style={[styles.modalButton, styles.modalButtonCancel]} onPress={() => setIsCategoryModalVisible(false)}>
+                <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity accessibilityLabel="Conferma creazione categoria" accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleAddNewCategory}>
-                <Text style={styles.modalButtonTextConfirm}>OK</Text>
+              <TouchableOpacity accessibilityLabel={t('categories.confirmCreateLabel')} accessibilityRole="button" style={[styles.modalButton, styles.modalButtonConfirm]} onPress={handleAddNewCategory}>
+                <Text style={styles.modalButtonTextConfirm}>{t('common.ok')}</Text>
               </TouchableOpacity>
             </View>
           </View>

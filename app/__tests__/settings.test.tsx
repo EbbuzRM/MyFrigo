@@ -7,6 +7,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import Settings from '../(tabs)/settings';
+import i18next from 'i18next';
 
 // Override SafeAreaView mock to preserve testID
 jest.mock('react-native-safe-area-context', () => {
@@ -283,13 +284,17 @@ const renderSettingsScreen = () => render(<Settings />);
 // --- Test Suite ---
 
 describe('SettingsScreen', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    await i18next.changeLanguage('it');
 
     mockedUseSettings.mockReturnValue({ ...defaultSettingsData });
     mockedUseUpdate.mockReturnValue({ ...defaultUpdateData });
     mockedUseTheme.mockReturnValue({ ...defaultThemeData });
     mockedUseAuth.mockReturnValue({ changePassword: jest.fn() });
+  });
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
   });
 
   // ── Rendering ──────────────────────────────────────────────────────
@@ -307,7 +312,16 @@ describe('SettingsScreen', () => {
 
     it('should render the header subtitle', () => {
       const { getByText } = renderSettingsScreen();
-      expect(getByText(/Personalizza l'app secondo le tue preferenze/)).toBeTruthy();
+      expect(getByText('Personalizza l’app secondo le tue preferenze')).toBeTruthy();
+    });
+
+    it('updates the subtitle when the language changes', async () => {
+      const { getByText } = renderSettingsScreen();
+      expect(getByText('Personalizza l’app secondo le tue preferenze')).toBeTruthy();
+      await act(async () => {
+        await i18next.changeLanguage('en');
+      });
+      expect(getByText('Tailor the app to your preferences')).toBeTruthy();
     });
 
     it('should render AccountSettingsSection', () => {

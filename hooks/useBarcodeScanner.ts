@@ -16,8 +16,10 @@ import { ProductCategory, Product } from '@/types/Product';
 import { LoggingService } from '@/services/LoggingService';
 import { OpenFoodFactsProduct } from '@/types/api';
 import { useBarcodeCache } from './barcode/useBarcodeCache';
-import { useOpenFoodFactsApi } from './barcode/useOpenFoodFactsApi';
+import { ProductNotFoundError, useOpenFoodFactsApi } from './barcode/useOpenFoodFactsApi';
 import { useLocalDatabaseLookup } from './barcode/useLocalDatabaseLookup';
+import { getCurrentLanguage } from '@/i18n';
+import type { SupportedLanguage } from '@/i18n/types';
 
 const MIN_OVERLAP_PERCENTAGE = 0.1;
 const DEBUG_SCANNER = __DEV__;
@@ -65,8 +67,12 @@ const mapOffCategoryToAppCategory = (
   return CategoryMatcher.mapOpenFoodFactsCategories(offCategories, appCategories);
 };
 
-const extractProductName = (product: OpenFoodFactsProduct): string => {
-  return product.product_name || product.product_name_it || product.generic_name_it || product.generic_name || product.abbreviated_product_name || '';
+const extractProductName = (product: OpenFoodFactsProduct, language: SupportedLanguage = 'it'): string => {
+  const activeName = language === 'it' ? product.product_name_it : product.product_name_en;
+  const activeGeneric = language === 'it' ? product.generic_name_it : product.generic_name_en;
+  const otherName = language === 'it' ? product.product_name_en : product.product_name_it;
+  const otherGeneric = language === 'it' ? product.generic_name_en : product.generic_name_it;
+  return activeName || activeGeneric || product.generic_name || otherName || otherGeneric || product.product_name || product.abbreviated_product_name || '';
 };
 
 const extractBrand = (product: OpenFoodFactsProduct): string => {
@@ -74,7 +80,8 @@ const extractBrand = (product: OpenFoodFactsProduct): string => {
 };
 
 const extractImageUrl = (product: OpenFoodFactsProduct): string => {
-  return product.image_front_small_url || product.image_front_url || product.image_url || '';
+  const imageUrl = product.image_front_small_url || product.image_front_url || product.image_url || '';
+  return /^https?:\/\//i.test(imageUrl) ? imageUrl : '';
 };
 
 const isBarcodeInFrame = (
@@ -108,10 +115,13 @@ export function useBarcodeScanner(
   const [scanned, setScanned] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
-  const [loadingProgress, setLoadingProgress] = useState<string>('Inizializzazione...');
+  const [loadingProgress, setLoadingProgress] = useState<string>('initializing');
   const [currentBarcode, setCurrentBarcode] = useState<string | null>(null);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
+  const onProductFoundRef = useRef(onProductFound);
+  onProductFoundRef.current = onProductFound;
 
   const { get: getCache, set: setCache } = useBarcodeCache();
   const { fetchProduct: fetchOFF } = useOpenFoodFactsApi();
@@ -139,12 +149,14 @@ export function useBarcodeScanner(
 
     LoggingService.info('BarcodeScanner', `Scanning barcode: ${data}`);
 
-    const cachedResult = getCache(data);
+    const language = getCurrentLanguage();
+    const cacheKey = `${language}:${data}`;
+    const cachedResult = getCache(cacheKey);
     if (cachedResult) {
       if (DEBUG_SCANNER) {
         LoggingService.debug('BarcodeScanner', `Cache hit for ${data}`);
       }
-      onProductFound(cachedResult, data);
+      onProductFoundRef.current(cachedResult, data);
       return;
     }
 
@@ -156,10 +168,11 @@ export function useBarcodeScanner(
     LoggingService.info('BarcodeScanner', '✅ Barcode valido e nel frame, procedo...');
 
     setScanned(true);
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setLoadingError(null);
     setCurrentBarcode(data);
-    setLoadingProgress('Inizializzazione scansione...');
+    setLoadingProgress('initializing');
 
     let paramsForManualEntry: Partial<Product> & { barcodeType?: string; addedMethod?: string } = {
       barcode: data,
@@ -168,22 +181,30 @@ export function useBarcodeScanner(
     };
 
     try {
-      setLoadingProgress('Ricerca velocissima in corso...');
+      setLoadingProgress('searching');
 
       const [supabaseResult, offResult] = await Promise.allSettled([
         fetchSupabase(data),
         fetchOFF(data)
       ]);
+      if (requestId !== requestIdRef.current) return;
+      const deliveryLanguage = getCurrentLanguage();
+      const deliveryCacheKey = `${deliveryLanguage}:${data}`;
 
       const totalTime = Date.now() - startTime;
 
       if (supabaseResult.status === 'fulfilled' && supabaseResult.value) {
+        const offProduct = offResult.status === 'fulfilled' ? offResult.value : null;
+        const offImageUrl = offProduct && typeof offProduct === 'object'
+          ? extractImageUrl(offProduct)
+          : '';
+
         paramsForManualEntry = {
           ...paramsForManualEntry,
           name: supabaseResult.value.name || '',
           brand: supabaseResult.value.brand || '',
           category: supabaseResult.value.category || '',
-          imageUrl: supabaseResult.value.imageUrl || '',
+          imageUrl: offImageUrl || supabaseResult.value.imageUrl || '',
         };
 
         const result: ScanResult = {
@@ -192,10 +213,10 @@ export function useBarcodeScanner(
           params: paramsForManualEntry
         };
 
-        setCache(data, result);
+        setCache(deliveryCacheKey, result);
         LoggingService.info('BarcodeScanner', `Found template: ${supabaseResult.value.name} (${totalTime}ms)`);
         setCurrentBarcode(null);
-        onProductFound(result, data);
+        onProductFoundRef.current(result, data);
         return;
       }
 
@@ -203,7 +224,7 @@ export function useBarcodeScanner(
         const productInfo = offResult.value;
         if (productInfo && typeof productInfo === 'object') {
           const suggestedCategoryId = mapOffCategoryToAppCategory(productInfo.categories_tags, appCategories);
-          const extractedName = extractProductName(productInfo);
+          const extractedName = extractProductName(productInfo, deliveryLanguage);
           const extractedBrand = extractBrand(productInfo);
           const extractedImage = extractImageUrl(productInfo);
 
@@ -221,50 +242,40 @@ export function useBarcodeScanner(
             params: paramsForManualEntry
           };
 
-          setCache(data, result);
+          setCache(deliveryCacheKey, result);
           LoggingService.info('BarcodeScanner', `Found online: ${extractedName} (${totalTime}ms)`);
           setCurrentBarcode(null);
-          onProductFound(result, data);
+          onProductFoundRef.current(result, data);
           return;
         }
       }
 
-      const supabaseError = supabaseResult.status === 'rejected' ? supabaseResult.reason?.message : null;
-      const offError = offResult.status === 'rejected' ? offResult.reason?.message : null;
-
-      if (supabaseError?.includes('Timeout database locale') && !offError) {
-        throw new Error(offError || 'Entrambe le ricerche hanno fallito');
+      if (offResult.status === 'fulfilled' ||
+          (offResult.status === 'rejected' && offResult.reason instanceof ProductNotFoundError)) {
+        const result: ScanResult = { type: 'not_found', params: paramsForManualEntry };
+        setCache(deliveryCacheKey, result);
+        setCurrentBarcode(null);
+        onProductFoundRef.current(result, data);
+        return;
       }
 
-      const errorMessage = supabaseError && offError
-        ? `Database locale: ${supabaseError}. ${offError}`
-        : supabaseError || offError || 'Entrambe le ricerche hanno fallito';
-
-      throw new Error(errorMessage);
+      throw offResult.status === 'rejected' ? offResult.reason : new Error('Barcode lookup failed');
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
       LoggingService.error('BarcodeScanner', `Scan error: ${errorMessage}`, error);
 
-      if (errorMessage.includes('Prodotto non trovato') || errorMessage.includes('Errore HTTP: 404')) {
-        const result: ScanResult = {
-          type: 'not_found',
-          params: paramsForManualEntry
-        };
-
-        setCache(data, result);
-        setCurrentBarcode(null);
-        onProductFound(result, data);
-      } else {
-        setLoadingError(`Errore: ${errorMessage}. Riprova o inserisci manualmente.`);
-      }
+      if (requestId === requestIdRef.current) setLoadingError('lookup_failed');
     } finally {
-      setIsLoading(false);
-      clearApiTimeout();
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+        clearApiTimeout();
+      }
     }
-  }, [appCategories, clearApiTimeout, fetchSupabase, fetchOFF, onProductFound, getCache, setCache]);
+  }, [appCategories, clearApiTimeout, fetchSupabase, fetchOFF, getCache, setCache]);
 
   const resetScanner = useCallback(() => {
+    requestIdRef.current += 1;
     setScanned(false);
     setIsLoading(false);
     setCurrentBarcode(null);
@@ -280,6 +291,7 @@ export function useBarcodeScanner(
 
   useEffect(() => {
     return () => {
+      requestIdRef.current += 1;
       clearApiTimeout();
     };
   }, [clearApiTimeout]);

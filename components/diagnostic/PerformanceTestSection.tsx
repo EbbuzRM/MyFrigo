@@ -9,6 +9,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { DiagnosticTest, TestResult } from '@/hooks/useDiagnosticTests';
@@ -26,6 +27,7 @@ export const PerformanceTestSection: React.FC<PerformanceTestSectionProps> = ({
   isRunning,
   onRunTest
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -45,7 +47,7 @@ export const PerformanceTestSection: React.FC<PerformanceTestSectionProps> = ({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Test Performance e Sistema</Text>
+      <Text style={styles.sectionTitle}>{t('settings.diagnosticPerformanceSection')}</Text>
 
       {performanceTests.map(test => {
         const result = getTestResult(test.id);
@@ -95,7 +97,10 @@ export const PerformanceTestSection: React.FC<PerformanceTestSectionProps> = ({
 
                     {result.data && test.id === 'api-performance' && result.data.successCount !== undefined && (
                       <Text style={styles.successRate}>
-                        {result.data.successCount}/{result.data.tests?.length || 0} successi
+                        {t('settings.diagnosticSuccessCount', {
+                          passed: result.data.successCount,
+                          total: result.data.tests?.length || 0
+                        })}
                       </Text>
                     )}
 
@@ -106,7 +111,11 @@ export const PerformanceTestSection: React.FC<PerformanceTestSectionProps> = ({
                         result.data.overallHealth === 'BUONA' && styles.healthGood,
                         result.data.overallHealth === 'CRITICA' && styles.healthCritical
                       ]}>
-                        {result.data.overallHealth}
+                        {t(
+                          result.data.overallHealth === 'OTTIMA' ? 'settings.diagnosticHealthExcellent' :
+                          result.data.overallHealth === 'BUONA' ? 'settings.diagnosticHealthGood' :
+                          'settings.diagnosticHealthCritical'
+                        )}
                       </Text>
                     )}
 

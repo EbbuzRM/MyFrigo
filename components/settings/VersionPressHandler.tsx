@@ -8,6 +8,7 @@
 // message: 
 
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
 import { useTheme } from '@/context/ThemeContext';
@@ -29,6 +30,7 @@ const REQUIRED_TAPS = 5;
 export function VersionPressHandler({
   onActivate,
 }: VersionPressHandlerProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -48,8 +50,8 @@ export function VersionPressHandler({
           testID="version-tap"
           activeOpacity={0.7}
           onPress={handlePress}
-          accessibilityLabel="Versione applicazione"
-          accessibilityHint={`Tocca ${REQUIRED_TAPS} volte per attivare la diagnostica`}
+          accessibilityLabel={t('settings.appVersionLabel')}
+          accessibilityHint={t('settings.diagnosticTapHint', { count: REQUIRED_TAPS })}
         >
           <Text style={styles.versionText}>
             MyFrigo v{Constants.expoConfig?.version}
@@ -60,7 +62,7 @@ export function VersionPressHandler({
       {tapCount > 0 && (
         <View style={styles.tapOverlay}>
           <Text style={styles.tapText}>
-            Altri {REQUIRED_TAPS - tapCount} tap per la diagnostica
+            {t('settings.diagnosticTapsRemaining', { count: REQUIRED_TAPS - tapCount })}
           </Text>
         </View>
       )}

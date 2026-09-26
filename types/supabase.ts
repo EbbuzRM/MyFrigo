@@ -224,6 +224,27 @@ export interface Database {
         }
         Relationships: []
       }
+      user_push_subscriptions: {
+        Row: {
+          user_id: string
+          subscription_id: string
+          language: string
+          synced_at: string
+        }
+        Insert: {
+          user_id: string
+          subscription_id: string
+          language: string
+          synced_at?: string
+        }
+        Update: {
+          user_id?: string
+          subscription_id?: string
+          language?: string
+          synced_at?: string
+        }
+        Relationships: []
+      }
       user_notification_settings: {
         Row: {
           notification_days: number
@@ -247,10 +268,7 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      check_email_exists: {
-        Args: { email_to_check: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

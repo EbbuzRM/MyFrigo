@@ -12,7 +12,8 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Product, ProductCategory } from '@/types/Product';
 import { useTheme } from '@/context/ThemeContext';
-import { getCategoryFilterAccessibilityProps } from '@/utils/accessibility';
+import { getCategoryLabel } from '@/utils/categoryLabels';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryFilterProps {
   selectedCategories: string[];
@@ -22,6 +23,7 @@ interface CategoryFilterProps {
 }
 
 export function CategoryFilter({ selectedCategories, onCategoryChange, products, categories: customCategories }: CategoryFilterProps) {
+  const { t, i18n } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -33,7 +35,7 @@ export function CategoryFilter({ selectedCategories, onCategoryChange, products,
   };
 
   const categories = [
-    { id: 'all', name: 'Tutti', icon: '📦', color: '#64748B' },
+    { id: 'all', name: t('categories.all'), icon: '📦', color: '#64748B' },
     ...customCategories,
   ];
 
@@ -44,6 +46,7 @@ export function CategoryFilter({ selectedCategories, onCategoryChange, products,
           {categories.map((category) => {
             const count = getCategoryCount(category.id);
             const isSelected = selectedCategories.includes(category.id);
+            const categoryLabel = category.id === 'all' ? category.name : getCategoryLabel(category, i18n.language?.startsWith('it') ? 'it' : 'en');
 
             if (count === 0 && category.id !== 'all') {
               return null; // Don't show categories with no products
@@ -59,7 +62,12 @@ export function CategoryFilter({ selectedCategories, onCategoryChange, products,
                 ]}
                 onPress={() => onCategoryChange(category.id)}
                 activeOpacity={0.7}
-                {...getCategoryFilterAccessibilityProps(category.name, count, isSelected)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={t('accessibility.categoryFilterCount', { name: categoryLabel, count })}
+                accessibilityHint={isSelected
+                  ? t('accessibility.categoryFilterSelected')
+                  : t('accessibility.categoryFilterHint', { name: categoryLabel })}
               >
                 {category.localIcon ? (
                   // Mostra l'icona locale
@@ -83,7 +91,7 @@ export function CategoryFilter({ selectedCategories, onCategoryChange, products,
                     isSelected && { color: category.color }
                   ]}
                 >
-                  {category.name}
+                  {categoryLabel}
                 </Text>
                 <View
                   style={[

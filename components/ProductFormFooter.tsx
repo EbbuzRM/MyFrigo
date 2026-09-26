@@ -9,6 +9,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, TextInput, AccessibilityProps } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Quantity as FormQuantity } from '@/context/ManualEntryContext';
 import { QuantitySection } from './QuantitySection';
@@ -70,6 +71,7 @@ export const ProductFormFooter = React.memo(
     accessibilityLabel = 'Product form footer',
   }: ProductFormFooterProps) => {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const styles = getStyles(isDarkMode);
 
     const handleNotesChange = useCallback(
@@ -115,22 +117,22 @@ export const ProductFormFooter = React.memo(
         />
 
         <Text style={styles.helperText}>
-          Puoi anche selezionare una foto dalla galleria nella schermata della fotocamera.
+          {t('products.galleryPhotoHint')}
         </Text>
 
-        <Text style={styles.label}>Note</Text>
+        <Text style={styles.label}>{t('products.notesLabel')}</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={formData.notes}
           onChangeText={handleNotesChange}
-          placeholder="Eventuali note aggiuntive..."
+          placeholder={t('products.notesPlaceholder')}
           multiline
           numberOfLines={3}
           placeholderTextColor={isDarkMode ? '#8b949e' : '#64748b'}
           accessible={true}
-          accessibilityLabel="Notes"
+          accessibilityLabel={t('products.notesLabel')}
           accessibilityRole="text"
-          accessibilityHint="Enter additional notes about the product"
+          accessibilityHint={t('products.notesHint')}
         />
 
         <FormActionButtons

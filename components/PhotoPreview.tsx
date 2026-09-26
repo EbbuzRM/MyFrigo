@@ -8,6 +8,7 @@
 // message: 
 
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Image, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { Check, RefreshCw, Calendar, Edit2 } from 'lucide-react-native';
 import { PhotoCaptureStyles } from '@/styles/photo-capture.styles';
@@ -67,6 +68,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
   onEditDate,
   captureMode,
 }) => {
+  const { t } = useTranslation();
   const isExpirationMode = captureMode === 'expirationDateOnly';
 
   return (
@@ -74,8 +76,8 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
       <Image
         source={{ uri: capturedImage }}
         style={styles.previewImage}
-        accessibilityLabel="Immagine scattata del prodotto"
-        accessibilityHint="Tocca conferma per procedere o riprova per scattare una nuova foto"
+        accessibilityLabel={t('scanner.capturedImage')}
+        accessibilityHint={t('scanner.capturedImageHint')}
         testID="preview-image"
       />
 
@@ -93,43 +95,43 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
             <View style={styles.dateIconContainer}>
               <Calendar size={32} color="#4CAF50" />
             </View>
-            <Text style={styles.dateConfirmationTitle}>Data Rilevata</Text>
+            <Text style={styles.dateConfirmationTitle}>{t('scanner.dateDetected')}</Text>
             <Text style={styles.dateConfirmationDate} testID="expiration-date-display">{extractedDate}</Text>
             <Text style={styles.dateConfirmationSubtitle}>
-              Verifica che la data sia corretta
+              {t('scanner.verifyDate')}
             </Text>
 
             <View style={styles.dateConfirmationButtons}>
               <TouchableOpacity
                 style={[styles.dateButton, styles.dateButtonConfirm]}
                 onPress={onConfirmDate}
-                accessibilityLabel="Conferma data"
+                accessibilityLabel={t('scanner.confirmDate')}
                 accessibilityRole="button"
                 testID="confirm-date-button"
               >
                 <Check size={20} color="#fff" />
-                <Text style={styles.dateButtonText}>Conferma</Text>
+                <Text style={styles.dateButtonText}>{t('common.confirm')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.dateButton, styles.dateButtonEdit]}
                 onPress={onEditDate}
-                accessibilityLabel="Modifica data"
+                accessibilityLabel={t('scanner.editDate')}
                 accessibilityRole="button"
                 testID="edit-date-button"
               >
                 <Edit2 size={20} color="#fff" />
-                <Text style={styles.dateButtonText}>Modifica</Text>
+                <Text style={styles.dateButtonText}>{t('scanner.edit')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.dateButton, styles.dateButtonRetry]}
                 onPress={onRetake}
-                accessibilityLabel="Scatta di nuovo"
+                accessibilityLabel={t('scanner.retakePhoto')}
                 accessibilityRole="button"
               >
                 <RefreshCw size={20} color="#fff" />
-                <Text style={styles.dateButtonText}>Riprova</Text>
+                <Text style={styles.dateButtonText}>{t('common.retry')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -142,13 +144,13 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
           <TouchableOpacity
             style={styles.controlButton}
             onPress={onRetake}
-            accessibilityLabel="Scatta una nuova foto"
+            accessibilityLabel={t('scanner.retakePhoto')}
             accessibilityRole="button"
             disabled={isProcessingImage}
             accessibilityState={{ disabled: isProcessingImage }}
           >
             <RefreshCw size={20} color="#fff" />
-            <Text style={styles.controlButtonText}>Riprova</Text>
+            <Text style={styles.controlButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -158,7 +160,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
               isProcessingImage && styles.buttonDisabled
             ]}
             onPress={onConfirm}
-            accessibilityLabel="Conferma e procedi"
+            accessibilityLabel={t('scanner.confirmProceed')}
             accessibilityRole="button"
             disabled={isProcessingImage}
             accessibilityState={{ disabled: isProcessingImage }}
@@ -169,7 +171,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = memo(({
               <Check size={24} color="#fff" />
             )}
             <Text style={styles.controlButtonText}>
-              {isProcessingImage ? 'Elaborazione...' : 'Conferma'}
+              {isProcessingImage ? t('scanner.processing') : t('common.confirm')}
             </Text>
           </TouchableOpacity>
         </View>

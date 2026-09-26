@@ -9,6 +9,7 @@
 // message: 
 
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Edit, CheckCircle, Trash2 } from 'lucide-react-native';
@@ -28,6 +29,7 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
   onDelete,
   disabled = false
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -37,13 +39,13 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
         style={[styles.editButton, disabled && styles.buttonDisabled]}
         onPress={onEdit}
         disabled={disabled}
-        accessibilityLabel="Modifica prodotto"
+        accessibilityLabel={t('products.editProduct')}
         accessibilityRole="button"
-        accessibilityHint="Apri la schermata di modifica del prodotto"
+        accessibilityHint={t('products.editProductHint')}
         accessibilityState={{ disabled }}
       >
         <Edit size={20} color="#ffffff" />
-        <Text style={styles.editButtonText}>Modifica Prodotto</Text>
+        <Text style={styles.editButtonText}>{t('products.editProduct')}</Text>
       </TouchableOpacity>
 
 {canConsume && (
@@ -52,13 +54,13 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
            style={[styles.consumeButton, disabled && styles.buttonDisabled]}
            onPress={onConsume}
            disabled={disabled}
-           accessibilityLabel="Segna come consumato"
+           accessibilityLabel={t('products.consumeProduct')}
            accessibilityRole="button"
-           accessibilityHint="Segna il prodotto come consumato o apri la schermata per scegliere la quantità"
+           accessibilityHint={t('products.consumeProductHint')}
            accessibilityState={{ disabled }}
          >
           <CheckCircle size={20} color="#ffffff" />
-          <Text style={styles.consumeButtonText}>Segna come Consumato</Text>
+          <Text style={styles.consumeButtonText}>{t('products.consumeProduct')}</Text>
         </TouchableOpacity>
       )}
 
@@ -66,13 +68,13 @@ export const ProductDetailActions: React.FC<ProductDetailActionsProps> = memo(({
         style={[styles.deleteButton, disabled && styles.buttonDisabled]}
         onPress={onDelete}
         disabled={disabled}
-        accessibilityLabel="Elimina prodotto"
+        accessibilityLabel={t('products.deleteProduct')}
         accessibilityRole="button"
-        accessibilityHint="Elimina definitivamente il prodotto"
+        accessibilityHint={t('products.deleteProductHint')}
         accessibilityState={{ disabled }}
       >
         <Trash2 size={20} color="#ffffff" />
-        <Text style={styles.deleteButtonText}>Elimina Prodotto</Text>
+        <Text style={styles.deleteButtonText}>{t('products.deleteProduct')}</Text>
       </TouchableOpacity>
     </View>
   );

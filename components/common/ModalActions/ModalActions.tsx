@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { scaleFont } from '@/utils/scaleFont';
 
 interface ModalActionsProps {
@@ -23,8 +24,11 @@ export function ModalActions({
   confirmDisabled = false,
   isDarkMode,
 }: ModalActionsProps): React.ReactElement {
+  const { t } = useTranslation();
   const styles = getStyles(isDarkMode);
   const isDisabled = isSubmitting || confirmDisabled;
+  const cancelLabel = t('common.cancel');
+  const confirmLabel = t('common.confirm');
 
   return (
     <View style={styles.container}>
@@ -32,11 +36,11 @@ export function ModalActions({
         style={[styles.button, styles.cancelButton]}
         onPress={() => !isSubmitting && onCancel()}
         disabled={isSubmitting}
-        accessibilityLabel="Annulla"
+        accessibilityLabel={cancelLabel}
         accessibilityRole="button"
         accessibilityState={{ disabled: isSubmitting }}
       >
-        <Text style={styles.cancelText}>Annulla</Text>
+        <Text style={styles.cancelText}>{cancelLabel}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -47,17 +51,17 @@ export function ModalActions({
         ]}
         onPress={() => !isDisabled && onConfirm()}
         disabled={isDisabled}
-        accessibilityLabel="Conferma"
+        accessibilityLabel={confirmLabel}
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled }}
       >
         {isSubmitting ? (
           <View style={styles.loadingContent}>
             <ActivityIndicator size="small" color="#ffffff" />
-            <Text style={styles.confirmText}>Salvataggio...</Text>
+            <Text style={styles.confirmText}>{t('common.saving')}</Text>
           </View>
         ) : (
-          <Text style={styles.confirmText}>Conferma</Text>
+          <Text style={styles.confirmText}>{confirmLabel}</Text>
         )}
       </TouchableOpacity>
     </View>

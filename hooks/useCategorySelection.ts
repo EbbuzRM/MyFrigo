@@ -15,6 +15,7 @@ import { useManualEntry } from '@/context/ManualEntryContext';
 import { LoggingService } from '@/services/LoggingService';
 import { CategoryMatcher } from '@/services/CategoryMatcher';
 import { ProductCategory } from '@/types/Product';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Formats category data for grid display with "Add New" button and spacers
@@ -22,12 +23,13 @@ import { ProductCategory } from '@/types/Product';
 const formatCategoryData = (
   data: ProductCategory[],
   columns: number,
-  addNewCategoryId: string
+  addNewCategoryId: string,
+  addNewLabel: string,
 ): (ProductCategory & { spacer?: boolean })[] => {
   // Create new array with "Add New" button
   const dataWithButton: (ProductCategory & { spacer?: boolean })[] = [
     ...data,
-    { id: addNewCategoryId, name: 'Aggiungi', icon: '+', color: '#808080' },
+    { id: addNewCategoryId, name: addNewLabel, icon: '+', color: '#808080' },
   ];
 
   // Calculate how many spacers are needed to fill the last row
@@ -79,6 +81,7 @@ export const useCategorySelection = ({
   setNewCategoryNameInput,
   ADD_NEW_CATEGORY_ID,
 }: UseCategorySelectionProps): UseCategorySelectionReturn => {
+  const { t } = useTranslation();
   const { addCategory } = useCategories();
   const {
     setSelectedCategory,
@@ -126,7 +129,7 @@ export const useCategorySelection = ({
   const handleAddNewCategory = useCallback(async () => {
     LoggingService.info('useCategorySelection', `handleAddNewCategory called with name: ${newCategoryNameInput}`);
     if (!newCategoryNameInput.trim()) {
-      Alert.alert('Errore', 'Il nome della categoria non può essere vuoto.');
+      Alert.alert(t('common.error'), t('categories.nameRequiredError'));
       return;
     }
     try {
@@ -141,9 +144,9 @@ export const useCategorySelection = ({
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Si è verificato un errore sconosciuto.';
       LoggingService.error('useCategorySelection', `Error creating category: ${message}`);
-      Alert.alert('Errore', message);
+      Alert.alert(t('common.error'), t('categories.createFailedError'));
     }
-  }, [newCategoryNameInput, addCategory, setSelectedCategory, setHasManuallySelectedCategory, setIsCategoryModalVisible, setNewCategoryNameInput]);
+  }, [newCategoryNameInput, addCategory, setSelectedCategory, setHasManuallySelectedCategory, setIsCategoryModalVisible, setNewCategoryNameInput, t]);
 
   const handleCategoryChange = useCallback((itemValue: string) => {
     LoggingService.info('useCategorySelection', `handleCategoryChange called with: ${itemValue}`);
@@ -159,8 +162,8 @@ export const useCategorySelection = ({
   }, [ADD_NEW_CATEGORY_ID, setIsCategoryModalVisible, setNewCategoryNameInput, setSelectedCategory, setHasManuallySelectedCategory]);
 
   const categoryData = useMemo(
-    () => formatCategoryData(categories, 4, ADD_NEW_CATEGORY_ID),
-    [categories]
+    () => formatCategoryData(categories, 4, ADD_NEW_CATEGORY_ID, t('categories.addAction')),
+    [categories, ADD_NEW_CATEGORY_ID, t]
   );
 
   return {

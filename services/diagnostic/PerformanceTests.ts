@@ -13,6 +13,7 @@ import { ProductStorage } from '@/services/ProductStorage';
 import { SettingsService } from '@/services/SettingsService';
 import { CategoryService } from '@/services/CategoryService';
 import { Alert } from 'react-native';
+import i18next from 'i18next';
 
 export interface DiagnosticData {
   [key: string]: unknown;
@@ -30,10 +31,10 @@ export class PerformanceTests {
   static async runApiPerformanceTest(): Promise<PerformanceTestResult> {
     const startTime = Date.now();
     const tests = [
-      { name: 'Recupero Prodotti', operation: () => ProductStorage.getProducts() },
-      { name: 'Recupero Impostazioni', operation: () => SettingsService.getSettings() },
-      { name: 'Recupero Categorie', operation: () => CategoryService.getCustomCategories() },
-      { name: 'Recupero Cronologia', operation: () => ProductStorage.getHistory() }
+      { name: i18next.t('settings.diagnosticFetchProducts'), operation: () => ProductStorage.getProducts() },
+      { name: i18next.t('settings.diagnosticFetchSettings'), operation: () => SettingsService.getSettings() },
+      { name: i18next.t('settings.diagnosticFetchCategories'), operation: () => CategoryService.getCustomCategories() },
+      { name: i18next.t('settings.diagnosticFetchHistory'), operation: () => ProductStorage.getHistory() }
     ];
 
     const testResults = [];
@@ -61,9 +62,13 @@ export class PerformanceTests {
     ).join('\n');
 
     Alert.alert(
-      'Test Performance API Completato',
-      `📊 Risultati (${successCount}/${testResults.length} successi):\n\n` +
-      `${resultText}\n\n⏱️ Tempo medio: ${Math.round(avgTime)}ms`
+      i18next.t('settings.diagnosticPerformanceCompleted'),
+      i18next.t('settings.diagnosticPerformanceSummary', {
+        passed: successCount,
+        total: testResults.length,
+        results: resultText,
+        average: Math.round(avgTime)
+      })
     );
 
     return {

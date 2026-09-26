@@ -9,6 +9,7 @@ import { View, Text, TextInput, FlatList, Image, TouchableOpacity, ActivityIndic
 import { Search, Check } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Product } from '@/types/Product';
+import { useTranslation } from 'react-i18next';
 
 interface RecentsPickerProps {
   products: Product[];
@@ -31,6 +32,7 @@ export function RecentsPicker({
   error,
   hintText,
 }: RecentsPickerProps) {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -39,7 +41,7 @@ export function RecentsPicker({
     return (
       <TouchableOpacity
         testID={`recent-card-${item.id}`}
-        accessibilityLabel={`Seleziona ${item.name}`}
+        accessibilityLabel={t('products.selectRecentProduct', { name: item.name })}
         accessibilityRole="button"
         style={[styles.card, selected && styles.cardSelected]}
         onPress={() => onToggle(item)}
@@ -66,18 +68,18 @@ export function RecentsPicker({
 
   return (
     <View style={styles.container} testID="recents-picker">
-      <Text style={styles.sectionTitle}>Recenti</Text>
+      <Text style={styles.sectionTitle}>{t('products.recentTitle')}</Text>
 
       <View style={styles.searchContainer}>
         <Search size={16} color={isDarkMode ? '#8b949e' : '#64748b'} />
         <TextInput
           testID="recents-search-input"
           style={styles.searchInput}
-          placeholder="Cerca nome o marca..."
+          placeholder={t('products.recentSearchPlaceholder')}
           placeholderTextColor={isDarkMode ? '#8b949e' : '#64748b'}
           value={searchQuery}
           onChangeText={onSearchChange}
-          accessibilityLabel="Cerca prodotti recenti"
+          accessibilityLabel={t('products.recentSearchLabel')}
           returnKeyType="search"
           autoCorrect={false}
         />
@@ -99,7 +101,7 @@ export function RecentsPicker({
         </Text>
       ) : products.length === 0 ? (
         <Text style={styles.emptyText} testID="recents-empty">
-          Nessun prodotto recente
+          {t('products.noRecentProducts')}
         </Text>
       ) : (
         <FlatList

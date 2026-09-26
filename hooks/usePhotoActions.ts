@@ -8,6 +8,7 @@
 // message: 
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LoggingService } from '@/services/LoggingService';
@@ -56,6 +57,7 @@ interface UsePhotoActionsReturn {
  * product photo updates, and navigation.
  */
 export const usePhotoActions = (): UsePhotoActionsReturn => {
+  const { t } = useTranslation();
   const params = useLocalSearchParams() as RouterParams;
   const { setImageUrl, setExpirationDate } = useManualEntry();
   const { extractExpirationDate: extractOCRDate, ocrProgress, resetProgress } = usePhotoOCR();
@@ -70,12 +72,15 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
     imageUri: string
   ): Promise<void> => {
     try {
-      await ProductStorage.updateProductImage(productId, imageUri);
+      const updateResult = await ProductStorage.updateProductImage(productId, imageUri);
+      if (!updateResult.success) {
+        throw new Error(updateResult.error);
+      }
       
       Alert.alert(
-        "Foto Aggiornata",
-        "L'immagine del prodotto è stata aggiornata con successo.",
-        [{ text: 'OK', onPress: () => router.back() }]
+        t('scanner.photoUpdated'),
+        t('scanner.photoUpdatedMessage'),
+        [{ text: t('common.ok'), onPress: () => router.back() }]
       );
       
       LoggingService.info('usePhotoActions', `Product ${productId} image updated`);
@@ -83,7 +88,7 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
       LoggingService.error('usePhotoActions', 'Error updating product image', error);
       throw error;
     }
-  }, []);
+  }, [t]);
 
   /**
    * Handle expiration date extraction
@@ -164,7 +169,7 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
             await handleUpdateProductPhoto(productId, capturedImage);
           } else {
             LoggingService.error('usePhotoActions', 'updateProductPhoto mode without productId');
-            Alert.alert("Errore", "ID prodotto mancante per l'aggiornamento.", [{ text: 'OK' }]);
+          Alert.alert(t('common.error'), t('scanner.missingProductId'), [{ text: t('common.ok') }]);
           }
           return 'success';
 
@@ -181,16 +186,17 @@ export const usePhotoActions = (): UsePhotoActionsReturn => {
     } catch (error) {
       LoggingService.error('usePhotoActions', 'Error in confirmPhoto', error);
       Alert.alert(
-        "Errore",
-        "Si è verificato un errore durante l'elaborazione dell'immagine.",
-        [{ text: 'OK' }]
+        t('common.error'),
+        t('scanner.processImageFailed'),
+        [{ text: t('common.ok') }]
       );
       return 'success';
     }
   }, [
     params.productId, 
     handleUpdateProductPhoto, 
-    handleProductPhotoCapture
+    handleProductPhotoCapture,
+    t
   ]);
 
   return {

@@ -6,6 +6,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { renderExpiredNotification, renderPreWarningNotification, type NotificationLanguage } from './messages.ts';
+import { groupActivePushSubscriptions, type ProviderSubscription, type RegisteredSubscription } from './subscriptionRouting.ts';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -93,29 +95,26 @@ const supabase = createClient(SUPABASE_URL, secretKey);
 // ─── OneSignal ────────────────────────────────────────────────────────────────
 
 /**
- * Invia notifica push tramite external_id alias.
+ * Invia notifica push a sottoscrizioni specifiche nella lingua sincronizzata.
  *
  * OneSignal docs (https://documentation.onesignal.com/reference/create-notification):
- * - include_aliases è il metodo corretto per targetare utenti specifici
- * - include_player_ids NON è più un metodo valido
- * - target_channel è richiesto quando si usa include_aliases
+ * - include_subscription_ids evita invii duplicati tramite alias utente.
  */
 async function sendPushNotification(
-  externalUserId: string,
+  subscriptionIds: string[],
   title: string,
   body: string,
   data: PushNotificationData = {}
 ): Promise<SendResult> {
-  if (!externalUserId) {
-    return { success: false, recipients: 0, errors: ['No external user ID provided'] };
+  if (subscriptionIds.length === 0) {
+    return { success: false, recipients: 0, errors: ['No subscriptions provided'] };
   }
 
   const message = {
     app_id:          ONESIGNAL_APP_ID,
-    target_channel:  'push',
-    include_aliases: { external_id: [externalUserId] },
-    headings:        { en: title },
-    contents:        { en: body },
+    include_subscription_ids: subscriptionIds,
+    headings:        { en: title, it: title },
+    contents:        { en: body, it: body },
     data,
   };
 
@@ -141,13 +140,13 @@ async function sendPushNotification(
       return { success: false, recipients: 0, errors: responseData.errors };
     }
 
-    // When using include_aliases, OneSignal may not return recipients.
+    // OneSignal may not return recipients for every accepted notification.
     // A successful response with an id means the notification was created.
     const recipients = responseData.recipients ?? (responseData.id ? 1 : 0);
-    log('info', 'OneSignal notification sent', { recipients, notificationId: responseData.id, externalUserId });
+    log('info', 'OneSignal notification sent', { recipients, notificationId: responseData.id, subscriptionCount: subscriptionIds.length });
 
     if (recipients === 0) {
-      log('warning', 'OneSignal accepted notification but delivered to 0 devices', { externalUserId });
+      log('warning', 'OneSignal accepted notification but delivered to 0 devices', { subscriptionCount: subscriptionIds.length });
     }
 
     return { success: true, recipients, notificationId: responseData.id };
@@ -156,6 +155,26 @@ async function sendPushNotification(
     log('error', 'Error sending push notification', { error: errorMessage });
     return { success: false, recipients: 0, errors: [errorMessage] };
   }
+}
+
+async function getSubscriptionGroups(userId: string): Promise<Record<NotificationLanguage, string[]>> {
+  const response = await fetch(
+    `https://api.onesignal.com/apps/${ONESIGNAL_APP_ID}/users/by/external_id/${encodeURIComponent(userId)}`,
+    { headers: { Authorization: `Basic ${ONESIGNAL_REST_API_KEY}` } },
+  );
+  if (response.status === 404) return { it: [], en: [] };
+  if (!response.ok) throw new Error(`OneSignal user lookup failed: HTTP ${response.status}`);
+
+  const providerUser = await response.json() as { subscriptions?: ProviderSubscription[] };
+  if (!Array.isArray(providerUser.subscriptions)) {
+    throw new Error('OneSignal user response has no subscriptions array');
+  }
+
+  const { data, error } = await supabase.from('user_push_subscriptions')
+    .select('subscription_id, language')
+    .eq('user_id', userId);
+  if (error) throw new Error(`Subscription lookup failed: ${error.message}`);
+  return groupActivePushSubscriptions(providerUser.subscriptions, (data ?? []) as RegisteredSubscription[]);
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -232,22 +251,32 @@ serve(async (request: Request) => {
       }
     }
 
-    // 3. Per ogni utente: invia notifiche usando external_id alias
-    //    (non serve più query user_devices — l'external_id è già il userId Supabase)
+    // 3. Match the user's current OneSignal push subscriptions with saved device languages.
     let actualUsersNotified = 0;
 
     for (const [userId, { expired, preWarning }] of notificationsByUser) {
       let userNotified = false;
+      let groups: Record<NotificationLanguage, string[]>;
+      try {
+        groups = await getSubscriptionGroups(userId);
+      } catch (error) {
+        log('error', 'Could not load user push subscriptions', {
+          userId, error: error instanceof Error ? error.message : String(error),
+        });
+        continue;
+      }
+
+      for (const language of ['it', 'en'] as const) {
+        const subscriptionIds = groups[language];
+        if (subscriptionIds.length === 0) continue;
 
       // Notifica prodotti scaduti oggi
       if (expired.length > 0) {
-        const productNames = expired.map(p => `"${p.product_name}"`).join(', ');
+        const message = renderExpiredNotification(expired, language);
         const result = await sendPushNotification(
-          userId,
-          'Prodotti Scaduti!',
-          expired.length === 1
-            ? `Il prodotto ${productNames} è scaduto oggi.`
-            : `${expired.length} prodotti scaduti oggi: ${productNames}`,
+          subscriptionIds,
+          message.title,
+          message.body,
           { productIds: expired.map(p => p.product_id) }
         );
         if (result.success && result.recipients > 0) userNotified = true;
@@ -255,21 +284,16 @@ serve(async (request: Request) => {
 
       // Notifica prodotti in scadenza imminente (testo per-prodotto usando days_remaining)
       if (preWarning.length > 0) {
-        const productLines = preWarning.map(p => {
-          const suffix = p.days_remaining === 1
-            ? 'scade domani'
-            : `scade tra ${p.days_remaining} giorni`;
-          return `"${p.product_name}" ${suffix}`;
-        }).join(', ');
+        const message = renderPreWarningNotification(preWarning, language);
         const result = await sendPushNotification(
-          userId,
-          'Prodotti in Scadenza!',
-          preWarning.length === 1
-            ? `Il prodotto ${productLines}.`
-            : `${preWarning.length} prodotti in scadenza: ${productLines}`,
+          subscriptionIds,
+          message.title,
+          message.body,
           { productIds: preWarning.map(p => p.product_id) }
         );
         if (result.success && result.recipients > 0) userNotified = true;
+      }
+
       }
 
       log('info', `Notification result for user`, {

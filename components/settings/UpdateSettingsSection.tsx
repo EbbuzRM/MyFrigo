@@ -7,6 +7,7 @@
 // message: 
 
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Switch, ActivityIndicator } from 'react-native';
 import { SettingsCard } from '@/components/SettingsCard';
 import { SettingsSection } from './SettingsSection';
@@ -85,17 +86,18 @@ export function UpdateSettingsSection({
   isUpdateAvailable,
   onInstallUpdate,
 }: UpdateSettingsSectionProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const cards = createUpdateCards(isDarkMode);
 
   const getCardDescription = useCallback(
     (card: UpdateCardConfig): string | undefined => {
       if (card.id === 'check-updates' && lastUpdateInfo?.isAvailable) {
-        return `Disponibile v${lastUpdateInfo.availableVersion}`;
+        return t('settings.availableVersion', { version: lastUpdateInfo.availableVersion });
       }
       return card.description;
     },
-    [lastUpdateInfo]
+    [lastUpdateInfo, t]
   );
 
   const getCardControl = useCallback(
@@ -145,7 +147,7 @@ export function UpdateSettingsSection({
   );
 
   return (
-    <SettingsSection title="Aggiornamenti">
+    <SettingsSection title={t('settings.updates')}>
       {cards.map((card) => (
         <SettingsCard
           key={card.id}
@@ -159,8 +161,8 @@ export function UpdateSettingsSection({
       {isUpdateAvailable && (
         <SettingsCard
           icon={cards[1].icon}
-          title="Installa Aggiornamento"
-          description={`Aggiorna alla versione ${lastUpdateInfo?.availableVersion}`}
+          title={t('settings.installUpdate')}
+          description={t('settings.updateVersion', { version: lastUpdateInfo?.availableVersion })}
           onPress={onInstallUpdate}
         />
       )}

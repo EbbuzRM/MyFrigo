@@ -15,15 +15,19 @@
  * import { getProductCardAccessibilityProps, getStatsCardAccessibilityProps } from '@/utils/accessibility/cards';
  * 
  * // Product card
- * const productProps = getProductCardAccessibilityProps(product, category);
+ * const productProps = getProductCardAccessibilityProps(product, category, t);
  * 
  * // Stats card
- * const statsProps = getStatsCardAccessibilityProps('Total Products', '42', true);
+ * const statsProps = getStatsCardAccessibilityProps('Total Products', '42', true, t);
  * ```
  */
 
 import { Product, ProductCategory } from '@/types/Product';
 import { createAccessibilityProps, AccessibilityAttributes } from './buttons';
+import type { TFunction } from 'i18next';
+import { getCurrentLanguage } from '@/i18n';
+import { formatDisplayDate } from '@/i18n/format';
+import { getCategoryLabel } from '@/utils/categoryLabels';
 
 /**
  * Expiration status information interface
@@ -40,24 +44,31 @@ export interface ExpirationStatus {
  * @returns Formatted date string in Italian locale
  * @internal
  */
-function formatExpirationDate(dateString: string | Date | undefined): string {
+function formatExpirationDate(dateString: string | Date | undefined, t: TFunction): string {
   if (!dateString) return '';
-  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-  return `, scade il ${date.toLocaleDateString('it-IT')}`;
+  const date = formatDisplayDate(dateString, getCurrentLanguage());
+  return t('accessibility.productExpirationDateLabel', {
+    date: date ?? '',
+  });
+}
+
+function formatExpirationDateValue(dateString: string | Date): string {
+  return formatDisplayDate(dateString, getCurrentLanguage()) ?? '';
 }
 
 /**
  * Creates accessibility props for a product card
  * 
  * @param product - Product data
- * @param category - Optional product category
+ * @param category - Optional product category, or `undefined`
+ * @param t - Translation function for localized accessibility copy
  * @returns AccessibilityAttributes for product card
  * 
  * @example
  * ```tsx
  * const product = { name: 'Milk', brand: 'Brand', expirationDate: '2024-12-31' };
  * const category = { name: 'Dairy' };
- * <TouchableOpacity {...getProductCardAccessibilityProps(product, category)}>
+ * <TouchableOpacity {...getProductCardAccessibilityProps(product, category, t)}>
  *   <ProductCardContent product={product} />
  * </TouchableOpacity>
  * // Screen reader: "Milk, marca Brand, categoria Dairy, scade il 31/12/2024. Tocca per visualizzare i dettagli del prodotto"
@@ -65,17 +76,20 @@ function formatExpirationDate(dateString: string | Date | undefined): string {
  */
 export function getProductCardAccessibilityProps(
   product: Product,
-  category?: ProductCategory
+  category: ProductCategory | undefined,
+  t: TFunction,
 ): AccessibilityAttributes {
-  const productName = product.name || 'Prodotto senza nome';
-  const brandInfo = product.brand ? `, marca ${product.brand}` : '';
-  const categoryInfo = category ? `, categoria ${category.name}` : '';
-  const expirationInfo = formatExpirationDate(product.expirationDate);
+  const productName = product.name || t('dashboard.unnamedProduct');
+  const brandInfo = product.brand ? t('accessibility.productBrandLabel', { brand: product.brand }) : '';
+  const categoryInfo = category
+    ? t('accessibility.productCategoryLabel', { category: getCategoryLabel(category, getCurrentLanguage()) })
+    : '';
+  const expirationInfo = formatExpirationDate(product.expirationDate, t);
 
   return createAccessibilityProps({
     role: 'button',
     label: `${productName}${brandInfo}${categoryInfo}${expirationInfo}`,
-    hint: 'Tocca per visualizzare i dettagli del prodotto',
+    hint: t('accessibility.productCardHint'),
   });
 }
 
@@ -125,17 +139,18 @@ export function getSettingsCardAccessibilityProps(
  * @param title - Statistic title
  * @param value - Statistic value
  * @param isClickable - Whether the card is clickable for more details
+ * @param t - Translation function for localized accessibility copy
  * @returns AccessibilityAttributes for statistics card
  * 
  * @example
  * ```tsx
  * // Clickable stats card
- * <TouchableOpacity {...getStatsCardAccessibilityProps('Expiring Soon', '5 items', true)}>
+ * <TouchableOpacity {...getStatsCardAccessibilityProps('Expiring Soon', '5 items', true, t)}>
  *   <StatDisplay title="Expiring Soon" value="5" />
  * </TouchableOpacity>
  * 
  * // Non-clickable stats card
- * <View {...getStatsCardAccessibilityProps('Total Products', '42', false)}>
+ * <View {...getStatsCardAccessibilityProps('Total Products', '42', false, t)}>
  *   <StatDisplay title="Total Products" value="42" />
  * </View>
  * ```
@@ -143,10 +158,11 @@ export function getSettingsCardAccessibilityProps(
 export function getStatsCardAccessibilityProps(
   title: string,
   value: string,
-  isClickable: boolean
+  isClickable: boolean,
+  t: TFunction,
 ): AccessibilityAttributes {
   const label = `${title}: ${value}`;
-  const hint = isClickable ? "Tocca per visualizzare maggiori dettagli" : undefined;
+  const hint = isClickable ? t('accessibility.statsCardHint') : undefined;
 
   return createAccessibilityProps({
     role: isClickable ? 'button' : 'text',
@@ -173,16 +189,22 @@ export function getStatsCardAccessibilityProps(
  */
 export function getExpirationCardAccessibilityProps(
   product: Product,
-  expirationStatus: ExpirationStatus
+  expirationStatus: ExpirationStatus,
+  t: TFunction,
 ): AccessibilityAttributes {
-  const productName = product.name || 'Prodotto senza nome';
-  const brandInfo = product.brand ? `, marca ${product.brand}` : '';
-  const expirationInfo = formatExpirationDate(product.expirationDate);
-  const statusInfo = `, stato: ${expirationStatus.text}`;
+  const productName = product.name || t('dashboard.unnamedProduct');
+  const brand = product.brand ? t('dashboard.expiringProductBrand', { brand: product.brand }) : '';
+  const labelOptions = { name: productName, brand, status: expirationStatus.text };
+  const formattedDate = product.expirationDate
+    ? formatExpirationDateValue(product.expirationDate)
+    : '';
+  const label = formattedDate
+    ? t('dashboard.expiringProductLabel', { ...labelOptions, date: formattedDate })
+    : t('dashboard.expiringProductWithoutDateLabel', labelOptions);
 
   return createAccessibilityProps({
     role: 'button',
-    label: `${productName}${brandInfo}${expirationInfo}${statusInfo}`,
-    hint: 'Tocca per visualizzare i dettagli del prodotto',
+    label,
+    hint: t('dashboard.expiringProductHint'),
   });
 }

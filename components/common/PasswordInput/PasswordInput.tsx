@@ -7,6 +7,7 @@ import {
   Text,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { scaleFont } from '@/utils/scaleFont';
 
 interface PasswordInputProps {
@@ -29,10 +30,13 @@ export function PasswordInput({
   onToggleVisibility,
   isDarkMode,
   error,
-  placeholder = 'Inserisci password',
+  placeholder,
   testID,
 }: PasswordInputProps): React.ReactElement {
+  const { t } = useTranslation();
   const styles = getStyles(isDarkMode);
+  const resolvedPlaceholder = placeholder ?? t('common.passwordPlaceholder');
+  const toggleLabel = showPassword ? t('common.hidePasswordLabel') : t('common.showPasswordLabel');
 
   return (
     <View style={styles.container}>
@@ -48,7 +52,7 @@ export function PasswordInput({
         />
         <TextInput
           style={styles.input}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           placeholderTextColor={isDarkMode ? '#8b949e' : '#94a3b8'}
           value={value}
           onChangeText={onChangeText}
@@ -59,7 +63,7 @@ export function PasswordInput({
         <TouchableOpacity
           onPress={onToggleVisibility}
           style={styles.eyeButton}
-          accessibilityLabel={showPassword ? 'Nascondi password' : 'Mostra password'}
+          accessibilityLabel={toggleLabel}
           accessibilityRole="button"
         >
           <FontAwesome

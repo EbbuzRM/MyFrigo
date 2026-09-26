@@ -13,6 +13,9 @@
 import React, { useMemo } from 'react';
 import { Text } from 'react-native';
 import { Quantity } from '@/types/Product';
+import { useAppLanguage } from '@/i18n/useAppLanguage';
+import { formatDisplayNumber } from '@/i18n/format';
+import { getUnitLabel } from '@/i18n/units';
 
 interface QuantityDisplayProps {
   /** Array of quantities to display */
@@ -39,6 +42,7 @@ export const QuantityDisplay = React.memo(({
   style,
   fallbackText = 'N/A',
 }: QuantityDisplayProps) => {
+  const language = useAppLanguage();
   const displayText = useMemo(() => {
     if (!Array.isArray(quantities) || quantities.length === 0) {
       return fallbackText;
@@ -46,13 +50,13 @@ export const QuantityDisplay = React.memo(({
 
     if (quantities.length === 1) {
       const { quantity, unit } = quantities[0];
-      return `${quantity} ${unit || DEFAULT_UNIT}`;
+      return `${formatDisplayNumber(quantity, language)} ${getUnitLabel(unit || DEFAULT_UNIT, language)}`;
     }
 
     return quantities
-      .map((q) => `${q.quantity} ${q.unit || DEFAULT_UNIT}`)
+      .map((q) => `${formatDisplayNumber(q.quantity, language)} ${getUnitLabel(q.unit || DEFAULT_UNIT, language)}`)
       .join(', ');
-  }, [quantities, fallbackText]);
+  }, [quantities, fallbackText, language]);
 
   return <Text style={style}>{displayText}</Text>;
 });

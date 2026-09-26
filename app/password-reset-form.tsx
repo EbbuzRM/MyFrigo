@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Alert, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import { useRouter } from 'expo-router';
@@ -26,6 +27,7 @@ const ValidationCheck = ({ text, isValid }: { text: string; isValid: boolean }) 
 );
 
 export default function PasswordResetForm() {
+  const { t } = useTranslation();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,14 +51,14 @@ export default function PasswordResetForm() {
 
         if (error) {
           LoggingService.error('PasswordResetForm', 'Error getting session', error);
-          Alert.alert('Errore', 'Impossibile verificare la sessione utente');
+          Alert.alert(t('auth.alertTitles_error'), t('auth.errors_sessionCheckError'));
           router.replace('/login');
           return;
         }
 
         if (!currentSession) {
           LoggingService.error('PasswordResetForm', 'No active session found');
-          Alert.alert('Errore', 'Nessuna sessione attiva. Effettua nuovamente il login.');
+          Alert.alert(t('auth.alertTitles_error'), t('auth.errors_noActiveSession'));
           router.replace('/login');
           return;
         }
@@ -69,10 +71,10 @@ export default function PasswordResetForm() {
           currentSessionToCheck = currentSession;
         } else {
           const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-          // Se la sessione è esplicitamente null dopo refresh riuscito (senza errori), è scaduta
+          // If the session is explicitly null after a successful refresh (no errors), it has expired
           if (!refreshedSession) {
             LoggingService.error('PasswordResetForm', 'Session expired after refresh.');
-            Alert.alert('Errore', 'Sessione scaduta o non valida. Riprova il login.');
+            Alert.alert(t('auth.alertTitles_error'), t('auth.errors_sessionExpired'));
             router.replace('/login');
             return;
           }
@@ -81,7 +83,7 @@ export default function PasswordResetForm() {
 
         if (!currentSessionToCheck) {
           LoggingService.error('PasswordResetForm', 'Critical: No session available.');
-          Alert.alert('Errore', 'Sessione scaduta o non valida. Riprova il login.');
+          Alert.alert(t('auth.alertTitles_error'), t('auth.errors_sessionExpired'));
           router.replace('/login');
           return;
         }
@@ -118,12 +120,12 @@ checkSession();
 
   const handleUpdatePassword = async () => {
     if (!newPassword || !confirmPassword) {
-      Alert.alert('Errore', 'Inserisci e conferma la password.');
+      Alert.alert(t('auth.alertTitles_error'), t('auth.errors_insertAndConfirmPassword'));
       return;
     }
 
     if (!isPasswordValid(newPassword) || !passwordsMatch) {
-      Alert.alert('Errore', 'La password non soddisfa tutti i requisiti di sicurezza o le password non coincidono.');
+      Alert.alert(t('auth.alertTitles_error'), t('auth.errors_passwordRequirementsMismatch'));
       return;
     }
 
@@ -160,26 +162,27 @@ checkSession();
       }
 
       Alert.alert(
-        'Successo',
-        'Password reimpostata con successo! Verrai reindirizzato alla dashboard.',
-        [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
+        t('auth.successTitle'),
+        t('auth.successMessage'),
+        [{ text: t('auth.ok'), onPress: () => router.replace('/(tabs)') }]
       );
     } catch (error: unknown) {
       LoggingService.error('PasswordResetForm', 'Error during password update', error);
-      let errorMessage = 'Errore sconosciuto';
+      let errorMessageKey: 'auth.errors_unknownError' | 'auth.errors_serverTimeout' | 'auth.errors_newPasswordDifferent' = 'auth.errors_unknownError';
+      let rawMessage = '';
       if (error instanceof Error) {
-        errorMessage = error.message;
+        rawMessage = error.message;
       } else if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = String(error.message);
+        rawMessage = String(error.message);
       }
 
-      if (errorMessage === 'TIMEOUT') {
-        errorMessage = 'Il server non ha risposto in tempo, riprova tra poco.';
-      } else if (errorMessage.includes('New password should be different')) {
-        errorMessage = 'La nuova password deve essere diversa dalla precedente.';
+      if (rawMessage === 'TIMEOUT') {
+        errorMessageKey = 'auth.errors_serverTimeout';
+      } else if (rawMessage.includes('New password should be different')) {
+        errorMessageKey = 'auth.errors_newPasswordDifferent';
       }
 
-      Alert.alert('Errore', errorMessage);
+      Alert.alert(t('auth.alertTitles_error'), t(errorMessageKey));
     } finally {
       setLoading(false);
     }
@@ -191,29 +194,29 @@ checkSession();
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Verifica sessione...</Text>
+        <Text style={styles.loadingText}>{t('auth.verifyingSession')}</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Reimposta Password</Text>
+      <Text style={styles.title}>{t('auth.resetPasswordTitle')}</Text>
       <Text style={styles.subtitle}>
-        Ciao {session?.user.email}, inserisci la tua nuova password
+        {t('auth.resetPasswordGreeting', { email: session?.user.email })}
       </Text>
 
       <View style={styles.inputContainer}>
         <TextInput
           testID="new-password-input"
           style={styles.input}
-          placeholder="Nuova password"
+          placeholder={t('auth.newPasswordPlaceholder')}
           secureTextEntry={!isPasswordVisible}
           value={newPassword}
           onChangeText={setNewPassword}
           editable={!loading}
         />
-        <TouchableOpacity accessibilityLabel="Mostra password" accessibilityRole="button" onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon}>
+        <TouchableOpacity accessibilityLabel={t('auth.showHidePasswordLabel')} accessibilityRole="button" onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon}>
           <FontAwesome name={isPasswordVisible ? 'eye-slash' : 'eye'} size={20} color="#666" />
         </TouchableOpacity>
       </View>
@@ -222,28 +225,28 @@ checkSession();
         <TextInput
           testID="confirm-password-input"
           style={styles.input}
-          placeholder="Conferma password"
+          placeholder={t('auth.confirmPasswordPlaceholder')}
           secureTextEntry={!isConfirmPasswordVisible}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           editable={!loading}
         />
-        <TouchableOpacity accessibilityLabel="Mostra conferma password" accessibilityRole="button" onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)} style={styles.eyeIcon}>
+        <TouchableOpacity accessibilityLabel={t('auth.showHidePasswordLabel')} accessibilityRole="button" onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)} style={styles.eyeIcon}>
           <FontAwesome name={isConfirmPasswordVisible ? 'eye-slash' : 'eye'} size={20} color="#666" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.validationContainer}>
-        <ValidationCheck text="Almeno 8 caratteri" isValid={passwordValidation.minLength} />
-        <ValidationCheck text="Una lettera maiuscola" isValid={passwordValidation.hasUpper} />
-        <ValidationCheck text="Una lettera minuscola" isValid={passwordValidation.hasLower} />
-        <ValidationCheck text="Un numero" isValid={passwordValidation.hasNumber} />
-        <ValidationCheck text="Le password coincidono" isValid={passwordsMatch} />
+        <ValidationCheck text={t('auth.minLengthRequirement')} isValid={passwordValidation.minLength} />
+        <ValidationCheck text={t('auth.hasUpperRequirement')} isValid={passwordValidation.hasUpper} />
+        <ValidationCheck text={t('auth.hasLowerRequirement')} isValid={passwordValidation.hasLower} />
+        <ValidationCheck text={t('auth.hasNumberRequirement')} isValid={passwordValidation.hasNumber} />
+        <ValidationCheck text={t('auth.passwordsMatchRequirement')} isValid={passwordsMatch} />
       </View>
 
       <TouchableOpacity
         testID="confirm-reset-button"
-        accessibilityLabel="Aggiorna password"
+        accessibilityLabel={t('auth.updatePasswordButton')}
         accessibilityRole="button"
         style={[
           styles.button,
@@ -253,7 +256,7 @@ checkSession();
         disabled={isButtonDisabled}
       >
         <Text style={styles.buttonText}>
-          {loading ? 'Aggiornamento...' : 'Aggiorna Password'}
+          {loading ? t('auth.updatingPassword') : t('auth.updatePasswordButton')}
         </Text>
       </TouchableOpacity>
     </View>

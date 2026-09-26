@@ -13,34 +13,35 @@ import { Plus, ScanBarcode } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 
-import { DASHBOARD_CONTENT } from '@/constants/content';
+import { useTranslation } from 'react-i18next';
 
 export const QuickActions = React.memo(function QuickActions() {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const styles = getStyles(isDarkMode);
 
     return (
         <View style={styles.ctaContainer}>
             <TouchableOpacity 
                 testID="add-product-button"
-                accessibilityLabel="Aggiungi prodotto" 
+                accessibilityLabel={t('dashboard.addProductLabel')}
                 accessibilityRole="button" 
                 style={styles.ctaButton} 
                 onPress={() => router.push('/add')}
             >
                 <Plus size={20} color="#ffffff" />
-                <Text style={styles.ctaButtonText}>{DASHBOARD_CONTENT.BTN_ADD}</Text>
+                <Text style={styles.ctaButtonText}>{t('dashboard.addProduct')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
                 testID="scan-barcode-button"
-                accessibilityLabel="Scansiona codice a barre"
+                accessibilityLabel={t('dashboard.scanBarcodeLabel')}
                 accessibilityRole="button"
                 style={[styles.ctaButton, styles.ctaSecondaryButton]}
                 onPress={() => router.push('/scanner')}
             >
                 <ScanBarcode size={20} color={isDarkMode ? '#ffffff' : '#3b82f6'} />
-                <Text style={[styles.ctaButtonText, styles.ctaSecondaryButtonText]}>{DASHBOARD_CONTENT.BTN_SCAN}</Text>
+                <Text style={[styles.ctaButtonText, styles.ctaSecondaryButtonText]}>{t('dashboard.scanProduct')}</Text>
             </TouchableOpacity>
         </View>
     );

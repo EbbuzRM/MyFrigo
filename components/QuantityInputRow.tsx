@@ -16,6 +16,7 @@ import { useQuantityInput } from '@/hooks/useQuantityInput';
 import { QuantityButton } from './QuantityButton';
 import { QuantityUnitSelector } from './QuantityUnitSelector';
 import { getStyles } from './QuantityInputRow.styles';
+import { useTranslation } from 'react-i18next';
 
 interface QuantityInputRowProps {
   item: FormQuantity;
@@ -33,6 +34,7 @@ const QuantityInputRow = React.memo(({
   removeQuantity,
   isOnlyOne,
 }: QuantityInputRowProps) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const handleQuantityUpdate = useCallback((value: string) => updateQuantity(item.id, 'quantity', value), [item.id, updateQuantity]);
@@ -46,7 +48,7 @@ const QuantityInputRow = React.memo(({
     <View style={styles.container}>
       <View style={styles.mainRow}>
         <View style={[styles.column, !isOnlyOne && styles.columnWithRemove]}>
-          <Text style={styles.label}>Quantità*</Text>
+          <Text style={styles.label}>{t('products.quantityRequiredLabel')}</Text>
           <View style={styles.quantityContainer}>
             <QuantityButton operation="decrement" onPress={handleDecrement} disabled={isAtMin} />
             <TextInput
@@ -56,8 +58,8 @@ const QuantityInputRow = React.memo(({
               keyboardType="decimal-pad"
               placeholder="0"
               placeholderTextColor={isDarkMode ? '#8b949e' : '#64748b'}
-              accessibilityLabel="Quantità"
-              accessibilityHint="Inserisci la quantità del prodotto"
+              accessibilityLabel={t('products.quantityLabel')}
+              accessibilityHint={t('products.quantityInputHint')}
               testID={`quantity-input-${item.id}`}
             />
             <QuantityButton operation="increment" onPress={handleIncrement} />
@@ -75,8 +77,8 @@ const QuantityInputRow = React.memo(({
           <TouchableOpacity
             onPress={() => removeQuantity(item.id)}
             style={styles.removeButton}
-            accessibilityLabel="Rimuovi quantità"
-            accessibilityHint="Rimuovi questa riga di quantità"
+            accessibilityLabel={t('products.removeQuantityLabel')}
+            accessibilityHint={t('products.removeQuantityHint')}
             testID={`remove-quantity-${item.id}`}
           >
             <Text style={styles.removeButtonText}>-</Text>

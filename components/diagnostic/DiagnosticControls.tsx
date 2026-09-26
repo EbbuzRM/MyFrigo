@@ -9,6 +9,7 @@
 // message: 
 
 import React, { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Play } from 'lucide-react-native';
@@ -28,6 +29,7 @@ export const DiagnosticControls: React.FC<DiagnosticControlsProps> = memo(({
   testCount,
   completedTests
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
 
   const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
@@ -40,7 +42,7 @@ export const DiagnosticControls: React.FC<DiagnosticControlsProps> = memo(({
     <View style={styles.container}>
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>
-          {completedTests}/{testCount} test completati
+          {t('settings.diagnosticProgress', { completed: completedTests, total: testCount })}
         </Text>
         <View style={styles.progressBar}>
           <View
@@ -63,19 +65,18 @@ export const DiagnosticControls: React.FC<DiagnosticControlsProps> = memo(({
         {isRunning ? (
           <>
             <ActivityIndicator size="small" color="#ffffff" style={styles.buttonIcon} />
-            <Text style={styles.runAllButtonText}>Esecuzione Test...</Text>
+            <Text style={styles.runAllButtonText}>{t('settings.diagnosticRunning')}</Text>
           </>
         ) : (
           <>
             <Play size={20} color="#ffffff" style={styles.buttonIcon} />
-            <Text style={styles.runAllButtonText}>Esegui Tutti i Test</Text>
+            <Text style={styles.runAllButtonText}>{t('settings.diagnosticRunAll')}</Text>
           </>
         )}
       </TouchableOpacity>
 
       <Text style={styles.infoText}>
-        I test verificano il corretto funzionamento del sistema MyFrigo, inclusi autenticazione,
-        connettività database, performance API e salute generale del sistema.
+        {t('settings.diagnosticControlsInfo')}
       </Text>
     </View>
   );

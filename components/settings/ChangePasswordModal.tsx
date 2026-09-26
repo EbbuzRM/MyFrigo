@@ -14,6 +14,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { usePasswordForm } from '@/hooks/usePasswordForm';
 import { usePasswordVisibility } from '@/hooks/usePasswordVisibility';
 import {
@@ -78,6 +79,7 @@ export function ChangePasswordModal({
   onClose,
   onChangePassword,
 }: ChangePasswordModalProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -145,35 +147,35 @@ export function ChangePasswordModal({
       visible={visible}
       onRequestClose={handleClose}
       accessibilityViewIsModal={true}
-      accessibilityLabel="Cambia password"
+      accessibilityLabel={t('settings.changePasswordLabel')}
     >
       <Pressable style={styles.modalOverlay} onPress={handleClose}>
         <Pressable onPress={() => {}} style={styles.modalContainer}>
           <ModalHeader
-            title="Cambia Password"
+            title={t('settings.changePassword')}
             onClose={handleClose}
             isDarkMode={isDarkMode}
           />
 
           <PasswordInput
-            label="Password attuale"
+            label={t('settings.currentPassword')}
             value={values.currentPassword}
             onChangeText={(text) => handleChange('currentPassword', text)}
             showPassword={currentPasswordVisibility.showPassword}
             onToggleVisibility={currentPasswordVisibility.togglePasswordVisibility}
             isDarkMode={isDarkMode}
-            placeholder="Inserisci la password attuale"
+            placeholder={t('settings.currentPasswordPlaceholder')}
             testID="current-password-input"
           />
 
           <PasswordInput
-            label="Nuova password"
+            label={t('settings.newPassword')}
             value={values.newPassword}
             onChangeText={(text) => handleChange('newPassword', text)}
             showPassword={newPasswordVisibility.showPassword}
             onToggleVisibility={newPasswordVisibility.togglePasswordVisibility}
             isDarkMode={isDarkMode}
-            placeholder="Inserisci la nuova password"
+            placeholder={t('settings.newPasswordPlaceholder')}
             testID="new-password-input"
           />
 
@@ -186,16 +188,16 @@ export function ChangePasswordModal({
           )}
 
           <PasswordInput
-            label="Conferma nuova password"
+            label={t('settings.confirmNewPassword')}
             value={values.confirmPassword}
             onChangeText={(text) => handleChange('confirmPassword', text)}
             showPassword={confirmPasswordVisibility.showPassword}
             onToggleVisibility={confirmPasswordVisibility.togglePasswordVisibility}
             isDarkMode={isDarkMode}
-            placeholder="Ripeti la nuova password"
+            placeholder={t('settings.confirmNewPasswordPlaceholder')}
             error={
               values.confirmPassword.length > 0 && !validation.passwordsMatch
-                ? 'Le password non coincidono'
+                ? t('settings.passwordsMismatch')
                 : undefined
             }
             testID="confirm-password-input"

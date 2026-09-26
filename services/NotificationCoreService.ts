@@ -2,21 +2,21 @@
 //
 // exports: NotificationCoreService
 // used_by: services\NotificationService.ts
-// rules:   Dopo la migrazione a OneSignal, scheduleTestNotification usa OneSignal.Notifications
-//          invece di expo-notifications. Le notifiche sono server-side via OneSignal.
+// rules:   Le notifiche sono server-side via OneSignal; questo controllo non le invia.
 
 import { Platform } from 'react-native';
 import { OneSignal } from 'react-native-onesignal';
 import { LoggingService } from './LoggingService';
 
 export class NotificationCoreService {
-  static async scheduleTestNotification(): Promise<void> {
-    if (Platform.OS === 'web') return;
+  static async checkNotificationReadiness(): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
     const hasPermission = await OneSignal.Notifications.getPermissionAsync();
     if (!hasPermission) {
-      LoggingService.error('NotificationCoreService', 'Cannot schedule test: permission not granted');
-      return;
+      LoggingService.warning('NotificationCoreService', 'Notification permission not granted');
+      return false;
     }
-    LoggingService.info('NotificationCoreService', 'OneSignal permission check OK for test notification');
+    LoggingService.info('NotificationCoreService', 'OneSignal notification permission granted');
+    return true;
   }
 }

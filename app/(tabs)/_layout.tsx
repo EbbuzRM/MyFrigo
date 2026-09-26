@@ -8,12 +8,14 @@
 // message: 
 
 import { Tabs, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Home, Plus, Package, Settings, History } from 'lucide-react-native';
 import AnimatedTabBar from '@/components/AnimatedTabBar';
 
 // Esportazione predefinita del componente di layout delle tab
 const TabLayout = () => {
   const { user } = useLocalSearchParams(); // Ottieni l'oggetto utente dai parametri
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -24,8 +26,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarAccessibilityLabel: 'Tab Home',
+          title: t('common.tabHome'),
+          tabBarAccessibilityLabel: t('common.tabHomeLabel'),
 
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} />
@@ -36,8 +38,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="products"
         options={{
-          title: 'Prodotti',
-          tabBarAccessibilityLabel: 'Tab Prodotti',
+          title: t('common.tabProducts'),
+          tabBarAccessibilityLabel: t('common.tabProductsLabel'),
           tabBarIcon: ({ color, size }) => (
             <Package size={size} color={color} />
           ),
@@ -46,8 +48,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="add"
         options={{
-          title: 'Aggiungi',
-          tabBarAccessibilityLabel: 'Tab Aggiungi',
+          title: t('common.tabAdd'),
+          tabBarAccessibilityLabel: t('common.tabAddLabel'),
           tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} />
           ),
@@ -56,8 +58,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'Storico',
-          tabBarAccessibilityLabel: 'Tab Storico',
+          title: t('common.tabHistory'),
+          tabBarAccessibilityLabel: t('common.tabHistoryLabel'),
           tabBarIcon: ({ color, size }) => (
             <History size={size} color={color} />
           ),
@@ -66,8 +68,8 @@ const TabLayout = () => {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Impostazioni',
-          tabBarAccessibilityLabel: 'Tab Impostazioni',
+          title: t('common.tabSettings'),
+          tabBarAccessibilityLabel: t('common.tabSettingsLabel'),
           tabBarIcon: ({ color, size }) => (
             <Settings size={size} color={color} />
           ),

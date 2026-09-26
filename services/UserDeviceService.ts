@@ -46,7 +46,7 @@ export class UserDeviceService {
 
       LoggingService.info('UserDeviceService', `Device ${deviceId.substring(0, 8)}... added successfully for user ${userId}`);
     } catch (error) {
-      LoggingService.error('UserDeviceService', 'Error adding device for user', { userId, error });
+      LoggingService.error('UserDeviceService', 'Error adding device for user', error);
       throw error;
     }
   }
@@ -77,7 +77,7 @@ export class UserDeviceService {
 
       LoggingService.info('UserDeviceService', `Device ${deviceId.substring(0, 8)}... removed successfully for user ${userId}`);
     } catch (error) {
-      LoggingService.error('UserDeviceService', 'Error removing device for user', { userId, error });
+      LoggingService.error('UserDeviceService', 'Error removing device for user', error);
       throw error;
     }
   }

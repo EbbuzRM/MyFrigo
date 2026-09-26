@@ -1,10 +1,10 @@
 // useRegistrationActions.ts — useRegistrationActions module.
 //
-// exports: useEmailCheck | useUserProfileCreation | useAccountCreation
+// exports: useUserProfileCreation | useAccountCreation
 // used_by: hooks\useRegistration.ts
 // rules:   - All authentication hooks must use `useCallback` with proper dependency arrays and must not mutate external state directly
 //          - Supabase client calls must always be wrapped in try-catch or error-checked, with errors logged via `LoggingService` using the `LOG_TAG` constant
-//          - Profile creation and email checking RPCs must be handled as separate, composable hooks rather than combined into a single function
+//          - Profile creation and account creation must remain separate, composable hooks
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
@@ -13,7 +13,7 @@ import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 import Constants from 'expo-constants';
 import { AUTH_CONSTANTS } from '@/constants/auth';
-import { RegistrationData, RegistrationResult } from './useRegistration.types';
+import { RegistrationData, RegistrationResult, REGISTRATION_ERROR_CODES } from './useRegistration.types';
 
 const LOG_TAG = AUTH_CONSTANTS.LOG_TAGS.SIGNUP;
 
@@ -28,21 +28,6 @@ const isE2ETest = (): boolean => {
     return false;
   }
 };
-
-export function useEmailCheck() {
-  return useCallback(async (email: string): Promise<boolean> => {
-    const { data: emailExists, error: rpcError } = await supabase.rpc('check_email_exists', {
-      email_to_check: email,
-    });
-
-    if (rpcError) {
-      LoggingService.error(LOG_TAG, 'RPC call to check_email_exists failed', rpcError);
-      throw new Error(AUTH_CONSTANTS.ERRORS.EMAIL_CHECK_FAILED);
-    }
-
-    return emailExists || false;
-  }, []);
-}
 
 export function useUserProfileCreation() {
   return useCallback(async (userId: string, firstName: string, lastName: string) => {
@@ -91,12 +76,15 @@ export function useAccountCreation(onProfileCreated: (userId: string, firstName:
         message: signUpError.message,
         status: signUpError.status,
       });
-      throw new Error(signUpError.message);
+      // Stable code (never leak provider message to UI): the screen maps it
+      // to `auth.errors_registrationFailed`. Same generic code for
+      // already-registered emails -> no account enumeration.
+      throw new Error(REGISTRATION_ERROR_CODES.REGISTRATION_FAILED);
     }
 
     if (!authData.user) {
       LoggingService.error(LOG_TAG, 'No user created during signup');
-      throw new Error(AUTH_CONSTANTS.ERRORS.REGISTRATION_FAILED);
+      throw new Error(REGISTRATION_ERROR_CODES.REGISTRATION_FAILED);
     }
 
     LoggingService.info(LOG_TAG, 'Registration successful', {

@@ -25,7 +25,6 @@ export const AUTH_CONSTANTS = {
   ERRORS: {
     MISSING_FIELDS: 'Completa tutti i campi richiesti e assicurati che la password rispetti i requisiti',
     MISSING_NAMES: 'Per favore, inserisci nome e cognome per completare la registrazione.',
-    EMAIL_CHECK_FAILED: "Errore durante la verifica dell'email. Riprova.",
     REGISTRATION_FAILED: 'Registrazione fallita: nessun utente creato',
     UNKNOWN_ERROR: 'Errore sconosciuto',
   },
@@ -33,14 +32,17 @@ export const AUTH_CONSTANTS = {
   // Alert titles
   ALERT_TITLES: {
     MISSING_DATA: 'Dati Mancanti',
-    EMAIL_EXISTS: 'Email già registrata',
+    CHECK_EMAIL: 'Controlla la tua email',
     REGISTRATION_COMPLETE: 'Registrazione Completata',
     REGISTRATION_ERROR: 'Errore di Registrazione',
   },
 
   // Alert messages
   ALERT_MESSAGES: {
-    EMAIL_EXISTS: 'Questo indirizzo email è già in uso. Prova ad accedere.',
+    CHECK_EMAIL_NEUTRAL: 'Se l\'indirizzo può essere registrato, riceverai un codice. Se hai già un account, accedi oppure recupera la password.',
+    ENTER_CODE_BUTTON: 'Inserisci codice',
+    LOGIN_BUTTON: 'Accedi',
+    RECOVER_PASSWORD_BUTTON: 'Recupera password',
     REGISTRATION_SUCCESS: 'Registrazione completata con successo! Puoi accedere subito.',
     OK_BUTTON: 'OK',
   },

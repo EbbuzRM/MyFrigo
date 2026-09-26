@@ -20,6 +20,7 @@ import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
 import { useCategories } from '@/context/CategoryContext';
 import { router } from 'expo-router';
+import i18next from 'i18next';
 
 // --- Mocks ---
 
@@ -124,6 +125,9 @@ const createMockScannerReturn = (overrides: any = {}): any => ({
 
 // --- Test Suite ---
 describe('BarcodeScannerScreen', () => {
+  afterEach(async () => {
+    await i18next.changeLanguage('it');
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     
@@ -160,39 +164,39 @@ describe('BarcodeScannerScreen', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
           isLoading: true,
-          loadingProgress: 'Ricerca in corso...',
+          loadingProgress: 'searching',
         })
       );
 
       const { getByText } = render(<BarcodeScannerScreen />);
 
-      expect(getByText('Ricerca in corso...')).toBeTruthy();
+      expect(getByText('Ricerca velocissima in corso...')).toBeTruthy();
     });
 
     it('dovrebbe mostrare lo stato di caricamento quando isLoading è true', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
           isLoading: true,
-          loadingProgress: 'Ricerca in corso...',
+          loadingProgress: 'searching',
         })
       );
 
       const { getByText } = render(<BarcodeScannerScreen />);
 
-      expect(getByText('Ricerca in corso...')).toBeTruthy();
+      expect(getByText('Ricerca velocissima in corso...')).toBeTruthy();
     });
 
     it('dovrebbe mostrare lo stato di errore quando loadingError è presente', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
-          loadingError: 'Errore di connessione',
+          loadingError: 'lookup_failed',
           currentBarcode: '1234567890123',
         })
       );
 
       const { getByText } = render(<BarcodeScannerScreen />);
 
-      expect(getByText('Errore di connessione')).toBeTruthy();
+      expect(getByText('Errore durante la ricerca. Riprova o inserisci manualmente.')).toBeTruthy();
       expect(getByText('Riprova')).toBeTruthy();
       expect(getByText('Inserisci Manualmente')).toBeTruthy();
     });
@@ -250,6 +254,33 @@ describe('BarcodeScannerScreen', () => {
   });
 
   describe('Gestione Prodotti Trovati', () => {
+    it.each([
+      { from: 'it', to: 'en', title: 'Product found!', action: 'Continue' },
+      { from: 'en', to: 'it', title: 'Prodotto Trovato!', action: 'Continua' },
+    ])('translates a delayed callback after $from -> $to', async ({ from, to, title, action }) => {
+      let delayedCallback: ((result: ScanResult, barcode: string) => void) | undefined;
+      mockedUseBarcodeScanner.mockImplementation((_, onProductFound) => {
+        delayedCallback = onProductFound;
+        return createMockScannerReturn();
+      });
+      await i18next.changeLanguage(from);
+      render(<BarcodeScannerScreen />);
+      await i18next.changeLanguage(to);
+
+      act(() => {
+        delayedCallback?.({
+          type: 'online',
+          data: { product_name_en: 'Milk' },
+          params: { barcode: '123', name: 'Milk' },
+        } as ScanResult, '123');
+      });
+
+      expect(mockedAlert).toHaveBeenCalledWith(
+        title,
+        expect.stringContaining('Milk'),
+        expect.arrayContaining([expect.objectContaining({ text: action })])
+      );
+    });
     it('dovrebbe mostrare un alert quando viene trovato un prodotto template', () => {
       const mockOnProductFound = jest.fn();
       mockedUseBarcodeScanner.mockImplementation((_, onProductFound) => {
@@ -459,7 +490,7 @@ describe('BarcodeScannerScreen', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
           isLoading: true,
-          loadingProgress: 'Ricerca velocissima in corso...',
+          loadingProgress: 'searching',
         })
       );
 
@@ -473,7 +504,7 @@ describe('BarcodeScannerScreen', () => {
     it('dovrebbe mostrare il pulsante "Riprova" in caso di errore', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
-          loadingError: 'Errore di connessione',
+          loadingError: 'lookup_failed',
         })
       );
 
@@ -485,7 +516,7 @@ describe('BarcodeScannerScreen', () => {
     it('dovrebbe mostrare il pulsante "Inserisci Manualmente" in caso di errore', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
-          loadingError: 'Errore di connessione',
+          loadingError: 'lookup_failed',
           currentBarcode: '1234567890123',
         })
       );
@@ -498,13 +529,13 @@ describe('BarcodeScannerScreen', () => {
     it('dovrebbe mostrare "Torna Indietro" in caso di errore', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
-          loadingError: 'Errore di connessione',
+          loadingError: 'lookup_failed',
         })
       );
 
       const { getByText } = render(<BarcodeScannerScreen />);
 
-      expect(getByText('Torna Indietro')).toBeTruthy();
+      expect(getByText('Torna indietro')).toBeTruthy();
     });
   });
 
@@ -560,13 +591,13 @@ describe('BarcodeScannerScreen', () => {
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
           isLoading: true,
-          loadingProgress: 'Ricerca in corso...',
+          loadingProgress: 'searching',
         })
       );
 
       const { getByText } = render(<BarcodeScannerScreen />);
 
-      expect(getByText('Ricerca in corso...')).toBeTruthy();
+      expect(getByText('Ricerca velocissima in corso...')).toBeTruthy();
     });
 
     it('dovrebbe mostrare il pulsante "Inserisci Manualmente" in caso di errore', () => {
@@ -585,7 +616,7 @@ describe('BarcodeScannerScreen', () => {
 
   describe('Gestione Errori', () => {
     it('dovrebbe gestire gli errori di scansione mostrando un messaggio appropriato', () => {
-      const errorMessage = 'Errore di connessione al database';
+      const errorMessage = 'lookup_failed';
       mockedUseBarcodeScanner.mockReturnValue(
         createMockScannerReturn({
           loadingError: errorMessage,
@@ -594,7 +625,7 @@ describe('BarcodeScannerScreen', () => {
 
       const { getByText } = render(<BarcodeScannerScreen />);
 
-      expect(getByText(errorMessage)).toBeTruthy();
+      expect(getByText('Errore durante la ricerca. Riprova o inserisci manualmente.')).toBeTruthy();
     });
 
     it('dovrebbe mostrare il pulsante "Riprova" per tentare di nuovo la scansione', () => {

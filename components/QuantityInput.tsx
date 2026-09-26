@@ -8,6 +8,7 @@
 // message: 
 
 import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TextInput, View, TextStyle, ViewStyle } from 'react-native';
 
 interface QuantityInputProps {
@@ -26,6 +27,7 @@ export const QuantityInput = React.memo(({
   value, onChangeText, totalQuantity, hasError, maxLength, isDarkMode,
   inputStyle, containerStyle, placeholderTextColor,
 }: QuantityInputProps) => {
+  const { t } = useTranslation();
   const placeholder = useMemo(() => totalQuantity > 1 ? `Es. 1-${totalQuantity}` : String(totalQuantity), [totalQuantity]);
   const handleChangeText = useCallback((text: string) => onChangeText(text.replace(/[^0-9]/g, '')), [onChangeText]);
   const borderColor = hasError ? '#ef4444' : (isDarkMode ? '#30363d' : '#e2e8f0');
@@ -41,7 +43,7 @@ export const QuantityInput = React.memo(({
         keyboardType="numeric"
         maxLength={maxLength}
         accessible
-        accessibilityLabel="Quantità da consumare"
+        accessibilityLabel={t('products.consumeQuantityLabel')}
         accessibilityRole="text"
         autoFocus
         testID="quantity-input"

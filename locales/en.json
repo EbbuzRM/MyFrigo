@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "MyFrigo",
+    "NSCameraUsageDescription": "MyFrigo uses the camera to scan barcodes and expiry dates.",
+    "NSPhotoLibraryUsageDescription": "MyFrigo uses photos to read expiry dates."
+  }
+}

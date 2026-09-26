@@ -7,12 +7,14 @@
 // message: 
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { supabase } from '@/services/supabaseClient';
 import { LoggingService } from '@/services/LoggingService';
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -125,7 +127,7 @@ export default function ResetPassword() {
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#007bff" />
       <Text style={styles.loadingText}>
-        {error ? 'Si è verificato un problema.' : 'Verifica token in corso...'}
+        {error ? t('auth.resetTokenProblem') : t('auth.resetTokenChecking')}
       </Text>
 
       {error && (
@@ -133,13 +135,13 @@ export default function ResetPassword() {
           <Text style={styles.errorText}>{error}</Text>
           {diagnosticToken && (
             <View style={styles.diagnosticBox}>
-              <Text style={styles.diagnosticLabel}>Codice diagnostica (opzionale):</Text>
+              <Text style={styles.diagnosticLabel}>{t('auth.diagnosticCode')}</Text>
               <Text style={styles.diagnosticValue}>{diagnosticToken}</Text>
-              <Text style={styles.diagnosticSubLabel}>(può essere utile per il supporto)</Text>
+              <Text style={styles.diagnosticSubLabel}>{t('auth.diagnosticCodeHint')}</Text>
             </View>
           )}
           <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-            <Text style={styles.backButtonText}>Torna al recupero password</Text>
+            <Text style={styles.backButtonText}>{t('auth.backToRecovery')}</Text>
           </TouchableOpacity>
         </>
       )}

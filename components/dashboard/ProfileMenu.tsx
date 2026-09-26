@@ -13,7 +13,7 @@ import { View, Text, TouchableOpacity, Modal, Pressable, StyleSheet } from 'reac
 import { Settings, LogOut } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
-import { DASHBOARD_CONTENT } from '@/constants/content';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileMenuProps {
     isVisible: boolean;
@@ -24,6 +24,7 @@ interface ProfileMenuProps {
 
 export const ProfileMenu = React.memo(function ProfileMenu({ isVisible, onClose, onLogout, userName }: ProfileMenuProps) {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const styles = getStyles(isDarkMode);
 
     return (
@@ -34,28 +35,28 @@ export const ProfileMenu = React.memo(function ProfileMenu({ isVisible, onClose,
             onRequestClose={onClose}
             testID="profile-modal"
         >
-            <Pressable accessibilityLabel="Chiudi menu" accessibilityRole="button" style={styles.modalOverlay} onPress={onClose}>
+            <Pressable accessibilityLabel={t('dashboard.closeMenuLabel')} accessibilityRole="button" style={styles.modalOverlay} onPress={onClose}>
                 <View style={styles.menuContainer}>
                     <Text style={styles.menuEmail}>{userName}</Text>
                     <View style={styles.menuDivider} />
                     <TouchableOpacity
-                        accessibilityLabel="Impostazioni"
+                        accessibilityLabel={t('dashboard.settingsLabel')}
                         accessibilityRole="button"
                         style={styles.menuItem}
                         onPress={() => { router.push('/(tabs)/settings'); onClose(); }}
                     >
                         <Settings size={20} color={isDarkMode ? '#c9d1d9' : '#4b5563'} />
-                        <Text style={styles.menuItemText}>{DASHBOARD_CONTENT.MENU_SETTINGS}</Text>
+                        <Text style={styles.menuItemText}>{t('dashboard.menuSettings')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        accessibilityLabel="Esci"
+                        accessibilityLabel={t('dashboard.logoutLabel')}
                         accessibilityRole="button"
                         style={styles.menuItem}
                         onPress={onLogout}
                         testID="logout-button"
                     >
                         <LogOut size={20} color="#EF4444" />
-                        <Text style={[styles.menuItemText, { color: '#EF4444' }]}>{DASHBOARD_CONTENT.MENU_LOGOUT}</Text>
+                        <Text style={[styles.menuItemText, { color: '#EF4444' }]}>{t('dashboard.menuLogout')}</Text>
                     </TouchableOpacity>
                 </View>
             </Pressable>

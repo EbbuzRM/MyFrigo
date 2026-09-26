@@ -1,11 +1,11 @@
 # GSD State
 
-Last updated: 2026-08-30
+Last updated: 2026-09-19
 
 ## Current Phase
 Released v1.0.6 (SDK 57)
 
-**Status**: Expo SDK 57 upgrade completato e mergiato su `master` (commit `801d1dd`). Safety net rollback ancora disponibile: tag annotato `pre-sdk57` + branch `sdk57` + zip `android/` + backup `package.json` / `package-lock.json` con suffisso `.bak-presdk57-20260829-170621`. Runbook completo in SESSIONS.md `#2026-08-29--audit-dipendenze-allineamento-sdk-54-e-safety-net-pre-sdk-57`.
+**Status**: Expo SDK 57 upgrade completato su `master`; il repository contiene i successivi fix di lint, camera, feedback e sicurezza fino a `6f4cf4c`. La safety net verificabile nel checkout corrente è il tag annotato `pre-sdk57`; il branch locale `sdk57` e lo zip temporaneo Android non risultano presenti.
 
 ## Session Log Index
 
@@ -53,13 +53,12 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - **Note aperte OCR fix 2026-07-08 (LOW)**:
   - `parsing.ts` filtro per sottostringa: edge case raro di blocco singolo con data standard + month-year legittimo distinto (es. "SCAD 08/26 15/08/26") escluderebbe anche il legittimo. Non impatta i casi reali (blocchi separati).
   - Manca test dedicato per "ENTRO 08 26" (comportamento preservato ma non coperto da test).
-- **devDeps drift fuori range SDK 54** (2026-08-29): `jest` 30.3.0, `jest-expo` 55.0.16, `@types/jest` 30.0.0, `@types/react` 19.2.14 (attesi 29.7.0 / 54.0.18 / 29.5.14 / 19.1.10). Allineare durante upgrade SDK 57, non prima. `expo-doctor` 15/18 per questo.
 - **Manca coverage test auth CON `captchaToken` valorizzato** (`LoginForm.tsx:78-80`): i test passano il terzo argomento come `undefined`, nessuno copre il path con token risolto.
 - **Worker Jest non esce gracefully** (pre-esistente, non bloccante).
-- **Branch `sdk57` esiste ancora come safety net** — può essere eliminato dopo conferma stabilità produzione SDK 57.
 
 ### Risolti
 - **2026-09-06**: Migrazione EXPO_PUBLIC_OCR_SPACE_API_KEY a proxy completata — utils/ocr/ocrSpaceService.ts invoca supabase.functions.invoke('ocr-proxy') (verify_jwt=true), nessuna key nel bundle client. Chiuso finding SEC-05 (stale).
+- **2026-09-06**: Rimossi il fallback hardcoded dell'hCaptcha sitekey e il prefisso `EXPO_PUBLIC_` dai secret E2E/admin.
 - **2026-08-30**: ML Kit OCR confermato funzionante su RN 0.86 via interop layer. Smoke test: 7 blocchi testo letti, data "21/05/2027" estratta correttamente, anchor OCR trovato, lotto escluso, zero crash.
 - **2026-08-04**: `feedback.test.tsx` 14 fallimenti (mock hoisting `expo-image-picker`); `forgot-password.tsx` trim mancante in `handleVerifyOTP`; RPC `get_expiring_products` chiusa (già sincronizzata con prod, `days_remaining` presente, commit `ab44414`).
 - **2026-07-16**: `NotificationService.initialize()` ora chiamato in `_layout.tsx` (era `OneSignalService.initialize()` che non richiedeva permessi push).
@@ -95,7 +94,7 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Scelto amend di `bb2ffb1`→`ed8ed7e`: messaggio citava 3 patch bump inesistenti; commit locale non pushato, nessun rewrite remoto.
 - Scelto `expo-splash-screen` con props esplicite (vs forma nuda `{}`): forma nuda cancella immagini ma genera stile che le referenzia → build Android rotta.
 - Scelto import type-only dal fork expo-router (vs installare @react-navigation/bottom-tabs): due universi di tipi incompatibili, type-only import risolve.
-- Scelto TypeScript 5.9.3 (vs 6.0.3 pin SDK 57): errore TS5101 su `baseUrl` deprecato, richiede decisione su tsconfig.
+- Scelto TypeScript 6.0.3 dopo la rimozione di `baseUrl` da `tsconfig.json`, deprecato da TS 6.0.
 - Scelto rimuovere baseUrl da tsconfig.json (vs ignoreDeprecations): paths già relativo al tsconfig, zero impatto funzionale, allinea a best practice TS 6.0.
 - Scelto mantenere @react-navigation/native come devDependency (vs rimuovere): test files importano tipi, non va nel bundle production.
 - Scelto migrare import application code a expo-router/build/react-navigation/native (vs lasciare @react-navigation/native): Expo Router 56+ ha forkato React Navigation, import diretti non supportati.
@@ -103,5 +102,5 @@ Log sessioni dettagliato: **`.planning/SESSIONS.md`** (unica fonte di verità).
 - Scelto prebuild --clean (vs prebuild incrementale): android/ rigenerato da zero per SDK 57.
 
 ## Last Commit
-Hash: 801d1dd
-Message: "Merge branch 'sdk57' — Expo SDK 57 upgrade (v1.0.6)"
+Hash: 6f4cf4c
+Message: "fix(security): strip EXPO_PUBLIC_ prefix from E2E/admin secrets drop hardcoded hCaptcha sitekey fallback"

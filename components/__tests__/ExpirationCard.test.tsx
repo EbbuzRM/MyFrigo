@@ -5,9 +5,19 @@
 // rules: none
 
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
+import i18next from 'i18next';
 import { ExpirationCard } from '../ExpirationCard';
 import type { Product } from '@/types/Product';
+import { initI18n } from '@/i18n';
+import { itCatalogs } from '@/i18n/catalogs/it';
+import { enCatalogs } from '@/i18n/catalogs/en';
+import type { ExpirationStatusInfo } from '@/hooks/useExpirationStatus';
+import { getExpirationCardAccessibilityProps as buildExpirationCardAccessibilityProps } from '@/utils/accessibility/cards';
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'it-IT' }]),
+}));
 
 // Mock scaleFont: must be before any other import that depends on it
 jest.mock('@/utils/scaleFont', () => ({
@@ -35,6 +45,7 @@ jest.mock('@/context/CategoryContext', () => ({
 
 // Mock useExpirationStatus (overrides global)
 jest.mock('@/hooks/useExpirationStatus', () => ({
+  ...jest.requireActual('@/hooks/useExpirationStatus'),
   useExpirationStatus: jest.fn(),
 }));
 
@@ -86,16 +97,67 @@ describe('ExpirationCard', () => {
     addedMethod: 'manual',
   };
 
-  const mockExpirationInfo = {
-    text: '15 giorni',
-    color: '#16a34a',
-    backgroundColor: '#dcfce720',
-  };
+const mockExpirationInfo = {
+  status: 'expiresInDays',
+  daysUntil: 15,
+  color: '#16a34a',
+  backgroundColor: '#dcfce720',
+};
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    (useExpirationStatus as jest.Mock).mockReturnValue(mockExpirationInfo);
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+  initI18n();
+  (useExpirationStatus as jest.Mock).mockReturnValue(mockExpirationInfo);
+});
+
+afterEach(async () => {
+  await i18next.changeLanguage('it');
+});
+
+const expirationStatusCases: Array<{
+  status: ExpirationStatusInfo['status'];
+  daysUntil?: number;
+  expectedItalian: string;
+  expectedEnglish: string;
+}> = [
+  {
+    status: 'frozen',
+    expectedItalian: itCatalogs.dashboard.statusFrozen,
+    expectedEnglish: enCatalogs.dashboard.statusFrozen,
+  },
+  {
+    status: 'dateNotSet',
+    expectedItalian: itCatalogs.dashboard.statusDateNotSet,
+    expectedEnglish: enCatalogs.dashboard.statusDateNotSet,
+  },
+  {
+    status: 'dateInvalid',
+    expectedItalian: itCatalogs.dashboard.statusDateInvalid,
+    expectedEnglish: enCatalogs.dashboard.statusDateInvalid,
+  },
+  {
+    status: 'expired',
+    expectedItalian: itCatalogs.dashboard.statusExpired,
+    expectedEnglish: enCatalogs.dashboard.statusExpired,
+  },
+  {
+    status: 'expiresToday',
+    expectedItalian: itCatalogs.dashboard.statusExpiresToday,
+    expectedEnglish: enCatalogs.dashboard.statusExpiresToday,
+  },
+  {
+    status: 'expiresInDays',
+    daysUntil: 1,
+    expectedItalian: itCatalogs.dashboard.statusExpiresInDays_one.replace('{{count}}', '1'),
+    expectedEnglish: enCatalogs.dashboard.statusExpiresInDays_one.replace('{{count}}', '1'),
+  },
+  {
+    status: 'expiresInDays',
+    daysUntil: 2,
+    expectedItalian: itCatalogs.dashboard.statusExpiresInDays_other.replace('{{count}}', '2'),
+    expectedEnglish: enCatalogs.dashboard.statusExpiresInDays_other.replace('{{count}}', '2'),
+  },
+];
 
   describe('Rendering', () => {
     it('should render the product card with header and details', () => {
@@ -120,11 +182,11 @@ describe('ExpirationCard', () => {
 
       expect(useExpirationStatus).toHaveBeenCalledWith(
         mockProduct.expirationDate,
-        false
+        false,
       );
     });
 
-    it('should render correctly with frozen product (isFrozen not forwarded to hook)', () => {
+    it('should keep expiration status behavior unchanged for frozen products', () => {
       const frozenProduct: Product = {
         ...mockProduct,
         isFrozen: true,
@@ -132,12 +194,36 @@ describe('ExpirationCard', () => {
 
       render(<ExpirationCard product={frozenProduct} onPress={jest.fn()} />);
 
-      // ExpirationCard does NOT pass isFrozen to useExpirationStatus
       expect(useExpirationStatus).toHaveBeenCalledWith(
         frozenProduct.expirationDate,
-        false
+        false,
       );
     });
+  });
+
+  describe('Localized expiration status', () => {
+    it.each(expirationStatusCases)(
+      'renders $status in Italian and British English',
+      async ({ status, daysUntil, expectedItalian, expectedEnglish }) => {
+        (useExpirationStatus as jest.Mock).mockReturnValue({
+          ...mockExpirationInfo,
+          status,
+          daysUntil,
+        });
+
+        const screen = render(<ExpirationCard product={mockProduct} />);
+
+        expect(screen.getByText(expectedItalian)).toBeTruthy();
+
+        await act(async () => {
+          await i18next.changeLanguage('en');
+        });
+
+        await waitFor(() => {
+          expect(screen.getByText(expectedEnglish)).toBeTruthy();
+        });
+      },
+    );
   });
 
   describe('Category Handling', () => {
@@ -188,7 +274,7 @@ describe('ExpirationCard', () => {
 
       expect(useExpirationStatus).toHaveBeenCalledWith(
         mockProduct.expirationDate,
-        false
+        false,
       );
       expect(getByTestId('expiration-card-header')).toBeTruthy();
     });
@@ -202,7 +288,36 @@ describe('ExpirationCard', () => {
 
       expect(getExpirationCardAccessibilityProps).toHaveBeenCalledWith(
         mockProduct,
-        mockExpirationInfo
+        { text: itCatalogs.dashboard.statusExpiresInDays_other.replace('{{count}}', '15') },
+        expect.any(Function),
+      );
+    });
+
+    it('preserves Italian accessibility copy and localizes it in English', async () => {
+      const status = { text: '1 giorno' };
+      const italianDate = new Date(mockProduct.expirationDate!).toLocaleDateString('it-IT');
+      const italianLabel = buildExpirationCardAccessibilityProps(
+        mockProduct,
+        status,
+        i18next.getFixedT('it'),
+      ).accessibilityLabel;
+
+      expect(italianLabel).toBe(
+        `Latte, marca Parmalat, scade il ${italianDate}, stato: 1 giorno`,
+      );
+
+      await act(async () => {
+        await i18next.changeLanguage('en');
+      });
+
+      const englishLabel = buildExpirationCardAccessibilityProps(
+        mockProduct,
+        { text: '1 day' },
+        i18next.getFixedT('en'),
+      ).accessibilityLabel;
+
+      expect(englishLabel).toBe(
+        `Product Latte, brand Parmalat, expires ${italianDate}. Status: 1 day.`,
       );
     });
   });

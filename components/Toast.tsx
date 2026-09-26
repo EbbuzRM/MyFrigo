@@ -28,31 +28,50 @@ export function Toast({ message, visible, onDismiss, type = 'success', testID }:
   const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
-    if (visible) {
-      if (reducedMotion) {
-        // Skip animation, show instantly and dismiss after timeout
-        fadeAnim.setValue(1);
-        const timer = setTimeout(() => {
-          fadeAnim.setValue(0);
-          onDismiss();
-        }, 2000);
-        return () => clearTimeout(timer);
-      }
+    let dismissTimer: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+
+    if (!visible) {
+      fadeAnim.stopAnimation();
+      fadeAnim.setValue(0);
+      return undefined;
+    }
+
+    const dismiss = () => {
+      if (cancelled) return;
+      fadeAnim.setValue(0);
+      onDismiss();
+    };
+
+    if (reducedMotion) {
+      fadeAnim.setValue(1);
+      dismissTimer = setTimeout(dismiss, 2000);
+    } else {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
-      }).start(() => {
-        setTimeout(() => {
+      }).start(({ finished }) => {
+        if (!finished || cancelled) return;
+        dismissTimer = setTimeout(() => {
+          if (cancelled) return;
           Animated.timing(fadeAnim, {
             toValue: 0,
             duration: 300,
             useNativeDriver: true,
-          }).start(onDismiss);
+          }).start(({ finished: fadeFinished }) => {
+            if (fadeFinished) dismiss();
+          });
         }, 2000);
       });
     }
-  }, [visible, reducedMotion]);
+
+    return () => {
+      cancelled = true;
+      if (dismissTimer !== undefined) clearTimeout(dismissTimer);
+      fadeAnim.stopAnimation();
+    };
+  }, [fadeAnim, onDismiss, reducedMotion, visible]);
 
   if (!visible) {
     return null;

@@ -7,6 +7,10 @@
 // message: 
 
 import { useCallback } from 'react';
+
+export class ProductNotFoundError extends Error {
+  readonly code = 'product_not_found';
+}
 import { OpenFoodFactsProduct } from '@/types/api';
 
 const API_TIMEOUT = 15000;
@@ -32,7 +36,9 @@ export function useOpenFoodFactsApi() {
           .then(response => {
             clearTimeout(timeoutId);
             if (!response.ok) {
-              reject(new Error(`Errore HTTP: ${response.status}`));
+              reject(response.status === 404
+                ? new ProductNotFoundError('Product not found')
+                : new Error(`Open Food Facts HTTP ${response.status}`));
               return;
             }
             return response.json() as Promise<OpenFoodFactsResponse>;
@@ -43,7 +49,7 @@ export function useOpenFoodFactsApi() {
               return;
             }
             if (jsonResponse.status !== 1 || !jsonResponse.product) {
-              reject(new Error('Prodotto non trovato nel database online'));
+              reject(new ProductNotFoundError('Product not found'));
               return;
             }
             // Aggiungi il barcode al product (l'API lo restituisce come 'code' nella response principale)

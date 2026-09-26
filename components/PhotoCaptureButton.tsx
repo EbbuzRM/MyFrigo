@@ -13,6 +13,7 @@ import { Text, TouchableOpacity, Image, View, AccessibilityProps } from 'react-n
 import { usePhotoNavigation, PhotoNavigationParams } from '@/hooks/usePhotoNavigation';
 import { getPhotoCaptureStyles, getButtonStyles } from './ProductFormHeader.styles';
 import { LoggingService } from '@/services/LoggingService';
+import { useTranslation } from 'react-i18next';
 
 // ============================================================================
 // EXPIRATION DATE BUTTON (for Footer)
@@ -36,9 +37,10 @@ export const ExpirationPhotoButton = React.memo(({
   isDarkMode,
   mode = 'expirationDateOnly',
   accessible = true,
-  accessibilityLabel = 'Capture expiration date with camera',
+  accessibilityLabel,
   testID = 'capture-expiration-date-button',
 }: ExpirationPhotoButtonProps) => {
+  const { t } = useTranslation();
   const styles = getButtonStyles(isDarkMode);
   const { navigateToPhotoCapture } = usePhotoNavigation();
 
@@ -51,13 +53,13 @@ export const ExpirationPhotoButton = React.memo(({
       style={styles.photoButton}
       onPress={handlePress}
       accessible={accessible}
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel ?? t('scanner.captureExpiry')}
       accessibilityRole="button"
-      accessibilityHint="Opens camera to capture expiration date"
+      accessibilityHint={t('scanner.captureExpiryHint')}
       testID={testID}
     >
       <Text style={styles.photoButtonText}>
-        {mode === 'expirationDateOnly' ? 'Fotografa la scadenza' : 'Scatta Foto'}
+        {mode === 'expirationDateOnly' ? t('scanner.captureExpiry') : t('scanner.takePhoto')}
       </Text>
     </TouchableOpacity>
   );
@@ -98,28 +100,30 @@ export const ProductPhotoButton = React.memo(({
   barcode,
   isDarkMode,
   onPhotoPress,
-  accessibilityLabel = imageUrl ? 'Tap to change product photo' : 'Capture product photo',
+  accessibilityLabel,
   testID = 'photo-capture-button',
 }: ProductPhotoButtonProps) => {
+  const { t } = useTranslation();
   const styles = getPhotoCaptureStyles(isDarkMode);
   const [, setImageLoading] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 
   const handlePress = useCallback(() => {
     onPhotoPress();
   }, [onPhotoPress]);
 
   // No image - show capture button
-  if (!imageUrl) {
+  if (!imageUrl || failedImageUrl === imageUrl) {
     return (
       <TouchableOpacity
         style={styles.noImageButton}
         onPress={handlePress}
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={accessibilityLabel ?? t('scanner.captureProductPhoto')}
         accessibilityRole="button"
         testID={`${testID}-capture`}
       >
         <Text style={styles.noImageButtonText}>
-          {barcode ? 'Aggiungi Foto Prodotto' : 'Scatta Foto Prodotto'}
+          {barcode ? t('scanner.addProductPhoto') : t('scanner.captureProductPhoto')}
         </Text>
       </TouchableOpacity>
     );
@@ -131,14 +135,15 @@ export const ProductPhotoButton = React.memo(({
       <TouchableOpacity
         style={styles.imageTouchable}
         onPress={handlePress}
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={accessibilityLabel ?? t('scanner.changeProductPhoto')}
         accessibilityRole="button"
         testID={`${testID}-preview`}
       >
         <Text style={styles.imageLabel}>
-          Immagine Prodotto (clicca per modificare)
+          {t('scanner.productPhotoChangeHint')}
         </Text>
         <Image
+          testID={`${testID}-image`}
           source={{ uri: imageUrl }}
           style={styles.productImage}
           resizeMode="contain"
@@ -147,7 +152,8 @@ export const ProductPhotoButton = React.memo(({
           onLoadEnd={() => setImageLoading(false)}
           onError={() => {
             setImageLoading(false);
-            LoggingService.warning('PhotoCaptureButton', 'Failed to load product image', { imageUrl });
+            setFailedImageUrl(imageUrl);
+            LoggingService.warning('PhotoCaptureButton', 'Failed to load product image');
           }}
         />
       </TouchableOpacity>

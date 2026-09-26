@@ -11,6 +11,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import Constants from 'expo-constants';
+import { useTranslation } from 'react-i18next';
 import { UpdateModalStyles } from './UpdateModal.styles';
 import { UpdateStatus } from './UpdateModalHeader';
 import { UpdateInfo } from '@/services/UpdateService';
@@ -23,7 +24,18 @@ interface UpdateStatusMessageProps {
   autoInstall: boolean;
 }
 
+type StatusMessageKey =
+  | 'common.updateDownloading'
+  | 'common.updateInstalling'
+  | 'common.updateInstallComplete'
+  | 'common.updateDownloaded'
+  | 'common.updateError'
+  | 'common.updateNewVersion'
+  | 'common.notAvailable';
+type Translate = (key: StatusMessageKey, options?: { percent?: number; version?: string }) => string;
+
 const getStatusMessageText = (
+  t: Translate,
   status: UpdateStatus,
   downloadProgress: number,
   updateInfo: UpdateInfo | null | undefined,
@@ -31,15 +43,17 @@ const getStatusMessageText = (
 ): string => {
   switch (status) {
     case 'downloading':
-      return `Download in corso... ${Math.round(downloadProgress)}%`;
+      return t('common.updateDownloading', { percent: Math.round(downloadProgress) });
     case 'installing':
-      return autoInstall ? 'Installazione in corso...' : 'Installazione completata!';
+      return autoInstall ? t('common.updateInstalling') : t('common.updateInstallComplete');
     case 'completed':
-      return 'Aggiornamento scaricato con successo!';
+      return t('common.updateDownloaded');
     case 'error':
-      return "Errore durante l'aggiornamento. Riprova più tardi.";
+      return t('common.updateError');
     default:
-      return `Nuova versione disponibile: ${updateInfo?.availableVersion || 'N/D'}`;
+      return t('common.updateNewVersion', {
+        version: updateInfo?.availableVersion || t('common.notAvailable'),
+      });
   }
 };
 
@@ -50,12 +64,13 @@ export const UpdateStatusMessage: React.FC<UpdateStatusMessageProps> = React.mem
   updateInfo,
   autoInstall,
 }) => {
-  const message = getStatusMessageText(updateStatus, downloadProgress, updateInfo, autoInstall);
+  const { t } = useTranslation();
+  const message = getStatusMessageText(t as Translate, updateStatus, downloadProgress, updateInfo, autoInstall);
 
   return (
     <View style={styles.content}>
       <Text style={styles.title} accessibilityRole="header">
-        Aggiornamento Disponibile
+        {t('common.updateAvailableTitle')}
       </Text>
       <Text style={styles.message} accessibilityLiveRegion="polite">
         {message}
@@ -63,10 +78,10 @@ export const UpdateStatusMessage: React.FC<UpdateStatusMessageProps> = React.mem
 
       {updateStatus === 'idle' && (
         <View style={styles.versionInfo}>
-          <Text style={styles.versionLabel}>Versione attuale:</Text>
-          <Text style={styles.versionText}>{Constants.expoConfig?.version || 'N/D'}</Text>
-          <Text style={styles.versionLabel}>Nuova versione:</Text>
-          <Text style={styles.versionText}>{updateInfo?.availableVersion || 'N/D'}</Text>
+          <Text style={styles.versionLabel}>{t('common.currentVersion')}</Text>
+          <Text style={styles.versionText}>{Constants.expoConfig?.version || t('common.notAvailable')}</Text>
+          <Text style={styles.versionLabel}>{t('common.newVersion')}</Text>
+          <Text style={styles.versionText}>{updateInfo?.availableVersion || t('common.notAvailable')}</Text>
         </View>
       )}
     </View>

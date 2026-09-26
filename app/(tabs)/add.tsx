@@ -27,6 +27,7 @@ import { ProductStorage } from '@/services/ProductStorage';
 import { Product } from '@/types/Product';
 import { recentProductQueue, RecentQueueItem } from '@/utils/recentProductQueue';
 import { getLocalISODate } from '@/utils/dateUtils';
+import { useTranslation } from 'react-i18next';
 
 // Helper: map Product -> RecentQueueItem for clone
 function toQueueItem(p: Product): RecentQueueItem {
@@ -58,6 +59,7 @@ function toManualEntryParams(item: RecentQueueItem): Record<string, string> {
 
 // Componente per l'aggiunta di prodotti
 const AddProduct = () => {
+  const { t } = useTranslation();
   LoggingService.info('DEBUG_CRASH', 'AddProduct component mounting');
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
@@ -65,7 +67,7 @@ const AddProduct = () => {
 
   const [recents, setRecents] = useState<Product[]>([]);
   const [recentsLoading, setRecentsLoading] = useState(false);
-  const [recentsError, setRecentsError] = useState<string | null>(null);
+  const [recentsError, setRecentsError] = useState<'load' | 'search' | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -109,7 +111,7 @@ const AddProduct = () => {
     if (result.success) {
       setRecents(result.data ?? []);
     } else {
-      setRecentsError(result.error ?? 'Errore caricamento recents');
+      setRecentsError('load');
     }
     setRecentsLoading(false);
   }, []);
@@ -123,7 +125,7 @@ const AddProduct = () => {
     if (result.success) {
       setRecents(result.data ?? []);
     } else {
-      setRecentsError(result.error ?? 'Errore ricerca');
+      setRecentsError('search');
     }
     setRecentsLoading(false);
   }, []);
@@ -159,7 +161,7 @@ const AddProduct = () => {
     [fetchRecents, fetchSearch]
   );
 
-  const hintText = searchQuery.trim().length === 1 ? 'Digita ancora…' : null;
+  const hintText = searchQuery.trim().length === 1 ? t('products.searchMoreHint') : null;
 
   const handleToggle = useCallback((product: Product) => {
     setSelectedIds((prev) => {
@@ -202,17 +204,17 @@ const AddProduct = () => {
       <View style={styles.contentWrapper}>
         <ScrollView style={styles.scrollView} contentContainerStyle={{ gap: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <Text style={styles.title}>Aggiungi Prodotto</Text>
+            <Text style={styles.title}>{t('products.addTitle')}</Text>
             <Text style={styles.subtitle}>
-              Scegli il metodo per aggiungere un nuovo prodotto alla tua dispensa
+              {t('products.addSubtitle')}
             </Text>
           </View>
 
           <View style={styles.methodsContainer}>
             <AddMethodCard
               testID="barcode-scanner-button"
-              title="Scansiona Codice a Barre"
-              description="Usa la fotocamera per una scansione rapida"
+              title={t('products.scanBarcodeTitle')}
+              description={t('products.scanBarcodeDescription')}
               icon={<Barcode size={28} />}
               onPress={handleBarcodeScanner}
               variant="barcode"
@@ -220,8 +222,8 @@ const AddProduct = () => {
 
             <AddMethodCard
               testID="manual-entry-button"
-              title="Inserimento Manuale"
-              description="Aggiungi i dettagli del prodotto manualmente"
+              title={t('products.manualEntryTitle')}
+              description={t('products.manualEntryDescription')}
               icon={<Keyboard size={28} />}
               onPress={handleManualEntry}
               variant="manual"
@@ -235,18 +237,18 @@ const AddProduct = () => {
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             loading={recentsLoading}
-            error={recentsError}
+            error={recentsError ? t(recentsError === 'load' ? 'products.loadRecentError' : 'products.searchRecentError') : null}
             hintText={hintText}
           />
 
           <View style={styles.infoSection}>
-            <Text style={styles.infoTitle}>Suggerimenti</Text>
+            <Text style={styles.infoTitle}>{t('products.tipsTitle')}</Text>
             <View style={styles.tipContainer}>
               <Text style={styles.tipText}>
-                • Puoi inserire la data di scadenza anche da un'immagine della galleria.Assicurati che l'etichetta sia ben illuminata e si consiglia di utilizzare la modalità macro.
+                {t('products.photoExpiryTip')}
               </Text>
               <Text style={styles.tipText}>
-                • L'inserimento manuale ti permette il controllo completo sui dettagli
+                {t('products.manualEntryTip')}
               </Text>
               <Text style={styles.tipText}>
 
@@ -261,10 +263,10 @@ const AddProduct = () => {
               testID="recents-continue-button"
               style={styles.continueButton}
               onPress={handleContinue}
-              accessibilityLabel={`Continua con ${selectedCount} prodotti`}
+              accessibilityLabel={t('products.continueWithProducts', { count: selectedCount })}
               accessibilityRole="button"
             >
-              <Text style={styles.continueText}>Continua ({selectedCount})</Text>
+              <Text style={styles.continueText}>{t('products.continueCount', { count: selectedCount })}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -344,4 +346,3 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     lineHeight: 20,
   },
 });
-

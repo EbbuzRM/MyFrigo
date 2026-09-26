@@ -15,9 +15,9 @@ import { Product, ProductCategory } from '@/types/Product';
 import { CategoryIcon } from './CategoryIcon';
 import { scaleFont } from '@/utils/scaleFont';
 import {
-  getDeleteButtonAccessibilityProps,
-  getActionButtonAccessibilityProps,
+  getButtonAccessibilityProps,
 } from '@/utils/accessibility';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCardHeaderProps {
   /** Product data */
@@ -62,6 +62,9 @@ export const ProductCardHeader = React.memo(({
   onDelete,
   index,
 }: ProductCardHeaderProps) => {
+  const { t } = useTranslation();
+  const productName = product.name || t('products.genericProduct');
+  const deleteConfirmationName = product.name || t('products.genericProductForDelete');
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -118,16 +121,15 @@ export const ProductCardHeader = React.memo(({
   );
 
   const handleDeletePress = useCallback(() => {
-    const productName = product.name || 'questo prodotto';
     Alert.alert(
-      'Elimina Prodotto',
-      `Sei sicuro di voler eliminare "${productName}"?`,
+      t('products.deleteProductTitle'),
+      t('products.deleteProductConfirmation', { name: deleteConfirmationName }),
       [
-        { text: 'Annulla', style: 'cancel' },
-        { text: 'Elimina', style: 'destructive', onPress: onDelete },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('products.deleteProductAction'), style: 'destructive', onPress: onDelete },
       ]
     );
-  }, [product.name, onDelete]);
+  }, [deleteConfirmationName, onDelete, t]);
 
   return (
     <View style={styles.container}>
@@ -138,7 +140,7 @@ export const ProductCardHeader = React.memo(({
           <View style={styles.brandRow}>
             {product.brand && <Text style={styles.brandName}>{product.brand}</Text>}
             {product.isFrozen && (
-              <Text style={styles.frozenIndicator}>(Freezer)</Text>
+              <Text style={styles.frozenIndicator}>({t('products.freezerIndicator')})</Text>
             )}
           </View>
         </View>
@@ -147,14 +149,20 @@ export const ProductCardHeader = React.memo(({
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onConsume}
-          {...getActionButtonAccessibilityProps('consumato', product.name || 'prodotto')}
+          {...getButtonAccessibilityProps(
+            t('accessibility.consumeProductLabel', { name: productName }),
+            t('accessibility.consumeProductHint', { name: productName }),
+          )}
         >
           <Check size={22} color={colors.success} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={handleDeletePress}
-          {...getDeleteButtonAccessibilityProps(product.name || 'prodotto')}
+          {...getButtonAccessibilityProps(
+            t('accessibility.deleteProductLabel', { name: productName }),
+            t('accessibility.deleteProductHint', { name: productName }),
+          )}
         >
           <Trash2 size={20} color={colors.error} />
         </TouchableOpacity>

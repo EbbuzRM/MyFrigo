@@ -9,6 +9,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
@@ -28,6 +29,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   retryInProgress = false,
   retryAttemptNumber = 0
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
 
   const getButtonContent = () => {
@@ -40,7 +42,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
         <View style={styles.buttonContent}>
           <ActivityIndicator size="small" color="#fff" style={styles.loadingIcon} />
           <Text style={styles.buttonText}>
-            Tentativo {retryAttemptNumber}/3
+            {t('auth.googleAttempt', { attempt: retryAttemptNumber, max: 3 })}
           </Text>
         </View>
       );
@@ -49,7 +51,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     return (
       <View style={styles.buttonContent}>
         <FontAwesome name="google" size={20} color="#fff" style={styles.socialIcon} />
-        <Text style={styles.buttonText}>Accedi con Google</Text>
+        <Text style={styles.buttonText}>{t('auth.googleSignIn')}</Text>
       </View>
     );
   };
@@ -64,7 +66,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
       ]}
       onPress={onPress}
       disabled={disabled}
-      accessibilityLabel="Accedi con Google"
+      accessibilityLabel={t('auth.googleSignIn')}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
     >

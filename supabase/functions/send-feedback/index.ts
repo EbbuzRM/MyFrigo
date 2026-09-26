@@ -22,6 +22,7 @@ const STORAGE_BUCKET = 'feedback-screenshots'
 
 const MAX_FEEDBACK_CHARS = 5000
 const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024
+const SCREENSHOT_URL_TTL_SECONDS = 7 * 24 * 60 * 60
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 const jsonHeaders = { 'Content-Type': 'application/json', ...corsHeaders }
@@ -103,8 +104,25 @@ serve(async (req: Request) => {
         })
       }
 
-      const { data: publicUrlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName)
-      screenshotUrl = publicUrlData?.publicUrl ?? null
+      const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+        .from(STORAGE_BUCKET)
+        .createSignedUrl(fileName, SCREENSHOT_URL_TTL_SECONDS)
+
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        console.error('screenshot signed URL creation failed:', signedUrlError?.message ?? 'missing signed URL')
+        const { error: cleanupError } = await supabaseAdmin.storage
+          .from(STORAGE_BUCKET)
+          .remove([fileName])
+        if (cleanupError) {
+          console.error('screenshot cleanup failed:', cleanupError.message)
+        }
+        return new Response(JSON.stringify({ error: 'Impossibile rendere disponibile lo screenshot.' }), {
+          status: 502,
+          headers: jsonHeaders,
+        })
+      }
+
+      screenshotUrl = signedUrlData.signedUrl
     }
 
     let emailHtml = `

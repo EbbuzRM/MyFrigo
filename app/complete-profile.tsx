@@ -9,11 +9,13 @@
 // message: 
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 
 export default function CompleteProfileScreen() {
+  const { t } = useTranslation();
   const { updateProfile } = useAuth(); // Usa refreshUserProfile
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -24,7 +26,7 @@ export default function CompleteProfileScreen() {
     const trimmedLastName = lastName.trim();
 
     if (!trimmedFirstName || !trimmedLastName) {
-      Alert.alert('Attenzione', 'Per favore, inserisci nome e cognome.');
+      Alert.alert(t('common.error'), t('auth.completeProfileRequired'));
       return;
     }
 
@@ -37,9 +39,8 @@ export default function CompleteProfileScreen() {
       // La navigazione verrà gestita automaticamente dal layout principale
       // non appena rileverà che il profilo è stato completato.
 
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
-      Alert.alert('Errore', 'Impossibile salvare il profilo: ' + errorMessage);
+    } catch {
+      Alert.alert(t('common.error'), t('auth.completeProfileFailed'));
     } finally {
       setSaving(false);
     }
@@ -47,23 +48,23 @@ export default function CompleteProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Completa il Tuo Profilo</Text>
-      <Text style={styles.subtitle}>Inserisci il tuo nome e cognome per continuare.</Text>
+      <Text style={styles.title}>{t('auth.completeProfileTitle')}</Text>
+      <Text style={styles.subtitle}>{t('auth.completeProfileSubtitle')}</Text>
       
-      <Text style={styles.label}>Nome</Text>
+      <Text style={styles.label}>{t('auth.firstNameLabel')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Il tuo nome"
+          placeholder={t('auth.firstNamePlaceholder')}
           value={firstName}
           onChangeText={setFirstName}
           autoCapitalize="words"
           testID="complete-profile-first-name-input"
         />
         
-        <Text style={styles.label}>Cognome</Text>
+        <Text style={styles.label}>{t('auth.lastNameLabel')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Il tuo cognome"
+          placeholder={t('auth.lastNamePlaceholder')}
           value={lastName}
           onChangeText={setLastName}
           autoCapitalize="words"
@@ -75,14 +76,14 @@ export default function CompleteProfileScreen() {
           onPress={handleCompleteProfile}
           disabled={saving}
           accessibilityRole="button"
-          accessibilityLabel="Salva e Continua"
+          accessibilityLabel={t('auth.completeProfileSave')}
           accessibilityState={{ disabled: saving }}
           testID="complete-profile-save-button"
         >
         {saving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Salva e Continua</Text>
+          <Text style={styles.buttonText}>{t('auth.completeProfileSave')}</Text>
         )}
       </TouchableOpacity>
     </SafeAreaView>

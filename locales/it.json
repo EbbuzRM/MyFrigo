@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "MyFrigo",
+    "NSCameraUsageDescription": "MyFrigo usa la fotocamera per scansionare codici a barre e date di scadenza.",
+    "NSPhotoLibraryUsageDescription": "MyFrigo usa le foto per leggere le date di scadenza."
+  }
+}

@@ -53,6 +53,7 @@ jest.mock('react-native-calendars', () => {
   const React = require('react');
   const { View, Text, TouchableOpacity } = require('react-native');
   return {
+    LocaleConfig: { locales: {}, defaultLocale: 'it' },
     Calendar: (props: any) =>
       React.createElement(View, { testID: 'calendar' }, [
         React.createElement(TouchableOpacity, {
@@ -93,12 +94,12 @@ describe('CustomDatePicker', () => {
 
     it('renders modal title "Select Date"', () => {
       const { getByText } = render(<CustomDatePicker {...defaultProps} />);
-      expect(getByText('Select Date')).toBeTruthy();
+      expect(getByText('Seleziona Data')).toBeTruthy();
     });
 
     it('renders Close button', () => {
       const { getByText } = render(<CustomDatePicker {...defaultProps} />);
-      expect(getByText('Close')).toBeTruthy();
+      expect(getByText('Chiudi')).toBeTruthy();
     });
 
     it('calls onClose when Close button is pressed', () => {
@@ -106,7 +107,7 @@ describe('CustomDatePicker', () => {
       const { getByText } = render(
         <CustomDatePicker {...defaultProps} onClose={onClose} />
       );
-      fireEvent.press(getByText('Close'));
+      fireEvent.press(getByText('Chiudi'));
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
@@ -122,7 +123,7 @@ describe('CustomDatePicker', () => {
     it('renders correctly in dark mode', () => {
       mockTheme.isDarkMode = true;
       const { getByText } = render(<CustomDatePicker {...defaultProps} />);
-      expect(getByText('Select Date')).toBeTruthy();
+      expect(getByText('Seleziona Data')).toBeTruthy();
       mockTheme.isDarkMode = false;
     });
   });

@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { getStyles } from '@/styles/photo-capture.styles';
 import { useCamera, CaptureMode } from '@/hooks/useCamera';
+import { useTranslation } from 'react-i18next';
 import { usePhotoActions } from '@/hooks/usePhotoActions';
 import { CameraView } from '@/components/CameraView';
 import { PhotoPreview } from '@/components/PhotoPreview';
@@ -32,6 +33,7 @@ import { LoggingService } from '@/services/LoggingService';
  * - productPhoto: Captures product photo for new entries
  */
 const PhotoCaptureScreen: React.FC = memo(() => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [extractedDate, setExtractedDate] = useState<string | null>(null);
@@ -107,11 +109,11 @@ const PhotoCaptureScreen: React.FC = memo(() => {
         } else {
           // No date detected - show options to retry or enter manually
           Alert.alert(
-            "Data Non Rilevata",
-            ocrResult.error || "Non è stato possibile trovare una data di scadenza nell'immagine.",
+            t('scanner.dateNotDetected'),
+            t('scanner.noExpiryFound'),
             [
               {
-                text: 'Inserisci manualmente',
+                text: t('scanner.enterManually'),
                 onPress: () => router.replace({
                   pathname: '/manual-entry',
                   params: { ...params, isEditMode: 'false' }
@@ -119,7 +121,7 @@ const PhotoCaptureScreen: React.FC = memo(() => {
                 style: 'cancel'
               },
               {
-                text: 'Riprova',
+                text: t('common.retry'),
                 onPress: () => {
                   resetOCRProgress();
                   setCapturedImage(null);
@@ -131,16 +133,16 @@ const PhotoCaptureScreen: React.FC = memo(() => {
       } catch (error) {
         LoggingService.error('PhotoCaptureScreen', 'Error extracting expiration date', error);
         Alert.alert(
-          "Errore",
-          "Si è verificato un errore durante l'elaborazione dell'immagine.",
-          [{ text: 'OK' }]
+          t('common.error'),
+          t('scanner.processImageFailed'),
+          [{ text: t('common.ok') }]
         );
       }
     } else {
       // For other modes, use the standard confirm flow
       await confirmPhoto(capturedImage, captureMode);
     }
-  }, [captureMode, capturedImage, extractExpirationDate, confirmPhoto, resetOCRProgress, params]);
+  }, [captureMode, capturedImage, extractExpirationDate, confirmPhoto, resetOCRProgress, params, t]);
 
   /**
    * Handle confirming the extracted date and navigating to manual entry
@@ -223,10 +225,10 @@ const PhotoCaptureScreen: React.FC = memo(() => {
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionText}>
-            Abbiamo bisogno del permesso per usare la fotocamera.
+            {t('scanner.cameraPermissionForPhoto')}
           </Text>
-          <Button onPress={requestCameraPermission} title="Concedi Permesso" />
-          <Button onPress={() => router.back()} title="Indietro" color="gray" />
+          <Button onPress={requestCameraPermission} title={t('scanner.grantPermission')} />
+          <Button onPress={() => router.back()} title={t('common.back')} color="gray" />
         </View>
       </SafeAreaView>
     );

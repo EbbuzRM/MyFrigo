@@ -155,7 +155,7 @@ describe('useOpenFoodFactsApi', () => {
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Errore HTTP: 404');
+    await expect(result.current.fetchProduct(testBarcode)).rejects.toMatchObject({ code: 'product_not_found' });
         });
 
         it('should reject when product not found in database', async () => {
@@ -169,7 +169,7 @@ describe('useOpenFoodFactsApi', () => {
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Prodotto non trovato nel database online');
+    await expect(result.current.fetchProduct(testBarcode)).rejects.toMatchObject({ code: 'product_not_found' });
         });
 
         it('should reject when response is empty', async () => {

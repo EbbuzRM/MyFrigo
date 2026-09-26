@@ -1,5 +1,6 @@
 import { calculateHistoryStats, generateSuggestions, calculateHistoryData } from '../historyCalculations';
 import { Product } from '@/types/Product';
+import i18next from 'i18next';
 
 jest.mock('@/services/LoggingService', () => ({
   LoggingService: {
@@ -45,28 +46,28 @@ describe('historyCalculations', () => {
 
   describe('generateSuggestions', () => {
     it('should always include the default info suggestion', () => {
-      const suggestions = generateSuggestions({ consumedCount: 0, expiredCount: 0, wastePercentage: 0, totalCount: 0 });
+      const suggestions = generateSuggestions({ consumedCount: 0, expiredCount: 0, wastePercentage: 0, totalCount: 0 }, i18next.t);
       expect(suggestions).toHaveLength(1);
       expect(suggestions[0].type).toBe('info');
     });
 
     it('should generate a warning for high waste', () => {
-      const suggestions = generateSuggestions({ consumedCount: 1, expiredCount: 1, wastePercentage: 50, totalCount: 2 });
+      const suggestions = generateSuggestions({ consumedCount: 1, expiredCount: 1, wastePercentage: 50, totalCount: 2 }, i18next.t);
       expect(suggestions.find(s => s.type === 'warning')).toBeDefined();
     });
 
     it('should generate a positive feedback for low waste and enough products', () => {
-      const suggestions = generateSuggestions({ consumedCount: 9, expiredCount: 1, wastePercentage: 10, totalCount: 10 });
+      const suggestions = generateSuggestions({ consumedCount: 9, expiredCount: 1, wastePercentage: 10, totalCount: 10 }, i18next.t);
       // WASTE_POSITIVE_THRESHOLD is 10, but wastePercentage < threshold. 
       // Wait, 10 is not < 10. Let's try 9%.
-      const suggestions2 = generateSuggestions({ consumedCount: 91, expiredCount: 9, wastePercentage: 9, totalCount: 100 });
+      const suggestions2 = generateSuggestions({ consumedCount: 91, expiredCount: 9, wastePercentage: 9, totalCount: 100 }, i18next.t);
       expect(suggestions2.find(s => s.type === 'positive')).toBeDefined();
     });
   });
 
   describe('calculateHistoryData', () => {
     it('should combine stats and suggestions', () => {
-      const result = calculateHistoryData(mockProducts as Product[]);
+      const result = calculateHistoryData(mockProducts as Product[], i18next.t);
       expect(result.stats.totalCount).toBe(4);
       expect(result.suggestions.length).toBeGreaterThanOrEqual(1);
     });

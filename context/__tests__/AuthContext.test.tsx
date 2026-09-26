@@ -71,6 +71,16 @@ jest.mock('@/services/AuthService', () => ({
   AuthService: {
     signInWithEmail: (...args: unknown[]) => mockSignInWithEmail(...args),
   },
+  AUTH_ERROR_CODES: {
+    INVALID_EMAIL_FORMAT: 'invalid_email_format',
+    MISSING_CREDENTIALS: 'missing_credentials',
+    RATE_LIMITED: 'rate_limited',
+    INVALID_CREDENTIALS: 'invalid_credentials',
+    EMAIL_NOT_CONFIRMED: 'email_not_confirmed',
+    LOGIN_FAILED: 'login_failed',
+    GOOGLE_FAILED: 'google_failed',
+    GOOGLE_CONFIG_ERROR: 'google_config_error',
+  },
 }));
 
 // Mock global fetch
@@ -136,6 +146,7 @@ describe('AuthContext', () => {
     
     // Setup default mock implementations
     mockGetCachedSession.mockResolvedValue({ data: { session: null }, error: null });
+    mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     mockOnAuthStateChange.mockImplementation((callback: Function) => {
       authCallback = callback;
       return {
@@ -266,6 +277,29 @@ describe('AuthContext', () => {
   });
 
   describe('signOut', () => {
+    it('does not sign out a different account that logged in during push cleanup', async () => {
+      const userA = createMockUser('account-a');
+      mockGetCachedSession.mockResolvedValue({
+        data: { session: createMockSession(userA) },
+        error: null,
+      });
+      const { getByTestId } = renderAuthProvider();
+      await waitFor(() => expect(getByTestId('user-id').props.children).toBe('account-a'));
+      (OneSignalService.logout as jest.Mock).mockImplementationOnce(async () => {
+        mockGetSession.mockResolvedValue({
+          data: { session: createMockSession(createMockUser('account-b')) },
+          error: null,
+        });
+      });
+
+      await act(async () => {
+        await getByTestId('actions').props.onPress();
+      });
+
+      expect(OneSignalService.logout).toHaveBeenCalledWith('account-a');
+      expect(mockSignOut).not.toHaveBeenCalled();
+      expect(mockRouter.replace).not.toHaveBeenCalledWith('/login');
+    });
     
     it('dovrebbe chiamare supabase.auth.signOut', async () => {
       const { getByTestId } = renderAuthProvider();

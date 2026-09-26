@@ -3,42 +3,52 @@
 // exports: PostRegistrationCallbacks | usePostRegistration
 // used_by: hooks\useRegistration.ts
 // rules:   - This module is a pure side-effect hook that must not contain business logic or state management; it only orchestrates UI alerts and callback delegation based on RegistrationResult.
-//          - All user-facing strings and alert configurations must be sourced exclusively from AUTH_CONSTANTS, never hardcoded.
+//          - All user-facing strings come from the `auth` i18n catalog via `useTranslation` at call time (never hardcoded, never resolved at module scope). The hook receives stable error codes (see REGISTRATION_ERROR_CODES) and maps code -> catalog text at this UI boundary.
 //          - The callbacks parameter must remain immutable and provided externally; this module must not create or modify callbacks internally.
-// agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
+// agent:   executor | 2026-09-23 | Fase B i18n | gruppo 2 auth: CHIUSURA (consumer mapping)
 
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LoggingService } from '@/services/LoggingService';
 import { AUTH_CONSTANTS } from '@/constants/auth';
-import { RegistrationResult } from './useRegistration.types';
+import {
+  RegistrationResult,
+  REGISTRATION_ERROR_I18N_KEYS,
+  isRegistrationErrorCode,
+} from './useRegistration.types';
 
 const LOG_TAG = AUTH_CONSTANTS.LOG_TAGS.SIGNUP;
 
 export interface PostRegistrationCallbacks {
   onSuccess: () => void;
   onNeedsConfirmation: (email: string) => void;
+  onLogin: () => void;
+  onPasswordRecovery: () => void;
 }
 
 export function usePostRegistration(callbacks: PostRegistrationCallbacks) {
+  const { t } = useTranslation();
   return useCallback(
     (result: RegistrationResult, email: string) => {
       if (!result.success) {
-        const errorMsg = result.error || AUTH_CONSTANTS.ERRORS.UNKNOWN_ERROR;
-        Alert.alert(AUTH_CONSTANTS.ALERT_TITLES.REGISTRATION_ERROR, errorMsg, [
-          { text: AUTH_CONSTANTS.ALERT_MESSAGES.OK_BUTTON },
+        const message =
+          result.error && isRegistrationErrorCode(result.error)
+            ? t(REGISTRATION_ERROR_I18N_KEYS[result.error])
+            : t('auth.errors_unknownError');
+        Alert.alert(t('auth.alertTitles_registrationError'), message, [
+          { text: t('auth.ok') },
         ]);
-        return { error: errorMsg };
+        return { error: message };
       }
 
       if (result.emailConfirmed) {
         Alert.alert(
-          AUTH_CONSTANTS.ALERT_TITLES.REGISTRATION_COMPLETE,
-          AUTH_CONSTANTS.ALERT_MESSAGES.REGISTRATION_SUCCESS,
+          t('auth.alertTitles_registrationComplete'),
+          t('auth.postRegistration_registrationSuccess'),
           [
             {
-              text: AUTH_CONSTANTS.ALERT_MESSAGES.OK_BUTTON,
+              text: t('auth.ok'),
               onPress: () => {
                 LoggingService.info(LOG_TAG, 'User with confirmed email redirected to login', {
                   userId: result.userId,
@@ -49,12 +59,28 @@ export function usePostRegistration(callbacks: PostRegistrationCallbacks) {
           ]
         );
       } else {
-        LoggingService.info(LOG_TAG, 'User redirected to email confirmation', { email });
-        callbacks.onNeedsConfirmation(email);
+        Alert.alert(
+          t('auth.alertTitles_checkEmail'),
+          t('auth.postRegistration_checkEmailNeutral'),
+          [
+            {
+              text: t('auth.postRegistration_recoverPasswordButton'),
+              onPress: callbacks.onPasswordRecovery,
+            },
+            {
+              text: t('auth.postRegistration_loginButton'),
+              onPress: callbacks.onLogin,
+            },
+            {
+              text: t('auth.postRegistration_enterCodeButton'),
+              onPress: () => callbacks.onNeedsConfirmation(email),
+            },
+          ]
+        );
       }
 
       return { success: true };
     },
-    [callbacks]
+    [callbacks, t]
   );
 }

@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { X, Download, RefreshCw, CheckCircle } from 'lucide-react-native';
 import { UpdateModalStyles } from './UpdateModal.styles';
 
@@ -63,6 +64,7 @@ export const UpdateModalHeader: React.FC<UpdateModalHeaderProps> = React.memo(({
   onClose,
   isClosable,
 }) => {
+  const { t } = useTranslation();
   const iconColor = getStatusIconColor(updateStatus, isDarkMode);
 
   return (
@@ -75,7 +77,7 @@ export const UpdateModalHeader: React.FC<UpdateModalHeaderProps> = React.memo(({
         onPress={onClose}
         disabled={!isClosable}
         accessible={true}
-        accessibilityLabel="Chiudi modal aggiornamento"
+        accessibilityLabel={t('common.closeUpdateModalLabel')}
         accessibilityRole="button"
         accessibilityState={{ disabled: !isClosable }}
       >

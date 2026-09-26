@@ -147,7 +147,7 @@ export function createSuccessResult<T>(data: T): ServiceResult<T> {
  * return createErrorResult<Product>('Product not found');
  * ```
  */
-export function createErrorResult<T>(error: Error | string): ServiceResult<T> {
+export function createErrorResult<T>(error: Error | string): Extract<ServiceResult<T>, { success: false }> {
   return {
     success: false,
     data: null,

@@ -17,7 +17,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { Product } from '@/types/Product';
-import { UseHistoryDataReturn } from '@/types/history';
+import type { HistoryDataErrorCode, UseHistoryDataReturn } from '@/types/history';
 import { ProductStorage } from '@/services/ProductStorage';
 import { LoggingService } from '@/services/LoggingService';
 
@@ -39,7 +39,7 @@ export function useHistoryData(): UseHistoryDataReturn {
   const [allHistory, setAllHistory] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<HistoryDataErrorCode | null>(null);
 
   // Riferimenti per timeout e throttling
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,7 +82,7 @@ export function useHistoryData(): UseHistoryDataReturn {
         LoggingService.error('History', 'Loading timeout reached');
         isLoadingRef.current = false;
         setLoading(false);
-        setError('Caricamento troppo lungo, riprova più tardi');
+        setError('loadTimeout');
         setRefreshing(false);
       }
     }, LOADING_TIMEOUT);
@@ -119,7 +119,7 @@ export function useHistoryData(): UseHistoryDataReturn {
     } catch (err) {
       LoggingService.error('History', 'Failed to load history:', err);
       setAllHistory([]);
-      setError('Errore durante il caricamento dei dati');
+      setError('loadFailed');
     } finally {
       // Pulisci timeout
       if (timeoutRef.current) {

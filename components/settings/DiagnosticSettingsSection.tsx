@@ -9,6 +9,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Switch } from 'react-native';
 import { SettingsCard } from '@/components/SettingsCard';
 import { SettingsSection } from './SettingsSection';
@@ -79,6 +80,7 @@ export function DiagnosticSettingsSection({
   onClearDataPress,
   onFeedbackPress,
 }: DiagnosticSettingsSectionProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode: themeDarkMode } = useTheme();
 
   const notificationCards = createNotificationCards(themeDarkMode);
@@ -89,13 +91,13 @@ export function DiagnosticSettingsSection({
   return (
     <>
       {/* Notifications Section */}
-      <SettingsSection title="Notifiche">
+      <SettingsSection title={t('settings.notifications')}>
         {notificationCards.map((card) => (
           <SettingsCard
             key={card.id}
             icon={card.icon}
             title={card.title}
-            description={`Avvisami ${notificationDays} giorni prima`}
+            description={t('settings.notificationDaysSummary', { count: notificationDays })}
             onPress={onNotificationDaysPress}
             testID="settings-notification-days-button"
           />
@@ -103,7 +105,7 @@ export function DiagnosticSettingsSection({
       </SettingsSection>
 
       {/* Appearance Section */}
-      <SettingsSection title="Aspetto">
+      <SettingsSection title={t('settings.appearance')}>
         {appearanceCards.map((card) => (
           <SettingsCard
             key={card.id}
@@ -125,7 +127,7 @@ export function DiagnosticSettingsSection({
       </SettingsSection>
 
       {/* Data Management Section */}
-      <SettingsSection title="Gestione Dati">
+      <SettingsSection title={t('settings.dataManagement')}>
         {dataCards.map((card) => (
           <SettingsCard
             key={card.id}
@@ -140,7 +142,7 @@ export function DiagnosticSettingsSection({
       </SettingsSection>
 
       {/* Support Section */}
-      <SettingsSection title="Informazioni e Supporto">
+      <SettingsSection title={t('settings.support')}>
         {supportCards.map((card) => (
           <SettingsCard
             key={card.id}

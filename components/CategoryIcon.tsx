@@ -15,6 +15,8 @@ import { View, Image, Text, StyleSheet } from 'react-native';
 import { ProductCategory } from '@/types/Product';
 import { scaleFont } from '@/utils/scaleFont';
 import { getImageAccessibilityProps } from '@/utils/accessibility';
+import { useTranslation } from 'react-i18next';
+import { getCategoryLabel } from '@/utils/categoryLabels';
 
 /**
  * Size variants for the category icon
@@ -53,6 +55,7 @@ const SIZE_CONFIG: Record<IconSize, { container: number; image: number; emoji: n
  * Used by ProductCard, HistoryCard, and ExpirationCard.
  */
 export const CategoryIcon = React.memo(({ categoryInfo, size = 'medium', testID }: CategoryIconProps) => {
+  const { t, i18n } = useTranslation();
   const sizeConfig = SIZE_CONFIG[size];
 
   const styles = useMemo(
@@ -78,7 +81,7 @@ export const CategoryIcon = React.memo(({ categoryInfo, size = 'medium', testID 
     [size, sizeConfig, categoryInfo.color]
   );
 
-  const accessibilityLabel = `Icona categoria ${categoryInfo.name}`;
+  const accessibilityLabel = t('accessibility.categoryIconLabel', { name: getCategoryLabel(categoryInfo, i18n.language?.startsWith('it') ? 'it' : 'en') });
 
   if (categoryInfo.localIcon) {
     return (

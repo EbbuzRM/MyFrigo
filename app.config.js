@@ -9,7 +9,7 @@
 
 // Load environment variables from .env file so EAS CLI can access them
 // when running `expo config --json` during `eas update`
-require('dotenv').config(); 
+require('dotenv').config({ quiet: true });
 
 // TODO(#security): Certificate pinning non implementato.
 // Per produzione: Android → network_security_config.xml con <pin-set>
@@ -20,8 +20,8 @@ module.exports = {
   expo: {
     name: "MyFrigo",
     slug: "myfrigoapp",
-    version: "1.0.6",
-    runtimeVersion: "1.0.6",
+    version: "1.0.7",
+    runtimeVersion: "1.0.7",
     orientation: "portrait",
     scheme: "myfrigo",
     updates: {
@@ -60,7 +60,16 @@ module.exports = {
     backgroundColor: "#ffffff",
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.myfrigo"
+      bundleIdentifier: "com.myfrigo",
+      infoPlist: {
+        CFBundleAllowMixedLocalizations: true,
+        NSCameraUsageDescription: "MyFrigo uses the camera to scan barcodes and expiry dates.",
+        NSPhotoLibraryUsageDescription: "MyFrigo uses photos to read expiry dates."
+      }
+    },
+    locales: {
+      it: "./locales/it.json",
+      en: "./locales/en.json"
     },
     android: {
       allowBackup: false,
@@ -141,6 +150,7 @@ module.exports = {
     ],
     plugins: [
       "expo-router",
+      ["expo-localization", { "supportedLocales": { "ios": ["it", "en"], "android": ["it", "en"] } }],
       [
         "@react-native-google-signin/google-signin",
         {

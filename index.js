@@ -18,6 +18,10 @@
 
 import { Text, PixelRatio, Dimensions } from 'react-native';
 
+// Inizializza i18n PRIMA di expo-router/entry: le import vengono valutate
+// in ordine di dichiarazione, così login ed errori iniziali sono tradotti.
+import './i18n/setup';
+
 // Configure the global Expo object
 if (typeof global !== 'undefined' && !global.Expo) {
   global.Expo = {};

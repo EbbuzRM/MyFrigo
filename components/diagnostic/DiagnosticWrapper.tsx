@@ -8,6 +8,7 @@
 // message: 
 
 import React, { ReactNode, memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { AlertTriangle, RefreshCw, CheckCircle, XCircle } from 'lucide-react-native';
@@ -34,6 +35,7 @@ export const DiagnosticWrapper: React.FC<DiagnosticWrapperProps> = memo(({
   showProgress = false,
   progress
 }) => {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
 
   const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
@@ -47,12 +49,12 @@ export const DiagnosticWrapper: React.FC<DiagnosticWrapperProps> = memo(({
     return (
       <View style={styles.errorContainer}>
         <AlertTriangle size={48} color={isDarkMode ? '#f85149' : '#dc2626'} />
-        <Text style={styles.errorTitle}>Errore di Sistema</Text>
+        <Text style={styles.errorTitle}>{t('settings.diagnosticSystemError')}</Text>
         <Text style={styles.errorMessage}>{error}</Text>
         {onRetry && (
           <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
             <RefreshCw size={16} color="#ffffff" />
-            <Text style={styles.retryButtonText}>Riprova</Text>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         )}
       </View>

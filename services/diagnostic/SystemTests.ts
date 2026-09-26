@@ -14,6 +14,7 @@ import { supabase } from '@/services/supabaseClient';
 import { SettingsService } from '@/services/SettingsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import i18next from 'i18next';
 
 export interface DiagnosticData {
   [key: string]: unknown;
@@ -116,13 +117,31 @@ export class SystemTests {
         healthMetrics.tests.some(t => t.status === 'ERRORE') ? 'CRITICA' : 'BUONA';
 
       const testResults = healthMetrics.tests.map(t =>
-        `${t.status === 'OK' ? '✅' : t.status === 'LENTA' || t.status === 'PARZIALE' ? '⚠️' : '❌'} ${t.name}: ${t.status}`
+        `${t.status === 'OK' ? '✅' : t.status === 'LENTA' || t.status === 'PARZIALE' ? '⚠️' : '❌'} ${i18next.t(
+          t.name === 'Memoria' ? 'settings.diagnosticMemory' :
+          t.name === 'Rete' ? 'settings.diagnosticNetwork' :
+          t.name === 'Storage Locale' ? 'settings.diagnosticLocalStorage' :
+          t.name === 'Servizi Core' ? 'settings.diagnosticCoreServices' :
+          'settings.diagnosticReactContexts'
+        )}: ${i18next.t(
+          t.status === 'OK' ? 'settings.diagnosticStatusOk' :
+          t.status === 'LENTA' ? 'settings.diagnosticStatusSlow' :
+          t.status === 'PARZIALE' ? 'settings.diagnosticStatusPartial' :
+          'settings.diagnosticStatusError'
+        )}`
       ).join('\n');
 
       Alert.alert(
-        'Test Salute Sistema Completato',
-        `🏥 Salute Generale: ${overallHealth === 'OTTIMA' ? '✅' : overallHealth === 'BUONA' ? '⚠️' : '❌'} ${overallHealth}\n\n` +
-        `📊 Dettagli:\n${testResults}`
+        i18next.t('settings.diagnosticHealthCompleted'),
+        i18next.t('settings.diagnosticHealthSummary', {
+          icon: overallHealth === 'OTTIMA' ? '✅' : overallHealth === 'BUONA' ? '⚠️' : '❌',
+          health: i18next.t(
+            overallHealth === 'OTTIMA' ? 'settings.diagnosticHealthExcellent' :
+            overallHealth === 'BUONA' ? 'settings.diagnosticHealthGood' :
+            'settings.diagnosticHealthCritical'
+          ),
+          results: testResults
+        })
       );
 
       return {
@@ -135,8 +154,8 @@ export class SystemTests {
       const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto';
 
       Alert.alert(
-        'Test Salute Sistema Fallito',
-        `❌ Errore: ${errorMessage}`
+        i18next.t('settings.diagnosticHealthFailed'),
+        i18next.t('settings.diagnosticErrorWithMessage', { message: errorMessage })
       );
 
       return {

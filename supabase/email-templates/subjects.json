@@ -1,0 +1,9 @@
+{
+  "confirmation": "MyFrigo: conferma email / Confirm your email",
+  "recovery": "MyFrigo: reimposta password / Reset your password",
+  "magic_link": "MyFrigo: link di accesso / Sign-in link",
+  "invite": "MyFrigo: invito / Invitation",
+  "email_change": "MyFrigo: conferma nuova email / Confirm new email",
+  "reauthentication": "MyFrigo: conferma accesso / Confirm your identity",
+  "password_changed_notification": "MyFrigo: password modificata / Password changed"
+}

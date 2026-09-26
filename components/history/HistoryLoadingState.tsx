@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 interface HistoryLoadingStateProps {
   isDarkMode: boolean;
@@ -17,14 +18,16 @@ interface HistoryLoadingStateProps {
  * Componente per lo stato di caricamento della schermata History
  */
 export function HistoryLoadingState({ isDarkMode }: HistoryLoadingStateProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#3B82F6" />
       <Text style={[styles.loadingText, { color: isDarkMode ? '#8b949e' : '#64748B' }]}>
-        Caricamento statistiche...
+        {t('history.loadingStats')}
       </Text>
       <Text style={[styles.loadingSubtext, { color: isDarkMode ? '#8b949e' : '#64748B' }]}>
-        Analisi dei tuoi prodotti e abitudini in corso
+        {t('history.loadingStatsSubtitle')}
       </Text>
     </View>
   );

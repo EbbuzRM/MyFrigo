@@ -8,6 +8,7 @@
 // message: 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Modal,
   View,
@@ -59,6 +60,7 @@ export function NotificationDaysModal({
   onCancel,
   isSaving,
 }: NotificationDaysModalProps): React.ReactElement {
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
 
@@ -74,17 +76,17 @@ export function NotificationDaysModal({
       visible={visible}
       onRequestClose={onCancel}
       accessibilityViewIsModal={true}
-      accessibilityLabel="Modifica giorni di preavviso"
+      accessibilityLabel={t('settings.notificationDays')}
     >
       <View style={styles.modalOverlay} accessibilityRole="button" onTouchEnd={onCancel}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle} accessibilityRole="header">
-            Giorni di Preavviso
+            {t('settings.notificationDays')}
           </Text>
 
           <TextInput
             style={styles.modalInput}
-            placeholder={`Numero di giorni (${MIN_NOTIFICATION_DAYS}-${MAX_NOTIFICATION_DAYS})`}
+            placeholder={t('settings.daysPlaceholder', { min: MIN_NOTIFICATION_DAYS, max: MAX_NOTIFICATION_DAYS })}
             placeholderTextColor={isDarkMode ? '#8b949e' : '#94a3b8'}
             value={daysInput}
             onChangeText={onChangeDays}
@@ -92,8 +94,8 @@ export function NotificationDaysModal({
             autoFocus
             maxLength={2}
             editable={!isSaving}
-            accessibilityLabel="Inserisci numero di giorni"
-            accessibilityHint={`Inserisci un numero tra ${MIN_NOTIFICATION_DAYS} e ${MAX_NOTIFICATION_DAYS}`}
+            accessibilityLabel={t('settings.daysInputLabel')}
+            accessibilityHint={t('settings.daysInputHint', { min: MIN_NOTIFICATION_DAYS, max: MAX_NOTIFICATION_DAYS })}
             testID="notification-days-input"
           />
 
@@ -103,11 +105,11 @@ export function NotificationDaysModal({
               style={[styles.modalButton, styles.modalButtonCancel]}
               onPress={onCancel}
               disabled={isSaving}
-              accessibilityLabel="Annulla modifica"
+              accessibilityLabel={t('settings.cancelDaysEdit')}
               accessibilityRole="button"
               accessibilityState={{ disabled: isSaving }}
             >
-              <Text style={styles.modalButtonTextCancel}>Annulla</Text>
+              <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -119,7 +121,7 @@ export function NotificationDaysModal({
               ]}
               onPress={onSave}
               disabled={isSaving || !isValid(daysInput)}
-              accessibilityLabel="Salva giorni di preavviso"
+              accessibilityLabel={t('settings.saveDaysEdit')}
               accessibilityRole="button"
               accessibilityState={{ disabled: isSaving || !isValid(daysInput) }}
             >
@@ -127,11 +129,11 @@ export function NotificationDaysModal({
                 <View style={styles.saveButtonContent}>
                   <ActivityIndicator size="small" color="#ffffff" />
                   <Text style={[styles.modalButtonTextConfirm, styles.saveButtonText]}>
-                    Salvataggio...
+                    {t('common.saving')}
                   </Text>
                 </View>
               ) : (
-                <Text style={styles.modalButtonTextConfirm}>Salva</Text>
+                <Text style={styles.modalButtonTextConfirm}>{t('common.save')}</Text>
               )}
             </TouchableOpacity>
           </View>

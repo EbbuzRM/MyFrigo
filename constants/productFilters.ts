@@ -20,8 +20,6 @@ export type ProductStatusFilter = 'all' | 'fresh' | 'expiring' | 'expired';
  */
 export interface StatusFilterConfig {
   key: ProductStatusFilter;
-  label: string;
-  accessibilityLabel: string;
 }
 
 /**
@@ -29,10 +27,10 @@ export interface StatusFilterConfig {
  * Defines the available status filters with their labels and accessibility properties
  */
 export const STATUS_FILTERS: StatusFilterConfig[] = [
-  { key: 'all', label: 'Tutti', accessibilityLabel: 'Mostra tutti i prodotti' },
-  { key: 'fresh', label: 'Freschi', accessibilityLabel: 'Mostra prodotti freschi' },
-  { key: 'expiring', label: 'In Scadenza', accessibilityLabel: 'Mostra prodotti in scadenza' },
-  { key: 'expired', label: 'Scaduti', accessibilityLabel: 'Mostra prodotti scaduti' },
+  { key: 'all' },
+  { key: 'fresh' },
+  { key: 'expiring' },
+  { key: 'expired' },
 ];
 
 /**

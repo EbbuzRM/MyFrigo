@@ -12,6 +12,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { getStatsCardAccessibilityProps } from '@/utils/accessibility';
 import { scaleFont } from '@/utils/scaleFont';
+import { useTranslation } from 'react-i18next';
 
 interface StatsCardProps {
   title: string;
@@ -25,6 +26,7 @@ interface StatsCardProps {
 
 export const StatsCard = React.memo(function StatsCard({ title, value, icon, lightBackgroundColor, darkBackgroundColor, onPress, valueTestId }: StatsCardProps) {
   const { isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const styles = getStyles(isDarkMode);
   const CardComponent = onPress ? TouchableOpacity : View;
   const backgroundColor = isDarkMode ? darkBackgroundColor : lightBackgroundColor;
@@ -35,7 +37,7 @@ export const StatsCard = React.memo(function StatsCard({ title, value, icon, lig
       style={[styles.card, { backgroundColor }]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
-      {...getStatsCardAccessibilityProps(title, value, !!onPress)}
+      {...getStatsCardAccessibilityProps(title, value, !!onPress, t)}
     >
       <View style={styles.iconContainer}>
         {icon}

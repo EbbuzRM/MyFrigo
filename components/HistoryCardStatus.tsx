@@ -4,12 +4,13 @@
 // used_by: components\HistoryCard.tsx
 // rules:   - The `StatusInfo` interface and status color objects (`CONSUMED_COLORS`, `EXPIRED_COLORS`) define the canonical data structure for status theming and must remain consistent across all status-related components
 //          - Theme colors are mapped exclusively through the `isDarkMode` boolean pattern; no additional theme provider or context should be introduced for status color resolution
-//          - Status text translations are centralized in `STATUS_TEXTS` record; inline status strings must not be used elsewhere in the module
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
 // message: 
 
 import React, { useMemo } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react-native';
+import { formatDisplayDate } from '@/i18n/format';
+import type { SupportedLanguage } from '@/i18n/types';
 
 export type HistoryStatus = 'consumed' | 'expired';
 
@@ -22,8 +23,6 @@ interface StatusInfo {
   borderColor: string;
   /** Primary color for text and indicators */
   color: string;
-  /** Display text for the status */
-  statusText: string;
   /** Raw date value */
   date: string | undefined;
 }
@@ -70,14 +69,6 @@ const EXPIRED_COLORS = {
 };
 
 /**
- * Status text translations
- */
-const STATUS_TEXTS: Record<HistoryStatus, string> = {
-  consumed: 'Consumato',
-  expired: 'Scaduto',
-};
-
-/**
  * Hook to get memoized status information
  * @description Returns status info with icons and colors based on type and theme.
  * Uses useMemo to prevent object recreation on every render.
@@ -108,7 +99,6 @@ export function useStatusInfo({
       backgroundColor: colors.backgroundColor,
       borderColor: colors.borderColor,
       color: colors.color,
-      statusText: STATUS_TEXTS[type],
       date,
     };
   }, [type, isDarkMode, date]);
@@ -119,11 +109,7 @@ export function useStatusInfo({
  * @param date - Date string to format
  * @returns Formatted date string in Italian locale
  */
-export function formatHistoryDate(date: string | undefined): string {
+export function formatHistoryDate(date: string | undefined, language: SupportedLanguage = 'it'): string {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('it-IT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  return formatDisplayDate(date, language) ?? '';
 }

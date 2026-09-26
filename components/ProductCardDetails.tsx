@@ -14,6 +14,7 @@ import { Calendar, Package, ShoppingCart } from 'lucide-react-native';
 import { Product } from '@/types/Product';
 import { QuantityDisplay } from './QuantityDisplay';
 import { scaleFont } from '@/utils/scaleFont';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCardDetailsProps {
   /** Product data */
@@ -43,6 +44,7 @@ export const ProductCardDetails = React.memo(({
   formattedPurchaseDate,
   formattedExpirationDate,
 }: ProductCardDetailsProps) => {
+  const { t } = useTranslation();
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -86,7 +88,7 @@ export const ProductCardDetails = React.memo(({
       <View style={styles.detailRow}>
         <View style={styles.detailItem}>
           <ShoppingCart size={16} color={colors.textSecondary} />
-          <Text style={styles.detailText}>Acquisto</Text>
+          <Text style={styles.detailText}>{t('products.purchaseDateLabel')}</Text>
         </View>
         <Text style={styles.dateText}>{formattedPurchaseDate}</Text>
       </View>
@@ -94,7 +96,7 @@ export const ProductCardDetails = React.memo(({
       <View style={styles.detailRow}>
         <View style={styles.detailItem}>
           <Calendar size={16} color={colors.textSecondary} />
-          <Text style={styles.detailText}>Scadenza</Text>
+          <Text style={styles.detailText}>{t('products.expirationDateLabel')}</Text>
         </View>
         <Text style={styles.dateText}>{formattedExpirationDate}</Text>
       </View>
@@ -103,7 +105,7 @@ export const ProductCardDetails = React.memo(({
         <View style={styles.detailRow}>
           <View style={styles.detailItem}>
             <Package size={16} color={colors.textSecondary} />
-            <Text style={styles.detailText}>Quantità</Text>
+            <Text style={styles.detailText}>{t('products.quantityLabel')}</Text>
           </View>
           <QuantityDisplay quantities={product.quantities} style={styles.dateText} />
         </View>

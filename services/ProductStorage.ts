@@ -139,19 +139,40 @@ export class ProductStorage {
   }
 
   /** Salva il prodotto nel database (inserimento o aggiornamento). */
-  static async saveProduct(product: Partial<Product>): Promise<ServiceResult<void>> {
+  static async saveProduct(product: Partial<Product>): Promise<ServiceResult<void> & { errorCode?: 'timeout' }> {
     const userResult = await this.getCurrentUserId();
     if (!userResult.success) return userResult as ServiceResult<void>;
+    const abortController = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let timedOut = false;
     try {
-      const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout durante salvataggio prodotto')), this.TIMEOUT_MS));
-      await Promise.race([this.performUpsert(product, userResult.data), timeoutPromise]);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          timedOut = true;
+          abortController.abort();
+          reject(new Error('Timeout durante salvataggio prodotto'));
+        }, this.TIMEOUT_MS);
+      });
+      await Promise.race([
+        this.performUpsert(product, userResult.data, abortController.signal),
+        timeoutPromise,
+      ]);
       return createSuccessResult(undefined);
     } catch (error) {
-      return createErrorResult(this.handleError('Errore nel salvataggio prodotto', error).message);
+      return {
+        ...createErrorResult(this.handleError('Errore nel salvataggio prodotto', error).message),
+        ...(timedOut ? { errorCode: 'timeout' as const } : {}),
+      };
+    } finally {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
     }
   }
 
-  private static async performUpsert(product: Partial<Product>, userId: string): Promise<void> {
+  private static async performUpsert(
+    product: Partial<Product>,
+    userId: string,
+    signal: AbortSignal,
+  ): Promise<void> {
     const productToUpsert = this.prepareProductForUpsert(product);
     const snakeCaseProduct = convertProductToSnakeCase(productToUpsert);
     const upsertPayload: Record<string, unknown> = {
@@ -159,7 +180,10 @@ export class ProductStorage {
       user_id: userId,
       ...(productToUpsert.isFrozen !== undefined && { is_frozen: productToUpsert.isFrozen }),
     };
-    const { error } = await supabase.from('products').upsert(upsertPayload as TablesInsert<'products'>);
+    const { error } = await supabase
+      .from('products')
+      .upsert(upsertPayload as TablesInsert<'products'>)
+      .abortSignal(signal);
     if (error) throw error;
     if (productToUpsert.barcode) this.saveTemplateNonBlocking(productToUpsert as Product);
   }

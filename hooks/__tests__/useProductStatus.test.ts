@@ -1,5 +1,7 @@
 import { renderHook } from '@testing-library/react-native';
 import { useProductStatus } from '../useProductStatus';
+import { useExpirationStatus } from '@/hooks/useExpirationStatus';
+import { itCatalogs } from '@/i18n/catalogs/it';
 
 jest.mock('@/services/LoggingService', () => ({
   LoggingService: {
@@ -9,13 +11,31 @@ jest.mock('@/services/LoggingService', () => ({
 }));
 
 jest.mock('@/hooks/useExpirationStatus', () => ({
-  useExpirationStatus: jest.fn((date, isDarkMode, isFrozen) => {
+  ...jest.requireActual('@/hooks/useExpirationStatus'),
+  useExpirationStatus: jest.fn((date: string | undefined) => {
+    if (date === undefined) {
+      return {
+        status: 'dateNotSet',
+        color: 'green',
+        backgroundColor: 'lightgreen',
+      };
+    }
+
+    if (Number.isNaN(new Date(date).getTime())) {
+      return {
+        status: 'dateInvalid',
+        color: 'orange',
+        backgroundColor: 'lightorange',
+      };
+    }
+
     return {
-      text: 'Expiring soon',
+      status: 'expiresInDays',
+      daysUntil: 1,
       color: 'red',
-      backgroundColor: 'pink'
+      backgroundColor: 'pink',
     };
-  })
+  }),
 }));
 
 describe('useProductStatus', () => {
@@ -30,7 +50,9 @@ describe('useProductStatus', () => {
     expect(result.current.safeExpirationDate).toBeInstanceOf(Date);
     expect(result.current.safeExpirationDate?.toISOString()).toBe(validDate);
     expect(result.current.formattedExpirationDate).not.toBe('N/A');
-    expect(result.current.expirationInfo).toBeDefined();
+    expect(result.current.expirationInfo.text).toBe(
+      itCatalogs.dashboard.statusExpiresInDays_one.replace('{{count}}', '1'),
+    );
   });
 
   it('should handle invalid expiration date', () => {
@@ -39,6 +61,8 @@ describe('useProductStatus', () => {
 
     expect(result.current.safeExpirationDate).toBeNull();
     expect(result.current.formattedExpirationDate).toBe('N/A');
+    expect(result.current.expirationInfo.text).toBe(itCatalogs.dashboard.statusDateInvalid);
+    expect(useExpirationStatus).toHaveBeenCalledWith(invalidDate, false, false);
   });
 
   it('should handle undefined expiration date', () => {
@@ -46,6 +70,8 @@ describe('useProductStatus', () => {
 
     expect(result.current.safeExpirationDate).toBeNull();
     expect(result.current.formattedExpirationDate).toBe('N/A');
+    expect(result.current.expirationInfo.text).toBe(itCatalogs.dashboard.statusDateNotSet);
+    expect(useExpirationStatus).toHaveBeenCalledWith(undefined, false, false);
   });
 
   it('should format purchase date correctly', () => {

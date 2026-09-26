@@ -33,7 +33,7 @@ jest.mock('../NotificationPermissionService', () => ({
 }));
 jest.mock('../NotificationCoreService', () => ({
   NotificationCoreService: {
-    scheduleTestNotification: jest.fn(),
+    checkNotificationReadiness: jest.fn(),
   },
 }));
 jest.mock('../OneSignalService', () => ({
@@ -169,11 +169,11 @@ describe('NotificationService', () => {
     });
   });
 
-  describe('scheduleTestNotification', () => {
+  describe('checkNotificationReadiness', () => {
     it('should delegate to NotificationCoreService', async () => {
-      await NotificationService.scheduleTestNotification();
+      await NotificationService.checkNotificationReadiness();
 
-      expect(require('../NotificationCoreService').NotificationCoreService.scheduleTestNotification).toHaveBeenCalled();
+      expect(require('../NotificationCoreService').NotificationCoreService.checkNotificationReadiness).toHaveBeenCalled();
     });
   });
 });

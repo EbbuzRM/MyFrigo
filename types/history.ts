@@ -66,8 +66,11 @@ export interface HistoryLoadingState {
   /** Indica se è in corso un refresh manuale */
   refreshing: boolean;
   /** Messaggio di errore se presente */
-  error: string | null;
+  error: HistoryDataErrorCode | null;
 }
+
+/** Stable error reasons emitted by history data loading. */
+export type HistoryDataErrorCode = 'loadTimeout' | 'loadFailed';
 
 /**
  * Hook return type per useHistoryData

@@ -35,6 +35,7 @@ const createMockQueryBuilder = (data: any = null, error: any = null) => {
     order: jest.fn().mockReturnThis(),
     single: jest.fn().mockReturnThis(),
     maybeSingle: jest.fn().mockReturnThis(),
+    abortSignal: jest.fn().mockReturnThis(),
   };
   
   // Make it a thenable that resolves to { data, error }
@@ -235,11 +236,43 @@ describe('ProductStorage', () => {
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
       (caseConverter.convertProductToSnakeCase as jest.Mock).mockReturnValue(mockProductSnakeCase);
 
-      const result = await ProductStorage.saveProduct(mockProduct as any);
+      const result = await ProductStorage.saveProduct(mockProduct);
 
       expect(result.success).toBe(true);
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.upsert).toHaveBeenCalled();
+    });
+
+    it('should clear the timeout after a successful save', async () => {
+      const mockQueryBuilder = createMockQueryBuilder();
+      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (caseConverter.convertProductToSnakeCase as jest.Mock).mockReturnValue(mockProductSnakeCase);
+      const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+
+      const result = await ProductStorage.saveProduct(mockProduct);
+
+      expect(result.success).toBe(true);
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+    });
+
+    it('should abort the database request when saving times out', async () => {
+      jest.useFakeTimers();
+      const mockQueryBuilder = createMockQueryBuilder();
+      mockQueryBuilder.then = jest.fn();
+      (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
+      (caseConverter.convertProductToSnakeCase as jest.Mock).mockReturnValue(mockProductSnakeCase);
+
+      const savePromise = ProductStorage.saveProduct(mockProduct);
+      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(15000);
+      const result = await savePromise;
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Timeout');
+      expect(mockQueryBuilder.abortSignal).toHaveBeenCalledWith(expect.any(AbortSignal));
+      const signal = mockQueryBuilder.abortSignal.mock.calls[0][0] as AbortSignal;
+      expect(signal.aborted).toBe(true);
+      jest.useRealTimers();
     });
 
     it('should throw error when save fails', async () => {
