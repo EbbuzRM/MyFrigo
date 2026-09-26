@@ -1,222 +1,222 @@
 <div align="center">
-  <a href="#-italiano">Italiano</a> •
+  <a href="#-italiano">Italiano</a> ·
   <a href="#-english">English</a>
 </div>
 
-# MyFrigo - Smart Food Manager 🍏
+# MyFrigo — Smart Food Manager 🍏
 
 ---
 
 ## 🇮🇹 Italiano
 
-MyFrigo è un'applicazione mobile cross-platform che aiuta a gestire l'inventario alimentare domestico. Traccia le date di scadenza, invia notifiche locali per i prodotti in avvicinamento alla scadenza e fornisce statistiche sui consumi per minimizzare gli sprechi.
+MyFrigo aiuta a gestire le scorte alimentari di casa, tenere sotto controllo le date di scadenza e ridurre gli sprechi.
 
-L'app è costruita utilizzando React Native ed Expo, con un backend completamente basato su **Supabase** per il database PostgreSQL, l'autenticazione e le funzioni serverless.
+**Piattaforma supportata in questa versione: Android.** iOS non è attualmente supportato né validato.
 
-### ✨ Caratteristiche principali
+### Funzionalità
 
--   **Inventario Prodotti**: Tieni traccia di tutti i tuoi prodotti alimentari con dettagli su quantità, marca e date.
--   **Notifiche Locali Affidabili**: Ricevi avvisi push personalizzabili prima che i prodotti scadano, gestiti localmente per la massima affidabilità.
--   **Aggiunta Rapida**: Inserisci i prodotti manualmente, tramite scansione del codice a barre o scattando una foto con OCR per la data di scadenza.
--   **Backend Supabase**: Tutti i dati sono sincronizzati in tempo reale su un database PostgreSQL, con autenticazione sicura e Row Level Security.
--   **Statistiche di Consumo**: Visualizza report sui prodotti consumati e scaduti per migliorare le tue abitudini di acquisto.
--   **Tema Chiaro/Scuro**: Interfaccia utente adattabile alle preferenze di sistema o manuali.
+- Gestione dei prodotti, delle quantità, delle categorie e delle date di scadenza.
+- Aggiunta manuale o tramite scansione di codici a barre, con suggerimenti da Open Food Facts.
+- Foto dei prodotti e riconoscimento OCR locale delle date, con fallback server quando necessario.
+- Notifiche push sulle scadenze tramite OneSignal e una Supabase Edge Function.
+- Statistiche sui prodotti consumati e scaduti.
+- Interfaccia in italiano e inglese, in base alla lingua del dispositivo.
 
-### 🛠️ Stack Tecnologico
+### Tecnologie
 
--   **Framework**: React Native con Expo
--   **Linguaggio**: TypeScript
--   **Backend**: Supabase (PostgreSQL, Auth, Storage)
--   **Notifiche Push**: OneSignal (per notifiche remote, es. marketing)
--   **Notifiche Locali**: Expo Notifications
--   **Navigazione**: Expo Router
--   **UI**: Componenti personalizzati
+- React Native, Expo e TypeScript.
+- Supabase per database, autenticazione, storage e funzioni server.
+- OneSignal per le notifiche push.
+- Open Food Facts per i dati pubblici dei prodotti.
 
-### 🚀 Installazione e Avvio
+### Sviluppo Android
 
-Per eseguire il progetto in locale, segui questi passaggi.
+#### Requisiti
 
-#### Prerequisiti
+- Node.js 22.18 o successivo nella serie 22.x e npm.
+- Android Studio, Android SDK e ADB.
+- Un progetto Supabase e le configurazioni client di OneSignal e hCaptcha.
+- Per le build cloud, EAS CLI e accesso al progetto EAS.
 
--   [Node.js](https://nodejs.org/) (versione LTS raccomandata)
--   [npm](https://www.npmjs.com/) o [yarn](https://yarnpkg.com/)
--   [Expo CLI](https://docs.expo.dev/get-started/installation/): `npm install -g expo-cli`
--   [EAS CLI](https://docs.expo.dev/get-started/installation/): `npm install -g eas-cli`
--   App [Expo Go](https://expo.dev/go) installata sul tuo dispositivo mobile (iOS o Android).
+#### Installazione
 
-#### 1. Clonazione del Repository
-
-```bash
-git clone https://github.com/EbbuzRM/myfrigo.git
-cd myfrigo
+```sh
+git clone https://github.com/EbbuzRM/MyFrigo.git
+cd MyFrigo
+npm ci
 ```
 
-#### 2. Installazione delle Dipendenze
+Crea `.env` copiando `.env.example`:
 
-```bash
-npm install
+```sh
+cp .env.example .env
 ```
 
-#### 3. Configurazione delle Variabili d'Ambiente
+Imposta in .env le variabili client indicate in .env.example, tra cui:
 
-1.  Crea un file chiamato `.env` nella directory principale del progetto.
-2.  Copia il contenuto del file `.env.example` (se presente) o aggiungi le seguenti variabili:
+- EXPO_PUBLIC_SUPABASE_URL
+- EXPO_PUBLIC_SUPABASE_ANON_KEY
+- EXPO_PUBLIC_ONESIGNAL_APP_ID
+- EXPO_PUBLIC_HCAPTCHA_SITEKEY
 
-    ```env
-    EXPO_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
-    EXPO_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-    EXPO_PUBLIC_ONESIGNAL_APP_ID="YOUR_ONESIGNAL_APP_ID"
-    ```
+L'URL Supabase e la chiave client pubblica sono disponibili in `Project Settings > API`; recupera l'ID app da OneSignal e il site key dalla dashboard hCaptcha.
 
-    Puoi trovare i valori di URL e ANON KEY nella dashboard del tuo progetto Supabase in `Project Settings > API`.
+Configura lo stesso site key hCaptcha in Supabase Auth e nell'app. Le variabili EXPO_PUBLIC_ vengono incluse nell'app: non inserirvi chiavi server o altri segreti. I segreti delle Edge Function vanno configurati in Supabase.
 
-#### 4. Avvio del Server di Sviluppo
+#### Avvio
 
-```bash
-npx expo start
+```sh
+npx expo run:android
 ```
 
-Scansiona il QR code generato dal terminale con l'app Expo Go sul tuo telefono per avviare l'applicazione.
+Questo comando crea e avvia l'app Android locale. Expo Go non è sufficiente perché MyFrigo usa moduli nativi.
 
-#### 5. Script Utili
+Se sul dispositivo è già installata una development build:
 
--   `npm run test`: Esegue la suite di test con Jest.
--   `npm run lint`: Analizza il codice con ESLint per trovare errori e problemi di stile.
-
-#### 6. Creare una Build Standalone
-
-Per creare un file `.apk` o `.ipa` installabile:
-
-```bash
-# Configura il progetto (se non già fatto)
-eas build:configure --platform all
-
-# Avvia la build per Android
-eas build -p android --profile preview
-
-# Avvia la build per iOS
-eas build -p ios --profile preview
+```sh
+npx expo start --dev-client
 ```
+
+#### Verifiche
+
+```sh
+npm run type-check
+npm run lint
+npm test
+```
+
+#### Build Android Preview
+
+Installa EAS CLI e accedi al progetto:
+
+```sh
+npm install --global eas-cli
+eas login
+```
+
+Avvia la build:
+
+```sh
+eas build --platform android --profile preview
+```
+
+Il profilo preview genera una build Android a distribuzione interna sul channel EAS preview.
+
+### Versione e aggiornamenti OTA
+
+La build Android Preview 1.0.7 usa il runtime Expo 1.0.7 e il channel EAS preview. Il channel seleziona il branch degli aggiornamenti; runtimeVersion limita la consegna ai binari compatibili. I binari 1.0.6 con runtime 1.0.6 ricevono aggiornamenti compatibili con 1.0.6, mentre il binario 1.0.7 riceve aggiornamenti con runtime 1.0.7.
+
+Prima di pubblicare un OTA, verifica nel progetto EAS il collegamento tra channel e branch e controlla il runtime dell'aggiornamento. Il profilo production non dichiara un channel in eas.json: assegnalo e verifica il relativo branch prima di creare una build production o pubblicarvi OTA. EAS gestisce versionCode da remoto; controlla il valore assegnato prima della release Android.
 
 ---
 
 ## 🇬🇧 English
 
-MyFrigo is a cross-platform mobile application that helps manage home food inventory. It tracks expiration dates, sends local notifications for products nearing their expiration, and provides consumption statistics to minimize waste.
+MyFrigo helps you manage your household food inventory, track expiry dates and reduce food waste.
 
-The app is built using React Native and Expo, with a backend fully powered by **Supabase** for the PostgreSQL database, authentication, and serverless functions.
+**Platform supported in this version: Android.** iOS is not currently supported or validated.
 
-### ✨ Key Features
+### Features
 
--   **Product Inventory**: Keep track of all your food items with details on quantity, brand, and dates.
--   **Reliable Local Notifications**: Receive customizable push alerts before products expire, managed locally for maximum reliability.
--   **Quick Add**: Add products manually, by scanning a barcode, or by taking a photo with OCR for the expiration date.
--   **Supabase Backend**: All data is synchronized in real-time on a PostgreSQL database, with secure authentication and Row Level Security.
--   **Consumption Statistics**: View reports on consumed and expired products to improve your shopping habits.
--   **Light/Dark Theme**: UI adaptable to system or manual preferences.
+- Manage products, quantities, categories and expiry dates.
+- Add products manually or scan barcodes, with suggestions from Open Food Facts.
+- Take product photos and recognise expiry dates with on-device OCR, using a server fallback when needed.
+- Receive expiry push notifications through OneSignal and a Supabase Edge Function.
+- View statistics for consumed and expired products.
+- The interface follows the device language (Italian or English).
 
-### 🛠️ Tech Stack
+### Technology
 
--   **Framework**: React Native with Expo
--   **Language**: TypeScript
--   **Backend**: Supabase (PostgreSQL, Auth, Storage)
--   **Push Notifications**: OneSignal (for remote notifications, e.g., marketing)
--   **Local Notifications**: Expo Notifications
--   **Navigation**: Expo Router
--   **UI**: Custom Components
+- React Native, Expo and TypeScript.
+- Supabase for the database, authentication, storage and server functions.
+- OneSignal for push notifications.
+- Open Food Facts for public product information.
 
-### 🚀 Installation and Setup
+### Android development
 
-To run the project locally, follow these steps.
+#### Requirements
 
-#### Prerequisites
+- Node.js 22.18 or later in the 22.x series and npm.
+- Android Studio, the Android SDK and ADB.
+- A Supabase project and client configuration for OneSignal and hCaptcha.
+- For cloud builds, EAS CLI and access to the EAS project.
 
--   [Node.js](https://nodejs.org/) (LTS version recommended)
--   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
--   [Expo CLI](https://docs.expo.dev/get-started/installation/): `npm install -g expo-cli`
--   [EAS CLI](https://docs.expo.dev/get-started/installation/): `npm install -g eas-cli`
--   [Expo Go](https://expo.dev/go) app installed on your mobile device (iOS or Android).
+#### Installation
 
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/EbbuzRM/myfrigo.git
-cd myfrigo
+```sh
+git clone https://github.com/EbbuzRM/MyFrigo.git
+cd MyFrigo
+npm ci
 ```
 
-#### 2. Install Dependencies
+Create `.env` by copying `.env.example`:
 
-```bash
-npm install
+```sh
+cp .env.example .env
 ```
 
-#### 3. Configure Environment Variables
+Set the client variables listed in .env.example, including:
 
-1.  Create a file named `.env` in the project's root directory.
-2.  Copy the contents of the `.env.example` file (if present) or add the following variables:
+- EXPO_PUBLIC_SUPABASE_URL
+- EXPO_PUBLIC_SUPABASE_ANON_KEY
+- EXPO_PUBLIC_ONESIGNAL_APP_ID
+- EXPO_PUBLIC_HCAPTCHA_SITEKEY
 
-    ```env
-    EXPO_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
-    EXPO_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-    EXPO_PUBLIC_ONESIGNAL_APP_ID="YOUR_ONESIGNAL_APP_ID"
-    ```
+Find the Supabase URL and public client key under `Project Settings > API`; get the app ID from OneSignal and the site key from the hCaptcha dashboard.
 
-    You can find the URL and ANON KEY values in your Supabase project dashboard under `Project Settings > API`.
+Configure the same hCaptcha site key in Supabase Auth and in the app. EXPO_PUBLIC_ variables are bundled into the app. Do not put server keys or other secrets in them. Configure Edge Function secrets in Supabase.
 
-#### 4. Start the Development Server
+#### Run on Android
 
-```bash
-npx expo start
+```sh
+npx expo run:android
 ```
 
-Scan the QR code generated in the terminal with the Expo Go app on your phone to launch the application.
+This builds and launches the local Android app. Expo Go is not sufficient because MyFrigo uses native modules.
 
-#### 5. Useful Scripts
+If a development build is already installed on the device:
 
--   `npm run test`: Runs the test suite with Jest.
--   `npm run lint`: Lints the code with ESLint to find errors and style issues.
-
-#### 6. Create a Standalone Build
-
-To create an installable `.apk` or `.ipa` file:
-
-```bash
-# Configure the project (if not already done)
-eas build:configure --platform all
-
-# Start the build for Android
-eas build -p android --profile preview
-
-# Start the build for iOS
-eas build -p ios --profile preview
+```sh
+npx expo start --dev-client
 ```
 
-The next multilingual Android preview binary is version `1.0.7` with Expo OTA
-runtime `1.0.7` in both `app.config.js` and the checked-in Android resource.
-The `preview` EAS build profile uses the `preview` channel. Expo Updates
-matches both the channel and runtime: older binaries with runtime `1.0.6`
-can receive only compatible `1.0.6` updates, while the new binary can receive
-only `1.0.7` updates. Before publishing an OTA, verify the remote `preview`
-channel-to-branch mapping and the update's runtime. The `production` build
-profile does not declare a channel and is not used for this preview build.
-EAS uses remote app version source; check its Android `versionCode` before the
-next preview build. The checked-in Gradle `versionCode` has not been changed.
-Multilingual support is currently scoped to Android; iOS has not been validated.
+#### Checks
+
+```sh
+npm run type-check
+npm run lint
+npm test
+```
+
+#### Android Preview build
+
+Install EAS CLI and sign in to the project:
+
+```sh
+npm install --global eas-cli
+eas login
+```
+
+Start the build:
+
+```sh
+eas build --platform android --profile preview
+```
+
+The preview profile creates an Android build for internal distribution on the EAS preview channel.
+
+### Version and OTA updates
+
+The Android 1.0.7 Preview build uses Expo runtime 1.0.7 and the EAS preview channel. The channel selects the update branch; runtimeVersion limits delivery to compatible binaries. Binaries on runtime 1.0.6 receive updates compatible with 1.0.6, while the 1.0.7 binary receives updates with runtime 1.0.7.
+
+Before publishing an OTA update, check the channel-to-branch mapping in the EAS project and confirm the update runtime. The production profile does not declare a channel in eas.json: assign one and verify its branch before creating a production build or publishing production updates. EAS manages versionCode remotely; check the assigned value before an Android release.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are always welcome! If you want to contribute to the project, please follow these steps:
-
-1.  **Fork** the repository.
-2.  Create a new **branch** for your feature (`git checkout -b feature/feature-name`).
-3.  **Commit** your changes (`git commit -am 'Add new feature'`).
-4.  **Push** to your branch (`git push origin feature/feature-name`).
-5.  Open a **Pull Request**.
-
----
+Contributions are welcome. Fork the repository, create a feature branch, commit your changes, push the branch and open a pull request.
 
 ## 📄 License
 
-This project is released under the **MIT License**. See the `LICENSE` file for more details.
+MyFrigo is released under the MIT License. See the LICENSE file for details.
