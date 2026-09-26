@@ -1,22 +1,15 @@
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [1.0.7] - 2026-09-26
 
 ### Added
 
-- Italian and British English localization across app screens, accessibility, settings, diagnostics, and product flows.
+- British English localization across app screens, accessibility, settings, diagnostics, and product flows.
 - Locale-aware date, calendar, and quantity formatting, with Android locale declarations for Italian and English.
 - Push subscription registration with language metadata and notification routing support.
 - Bilingual Italian/English versions of all seven Supabase Auth email templates.
 
 ### Changed
 
-- Updated the app version and Android runtime to `1.0.7`; the EAS `preview` profile targets the `preview` channel so OTA updates remain runtime-compatible with each binary.
+- Updated the app version and Android runtime to `1.0.7`.
 - OCR fallback tries the active language first and uses the other supported language only when the first attempt finds no valid expiry date.
 
 ### Fixed
@@ -55,5 +48,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped runtimeVersion to 1.0.6 (native runtime changed, OTA updates incompatible). ([`13d267d`](https://github.com/EbbuzRM/MyFrigo/commit/13d267d))
 - Updated EAS Build Node.js version to 22.18.0 (SDK 57 requires ≥22.13). ([`e0efd91`](https://github.com/EbbuzRM/MyFrigo/commit/e0efd91))
 - Removed dead dependencies: `react-native-sound`, `patch-package`. ([`e0efd91`](https://github.com/EbbuzRM/MyFrigo/commit/e0efd91))
-
-**Baseline**: 129 test suites / 2284 tests passed / 0 failed / 5 skipped / 0 TypeScript errors.
