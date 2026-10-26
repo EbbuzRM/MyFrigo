@@ -16,6 +16,7 @@ import {
     STANDARD_DATE_PATTERNS,
     MONTH_YEAR_PATTERN,
     MONTH_YEAR_SPACE_PATTERN,
+    SEQUENCE_PATTERN,
     TEXTUAL_MONTH_PATTERN,
     FUZZY_DATE_PATTERN,
     PARTIAL_DATE_PATTERN,
@@ -27,10 +28,9 @@ const removeIgnoredDateContexts = (text: string): string => {
         /\b(?:CONF|CONE)\.?\s*[:.]?\s*\d{1,2}\s*[/\\\-.]\s*\d{1,2}(?:\s*[/\\\-.]\s*(?:\d{4}|\d{2}))?/gi,
         ' '
     ).replace(
-        // FIX: Expanded to cover LOTTO, LOT, LT, L: and L. with their number values.
-        // Handles formats like: "LOTTO: 11.8", "LOTTO 11.8", "LOT: 11.8", "LOT 058", "LT:058", "L. 11.8"
-        // MUST run before cleanBlockText which would strip "LOTTO" via its L[A-Z0-9] regex.
-        /\b(?:LOTTO[:. ]?|LOT[:. ]?|LT[:. ]?|L[.:])\s*\d{1,4}(?:\s*[/\\\-.]\s*\d{1,4}){0,2}/gi,
+        // Remove the whole numeric lot, including "Lotto: L 20102026", before
+        // preprocessing can turn its L prefix into a digit. Keep following dates intact.
+        /\b(?:(?:LOTTO|LOT|LT)\b[.:]?\s*(?:L\s*)?|L[.:]?\s*)\d+(?:[ \t]*[/\\.-][ \t]*\d+){0,2}\b/gi,
         ' '
     );
 };
@@ -124,18 +124,14 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
             })));
         }
 
-        // Numeric Sequences
-        const spacelessText = text.replace(/[\s.\-/]/g, '');
-        const seq6 = spacelessText.match(/(\d{2})(0[1-9]|1[0-2])(\d{2})/g);
-        if (seq6) {
-            for (const s of seq6) {
-                const d = s.substring(0, 2);
-                const m = s.substring(2, 4);
-                const y = s.substring(4, 6);
-                matches.push({
-                    value: `${d}.${m}.${y}`, isSequence: true, isMonthYear: false, isTextual: false, isDerived: false, frame
-                });
-            }
+        // Preserve the full year and token boundaries; never truncate longer numbers
+        // or concatenate unrelated numbers by stripping all separators from the block.
+        const sequenceRegex = new RegExp(SEQUENCE_PATTERN.source, SEQUENCE_PATTERN.flags);
+        for (const sequence of text.matchAll(sequenceRegex)) {
+            const [, day, month, year] = sequence;
+            matches.push({
+                value: `${day}.${month}.${year}`, isSequence: true, isMonthYear: false, isTextual: false, isDerived: false, frame
+            });
         }
     };
 
