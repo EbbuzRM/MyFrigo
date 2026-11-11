@@ -65,7 +65,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
       setUpdateStatus('downloading'); setIsDownloading(true);
 
       const success = await UpdateService.downloadUpdate((progress: DownloadProgress) => {
-        const percentage = (progress.totalBytesWritten / progress.totalBytes) * 100;
+        if (!(progress.totalBytes > 0)) return;
+        const percentage = Math.min(100, (progress.totalBytesWritten / progress.totalBytes) * 100);
         setDownloadProgress(percentage); animateProgress(percentage / 100);
       });
 
@@ -74,8 +75,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
         setUpdateStatus('installing'); setIsInstalling(true);
         installTimerRef.current = setTimeout(async () => {
           installTimerRef.current = null;
-          if (autoInstall) await UpdateService.restartApp();
-          else { setUpdateStatus('completed'); setIsInstalling(false); }
+          if (autoInstall) {
+            await UpdateService.restartApp();
+            // Se siamo ancora qui il riavvio non è avvenuto: sblocca il modal
+            setUpdateStatus('completed'); setIsInstalling(false);
+          } else { setUpdateStatus('completed'); setIsInstalling(false); }
         }, autoInstall ? 1500 : 1000);
       } else { throw new Error('Download fallito'); }
     } catch (error) {
@@ -87,7 +91,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = React.memo(({
   }, [autoInstall, animateProgress]);
 
   const handleLater = useCallback(() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onClose(); }, [onClose]);
-  const handleRestart = useCallback(async () => { setUpdateStatus('installing'); await UpdateService.restartApp(); }, []);
+  const handleRestart = useCallback(async () => {
+    setUpdateStatus('installing');
+    await UpdateService.restartApp();
+    // Se siamo ancora qui il riavvio non è avvenuto: sblocca il modal
+    setUpdateStatus('completed');
+  }, []);
 
   return (
     <View style={styles.modalContainer}>

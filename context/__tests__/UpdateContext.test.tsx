@@ -12,7 +12,7 @@ import { UpdateProvider, useUpdate } from '../UpdateContext';
 import { UpdateService } from '@/services/UpdateService';
 import { LoggingService } from '@/services/LoggingService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUpdates } from 'expo-updates';
+import { useUpdates, fetchUpdateAsync, reloadAsync } from 'expo-updates';
 
 // --- Mocks ---
 
@@ -24,6 +24,7 @@ jest.mock('expo-updates', () => ({
   useUpdates: jest.fn(),
   fetchUpdateAsync: jest.fn(),
   reloadAsync: jest.fn(),
+  checkForUpdateAsync: jest.fn(),
 }));
 
 // Mock del LoggingService
@@ -42,6 +43,7 @@ jest.mock('@/services/UpdateService', () => ({
     checkForUpdate: jest.fn(),
     downloadUpdate: jest.fn(),
     restartApp: jest.fn(),
+    markUpdatePending: jest.fn(),
     performFullUpdate: jest.fn(),
     shouldCheckForUpdates: jest.fn(),
     performAutoCheck: jest.fn(),
@@ -398,5 +400,96 @@ describe('UpdateContext', () => {
 
     // Verifica che il servizio sia stato inizializzato correttamente
     expect(mockedUpdateService.initialize).toHaveBeenCalled();
+  });
+
+  describe('flusso automatico useUpdates', () => {
+    const pendingState = {
+      isUpdateAvailable: true,
+      isUpdatePending: true,
+      isDownloading: false,
+      availableUpdate: { manifest: { extra: { expoClient: { version: '1.0.8' } } } },
+      currentlyRunning: { updateId: 'current-version' },
+    };
+
+    beforeEach(() => {
+      (fetchUpdateAsync as jest.Mock).mockResolvedValue({ isNew: true });
+      (reloadAsync as jest.Mock).mockResolvedValue(undefined);
+    });
+
+    const renderProvider = () =>
+      render(
+        <UpdateProvider>
+          <TestComponent />
+        </UpdateProvider>
+      );
+
+    it('con auto-install attivo riavvia e allinea UpdateService', async () => {
+      mockedUseUpdates.mockReturnValue(pendingState);
+
+      renderProvider();
+
+      await waitFor(() => expect(reloadAsync).toHaveBeenCalledTimes(1));
+      expect(mockedUpdateService.markUpdatePending).toHaveBeenCalled();
+    });
+
+    it('non riavvia prima di aver letto le preferenze: auto-install disattivato => modal, nessun reload', async () => {
+      mockedAsyncStorage.getItem.mockResolvedValue(
+        JSON.stringify({ autoCheckEnabled: true, autoInstallEnabled: false, checkInterval: 24 })
+      );
+      mockedUseUpdates.mockReturnValue(pendingState);
+
+      const { getByTestId } = renderProvider();
+
+      await waitFor(() => expect(getByTestId('show-modal').props.children).toBe('true'));
+      expect(reloadAsync).not.toHaveBeenCalled();
+      expect(mockedUpdateService.markUpdatePending).toHaveBeenCalled();
+    });
+
+    it('scarica automaticamente un update disponibile se il controllo automatico è attivo', async () => {
+      mockedUseUpdates.mockReturnValue({
+        isUpdateAvailable: true,
+        isUpdatePending: false,
+        isDownloading: false,
+        availableUpdate: null,
+        currentlyRunning: { updateId: 'current-version' },
+      });
+
+      renderProvider();
+
+      await waitFor(() => expect(fetchUpdateAsync).toHaveBeenCalledTimes(1));
+    });
+
+    it('NON scarica se il controllo automatico è disattivato', async () => {
+      mockedAsyncStorage.getItem.mockResolvedValue(
+        JSON.stringify({ autoCheckEnabled: false, autoInstallEnabled: true, checkInterval: 24 })
+      );
+      mockedUseUpdates.mockReturnValue({
+        isUpdateAvailable: true,
+        isUpdatePending: false,
+        isDownloading: false,
+        availableUpdate: null,
+        currentlyRunning: { updateId: 'current-version' },
+      });
+
+      renderProvider();
+
+      await waitFor(() => expect(mockedAsyncStorage.getItem).toHaveBeenCalled());
+      await act(async () => {});
+      expect(fetchUpdateAsync).not.toHaveBeenCalled();
+    });
+
+    it('isDownloading riflette lo stato nativo di expo-updates', async () => {
+      mockedUseUpdates.mockReturnValue({
+        isUpdateAvailable: false,
+        isUpdatePending: false,
+        isDownloading: true,
+        availableUpdate: null,
+        currentlyRunning: { updateId: 'current-version' },
+      });
+
+      const { getByTestId } = renderProvider();
+
+      await waitFor(() => expect(getByTestId('is-downloading').props.children).toBe('true'));
+    });
   });
 });

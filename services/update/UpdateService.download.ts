@@ -19,7 +19,7 @@ export class UpdateDownloadService {
     isDownloading: boolean,
     isUpdatePending: boolean,
     checkForUpdateFn: () => Promise<UpdateInfo>,
-    onProgress?: (progress: DownloadProgress) => void
+    _onProgress?: (progress: DownloadProgress) => void
   ): Promise<{ success: boolean; isNew: boolean; updateInfo: UpdateInfo | null }> {
     if (Platform.OS === 'web' || __DEV__) {
       LoggingService.info('UpdateService', 'Download non supportato in modalità sviluppo/web');
@@ -46,10 +46,8 @@ export class UpdateDownloadService {
         return { success: false, isNew: false, updateInfo };
       }
 
-      if (onProgress) {
-        onProgress({ totalBytes: 0, totalBytesWritten: 0 });
-      }
-
+      // expo-updates non espone il progresso byte-per-byte: nessun onProgress fittizio
+      // (un 0/0 produrrebbe NaN% nella UI).
       const downloadResult = await Updates.fetchUpdateAsync();
       LoggingService.info('UpdateService', `Download completato: isNew=${downloadResult.isNew}`);
 

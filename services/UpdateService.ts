@@ -69,13 +69,16 @@ export class UpdateService {
     if (!this.isInitialized) await this.initialize();
 
     if (Platform.OS !== 'web' && !__DEV__) {
+      // Cattura lo stato PRIMA di impostarlo: passare il flag già a true farebbe
+      // restituire sempre "nessun aggiornamento" a checkAvailability.
+      const wasChecking = this.isChecking;
       try {
         this.isChecking = true;
         // The metadata service handles the actual API call
         // We just wrap it to maintain state and notify
         const info = await UpdateMetadataService.checkAvailability(
-          this._isUpdatePending, 
-          this.isChecking, 
+          this._isUpdatePending,
+          wasChecking,
           forceCheck
         );
         
@@ -93,7 +96,7 @@ export class UpdateService {
         UpdateNotificationService.notifyUpdateError(errorInfo);
         return errorInfo;
       } finally {
-        this.isChecking = false;
+        if (!wasChecking) this.isChecking = false;
       }
     } else {
       // Web o DEV mode: chiama checkAvailability senza gestire stato/notifiche
@@ -117,9 +120,9 @@ export class UpdateService {
     );
 
     if (result.success) {
-      if (result.isNew) {
-        this._isUpdatePending = true;
-      }
+      // fetchUpdateAsync riuscito dopo un check positivo = update pronto da applicare
+      // (isNew è false anche quando era già stato scaricato, es. da useUpdates).
+      this._isUpdatePending = true;
       if (result.updateInfo) {
         UpdateNotificationService.notifyUpdateDownloaded({
           ...result.updateInfo,
@@ -131,6 +134,14 @@ export class UpdateService {
       UpdateNotificationService.notifyDownloadError();
       return false;
     }
+  }
+
+  /**
+   * Segnala che un update è già stato scaricato da un altro canale (hook useUpdates),
+   * così restartApp/downloadUpdate non lo ricercano né lo ignorano.
+   */
+  static markUpdatePending(): void {
+    this._isUpdatePending = true;
   }
 
   static async restartApp(): Promise<void> {

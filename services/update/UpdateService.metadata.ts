@@ -1,6 +1,6 @@
 // UpdateService.metadata.ts — UpdateService.metadata module.
 //
-// exports: ExpoUpdatesManifest | DownloadProgress | UpdateInfo | UpdateSettings | UpdateMetadataService
+// exports: ExpoUpdatesManifest | DownloadProgress | UpdateInfo | UpdateSettings | getManifestVersion | UpdateMetadataService
 // used_by: services\UpdateService.ts
 //                   services\update\UpdateService.download.ts
 //                   services\update\UpdateService.notifications.ts
@@ -51,6 +51,18 @@ interface ExpoUpdateCheckResult {
   manifest?: ExpoUpdatesManifest;
 }
 
+/**
+ * Versione app dentro un manifest EAS Update. La config Expo sta in `extra.expoClient`;
+ * NON si ripiega su runtimeVersion (coincide con la versione installata → "nuova versione" falsa).
+ */
+export function getManifestVersion(manifest?: { extra?: Record<string, unknown> } | null): string | undefined {
+  const extra = manifest?.extra;
+  const expoClient = extra?.expoClient as { version?: unknown } | undefined;
+  if (typeof expoClient?.version === 'string') return expoClient.version;
+  if (typeof extra?.version === 'string') return extra.version;
+  return undefined;
+}
+
 export class UpdateMetadataService {
   static async checkAvailability(isUpdatePending: boolean, isChecking: boolean, forceCheck: boolean): Promise<UpdateInfo> {
     if (Platform.OS === 'web' || __DEV__) {
@@ -92,7 +104,7 @@ export class UpdateMetadataService {
         isAvailable: updateResult.isAvailable,
         isUpdatePending: isUpdatePending,
         currentVersion: Constants.expoConfig?.version || '1.0.0',
-        availableVersion: manifest?.extra?.version || manifest?.runtimeVersion,
+        availableVersion: getManifestVersion(manifest),
         manifest: manifest,
       };
     } catch (error: unknown) {

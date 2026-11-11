@@ -8,14 +8,17 @@
 //                   hooks\useSettingsSections.ts
 // rules:   - The UpdateProvider component must remain as a single React context provider wrapping the entire update subsystem; do not split it into multiple providers or mix concerns with other contexts.
 //          - All AsyncStorage read/write operations for update settings must use the UPDATE_SETTINGS_KEY constant exclusively; no hardcoded keys or alternative storage keys allowed.
-//          - The update lifecycle (check, download, install) must be managed through the global UpdateService singleton, not through direct Expo Updates API calls.
+//          - Manual update lifecycle (check, download, install) goes through the global UpdateService singleton; the automatic flow uses the expo-updates `useUpdates()` hook and must call `UpdateService.markUpdatePending()` once an update is downloaded so both flows share state.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
+// message:
 
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUpdates, reloadAsync, fetchUpdateAsync } from 'expo-updates';
+import Constants from 'expo-constants';
+import { useUpdates, reloadAsync, fetchUpdateAsync, checkForUpdateAsync } from 'expo-updates';
 import { UpdateService, UpdateInfo, UpdateSettings, UpdateEventEmitter } from '@/services/UpdateService';
+import { getManifestVersion } from '@/services/update/UpdateService.metadata';
 import { LoggingService } from '@/services/LoggingService';
 
 // Chiave per salvare le impostazioni di aggiornamento in AsyncStorage
@@ -60,14 +63,19 @@ export const useUpdate = () => {
 
 export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
   const [isChecking, setIsChecking] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [lastUpdateInfo, setLastUpdateInfo] = useState<UpdateInfo | null>(null);
   const [settings, setSettings] = useState<UpdateSettings>(defaultSettings);
+  // Le azioni automatiche (download/auto-install) aspettano le preferenze reali dell'utente
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  // Incrementato al rientro in foreground per ri-eseguire l'effetto di download
+  const [retryNonce, setRetryNonce] = useState(0);
 
   // FIX RADICE: Usa useUpdates() hook invece di addListener (deprecato in SDK 51+)
   const updates = useUpdates();
+  // isDownloading deriva dallo stato nativo (copre sia download automatici che manuali)
+  const isDownloading = !!updates.isDownloading;
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -77,55 +85,95 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     setToast(null);
   }, []);
 
-  // Ref per avere sempre l'ultimo valore dei settings nei listener
-  const settingsRef = React.useRef(settings);
+  // Ref per avere sempre l'ultimo valore di settings / updates nei listener
+  const settingsRef = useRef(settings);
+  const updatesRef = useRef(updates);
+  updatesRef.current = updates;
 
-  // Aggiorna il ref quando i settings cambiano
+  // Inizializza il servizio, registra i listener (sincrono: il cleanup è sempre coerente) e carica le impostazioni
   useEffect(() => {
-    settingsRef.current = settings;
-  }, [settings]);
+    const unsubscribers = [
+      UpdateEventEmitter.on('updateChecked', (updateInfo: UpdateInfo | null) => {
+        setIsChecking(false);
+        if (updateInfo) {
+          setLastUpdateInfo(updateInfo);
 
-  // Inizializza il servizio e carica impostazioni
-  useEffect(() => {
-    const initializeUpdateService = async () => {
+          // Usa il ref per evitare stale closure!
+          if (updateInfo.isAvailable && !settingsRef.current.autoInstallEnabled) {
+            setShowUpdateModal(true);
+          }
+        }
+      }),
+      UpdateEventEmitter.on('updateError', () => {
+        setIsChecking(false);
+        LoggingService.error('UpdateProvider', 'Errore durante check aggiornamenti');
+      }),
+      UpdateEventEmitter.on('updateDownloaded', () => {
+        LoggingService.info('UpdateProvider', 'Aggiornamento scaricato con successo');
+      }),
+      UpdateEventEmitter.on('downloadError', () => {
+        LoggingService.error('UpdateProvider', 'Errore durante download aggiornamento');
+      }),
+      UpdateEventEmitter.on('appRestarting', () => {
+        LoggingService.info('UpdateProvider', 'App in riavvio per applicare aggiornamento');
+      }),
+      UpdateEventEmitter.on('restartError', () => {
+        LoggingService.error('UpdateProvider', 'Errore durante riavvio app');
+      }),
+    ];
+
+    let cancelled = false;
+    const initialize = async () => {
       try {
         await UpdateService.initialize();
-        await loadSettings();
-        setupEventListeners();
+        const stored = await AsyncStorage.getItem(UPDATE_SETTINGS_KEY);
+        if (cancelled) return;
+        if (stored) {
+          const parsedSettings: UpdateSettings = { ...defaultSettings, ...JSON.parse(stored) };
+          settingsRef.current = parsedSettings;
+          setSettings(parsedSettings);
+          LoggingService.info('UpdateProvider', 'Impostazioni caricate da AsyncStorage:', parsedSettings);
+        } else {
+          LoggingService.info('UpdateProvider', 'Nessuna impostazione salvata, uso default');
+        }
       } catch (error) {
         LoggingService.error('UpdateProvider', 'Errore durante l\'inizializzazione:', error);
+      } finally {
+        if (!cancelled) setSettingsLoaded(true);
       }
     };
-
-    initializeUpdateService();
+    initialize();
 
     return () => {
-      UpdateEventEmitter.removeAllListeners('updateChecked');
-      UpdateEventEmitter.removeAllListeners('updateError');
-      UpdateEventEmitter.removeAllListeners('updateDownloaded');
-      UpdateEventEmitter.removeAllListeners('downloadError');
-      UpdateEventEmitter.removeAllListeners('appRestarting');
-      UpdateEventEmitter.removeAllListeners('restartError');
+      cancelled = true;
+      unsubscribers.forEach((unsubscribe) => {
+        if (typeof unsubscribe === 'function') unsubscribe();
+      });
     };
   }, []);
 
   // FIX RADICE: Monitora lo stato di useUpdates() — gestisce sia il download che l'installazione
   // FLUSSO CORRETTO:
   //   1. checkAutomatically: "ON_LOAD" → expo-updates fa checkForUpdateAsync() all'avvio
-  //   2. isUpdateAvailable diventa true → chiamiamo fetchUpdateAsync() per scaricare
+  //   2. isUpdateAvailable diventa true → (se controllo automatico attivo) fetchUpdateAsync()
   //   3. isUpdatePending diventa true → auto-reload o mostra modal
   const fetchAttemptedRef = useRef(false);
+  const reloadRequestedRef = useRef(false);
 
   useEffect(() => {
-    const { isUpdateAvailable, isUpdatePending, availableUpdate, currentlyRunning } = updates;
+    if (!settingsLoaded) return;
+    const { isUpdateAvailable, isUpdatePending, availableUpdate } = updates;
+    const currentSettings = settingsRef.current;
 
     // STEP 1: Aggiornamento disponibile ma non ancora scaricato → scaricalo
     if (isUpdateAvailable && !isUpdatePending && !fetchAttemptedRef.current) {
+      if (!currentSettings.autoCheckEnabled) return; // download automatico disattivato dall'utente
       fetchAttemptedRef.current = true;
       LoggingService.info('UpdateProvider', 'Aggiornamento disponibile, avvio download automatico...');
       fetchUpdateAsync().catch((error) => {
         LoggingService.error('UpdateProvider', 'Errore durante fetchUpdateAsync:', error);
-        fetchAttemptedRef.current = false; // Riprova al prossimo ciclo
+        // Il retry parte al rientro in foreground (retryNonce)
+        fetchAttemptedRef.current = false;
       });
       return;
     }
@@ -133,96 +181,75 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     // STEP 2: Aggiornamento scaricato e pronto per l'installazione
     if (isUpdatePending && availableUpdate) {
       LoggingService.info('UpdateProvider', 'Aggiornamento scaricato, pronto per l\'installazione');
+      // Allinea il servizio: restartApp/downloadUpdate devono sapere che l'update è già pronto
+      UpdateService.markUpdatePending();
 
-      const manifestAny = availableUpdate.manifest as Record<string, unknown> | undefined;
-
+      const manifest = availableUpdate.manifest as UpdateInfo['manifest'];
       const updateInfo: UpdateInfo = {
         isAvailable: true,
         isUpdatePending: true,
-        currentVersion: currentlyRunning.updateId || 'unknown',
-        availableVersion: (manifestAny?.extra as Record<string, unknown> | undefined)?.version as string || (manifestAny?.runtimeVersion as string) || 'unknown',
-        manifest: availableUpdate.manifest as UpdateInfo['manifest'],
+        currentVersion: Constants.expoConfig?.version || 'unknown',
+        availableVersion: getManifestVersion(manifest),
+        manifest,
       };
 
       setLastUpdateInfo(updateInfo);
-      setIsDownloading(false);
 
-      if (settingsRef.current.autoInstallEnabled) {
+      if (currentSettings.autoInstallEnabled) {
+        if (reloadRequestedRef.current) return;
+        reloadRequestedRef.current = true;
         LoggingService.info('UpdateProvider', 'Auto-install abilitato, riavvio dell\'app...');
-        reloadAsync();
+        Promise.resolve(reloadAsync()).catch((error) => {
+          LoggingService.error('UpdateProvider', 'Errore durante reloadAsync:', error);
+          reloadRequestedRef.current = false;
+        });
       } else {
         setShowUpdateModal(true);
       }
     }
-  }, [updates.isUpdateAvailable, updates.isUpdatePending, updates.availableUpdate, updates.currentlyRunning]);
+  }, [updates.isUpdateAvailable, updates.isUpdatePending, updates.availableUpdate, settingsLoaded, retryNonce]);
 
-  const loadSettings = async () => {
+  // "Ripresa": al rientro in foreground riprova un download fallito e, scaduto
+  // l'intervallo impostato, ricontrolla (expo-updates controlla da solo solo all'avvio).
+  useEffect(() => {
+    if (__DEV__) return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      const currentSettings = settingsRef.current;
+      const {
+        isUpdatePending,
+        isChecking: nativeChecking,
+        isDownloading: nativeDownloading,
+        lastCheckForUpdateTimeSinceRestart,
+      } = updatesRef.current;
+      if (!currentSettings.autoCheckEnabled || isUpdatePending || nativeChecking || nativeDownloading) return;
+
+      fetchAttemptedRef.current = false;
+      setRetryNonce((n) => n + 1);
+
+      const lastCheck = lastCheckForUpdateTimeSinceRestart?.getTime() ?? 0;
+      if (Date.now() - lastCheck >= currentSettings.checkInterval * 60 * 60 * 1000) {
+        checkForUpdateAsync().catch((error) => {
+          LoggingService.error('UpdateProvider', 'Errore durante il re-check in foreground:', error);
+        });
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const updateSettings = useCallback(async (newSettings: Partial<UpdateSettings>) => {
+    const updated = { ...settingsRef.current, ...newSettings };
+    settingsRef.current = updated;
+    setSettings(updated);
     try {
-      const stored = await AsyncStorage.getItem(UPDATE_SETTINGS_KEY);
-      if (stored) {
-        const parsedSettings = JSON.parse(stored);
-        setSettings(parsedSettings);
-        LoggingService.info('UpdateProvider', 'Impostazioni caricate da AsyncStorage:', parsedSettings);
-      } else {
-        setSettings(defaultSettings);
-        LoggingService.info('UpdateProvider', 'Nessuna impostazione salvata, uso default');
-      }
-    } catch (error) {
-      LoggingService.error('UpdateProvider', 'Errore durante il caricamento delle impostazioni:', error);
-      setSettings(defaultSettings);
+      await AsyncStorage.setItem(UPDATE_SETTINGS_KEY, JSON.stringify(updated));
+      LoggingService.info('UpdateProvider', 'Impostazioni salvate:', updated);
+    } catch (err) {
+      LoggingService.error('UpdateProvider', 'Errore salvataggio:', err);
     }
-  };
+  }, []);
 
-  const updateSettings = async (newSettings: Partial<UpdateSettings>) => {
-    setSettings(current => {
-      const updated = { ...current, ...newSettings };
-      // Salvataggio asincrono fuori dal render
-      AsyncStorage.setItem(UPDATE_SETTINGS_KEY, JSON.stringify(updated))
-        .then(() => LoggingService.info('UpdateProvider', 'Impostazioni salvate:', updated))
-        .catch(err => LoggingService.error('UpdateProvider', 'Errore salvataggio:', err));
-      return updated;
-    });
-  };
-
-  const setupEventListeners = () => {
-    UpdateEventEmitter.on('updateChecked', (updateInfo: UpdateInfo | null) => {
-      setIsChecking(false);
-      if (updateInfo) {
-        setLastUpdateInfo(updateInfo);
-
-        // Usa il ref per evitare stale closure!
-        const currentSettings = settingsRef.current;
-        if (updateInfo.isAvailable && !currentSettings.autoInstallEnabled) {
-          setShowUpdateModal(true);
-        }
-      }
-    });
-
-    UpdateEventEmitter.on('updateError', () => {
-      setIsChecking(false);
-      LoggingService.error('UpdateProvider', 'Errore durante check aggiornamenti');
-    });
-
-    UpdateEventEmitter.on('updateDownloaded', () => {
-      setIsDownloading(false);
-      LoggingService.info('UpdateProvider', 'Aggiornamento scaricato con successo');
-    });
-
-    UpdateEventEmitter.on('downloadError', () => {
-      setIsDownloading(false);
-      LoggingService.error('UpdateProvider', 'Errore durante download aggiornamento');
-    });
-
-    UpdateEventEmitter.on('appRestarting', () => {
-      LoggingService.info('UpdateProvider', 'App in riavvio per applicare aggiornamento');
-    });
-
-    UpdateEventEmitter.on('restartError', () => {
-      LoggingService.error('UpdateProvider', 'Errore durante riavvio app');
-    });
-  };
-
-  const checkForUpdates = async (): Promise<UpdateInfo> => {
+  const checkForUpdates = useCallback(async (): Promise<UpdateInfo> => {
     setIsChecking(true);
     try {
       const updateInfo = await UpdateService.checkForUpdate();
@@ -240,7 +267,7 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     } finally {
       setIsChecking(false);
     }
-  };
+  }, [showToast]);
 
   /**
    * Apre il modal degli aggiornamenti.
@@ -248,7 +275,7 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
    * Essendo un'azione manuale, mostra sempre il modal se c'è un update disponibile.
    * In modalità sviluppo, mostra un messaggio esplicito.
    */
-  const openModal = async () => {
+  const openModal = useCallback(async () => {
     // Se in DEV mode, dai feedback immediato senza tentare il check
     if (__DEV__) {
       showToast('Aggiornamenti OTA non disponibili in modalità sviluppo. Usa una build di produzione.', 'error');
@@ -267,16 +294,16 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
         LoggingService.error('UpdateContext', 'Errore in openModal:', error);
       }
     }
-  };
+  }, [lastUpdateInfo, checkForUpdates, showToast]);
 
-  const hideModal = () => {
+  const hideModal = useCallback(() => {
     setShowUpdateModal(false);
-  };
+  }, []);
 
-  const resetUpdateState = () => {
+  const resetUpdateState = useCallback(() => {
     setLastUpdateInfo(null);
     setShowUpdateModal(false);
-  };
+  }, []);
 
   const contextValue = React.useMemo(() => ({
     checkForUpdates,
@@ -292,7 +319,10 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     toast,
     showToast,
     hideToast,
-  }), [isChecking, isDownloading, lastUpdateInfo, settings, showUpdateModal, toast, showToast, hideToast]);
+  }), [
+    checkForUpdates, isChecking, isDownloading, lastUpdateInfo, settings, updateSettings,
+    showUpdateModal, hideModal, openModal, resetUpdateState, toast, showToast, hideToast,
+  ]);
 
   return (
     <UpdateContext.Provider value={contextValue}>
