@@ -20,7 +20,9 @@ module.exports = {
   expo: {
     name: "MyFrigo",
     slug: "myfrigoapp",
-    version: "1.0.7",
+    version: "1.0.8",
+    // runtimeVersion resta 1.0.7: la 1.0.8 è solo JS e gira sul binario 1.0.7 già installato.
+    // Bumpare questo valore pubblica su un runtime nuovo e taglia fuori chi ha la 1.0.7.
     runtimeVersion: "1.0.7",
     orientation: "portrait",
     scheme: "myfrigo",

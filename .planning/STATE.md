@@ -1,11 +1,11 @@
 # GSD State
 
-Last updated: 2026-09-19
+Last updated: 2026-11-16
 
 ## Current Phase
-Released v1.0.6 (SDK 57)
+Preparazione rilascio v1.0.8 come OTA sul runtime nativo 1.0.7 (nessuna dipendenza nativa cambiata dalla build 1.0.7). v1.0.7 rilasciata il 2026-09-26.
 
-**Status**: Expo SDK 57 upgrade completato su `master`; il repository contiene i successivi fix di lint, camera, feedback e sicurezza fino a `6f4cf4c`. La safety net verificabile nel checkout corrente è il tag annotato `pre-sdk57`; il branch locale `sdk57` e lo zip temporaneo Android non risultano presenti.
+**Status**: Su `master` sono presenti i fix OTA del 2026-11-12 (`192b841`), la pulizia dei moduli morti (`bddbab3`) e i fix storage/update/push (`9dba3b6`). La 1.0.8 è solo JavaScript: nessuna modifica al runtime nativo, quindi può essere distribuita come aggiornamento OTA sopra la build 1.0.7.
 
 ## Session Log Index
 

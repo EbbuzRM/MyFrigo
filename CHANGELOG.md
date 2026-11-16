@@ -1,3 +1,21 @@
+## [1.0.8] - 2026-11-16
+
+### Fixed
+
+- Product lookups and writes are now filtered by `user_id` in addition to row-level security, and a missing product returns `null` instead of surfacing a PGRST116 error.
+- Restoring a product to `active` clears the previous consumption date.
+- The update download guard now sets the downloading flag before the download starts, so a second concurrent download is actually rejected; a failed duplicate attempt no longer raises a download-error notification.
+- The expiration notification function deletes stored push subscriptions that OneSignal no longer reports as active for the user.
+
+### Changed
+
+- `createError` moved into a leaf module (`utils/errorFactories.ts`) so the specialized error handlers and formatters no longer create a runtime import cycle with the `errorHandler` facade.
+- Type-only imports for `Product`, `AppSettings` and `ProductTemplate`.
+
+### Removed
+
+- Unused modules and their tests: `CategorySelector`, `ProductDetailActions`, `ProductDetailHeader`, `ProductDetailInfo`, `ProductDetailSkeleton`, `useProductDetail`, `useSettingsSections`, `UserService`, `DiagnosticContext`, `DiagnosticWrapper`, `TestRunner`, `DiagnosticTester`, `constants/content`, and the update integration test. Also removed `UpdateService.performFullUpdate`, `performAutoCheck`, `shouldCheckForUpdates`, `getDefaultSettings` and the OneSignal operation queue.
+
 ## [1.0.7] - 2026-09-26
 
 ### Added
