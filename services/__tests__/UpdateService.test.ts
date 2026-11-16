@@ -30,18 +30,6 @@ jest.mock('expo-constants', () => ({
 jest.mock('../update/UpdateService.metadata', () => ({
   UpdateMetadataService: {
     checkAvailability: jest.fn(),
-    shouldCheckForUpdates: jest.fn((settings: { autoCheckEnabled: boolean; checkInterval: number; lastCheckTime?: number }) => {
-      if (!settings.autoCheckEnabled) return false;
-      const now = Date.now();
-      const lastCheck = settings.lastCheckTime || 0;
-      const intervalMs = settings.checkInterval * 60 * 60 * 1000;
-      return (now - lastCheck) >= intervalMs;
-    }),
-    getBuildInfo: jest.fn(() => ({
-      updateId: 'test-update-id',
-      isEmbeddedLaunch: false,
-      runtimeVersion: '1.0.0',
-    })),
   },
 }));
 
@@ -70,7 +58,7 @@ jest.mock('../update/UpdateService.notifications', () => ({
 }));
 
 // Now import after mocks
-import { UpdateService, UpdateSettings } from '../UpdateService';
+import { UpdateService } from '../UpdateService';
 
 // Mock di __DEV__
 Object.defineProperty(process, 'env', {
@@ -210,64 +198,6 @@ describe('UpdateService', () => {
     it('should handle restart gracefully', async () => {
       // Just verify the method doesn't throw
       await expect(UpdateService.restartApp()).resolves.not.toThrow();
-    });
-  });
-
-  describe('shouldCheckForUpdates', () => {
-    it('should return true when it\'s time to check', () => {
-      const settings: UpdateSettings = {
-        autoCheckEnabled: true,
-        autoInstallEnabled: true,
-        checkInterval: 24,
-        lastCheckTime: Date.now() - (25 * 60 * 60 * 1000), // 25 hours ago
-      };
-
-      const result = UpdateService.shouldCheckForUpdates(settings);
-      expect(result).toBe(true);
-    });
-
-    it('should return false when auto-check is disabled', () => {
-      const settings: UpdateSettings = {
-        autoCheckEnabled: false,
-        autoInstallEnabled: true,
-        checkInterval: 24,
-        lastCheckTime: Date.now() - (25 * 60 * 60 * 1000),
-      };
-
-      const result = UpdateService.shouldCheckForUpdates(settings);
-      expect(result).toBe(false);
-    });
-
-    it('should return false when not enough time has passed', () => {
-      const settings: UpdateSettings = {
-        autoCheckEnabled: true,
-        autoInstallEnabled: true,
-        checkInterval: 24,
-        lastCheckTime: Date.now() - (23 * 60 * 60 * 1000), // 23 hours ago
-      };
-
-      const result = UpdateService.shouldCheckForUpdates(settings);
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('getDefaultSettings', () => {
-    it('should return default settings', () => {
-      const settings = UpdateService.getDefaultSettings();
-
-      expect(settings.autoCheckEnabled).toBe(true);
-      expect(settings.autoInstallEnabled).toBe(true);
-      expect(settings.checkInterval).toBe(24);
-    });
-  });
-
-  describe('getCurrentBuildInfo', () => {
-    it('should return build information', () => {
-      const info = UpdateService.getCurrentBuildInfo();
-
-      expect(info).toHaveProperty('updateId');
-      expect(info).toHaveProperty('isEmbeddedLaunch');
-      expect(info).toHaveProperty('runtimeVersion');
     });
   });
 });

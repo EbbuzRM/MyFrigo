@@ -40,14 +40,6 @@ export class GoogleAuthRetryManager {
   }
 
   /**
-   * Calculates delay for the next retry attempt using exponential backoff
-   */
-  calculateRetryDelay(attemptNumber: number): number {
-    const delay = this.config.baseDelayMs * Math.pow(this.config.backoffMultiplier, attemptNumber - 1);
-    return Math.min(delay, this.config.maxDelayMs);
-  }
-
-  /**
    * Analyzes whether a retry is needed based on current profile state
    */
   async analyzeRetryNeed(
@@ -148,21 +140,6 @@ export class GoogleAuthRetryManager {
       isExistingUser: true,
       message: 'Raggiunto il numero massimo di tentativi. Riprova più tardi.'
     };
-  }
-
-  /**
-   * Determines if user is likely new based on attempt history
-   */
-  async isLikelyNewUser(userId: string): Promise<boolean> {
-    const lastAttempt = await this.repository.getLastAttempt(userId);
-    return !lastAttempt;
-  }
-
-  /**
-   * Clears all attempts for a user
-   */
-  async clearAttempts(userId: string): Promise<void> {
-    await this.repository.clearAttempts(userId);
   }
 }
 

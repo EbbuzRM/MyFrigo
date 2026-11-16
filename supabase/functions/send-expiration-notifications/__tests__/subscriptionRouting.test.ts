@@ -1,4 +1,4 @@
-import { groupActivePushSubscriptions } from '../subscriptionRouting';
+import { findOrphanSubscriptionIds, groupActivePushSubscriptions } from '../subscriptionRouting';
 
 describe('push subscription routing', () => {
   it('separates two devices by language and defaults old clients to Italian', () => {
@@ -26,5 +26,25 @@ describe('push subscription routing', () => {
       [{ id: 'account-a-device', type: 'AndroidPush', enabled: true }],
       [{ subscription_id: 'account-b-device', language: 'en' }],
     )).toEqual({ it: ['account-a-device'], en: [] });
+  });
+
+  it('flags registered IDs that are missing, disabled, or not push as orphans', () => {
+    expect(findOrphanSubscriptionIds([
+      { id: 'active', type: 'AndroidPush', enabled: true },
+      { id: 'disabled', type: 'AndroidPush', enabled: false },
+      { id: 'email', type: 'Email', enabled: true },
+    ], [
+      { subscription_id: 'active', language: 'it' },
+      { subscription_id: 'disabled', language: 'it' },
+      { subscription_id: 'email', language: 'en' },
+      { subscription_id: 'reinstalled', language: 'en' },
+    ])).toEqual(['disabled', 'email', 'reinstalled']);
+  });
+
+  it('flags nothing when every registered ID is still active', () => {
+    expect(findOrphanSubscriptionIds(
+      [{ id: 'active', type: 'AndroidPush', enabled: true }],
+      [{ subscription_id: 'active', language: 'it' }],
+    )).toEqual([]);
   });
 });

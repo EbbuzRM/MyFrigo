@@ -48,7 +48,6 @@ const defaultSettings: UpdateSettings = {
   autoCheckEnabled: true,
   autoInstallEnabled: true,
   checkInterval: 24,
-  lastCheckTime: 0,
 };
 
 const UpdateContext = createContext<UpdateContextType | undefined>(undefined);

@@ -44,14 +44,8 @@ jest.mock('@/services/UpdateService', () => ({
     downloadUpdate: jest.fn(),
     restartApp: jest.fn(),
     markUpdatePending: jest.fn(),
-    performFullUpdate: jest.fn(),
-    shouldCheckForUpdates: jest.fn(),
-    performAutoCheck: jest.fn(),
-    getDefaultSettings: jest.fn(),
     isReady: jest.fn(),
     isCheckingForUpdates: jest.fn(),
-    isDownloadingUpdate: jest.fn(),
-    getCurrentBuildInfo: jest.fn(),
     resetState: jest.fn(),
   },
   UpdateEventEmitter: {
@@ -131,19 +125,8 @@ describe('UpdateContext', () => {
     });
     mockedUpdateService.downloadUpdate.mockResolvedValue(true);
     mockedUpdateService.restartApp.mockResolvedValue();
-    mockedUpdateService.performFullUpdate.mockResolvedValue({ success: true, message: 'Success' });
-    mockedUpdateService.shouldCheckForUpdates.mockReturnValue(true);
-    mockedUpdateService.performAutoCheck.mockResolvedValue(null);
-    mockedUpdateService.getDefaultSettings.mockReturnValue({
-      autoCheckEnabled: true,
-      autoInstallEnabled: true,
-      checkInterval: 24,
-      lastCheckTime: 0,
-    });
     mockedUpdateService.isReady.mockReturnValue(true);
     mockedUpdateService.isCheckingForUpdates.mockReturnValue(false);
-    mockedUpdateService.isDownloadingUpdate.mockReturnValue(false);
-    mockedUpdateService.getCurrentBuildInfo.mockReturnValue({ runtimeVersion: '1.0.0', updateId: null, isEmbeddedLaunch: false });
     mockedUpdateService.resetState.mockImplementation(() => {});
 
     // Mock di AsyncStorage

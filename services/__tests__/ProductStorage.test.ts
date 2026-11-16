@@ -185,7 +185,8 @@ describe('ProductStorage', () => {
        expect(supabase.from).toHaveBeenCalledWith('products');
        expect(mockQueryBuilder.select).toHaveBeenCalledWith('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url');
        expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'test-id');
-       expect(mockQueryBuilder.single).toHaveBeenCalled();
+       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
+       expect(mockQueryBuilder.maybeSingle).toHaveBeenCalled();
      });
 
     it('should return null when product not found', async () => {
@@ -475,8 +476,10 @@ describe('ProductStorage', () => {
       await ProductStorage.restoreConsumedProduct('test-id');
 
       expect(supabase.from).toHaveBeenCalledWith('products');
+      // Il ripristino azzera anche la data di consumo precedente
       expect(mockQueryBuilder.update).toHaveBeenCalledWith({
         status: 'active',
+        consumed_date: null,
       });
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'test-id');
     });

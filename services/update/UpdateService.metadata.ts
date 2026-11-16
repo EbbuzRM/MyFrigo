@@ -42,7 +42,6 @@ export interface UpdateSettings {
   autoCheckEnabled: boolean;
   autoInstallEnabled: boolean;
   checkInterval: number; // in ore
-  lastCheckTime?: number;
 }
 
 interface ExpoUpdateCheckResult {
@@ -115,23 +114,5 @@ export class UpdateMetadataService {
         currentVersion: Constants.expoConfig?.version || '1.0.0',
       };
     }
-  }
-
-  static shouldCheckForUpdates(settings: UpdateSettings): boolean {
-    if (!settings.autoCheckEnabled || Platform.OS === 'web' || __DEV__) {
-      return false;
-    }
-    const now = Date.now();
-    const lastCheck = settings.lastCheckTime || 0;
-    const intervalMs = settings.checkInterval * 60 * 60 * 1000;
-    return (now - lastCheck) >= intervalMs;
-  }
-
-  static getBuildInfo() {
-    return {
-      updateId: Updates.updateId,
-      isEmbeddedLaunch: Updates.isEmbeddedLaunch,
-      runtimeVersion: Updates.runtimeVersion,
-    };
   }
 }

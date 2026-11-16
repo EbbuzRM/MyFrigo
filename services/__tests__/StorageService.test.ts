@@ -171,10 +171,15 @@ describe('ProductStorage', () => {
   describe('updateProductStatus', () => {
     it('should update a product status to "consumed"', async () => {
       // Setup
+      (getCachedSession as jest.Mock).mockResolvedValue({ data: { session: { user: { id: 'user-123' } } } });
       const mockQueryBuilder = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null, data: null }),
+        eq: jest.fn(),
       };
+      // .eq('id').eq('user_id') -> l'ultimo eq risolve
+      mockQueryBuilder.eq
+        .mockReturnValueOnce(mockQueryBuilder)
+        .mockResolvedValueOnce({ error: null, data: null });
       (supabase.from as jest.Mock).mockReturnValue(mockQueryBuilder);
 
       const productId = 'product-to-consume';
@@ -187,6 +192,7 @@ describe('ProductStorage', () => {
       expect(supabase.from).toHaveBeenCalledWith('products');
       expect(mockQueryBuilder.update).toHaveBeenCalled();
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', productId);
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123');
     });
   });
 });

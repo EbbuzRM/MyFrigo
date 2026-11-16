@@ -27,10 +27,6 @@ export interface OneSignalUserData {
   lastName?: string;
 }
 
-// Heterogeneous fire-and-forget SDK calls; the queue never inspects the result.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type OneSignalOp = () => Promise<any>;
-
 export class OneSignalService {
   private static currentUserId: string | null = null;
   private static desiredUserId: string | null = null;
@@ -38,7 +34,6 @@ export class OneSignalService {
   private static lastSyncedSubscription: { userId: string; subscriptionId: string; language: SupportedLanguage } | null = null;
   private static accountOperation: Promise<void> = Promise.resolve();
   private static initializationPromise: Promise<void> | null = null;
-  private static opQueue: OneSignalOp[] = [];
 
   private static serializeAccountOperation(operation: () => Promise<void>): Promise<void> {
     const pending = this.accountOperation.then(operation, operation);
@@ -48,7 +43,7 @@ export class OneSignalService {
 
   /**
    * Inizializza OneSignal e configura i listener.
-   * Gestisce l'inizializzazione asincrona e accoda le operazioni pendenti.
+   * Gestisce l'inizializzazione asincrona.
    */
   static async initialize(): Promise<void> {
     if (this.initializationPromise) return this.initializationPromise;
@@ -131,14 +126,6 @@ export class OneSignalService {
 
         LoggingService.info('OneSignalService', 'OneSignal service fully initialized');
 
-        // Esegui le operazioni accodate durante l'inizializzazione
-        if (this.opQueue.length > 0) {
-          LoggingService.info('OneSignalService', `Executing ${this.opQueue.length} queued operations`);
-          const queue = [...this.opQueue];
-          this.opQueue = [];
-          await Promise.allSettled(queue.map(op => op()));
-        }
-
       } catch (error) {
         LoggingService.error('OneSignalService', 'Critical error initializing OneSignal service', error);
         this.initializationPromise = null; // Permetti il retry
@@ -163,38 +150,6 @@ export class OneSignalService {
     // (questo previene crash se initialize non è ancora stata chiamata dal RootLayout)
     await this.initialize();
     return op();
-  }
-
-  /**
-   * Versione alternativa di execute che accoda l'operazione invece di attendere
-   * se l'inizializzazione è in corso. Utile per operazioni non bloccanti (fire-and-forget).
-   */
-  private static async queueOp(op: OneSignalOp): Promise<void> {
-    if (this.initializationPromise) {
-      // Se l'inizializzazione è già partita, attendiamo che finisca e poi eseguiamo
-      this.initializationPromise.then(() => op().catch(e => LoggingService.error('OneSignalService', 'Queued op failed', e)));
-    } else {
-      // Altrimenti accodiamo
-      this.opQueue.push(op);
-    }
-  }
-
-  /**
-   * Ottiene l'ID OneSignal corrente.
-   */
-  static async getOneSignalId(): Promise<string | null> {
-    try {
-      return await this.execute(async () => {
-        const onesignalId = await OneSignal.User.getOnesignalId();
-        LoggingService.info('OneSignalService', 'Retrieved OneSignal ID', {
-          onesignalId: onesignalId ? onesignalId.substring(0, 8) + '...' : null,
-        });
-        return onesignalId || null;
-      });
-    } catch (error) {
-      LoggingService.error('OneSignalService', 'Error getting OneSignal ID', error);
-      return null;
-    }
   }
 
   /**

@@ -11,6 +11,19 @@ export interface RegisteredSubscription {
   language: NotificationLanguage;
 }
 
+function isActivePush(subscription: ProviderSubscription): boolean {
+  return !!subscription.id && subscription.enabled !== false && !!subscription.type?.endsWith('Push');
+}
+
+/** Registered IDs that OneSignal no longer lists as an active push subscription for the user. */
+export function findOrphanSubscriptionIds(
+  providerSubscriptions: readonly ProviderSubscription[],
+  registeredSubscriptions: readonly RegisteredSubscription[],
+): string[] {
+  const activeIds = new Set(providerSubscriptions.filter(isActivePush).map(subscription => subscription.id));
+  return registeredSubscriptions.map(row => row.subscription_id).filter(id => !activeIds.has(id));
+}
+
 export function groupActivePushSubscriptions(
   providerSubscriptions: readonly ProviderSubscription[],
   registeredSubscriptions: readonly RegisteredSubscription[],
@@ -18,7 +31,7 @@ export function groupActivePushSubscriptions(
   const languageById = new Map(registeredSubscriptions.map(row => [row.subscription_id, row.language]));
   const groups: Record<NotificationLanguage, Set<string>> = { it: new Set(), en: new Set() };
   for (const subscription of providerSubscriptions) {
-    if (!subscription.id || subscription.enabled === false || !subscription.type?.endsWith('Push')) continue;
+    if (!isActivePush(subscription)) continue;
     const language = languageById.get(subscription.id) === 'en' ? 'en' : 'it';
     groups[language].add(subscription.id);
   }

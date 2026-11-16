@@ -120,8 +120,11 @@ export class ProductStorage {
   static async getProductById(productId: string): Promise<ServiceResult<Product | null>> {
     const validationError = this.validateId(productId, 'ID Prodotto');
     if (validationError) return createErrorResult(validationError.message);
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<Product | null>;
     try {
-      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url').eq('id', productId).single();
+      // maybeSingle: prodotto assente = null (non errore PGRST116); filtro user_id oltre alla RLS
+      const { data, error } = await supabase.from('products').select('id, name, brand, category, purchase_date, expiration_date, status, quantities, is_frozen, consumed_date, notes, image_url').eq('id', productId).eq('user_id', userResult.data).maybeSingle();
       if (error) throw error;
       return createSuccessResult(data ? convertProductToCamelCase(data) : null);
     } catch (error) {
@@ -217,10 +220,15 @@ export class ProductStorage {
   static async updateProductStatus(productId: string, status: Product['status']): Promise<ServiceResult<void>> {
     const idError = this.validateId(productId, 'ID Prodotto');
     if (idError) return createErrorResult(idError.message);
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<void>;
     try {
       const updatedFields: Partial<Product> = { status };
       if (status === 'consumed') updatedFields.consumedDate = getLocalISODate();
-      const { error } = await supabase.from('products').update(convertProductToSnakeCase(updatedFields) as TablesUpdate<'products'>).eq('id', productId);
+      const payload = convertProductToSnakeCase(updatedFields) as TablesUpdate<'products'>;
+      // Ripristino ad 'active': azzera la data di consumo precedente
+      if (status === 'active') payload.consumed_date = null;
+      const { error } = await supabase.from('products').update(payload).eq('id', productId).eq('user_id', userResult.data);
       if (error) throw error;
       return createSuccessResult(undefined);
     } catch (error) {
@@ -284,8 +292,10 @@ export class ProductStorage {
     } catch {
       return createErrorResult(new Error('URL immagine non valido'));
     }
+    const userResult = await this.getCurrentUserId();
+    if (!userResult.success) return userResult as ServiceResult<void>;
     try {
-      const { error } = await supabase.from('products').update({ image_url: imageUrl } as TablesUpdate<'products'>).eq('id', productId);
+      const { error } = await supabase.from('products').update({ image_url: imageUrl } as TablesUpdate<'products'>).eq('id', productId).eq('user_id', userResult.data);
       if (error) throw error;
       return createSuccessResult(undefined);
     } catch (error) {

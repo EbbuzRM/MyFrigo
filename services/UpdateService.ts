@@ -34,12 +34,6 @@ export class UpdateService {
   private static isDownloading = false;
   private static _isUpdatePending = false;
 
-  private static defaultSettings: UpdateSettings = {
-    autoCheckEnabled: true,
-    autoInstallEnabled: true,
-    checkInterval: 24,
-  };
-
   static async initialize(): Promise<void> {
     if (this.isInitialized || Platform.OS === 'web') {
       return;
@@ -111,13 +105,21 @@ export class UpdateService {
   static async downloadUpdate(onProgress?: (progress: DownloadProgress) => void): Promise<boolean> {
     if (!this.isInitialized) await this.initialize();
 
-    const result = await UpdateDownloadService.download(
-      this.isInitialized,
-      this.isDownloading,
-      this._isUpdatePending,
-      () => this.checkForUpdate(),
-      onProgress
-    );
+    // Il flag isDownloading non veniva mai impostato: il guard anti-doppio-download era inerte.
+    const wasDownloading = this.isDownloading;
+    this.isDownloading = true;
+    let result: Awaited<ReturnType<typeof UpdateDownloadService.download>>;
+    try {
+      result = await UpdateDownloadService.download(
+        this.isInitialized,
+        wasDownloading,
+        this._isUpdatePending,
+        () => this.checkForUpdate(),
+        onProgress
+      );
+    } finally {
+      if (!wasDownloading) this.isDownloading = false;
+    }
 
     if (result.success) {
       // fetchUpdateAsync riuscito dopo un check positivo = update pronto da applicare
@@ -131,7 +133,7 @@ export class UpdateService {
       }
       return result.success;
     } else {
-      UpdateNotificationService.notifyDownloadError();
+      if (!wasDownloading) UpdateNotificationService.notifyDownloadError();
       return false;
     }
   }
@@ -170,75 +172,12 @@ export class UpdateService {
     }
   }
 
-  static async performFullUpdate(
-    autoInstall: boolean = false,
-    onProgress?: (progress: DownloadProgress) => void
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      LoggingService.info('UpdateService', 'Inizio flusso completo di aggiornamento...');
-      const updateInfo = await this.checkForUpdate();
-
-      if (!updateInfo.isAvailable) {
-        return { success: true, message: 'L\'app è aggiornata all\'ultima versione' };
-      }
-
-      const downloadSuccess = await this.downloadUpdate(onProgress);
-      if (!downloadSuccess) {
-        return { success: false, message: 'Errore durante il download dell\'aggiornamento' };
-      }
-
-      if (autoInstall) {
-        await this.restartApp();
-        return { success: true, message: 'Aggiornamento installato con successo' };
-      } else {
-        return { success: true, message: 'Aggiornamento scaricato. Riavvia l\'app per applicarlo.' };
-      }
-    } catch (error: unknown) {
-      LoggingService.error('UpdateService', 'Errore durante il flusso di aggiornamento:', error);
-      return { success: false, message: 'Errore durante l\'aggiornamento' };
-    }
-  }
-
-  static shouldCheckForUpdates(settings: UpdateSettings): boolean {
-    return UpdateMetadataService.shouldCheckForUpdates(settings);
-  }
-
-  static async performAutoCheck(settings: UpdateSettings): Promise<UpdateInfo | null> {
-    if (!this.shouldCheckForUpdates(settings)) return null;
-
-    try {
-      LoggingService.info('UpdateService', 'Esecuzione check automatico aggiornamenti...');
-      const updateInfo = await this.checkForUpdate();
-
-      if (updateInfo.isAvailable && settings.autoInstallEnabled) {
-        await this.downloadUpdate();
-        await this.restartApp();
-      }
-      return updateInfo;
-    } catch (error: unknown) {
-      LoggingService.error('UpdateService', 'Errore durante il check automatico:', error);
-      return null;
-    }
-  }
-
-  static getDefaultSettings(): UpdateSettings {
-    return { ...this.defaultSettings };
-  }
-
   static isReady(): boolean {
     return this.isInitialized;
   }
 
   static isCheckingForUpdates(): boolean {
     return this.isChecking;
-  }
-
-  static isDownloadingUpdate(): boolean {
-    return this.isDownloading;
-  }
-
-  static getCurrentBuildInfo() {
-    return UpdateMetadataService.getBuildInfo();
   }
 
   static resetState(): void {

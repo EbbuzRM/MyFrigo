@@ -7,7 +7,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { renderExpiredNotification, renderPreWarningNotification, type NotificationLanguage } from './messages.ts';
-import { groupActivePushSubscriptions, type ProviderSubscription, type RegisteredSubscription } from './subscriptionRouting.ts';
+import { findOrphanSubscriptionIds, groupActivePushSubscriptions, type ProviderSubscription, type RegisteredSubscription } from './subscriptionRouting.ts';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -174,7 +174,23 @@ async function getSubscriptionGroups(userId: string): Promise<Record<Notificatio
     .select('subscription_id, language')
     .eq('user_id', userId);
   if (error) throw new Error(`Subscription lookup failed: ${error.message}`);
-  return groupActivePushSubscriptions(providerUser.subscriptions, (data ?? []) as RegisteredSubscription[]);
+  const registered = (data ?? []) as RegisteredSubscription[];
+
+  // Pulizia best-effort: righe che OneSignal non considera più push attive (reinstallazioni, token scaduti).
+  const orphanIds = findOrphanSubscriptionIds(providerUser.subscriptions, registered);
+  if (orphanIds.length > 0) {
+    const { error: cleanupError } = await supabase.from('user_push_subscriptions')
+      .delete()
+      .eq('user_id', userId)
+      .in('subscription_id', orphanIds);
+    if (cleanupError) {
+      log('warning', 'Could not remove orphan push subscriptions', { userId, error: cleanupError.message });
+    } else {
+      log('info', 'Removed orphan push subscriptions', { userId, removed: orphanIds.length });
+    }
+  }
+
+  return groupActivePushSubscriptions(providerUser.subscriptions, registered);
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
