@@ -13,7 +13,7 @@
 
 import { ErrorCode } from '../types/errorCodes';
 import { AppError, hasErrorMessage, hasErrorCode } from '../types/errorTypes';
-import { createError } from './errorHandler';
+import { createError } from './errorFactories';
 
 /**
  * Checks if error indicates email not confirmed

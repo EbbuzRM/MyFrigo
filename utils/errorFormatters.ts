@@ -11,7 +11,8 @@
  * Converts technical error codes to readable Italian messages for UI display.
  */
 
-import { ErrorCode, AppError } from './errorHandler';
+import { ErrorCode } from '../types/errorCodes';
+import type { AppError } from '../types/errorTypes';
 
 /**
  * User-friendly error messages mapped by error code.

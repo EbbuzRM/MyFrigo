@@ -22,7 +22,7 @@ import {
   hasErrorMessage,
   NetworkError,
 } from '../types/errorTypes';
-import { createError } from './errorHandler';
+import { createError } from './errorFactories';
 
 /**
  * Checks if an error is a session expired error (PGRST301) or a

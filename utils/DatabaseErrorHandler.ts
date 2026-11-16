@@ -12,7 +12,7 @@
 
 import { ErrorCode } from '../types/errorCodes';
 import { AppError, hasErrorCode, hasErrorMessage } from '../types/errorTypes';
-import { createError } from './errorHandler';
+import { createError } from './errorFactories';
 
 /**
  * PostgreSQL error codes mapping

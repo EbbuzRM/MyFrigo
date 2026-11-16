@@ -1,10 +1,7 @@
 // errorHandler.ts — errorHandler module.
 //
 // exports: createError | handleError | handleValidationError | normalizeError | ErrorCode | getErrorCategory | isErrorCategory | ErrorCategory | AppError | ErrorConfig | hasErrorCode | hasErrorMessage | isNetworkError | isStandardError | extractErrorMessage | extractErrorCode | handleNetworkError | (+16 more)
-// used_by: utils\AuthErrorHandler.ts
-//                   utils\DatabaseErrorHandler.ts
-//                   utils\NetworkErrorHandler.ts
-//                   utils\errorFormatters.ts
+// used_by: (facade; handlers/formatters import the leaf modules instead)
 // rules:   - All error handling must go through this module as the single facade entry point; specialized handlers (NetworkErrorHandler, DatabaseErrorHandler, AuthErrorHandler) must not be imported directly by other modules.
 //          - The ErrorCode enum and ErrorCategory types are defined externally in '../types/errorCodes' and must remain in sync with this module's error creation and categorization logic.
 //          - Every public export function must have a corresponding import from a specialized handler or formatter; the facade pattern must be consistently maintained.
@@ -77,11 +74,10 @@
  * the specialized handlers directly.
  */
 
-import { LoggingService } from '../services/LoggingService';
-import { ErrorCode, getErrorCategory, ErrorCategory } from '../types/errorCodes';
+import { ErrorCode, ErrorCategory } from '../types/errorCodes';
+import { createError } from './errorFactories';
 import {
   AppError,
-  ErrorConfig,
   hasErrorCode,
   hasErrorMessage,
   isNetworkError,
@@ -96,97 +92,6 @@ import {
 } from './NetworkErrorHandler';
 import { handleDatabaseError } from './DatabaseErrorHandler';
 import { handleAuthError, isEmailNotConfirmed, isInvalidCredentials } from './AuthErrorHandler';
-
-// ==================== ERROR CREATION ====================
-
-/**
- * Creates a standardized application error
- * @param config - Error configuration
- * @returns Standardized AppError
- */
-export function createError(config: ErrorConfig): AppError;
-export function createError(
-  code: ErrorCode,
-  message: string,
-  details?: Record<string, unknown>,
-  originalError?: unknown
-): AppError;
-export function createError(
-  codeOrConfig: ErrorCode | ErrorConfig,
-  message?: string,
-  details?: Record<string, unknown>,
-  originalError?: unknown
-): AppError {
-  // Handle object config
-  if (typeof codeOrConfig === 'object') {
-    const config = codeOrConfig;
-    return createErrorInternal(config.code, config.message, config.details, config.originalError);
-  }
-
-  // Handle positional arguments
-  return createErrorInternal(codeOrConfig, message || 'Errore', details, originalError);
-}
-
-/**
- * Internal error creation with logging
- */
-function createErrorInternal(
-  code: ErrorCode,
-  message: string,
-  details?: Record<string, unknown>,
-  originalError?: unknown
-): AppError {
-  const error: AppError = {
-    code,
-    message,
-    details,
-    timestamp: new Date().toISOString(),
-    stack:
-      originalError && typeof originalError === 'object' && 'stack' in originalError
-        ? (originalError as { stack?: string }).stack
-        : undefined,
-  };
-
-  logError(error, originalError);
-  return error;
-}
-
-// ==================== ERROR LOGGING ====================
-
-/**
- * Logs an error with appropriate severity based on error category
- * @param error - The error to log
- * @param originalError - Original error for additional context
- */
-function logError(error: AppError, originalError?: unknown): void {
-  const logMessage = `[${error.code}] ${error.message}`;
-  const category = getErrorCategory(error.code);
-
-  switch (category) {
-    case 'AUTH':
-    case 'AUTHORIZATION':
-      LoggingService.warning('ErrorHandler', logMessage, error.details);
-      break;
-
-    case 'VALIDATION':
-      LoggingService.info('ErrorHandler', logMessage, error.details);
-      break;
-
-    case 'DATABASE':
-      if (error.code === ErrorCode.NETWORK_ERROR) {
-        LoggingService.warning('ErrorHandler', logMessage, error.details);
-      } else {
-        LoggingService.error('ErrorHandler', logMessage, originalError || error.details);
-      }
-      break;
-
-    case 'SYSTEM':
-    case 'CONFIGURATION':
-    default:
-      LoggingService.error('ErrorHandler', logMessage, originalError || error.details);
-      break;
-  }
-}
 
 // ==================== ERROR ROUTING ====================
 
@@ -428,6 +333,7 @@ export function normalizeError(error: unknown): AppError {
 export { ErrorCode, getErrorCategory, isErrorCategory } from '../types/errorCodes';
 export type { ErrorCategory } from '../types/errorCodes';
 export type { AppError, ErrorConfig } from '../types/errorTypes';
+export { createError } from './errorFactories';
 export {
   hasErrorCode,
   hasErrorMessage,
