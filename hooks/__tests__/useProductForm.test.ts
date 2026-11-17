@@ -230,6 +230,28 @@ describe('useProductForm', () => {
       expect(mockSetExpirationDate).toHaveBeenCalledWith('2025-12-31');
     });
 
+    it('keeps the picked calendar day when the picker returns local midnight', () => {
+      const mockSetPurchaseDate = jest.fn();
+      const mockSetExpirationDate = jest.fn();
+      mockUseManualEntry.mockReturnValue({
+        ...mockUseManualEntry.getMockImplementation()?.(),
+        setPurchaseDate: mockSetPurchaseDate,
+        setExpirationDate: mockSetExpirationDate,
+      } as any);
+
+      const { result } = renderHook(() => useProductForm());
+      // parseISO('2026-11-18') = mezzanotte locale: in UTC+1 è il 17 alle 23:00 UTC
+      const localMidnight = new Date(2026, 10, 18);
+
+      act(() => {
+        result.current.onChangePurchaseDate({ type: 'set' } as any, localMidnight);
+        result.current.onChangeExpirationDate({ type: 'set' } as any, localMidnight);
+      });
+
+      expect(mockSetPurchaseDate).toHaveBeenCalledWith('2026-11-18');
+      expect(mockSetExpirationDate).toHaveBeenCalledWith('2026-11-18');
+    });
+
     it('should not update date on cancel', () => {
       const mockSetExpirationDate = jest.fn();
       mockUseManualEntry.mockReturnValue({
