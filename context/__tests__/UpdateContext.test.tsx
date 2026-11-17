@@ -88,6 +88,7 @@ const TestComponent = () => {
     toast,
     showToast,
     hideToast,
+    isApplyingUpdate,
   } = useUpdate();
 
   return (
@@ -95,6 +96,7 @@ const TestComponent = () => {
       <Text testID="is-checking">{isChecking ? 'true' : 'false'}</Text>
       <Text testID="is-downloading">{isDownloading ? 'true' : 'false'}</Text>
       <Text testID="show-modal">{showModal ? 'true' : 'false'}</Text>
+      <Text testID="is-applying">{isApplyingUpdate ? 'true' : 'false'}</Text>
       <Text testID="settings">{JSON.stringify(settings)}</Text>
       {toast && <Text testID="toast">{toast.message}</Text>}
       {lastUpdateInfo && <Text testID="update-info">{lastUpdateInfo.isAvailable ? 'available' : 'not-available'}</Text>}
@@ -406,13 +408,44 @@ describe('UpdateContext', () => {
         </UpdateProvider>
       );
 
-    it('con auto-install attivo riavvia e allinea UpdateService', async () => {
-      mockedUseUpdates.mockReturnValue(pendingState);
+    it('con auto-install attivo mostra la schermata di aggiornamento per 10s, poi riavvia', async () => {
+      jest.useFakeTimers();
+      try {
+        mockedUseUpdates.mockReturnValue(pendingState);
 
-      renderProvider();
+        const { getByTestId } = renderProvider();
 
-      await waitFor(() => expect(reloadAsync).toHaveBeenCalledTimes(1));
-      expect(mockedUpdateService.markUpdatePending).toHaveBeenCalled();
+        await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+        expect(getByTestId('is-applying').props.children).toBe('true');
+        expect(mockedUpdateService.markUpdatePending).toHaveBeenCalled();
+
+        // Anche se l'update è già pronto, il riavvio aspetta i 10 secondi minimi
+        await act(async () => { await jest.advanceTimersByTimeAsync(9000); });
+        expect(reloadAsync).not.toHaveBeenCalled();
+
+        await act(async () => { await jest.advanceTimersByTimeAsync(1100); });
+        expect(reloadAsync).toHaveBeenCalledTimes(1);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('mostra la schermata già durante il download automatico e la nasconde se il download fallisce', async () => {
+      let rejectFetch: (error: Error) => void = () => {};
+      (fetchUpdateAsync as jest.Mock).mockReturnValue(new Promise((_, reject) => { rejectFetch = reject; }));
+      mockedUseUpdates.mockReturnValue({
+        isUpdateAvailable: true,
+        isUpdatePending: false,
+        isDownloading: false,
+        availableUpdate: null,
+        currentlyRunning: { updateId: 'current-version' },
+      });
+
+      const { getByTestId } = renderProvider();
+
+      await waitFor(() => expect(getByTestId('is-applying').props.children).toBe('true'));
+      await act(async () => { rejectFetch(new Error('network')); });
+      await waitFor(() => expect(getByTestId('is-applying').props.children).toBe('false'));
     });
 
     it('non riavvia prima di aver letto le preferenze: auto-install disattivato => modal, nessun reload', async () => {

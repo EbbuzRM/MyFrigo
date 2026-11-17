@@ -17,6 +17,7 @@ import { AppProviders } from '@/components/AppProviders';
 import { GlobalUpdateModal } from '@/components/GlobalUpdateModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Toast } from '@/components/Toast';
+import { UpdatingOverlay } from '@/components/UpdatingOverlay';
 import { useUpdate } from '@/context/UpdateContext';
 import { LoggingService } from '@/services/LoggingService';
 import { NotificationService } from '@/services/NotificationService';
@@ -56,6 +57,12 @@ function ToastManager() {
       testID="toast-message"
     />
   );
+}
+
+/** Schermata "Aggiornamento in corso" del flusso OTA automatico (dentro <AppProviders>). */
+function UpdatingOverlayManager() {
+  const { isApplyingUpdate } = useUpdate();
+  return <UpdatingOverlay visible={isApplyingUpdate} />;
 }
 
 SplashScreen.preventAutoHideAsync();
@@ -115,6 +122,7 @@ export default function RootLayout() {
           <StatusBar style="auto" />
           <UpdateModalManager />
           <ToastManager />
+          <UpdatingOverlayManager />
         </AppProviders>
       </ErrorBoundary>
     </ThemeProvider>

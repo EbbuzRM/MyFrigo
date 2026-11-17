@@ -75,4 +75,8 @@ export const commonIt = {
   restartApp: 'Riavvia App',
   later: 'Più tardi',
   installNow: 'Installa ora',
+
+  // Full-screen automatic OTA update
+  updatingTitle: 'Aggiornamento in corso',
+  updatingMessage: "L'app si riavvierà tra pochi secondi.",
 } satisfies Record<string, string>;

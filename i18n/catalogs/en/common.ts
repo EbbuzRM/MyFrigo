@@ -78,4 +78,8 @@ export const commonEn = {
   restartApp: 'Restart app',
   later: 'Later',
   installNow: 'Install now',
+
+  // Full-screen automatic OTA update
+  updatingTitle: 'Updating',
+  updatingMessage: 'The app will restart in a few seconds.',
 } satisfies Record<keyof typeof commonIt, string>;

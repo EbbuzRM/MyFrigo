@@ -24,6 +24,9 @@ import { LoggingService } from '@/services/LoggingService';
 // Chiave per salvare le impostazioni di aggiornamento in AsyncStorage
 const UPDATE_SETTINGS_KEY = '@myfrigo_update_settings';
 
+// Durata minima della schermata "Aggiornamento in corso" prima del riavvio automatico
+export const MIN_UPDATE_SCREEN_MS = 10000;
+
 interface UpdateContextType {
   checkForUpdates: () => Promise<UpdateInfo>;
   isChecking: boolean;
@@ -38,6 +41,8 @@ interface UpdateContextType {
   toast: { message: string, type: 'success' | 'error' } | null;
   showToast: (message: string, type?: 'success' | 'error') => void;
   hideToast: () => void;
+  /** true mentre il flusso automatico scarica/applica un OTA: mostra la schermata "Aggiornamento in corso" */
+  isApplyingUpdate: boolean;
 }
 
 interface UpdateProviderProps {
@@ -70,6 +75,20 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   // Incrementato al rientro in foreground per ri-eseguire l'effetto di download
   const [retryNonce, setRetryNonce] = useState(0);
+  const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
+  // Inizio della schermata di aggiornamento: il riavvio avviene almeno MIN_UPDATE_SCREEN_MS dopo
+  const applyStartedAtRef = useRef<number | null>(null);
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startApplyingScreen = useCallback(() => {
+    if (applyStartedAtRef.current === null) applyStartedAtRef.current = Date.now();
+    setIsApplyingUpdate(true);
+  }, []);
+
+  const stopApplyingScreen = useCallback(() => {
+    applyStartedAtRef.current = null;
+    setIsApplyingUpdate(false);
+  }, []);
 
   // FIX RADICE: Usa useUpdates() hook invece di addListener (deprecato in SDK 51+)
   const updates = useUpdates();
@@ -169,11 +188,18 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
       if (!currentSettings.autoCheckEnabled) return; // download automatico disattivato dall'utente
       fetchAttemptedRef.current = true;
       LoggingService.info('UpdateProvider', 'Aggiornamento disponibile, avvio download automatico...');
-      fetchUpdateAsync().catch((error) => {
-        LoggingService.error('UpdateProvider', 'Errore durante fetchUpdateAsync:', error);
-        // Il retry parte al rientro in foreground (retryNonce)
-        fetchAttemptedRef.current = false;
-      });
+      if (currentSettings.autoInstallEnabled) startApplyingScreen();
+      fetchUpdateAsync()
+        .then((result) => {
+          // Nessun bundle nuovo: isUpdatePending non arriverà, non lasciare la schermata appesa
+          if (result && !result.isNew) stopApplyingScreen();
+        })
+        .catch((error) => {
+          LoggingService.error('UpdateProvider', 'Errore durante fetchUpdateAsync:', error);
+          // Il retry parte al rientro in foreground (retryNonce)
+          fetchAttemptedRef.current = false;
+          stopApplyingScreen();
+        });
       return;
     }
 
@@ -197,16 +223,28 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
       if (currentSettings.autoInstallEnabled) {
         if (reloadRequestedRef.current) return;
         reloadRequestedRef.current = true;
-        LoggingService.info('UpdateProvider', 'Auto-install abilitato, riavvio dell\'app...');
-        Promise.resolve(reloadAsync()).catch((error) => {
-          LoggingService.error('UpdateProvider', 'Errore durante reloadAsync:', error);
-          reloadRequestedRef.current = false;
-        });
+        startApplyingScreen();
+        const elapsed = Date.now() - (applyStartedAtRef.current ?? Date.now());
+        const remaining = Math.max(0, MIN_UPDATE_SCREEN_MS - elapsed);
+        LoggingService.info('UpdateProvider', `Auto-install abilitato, riavvio dell'app tra ${remaining}ms...`);
+        reloadTimerRef.current = setTimeout(() => {
+          reloadTimerRef.current = null;
+          Promise.resolve(reloadAsync()).catch((error) => {
+            LoggingService.error('UpdateProvider', 'Errore durante reloadAsync:', error);
+            reloadRequestedRef.current = false;
+            stopApplyingScreen();
+          });
+        }, remaining);
       } else {
         setShowUpdateModal(true);
       }
     }
-  }, [updates.isUpdateAvailable, updates.isUpdatePending, updates.availableUpdate, settingsLoaded, retryNonce]);
+  }, [updates.isUpdateAvailable, updates.isUpdatePending, updates.availableUpdate, settingsLoaded, retryNonce,
+    startApplyingScreen, stopApplyingScreen]);
+
+  useEffect(() => () => {
+    if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+  }, []);
 
   // "Ripresa": al rientro in foreground riprova un download fallito e, scaduto
   // l'intervallo impostato, ricontrolla (expo-updates controlla da solo solo all'avvio).
@@ -318,9 +356,11 @@ export const UpdateProvider: React.FC<UpdateProviderProps> = ({ children }) => {
     toast,
     showToast,
     hideToast,
+    isApplyingUpdate,
   }), [
     checkForUpdates, isChecking, isDownloading, lastUpdateInfo, settings, updateSettings,
     showUpdateModal, hideModal, openModal, resetUpdateState, toast, showToast, hideToast,
+    isApplyingUpdate,
   ]);
 
   return (
