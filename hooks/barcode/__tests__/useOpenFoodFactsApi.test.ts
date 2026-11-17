@@ -27,7 +27,8 @@ global.fetch = mockFetch;
 import { useOpenFoodFactsApi } from '../useOpenFoodFactsApi';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 
-const API_TIMEOUT = 15000;
+const API_TIMEOUT = 8000;
+const RETRY_DELAY = 1000;
 
 describe('useOpenFoodFactsApi', () => {
     const testBarcode = '8001505005292';
@@ -122,29 +123,68 @@ describe('useOpenFoodFactsApi', () => {
             }
         });
 
-        it('should handle timeout', async () => {
+        it('should reject with timeout after both attempts time out', async () => {
             // Mock fetch che non risponde mai (simula timeout)
-            mockFetch.mockImplementationOnce(() => new Promise(() => { }));
+            mockFetch.mockImplementation(() => new Promise(() => { }));
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            // Avviamo la fetch
             const fetchPromise = result.current.fetchProduct(testBarcode);
-            
-            // Avanziamo i timer per triggerare il timeout nel hook
-            act(() => {
-                jest.advanceTimersByTime(API_TIMEOUT + 100);
+            const assertion = expect(fetchPromise).rejects.toThrow('Timeout della richiesta API');
+
+            await act(async () => {
+                await jest.advanceTimersByTimeAsync(API_TIMEOUT * 2 + RETRY_DELAY + 100);
             });
 
-            await expect(fetchPromise).rejects.toThrow('Timeout della richiesta API');
+            await assertion;
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+            mockFetch.mockReset();
         });
 
-        it('should return null on error', async () => {
-            mockFetch.mockRejectedValueOnce(new Error('Network error'));
+        it('should reject with the network error after the retry also fails', async () => {
+            mockFetch.mockRejectedValue(new Error('Network error'));
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Network error');
+            const fetchPromise = result.current.fetchProduct(testBarcode);
+            const assertion = expect(fetchPromise).rejects.toThrow('Network error');
+
+            await act(async () => {
+                await jest.advanceTimersByTimeAsync(RETRY_DELAY + 100);
+            });
+
+            await assertion;
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+            mockFetch.mockReset();
+        });
+
+        it('should succeed on the retry after a transient network error', async () => {
+            mockFetch
+                .mockRejectedValueOnce(new Error('Network request failed'))
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({ status: 1, product: { product_name: 'Trecce' } }),
+                });
+
+            const { result } = renderHook(() => useOpenFoodFactsApi());
+
+            const fetchPromise = result.current.fetchProduct(testBarcode);
+
+            await act(async () => {
+                await jest.advanceTimersByTimeAsync(RETRY_DELAY + 100);
+            });
+
+            await expect(fetchPromise).resolves.toMatchObject({ product_name: 'Trecce', barcode: testBarcode });
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not retry when the product does not exist', async () => {
+            mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+
+            const { result } = renderHook(() => useOpenFoodFactsApi());
+
+            await expect(result.current.fetchProduct(testBarcode)).rejects.toMatchObject({ code: 'product_not_found' });
+            expect(mockFetch).toHaveBeenCalledTimes(1);
         });
 
         it('should reject when HTTP status is not ok', async () => {
@@ -173,14 +213,22 @@ describe('useOpenFoodFactsApi', () => {
         });
 
         it('should reject when response is empty', async () => {
-            mockFetch.mockResolvedValueOnce({
+            mockFetch.mockResolvedValue({
                 ok: true,
                 json: () => Promise.resolve(null),
             });
 
             const { result } = renderHook(() => useOpenFoodFactsApi());
 
-            await expect(result.current.fetchProduct(testBarcode)).rejects.toThrow('Risposta API vuota');
+            const fetchPromise = result.current.fetchProduct(testBarcode);
+            const assertion = expect(fetchPromise).rejects.toThrow('Risposta API vuota');
+
+            await act(async () => {
+                await jest.advanceTimersByTimeAsync(RETRY_DELAY + 100);
+            });
+
+            await assertion;
+            mockFetch.mockReset();
         });
     });
 });

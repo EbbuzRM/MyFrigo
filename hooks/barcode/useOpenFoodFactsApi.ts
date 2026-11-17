@@ -3,8 +3,9 @@
 // exports: useOpenFoodFactsApi
 // used_by: hooks\useBarcodeScanner.ts
 // rules:   This module is a stateless React hook that wraps the Open Food Facts API; it must not introduce any local state or side effects beyond the fetch logic.
+//          Transient failures (network, timeout, HTTP errors) are retried once; ProductNotFoundError is never retried.
 // agent:   deepseek/deepseek-chat | deepseek | 2026-05-09 | codedna-cli | initial CodeDNA annotation pass
-// message: 
+// message: retry singolo su errori transitori di OFF
 
 import { useCallback } from 'react';
 
@@ -13,15 +14,17 @@ export class ProductNotFoundError extends Error {
 }
 import { OpenFoodFactsProduct } from '@/types/api';
 
-const API_TIMEOUT = 15000;
+// Timeout per singolo tentativo: con un retry il caso peggiore resta ~17s (prima 15s con un solo tentativo)
+const API_TIMEOUT = 8000;
+const MAX_ATTEMPTS = 2;
+const RETRY_DELAY = 1000;
 
 interface OpenFoodFactsResponse {
   status: number;
   product?: OpenFoodFactsProduct;
 }
 
-export function useOpenFoodFactsApi() {
-  const fetchProduct = useCallback(async (barcode: string): Promise<OpenFoodFactsProduct> => {
+function fetchProductOnce(barcode: string): Promise<OpenFoodFactsProduct> {
     return new Promise((resolve, reject) => {
       try {
         const controller = new AbortController();
@@ -66,6 +69,19 @@ export function useOpenFoodFactsApi() {
         reject(error);
       }
     });
+}
+
+export function useOpenFoodFactsApi() {
+  const fetchProduct = useCallback(async (barcode: string): Promise<OpenFoodFactsProduct> => {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await fetchProductOnce(barcode);
+      } catch (error) {
+        // "Prodotto non trovato" è una risposta definitiva: ritentare non serve
+        if (error instanceof ProductNotFoundError || attempt >= MAX_ATTEMPTS) throw error;
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      }
+    }
   }, []);
 
   return { fetchProduct };
