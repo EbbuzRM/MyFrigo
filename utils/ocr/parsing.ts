@@ -35,6 +35,15 @@ const removeIgnoredDateContexts = (text: string): string => {
     );
 };
 
+// Both backslash separators misread as 1 ("01\12\2026" -> "0111212026"). Only trusted right
+// after an expiration keyword: a bare 10-digit number may be a lot or code.
+const recoverAnchoredMisreadSeparators = (text: string): string => {
+    return text.replace(
+        /\b(ENTRO|SCAD(?:ENZA)?|CONSUMARSI|EXP|TMC)\b([^0-9]{0,6})(0[1-9]|[12]\d|3[01])1(0[1-9]|1[0-2])1(20\d{2})\b/g,
+        '$1$2$3.$4.$5'
+    );
+};
+
 /**
  * Parses OCR blocks to find date matches and expiration anchors.
  */
@@ -66,7 +75,7 @@ export const findAllMatches = (blocks: TextBlock[]): { matches: DateMatch[], anc
     // present in the text when the lot-exclusion regex tries to match it.
     // cleanBlockText strips "LOTTO" via its \bL[A-Z0-9]{2,6}\b regex, which would make
     // the lot filter ineffective and let lot numbers like "11.8" pass as date candidates.
-    const fullTextCleaned = cleanBlockText(removeIgnoredDateContexts(fullTextUpper));
+    const fullTextCleaned = cleanBlockText(recoverAnchoredMisreadSeparators(removeIgnoredDateContexts(fullTextUpper)));
     LoggingService.debug(TAG, `CLEANED Combined text: "${fullTextCleaned.replace(/\n/g, ' ')}"`);
 
     // Helper to add matches from text and optional frame

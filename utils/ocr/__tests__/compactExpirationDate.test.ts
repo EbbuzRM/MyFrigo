@@ -52,6 +52,21 @@ describe('compact expiration dates beside lot numbers', () => {
         ]).extractedDate).toBe('2026-11-10');
     });
 
+    // Real label "01\12\2026": ML Kit read both backslashes as 1, ocr.space only the first
+    it.each(['0111212026', '01112\\2026'])(
+        'recovers the date when backslash separators were misread (%s)',
+        dateText => {
+            expect(extractDate([
+                'intrecciate a mano',
+                'Lotto:/Da consumare entro(in confezione integra):\nLotto: L 10112026',
+                'Da consumarsi entro:',
+                dateText,
+                'Conservare in frigo a max.5°C.',
+                '500',
+            ]).extractedDate).toBe('2026-12-01');
+        }
+    );
+
     it.each(['LOTTO: L 01112026', 'LOTTO: 01112026', 'L 01112026', 'L01112026', 'L: 01112026'])(
         'excludes the complete numeric lot %s',
         lot => {

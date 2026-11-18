@@ -24,6 +24,10 @@ export const cleanBlockText = (text: string): string => {
         .replace(/\b(\d{2}0)[Gg](\d{2})\b/g, '$19$2')
         .replace(/\b(\d{1,2})~(\d{2})(\d{2})\b/g, '$1$2$3')
         .replace(/\b(\d{1,2})[/\\](\d{2})1(\d{4})\b/g, '$1.$2.$3')
+        // Backslash separators ("01\12\2026") misread as |, I or L — must run before I/L -> 1
+        .replace(/\b(0[1-9]|[12]\d|3[01])\s*[\\/|IL]\s*(0[1-9]|1[0-2])\s*[\\/|IL]\s*(20\d{2})\b/g, '$1.$2.$3')
+        // First separator misread as 1, second still readable (ocr.space: "01112\2026")
+        .replace(/\b(0[1-9]|[12]\d|3[01])1(0[1-9]|1[0-2])\s*[\\/|IL]\s*(20\d{2})\b/g, '$1.$2.$3')
         .replace(/\b[A-ZÀ-Ý]{1,2}(?=\d{1,2}\s*[./\\ -]\s*\d{1,2}\s*[./\\ -]\s*\d{2,4}\b)/g, '')
         .replace(/(?<=\d)O(?=\d)|(?<=\d)O\b|\bO(?=\d)/g, '0')
         .replace(/(?<=\d)S(?=\d)|(?<=\d)S\b|\bS(?=\d)/g, '5')

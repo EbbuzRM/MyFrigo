@@ -22,6 +22,21 @@ describe('cleanBlockText', () => {
         it('should handle backslash-separated dates (e.g. 23\\0512026)', () => {
             expect(cleanBlockText('23/0512026')).toBe('23.05.2026');
         });
+
+        // Backslash separators ("01\12\2026") are often misread by ML Kit as I, L or |
+        it.each([
+            ['01I12I2026'],
+            ['01L12L2026'],
+            ['01|12|2026'],
+            ['01 | 12 | 2026'],
+            ['01I12\\2026'],
+        ])('should recover a date whose backslash separators were misread (%s)', (input) => {
+            expect(cleanBlockText(input)).toBe('01.12.2026');
+        });
+
+        it('should not turn an 8-digit lot number into a misread-separator date', () => {
+            expect(cleanBlockText('10112026')).toBe('10112026');
+        });
     });
 
     // ── Letter-to-number substitutions ──────────────────────────────
