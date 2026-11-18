@@ -68,7 +68,7 @@ async function imageToBase64(imageUri: string): Promise<string> {
  * @param imageUri Local file URI of the image to process
  * @returns The raw API response, or null on error
  */
-export async function ocrSpaceRecognize(imageUri: string, language: SupportedLanguage = 'it'): Promise<OcrSpaceResponse | null> {
+export async function ocrSpaceRecognize(imageUri: string, language: SupportedLanguage = 'it', timeoutMs?: number): Promise<OcrSpaceResponse | null> {
     const base64Image = await imageToBase64(imageUri);
 
     LoggingService.info(TAG, 'Calling ocr.space fallback via Supabase Edge Function proxy (Engine 2 — dot matrix)');
@@ -76,6 +76,7 @@ export async function ocrSpaceRecognize(imageUri: string, language: SupportedLan
     try {
         const { data, error } = await supabase.functions.invoke('ocr-proxy', {
       body: { base64Image, engine: 2, language },
+            timeout: timeoutMs,
         });
 
         if (error) {

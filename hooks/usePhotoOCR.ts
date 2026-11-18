@@ -73,6 +73,7 @@ export const usePhotoOCR = () => {
   const extractExpirationDate = useCallback(async (imageUri: string): Promise<OCRResult> => {
     LoggingService.info(TAG, 'Starting OCR extraction');
     setOcrProgress({ isProcessing: true, progress: 0, currentStep: 'initializing' });
+    const deadline = Date.now() + DATE_CONSTANTS.TIMEOUT_MS;
 
     timeoutRef.current = setTimeout(() => {
       LoggingService.error(TAG, 'Timeout OCR - resetting progress');
@@ -117,7 +118,13 @@ export const usePhotoOCR = () => {
       const primaryLanguage = getCurrentLanguage();
       const languages = [primaryLanguage, primaryLanguage === 'it' ? 'en' : 'it'] as const;
       for (const language of languages) {
-        const ocrSpaceResponse = await ocrSpaceRecognize(imageUri, language);
+        // The OCR timeout is a real deadline: never start or wait for a remote call past it
+        const remainingMs = deadline - Date.now();
+        if (remainingMs <= 0) {
+          LoggingService.warning(TAG, 'OCR deadline reached — skipping remaining ocr.space attempts');
+          break;
+        }
+        const ocrSpaceResponse = await ocrSpaceRecognize(imageUri, language, remainingMs);
         if (!ocrSpaceResponse) continue;
         const ocrSpaceBlocks = convertOcrSpaceToTextBlocks(ocrSpaceResponse);
 

@@ -64,8 +64,8 @@ describe('usePhotoOCR', () => {
       await result.current.extractExpirationDate('file://test-image.jpg');
     });
 
-    expect(ocrSpaceRecognize).toHaveBeenNthCalledWith(1, 'file://test-image.jpg', 'en');
-    expect(ocrSpaceRecognize).toHaveBeenNthCalledWith(2, 'file://test-image.jpg', 'it');
+    expect(ocrSpaceRecognize).toHaveBeenNthCalledWith(1, 'file://test-image.jpg', 'en', expect.any(Number));
+    expect(ocrSpaceRecognize).toHaveBeenNthCalledWith(2, 'file://test-image.jpg', 'it', expect.any(Number));
     expect(ocrSpaceRecognize).toHaveBeenCalledTimes(2);
   });
 

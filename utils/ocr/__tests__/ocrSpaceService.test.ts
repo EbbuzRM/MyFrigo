@@ -79,6 +79,17 @@ describe('ocrSpaceService', () => {
             });
         });
 
+        it('forwards the remaining time budget as the proxy request timeout', async () => {
+            mockInvoke.mockResolvedValue({ data: { ParsedResults: [] }, error: null });
+
+            await ocrSpaceRecognize('file:///path/to/image.jpg', 'it', 4000);
+
+            expect(mockInvoke).toHaveBeenCalledWith('ocr-proxy', {
+                body: { base64Image: 'data:image/jpeg;base64,dGVzdA==', engine: 2, language: 'it' },
+                timeout: 4000,
+            });
+        });
+
         it('should return null when proxy returns an error', async () => {
             mockInvoke.mockResolvedValue({ data: null, error: { message: 'Function not found' } });
 

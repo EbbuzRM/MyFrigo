@@ -70,7 +70,7 @@ it('stops after one remote call when the active language finds a date', async ()
   expect(result?.success).toBe(true);
   expect(localRecognize).toHaveBeenCalledTimes(1);
   expect(remoteRecognize).toHaveBeenCalledTimes(1);
-  expect(remoteRecognize).toHaveBeenCalledWith(imageUri, 'en');
+  expect(remoteRecognize).toHaveBeenCalledWith(imageUri, 'en', expect.any(Number));
   expect(localRecognize.mock.invocationCallOrder[0]).toBeLessThan(remoteRecognize.mock.invocationCallOrder[0]);
 });
 
@@ -84,8 +84,42 @@ it('tries the other language only after the first remote result has no date', as
   expect(result?.success).toBe(true);
   expect(localRecognize).toHaveBeenCalledTimes(1);
   expect(remoteRecognize).toHaveBeenCalledTimes(2);
-  expect(remoteRecognize).toHaveBeenNthCalledWith(1, imageUri, 'en');
-  expect(remoteRecognize).toHaveBeenNthCalledWith(2, imageUri, 'it');
+  expect(remoteRecognize).toHaveBeenNthCalledWith(1, imageUri, 'en', expect.any(Number));
+  expect(remoteRecognize).toHaveBeenNthCalledWith(2, imageUri, 'it', expect.any(Number));
+});
+
+it('gives each remote call only the time left before the OCR deadline', async () => {
+  let now = 1_000_000;
+  const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => now);
+  localRecognize.mockImplementation(async () => {
+    now += 3000;
+    return { blocks: [{ text: 'no date' }] };
+  });
+  remoteRecognize.mockImplementationOnce(async () => {
+    now += 4000;
+    return { text: 'no date' };
+  });
+
+  await runOcr();
+
+  expect(remoteRecognize).toHaveBeenNthCalledWith(1, imageUri, 'en', 12000);
+  expect(remoteRecognize).toHaveBeenNthCalledWith(2, imageUri, 'it', 8000);
+  nowSpy.mockRestore();
+});
+
+it('skips the second remote call once the OCR deadline has passed', async () => {
+  let now = 1_000_000;
+  const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => now);
+  remoteRecognize.mockImplementationOnce(async () => {
+    now += 16000;
+    return { text: 'no date' };
+  });
+
+  const result = await runOcr();
+
+  expect(result?.success).toBe(false);
+  expect(remoteRecognize).toHaveBeenCalledTimes(1);
+  nowSpy.mockRestore();
 });
 
 it('caps a complete failure at one local and two sequential remote attempts', async () => {
@@ -94,6 +128,6 @@ it('caps a complete failure at one local and two sequential remote attempts', as
   expect(result?.success).toBe(false);
   expect(localRecognize).toHaveBeenCalledTimes(1);
   expect(remoteRecognize).toHaveBeenCalledTimes(2);
-  expect(remoteRecognize).toHaveBeenNthCalledWith(1, imageUri, 'en');
-  expect(remoteRecognize).toHaveBeenNthCalledWith(2, imageUri, 'it');
+  expect(remoteRecognize).toHaveBeenNthCalledWith(1, imageUri, 'en', expect.any(Number));
+  expect(remoteRecognize).toHaveBeenNthCalledWith(2, imageUri, 'it', expect.any(Number));
 });
